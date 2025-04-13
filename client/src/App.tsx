@@ -44,6 +44,9 @@ function ProjectViewPublicRoute({ params }: { params: { id: string }}) {
   return <ProjectView params={params} />;
 }
 
+// Importar a página de preços
+import PricingPage from "@/pages/pricing";
+
 function Router() {
   return (
     <Switch>
@@ -58,6 +61,8 @@ function Router() {
       <ProtectedRoute path="/subscription" component={SubscriptionPage} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />
+      <Route path="/planos" component={PricingPage} />
+      <Route path="/pricing" component={PricingPage} />
       <Route path="/">
         {() => <RootRedirect />}
       </Route>

@@ -1,0 +1,53 @@
+⚠️ Important: Do not break or modify any existing feature that is currently working (authentication, dashboard, photo upload, gallery view, project creation, etc).
+
+✅ GOALS:
+I want to launch a subscription system with upload limits, plan management, and Stripe checkout integration.
+
+🛠️ Implementation Tasks:
+
+1. Fix subscription page
+- Make sure the current subscription page loads properly.
+- Display the 3 available plans clearly:
+  • R$15/month → 1,500 total uploads
+  • R$35/month → 5,000 total uploads
+  • R$120/month → unlimited uploads
+- Each plan must have a "Subscribe" button that:
+  • Sends the correct plan type and amount to Stripe checkout
+  • After payment, assigns the upload limit to the user account
+
+2. Create a public pricing page at `/planos` or `/pricing`
+- This route should be accessible even for visitors not logged in
+- Show the 3 plans with description and price
+- Add “Subscribe” buttons linked to Stripe checkout
+
+3. Setup Stripe with fixed Price IDs (recommended)
+- Use hardcoded or pre-configured Stripe Price IDs for each plan:
+  • price_15BRL_ABC123 → 1,500 uploads
+  • price_35BRL_DEF456 → 5,000 uploads
+  • price_120BRL_GHI789 → unlimited
+- When a user completes payment, use the webhook to:
+  • Store the plan type (`basic`, `pro`, or `unlimited`)
+  • Set the correct `uploadLimit` in their account
+  • Initialize `usedUploads = 0`
+
+4. Upload Limiting System
+- On every photo upload, check if:
+  • usedUploads < uploadLimit → allow upload
+  • Else → block and show a warning: “Upload limit reached. Please upgrade your plan.”
+- When photos are deleted:
+  • Reduce usedUploads count accordingly
+- Show a visual counter on the dashboard:
+  • Example: “📷 327 / 1500 uploads used”
+
+5. Stripe Webhook Handling
+- On successful payment, receive plan and user email
+- Update their plan, limits and Stripe info in the database
+- If subscription is canceled or payment fails:
+  • Block dashboard access and show a “Renew Plan” screen
+
+✅ Summary:
+• Plans: R$15 (1,500 uploads), R$35 (5,000), R$120 (Unlimited)
+• Public pricing page: `/planos`
+• Stripe integration (working checkout + webhooks)
+• Upload count management
+• No disruption to current working features

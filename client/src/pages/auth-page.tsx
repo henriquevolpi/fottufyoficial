@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,15 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const { user, loginMutation, registerMutation } = useAuth();
+  const [, setLocation] = useLocation();
+  
+  // Processar parâmetros de URL para redirecionamento pós-login
+  const [searchParams] = useState(() => new URLSearchParams(window.location.search));
+  const redirect = searchParams.get('redirect') || '/dashboard';
+  const plan = searchParams.get('plan'); // Capturar o tipo de plano se existir
+  
+  // Construir a URL de redirecionamento com parâmetros adequados
+  const redirectUrl = plan ? `${redirect}?plan=${plan}` : redirect;
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -61,9 +70,17 @@ export default function AuthPage() {
     registerMutation.mutate(registerData);
   };
 
+  // Efeito para lidar com o redirecionamento após o login bem-sucedido
+  useEffect(() => {
+    if (user) {
+      // Redirecionar para o URL específico se disponível, caso contrário para o dashboard
+      setLocation(redirectUrl);
+    }
+  }, [user, redirectUrl, setLocation]);
+  
   // Redirecionar se já estiver autenticado
   if (user) {
-    return <Redirect to="/" />;
+    return null; // Retornamos null enquanto o efeito de redirecionamento está sendo processado
   }
 
   return (

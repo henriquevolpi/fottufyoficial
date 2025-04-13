@@ -11,6 +11,13 @@ import Stripe from 'stripe';
 
 // Basic authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
+  // Verificar se o usuário já está autenticado pela sessão
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    // O usuário já está autenticado pela sessão
+    return next();
+  }
+  
+  // Se não estiver autenticado pela sessão, tenta pelo header Authorization
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
