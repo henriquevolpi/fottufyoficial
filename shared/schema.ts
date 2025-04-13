@@ -11,7 +11,18 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("photographer"), // photographer | admin
   status: text("status").notNull().default("active"), // active | suspended | canceled
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  subscription_id: text("subscription_id"),
+  
+  // Campos relacionados ao plano e assinatura
+  planType: text("plan_type").default("free"), // free | basic | standard | professional
+  uploadLimit: integer("upload_limit").default(0),
+  usedUploads: integer("used_uploads").default(0),
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  subscriptionStatus: text("subscription_status").default("inactive"), // active | inactive | canceled
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscription_id: text("subscription_id"), // mantido para compatibilidade
+  
   lastEvent: jsonb("last_event").default(null).$type<{
     type: string;
     timestamp: string;
@@ -22,7 +33,45 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   lastEvent: true,
+  uploadLimit: true,
+  usedUploads: true,
+  subscriptionStartDate: true,
+  subscriptionEndDate: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
 });
+
+// Definição dos planos disponíveis
+export const SUBSCRIPTION_PLANS = {
+  FREE: {
+    name: "Gratuito",
+    type: "free",
+    price: 0,
+    uploadLimit: 10, // limite para teste
+    description: "Plano para testes",
+  },
+  BASIC: {
+    name: "Básico",
+    type: "basic",
+    price: 15,
+    uploadLimit: 1500,
+    description: "1.500 uploads por conta",
+  },
+  STANDARD: {
+    name: "Padrão",
+    type: "standard",
+    price: 35,
+    uploadLimit: 5000,
+    description: "5.000 uploads por conta",
+  },
+  PROFESSIONAL: {
+    name: "Profissional",
+    type: "professional",
+    price: 120,
+    uploadLimit: 999999, // Praticamente ilimitado
+    description: "Uploads ilimitados",
+  },
+};
 
 // Project model
 export const projects = pgTable("projects", {
@@ -66,4 +115,25 @@ export type WebhookPayload = {
   email: string;
   subscription_id: string;
   timestamp: string;
+  plan_type?: string;
+  metadata?: Record<string, any>;
+};
+
+export type SubscriptionWebhookPayload = {
+  type: string; // subscription.created, subscription.updated, subscription.cancelled
+  data: {
+    customer: {
+      email: string;
+      id: string;
+    };
+    subscription: {
+      id: string;
+      status: string;
+      current_period_end: number;
+      plan: {
+        id: string;
+        product: string;
+      };
+    };
+  };
 };

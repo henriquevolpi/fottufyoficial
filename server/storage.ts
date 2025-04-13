@@ -1,4 +1,9 @@
-import { users, type User, type InsertUser, projects, type Project, type InsertProject, type WebhookPayload, type Photo } from "@shared/schema";
+import { 
+  users, type User, type InsertUser, 
+  projects, type Project, type InsertProject, 
+  type WebhookPayload, type SubscriptionWebhookPayload, 
+  type Photo, SUBSCRIPTION_PLANS 
+} from "@shared/schema";
 import { nanoid } from "nanoid";
 
 // Memory storage implementation
@@ -12,11 +17,21 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserBySubscriptionId(subscriptionId: string): Promise<User | undefined>;
+  getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Subscription methods
   handleWebhookEvent(payload: WebhookPayload): Promise<User | undefined>;
+  handleStripeWebhook(payload: SubscriptionWebhookPayload): Promise<User | undefined>;
+  updateUserSubscription(userId: number, planType: string): Promise<User | undefined>;
+  updateStripeInfo(userId: number, customerId: string, subscriptionId: string): Promise<User | undefined>;
+  
+  // Upload management methods
+  checkUploadLimit(userId: number, count: number): Promise<boolean>;
+  updateUploadUsage(userId: number, addCount: number): Promise<User | undefined>;
   
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -77,7 +92,13 @@ export class MemStorage implements IStorage {
 
   async getUserBySubscriptionId(subscriptionId: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.subscription_id === subscriptionId
+      (user) => user.subscription_id === subscriptionId || user.stripeSubscriptionId === subscriptionId
+    );
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.stripeCustomerId === customerId
     );
   }
 
@@ -98,9 +119,25 @@ export class MemStorage implements IStorage {
       role: userData.role || "photographer",
       status: userData.status || "active",
       createdAt: now,
+      
+      // Campos de assinatura
+      planType: userData.planType || "free",
+      uploadLimit: 0, // Será definido com base no plano
+      usedUploads: 0,
+      subscriptionStartDate: null,
+      subscriptionEndDate: null,
+      subscriptionStatus: "inactive",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
       subscription_id: userData.subscription_id || null,
+      
       lastEvent: null,
     };
+    
+    // Configurar o limite de uploads com base no plano gratuito
+    if (user.planType === "free") {
+      user.uploadLimit = SUBSCRIPTION_PLANS.FREE.uploadLimit;
+    }
     
     this.users.set(id, user);
     return user;
