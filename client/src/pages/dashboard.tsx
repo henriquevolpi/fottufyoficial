@@ -942,6 +942,10 @@ export default function Dashboard() {
       <UploadModal 
         open={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
+        onProjectCreated={(newProject) => {
+          // Adicionar o novo projeto à lista de projetos existentes
+          setProjetos(prevProjetos => [...prevProjetos, newProject]);
+        }}
       />
     </div>
   );
