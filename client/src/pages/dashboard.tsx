@@ -180,10 +180,13 @@ const PROJETOS_EXEMPLO = [
 ];
 
 // Componente de card para projetos recentes
-function ProjetoCard({ projeto }: { projeto: any }) {
+function ProjetoCard({ projeto, onDelete }: { projeto: any, onDelete?: (id: number) => void }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [status, setStatus] = useState(projeto.status);
+  const [showSelectionsModal, setShowSelectionsModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -224,6 +227,49 @@ function ProjetoCard({ projeto }: { projeto: any }) {
     setLocation(`/project/${projeto.id}/edit`);
   };
   
+  const handleVerSelecoes = () => {
+    setShowSelectionsModal(true);
+  };
+  
+  const handleDeleteProject = async () => {
+    try {
+      setIsDeleting(true);
+      
+      // Fazer requisição para excluir o projeto
+      const response = await fetch(`/api/projects/${projeto.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao excluir projeto');
+      }
+      
+      // Exibir notificação de sucesso
+      toast({
+        title: "Projeto excluído",
+        description: `O projeto "${projeto.nome}" foi excluído com sucesso.`,
+      });
+      
+      // Chamar callback para atualizar a lista de projetos
+      if (onDelete) {
+        onDelete(projeto.id);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir projeto:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o projeto. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+  
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardHeader className="p-4">
@@ -253,59 +299,155 @@ function ProjetoCard({ projeto }: { projeto: any }) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-wrap gap-2 justify-end">
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="text-xs"
-          onClick={() => setLocation(`/project/${projeto.id}`)}
-        >
-          Ver Detalhes
-          <ArrowUpRight className="h-3 w-3 ml-1" />
-        </Button>
+      <CardFooter className="p-4 pt-0 flex flex-wrap gap-2 justify-between">
+        <div className="flex gap-2">
+          {/* Botão de excluir projeto */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Excluir
+            <X className="h-3 w-3 ml-1" />
+          </Button>
+          
+          {/* Botão de ver seleções - disponível para projetos com seleções */}
+          {projeto.selecionadas > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+              onClick={handleVerSelecoes}
+            >
+              Ver Seleções
+              <FileText className="h-3 w-3 ml-1" />
+            </Button>
+          )}
+        </div>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs text-blue-600"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Copiar o link para o cliente
-            const clientUrl = `${window.location.origin}/project-view/${projeto.id}`;
-            console.log("Copiando link do cliente:", clientUrl);
-            navigator.clipboard.writeText(clientUrl);
-            toast({
-              title: "Link copiado",
-              description: "Link para o cliente copiado para a área de transferência.",
-            });
-          }}
-        >
-          Link do Cliente
-          <Link className="h-3 w-3 ml-1" />
-        </Button>
-        
-        {status === "arquivado" && (
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
             size="sm"
-            className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800"
-            onClick={handleReabrirProjeto}
+            className="text-xs"
+            onClick={() => setLocation(`/project/${projeto.id}`)}
           >
-            Reabrir Projeto
+            Ver Detalhes
+            <ArrowUpRight className="h-3 w-3 ml-1" />
           </Button>
-        )}
-        
-        {(status === "pendente" || status === "revisado" || status === "reaberto") && (
-          <Button 
-            variant="outline" 
+          
+          <Button
+            variant="ghost"
             size="sm"
-            className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800"
-            onClick={handleEditarGaleria}
+            className="text-xs text-blue-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Copiar o link para o cliente
+              const clientUrl = `${window.location.origin}/project-view/${projeto.id}`;
+              console.log("Copiando link do cliente:", clientUrl);
+              navigator.clipboard.writeText(clientUrl);
+              toast({
+                title: "Link copiado",
+                description: "Link para o cliente copiado para a área de transferência.",
+              });
+            }}
           >
-            Editar Galeria
+            Link do Cliente
+            <Link className="h-3 w-3 ml-1" />
           </Button>
-        )}
+          
+          {status === "arquivado" && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800"
+              onClick={handleReabrirProjeto}
+            >
+              Reabrir Projeto
+              <RotateCcw className="h-3 w-3 ml-1" />
+            </Button>
+          )}
+          
+          {(status === "pendente" || status === "revisado" || status === "reaberto") && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800"
+              onClick={handleEditarGaleria}
+            >
+              Editar Galeria
+            </Button>
+          )}
+        </div>
       </CardFooter>
+      
+      {/* Modal para confirmar exclusão do projeto */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir Projeto</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o projeto "{projeto.nome}"? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProject}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir Projeto"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal para visualizar seleções */}
+      <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
+        <DialogContent className="sm:max-w-[900px]">
+          <DialogHeader>
+            <DialogTitle>Fotos Selecionadas - {projeto.nome}</DialogTitle>
+            <DialogDescription>
+              O cliente selecionou {projeto.selecionadas} de {projeto.fotos} fotos.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
+            {projeto.photos.filter(photo => photo.selected).map((photo) => (
+              <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
+                <img 
+                  src={photo.url} 
+                  alt={photo.filename}
+                  className="w-full h-full object-cover" 
+                />
+                <div className="absolute bottom-2 left-2 right-2 bg-black/50 text-white text-xs p-2 rounded">
+                  {photo.filename}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowSelectionsModal(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -764,8 +906,26 @@ export default function Dashboard() {
     setLocation("/login");
   };
   
+  // Handler para exclusão de projeto
+  const handleDeleteProject = (id: number) => {
+    // Remover o projeto do estado
+    setProjetos(prevProjetos => prevProjetos.filter(projeto => projeto.id !== id));
+    
+    // Remover também do localStorage, se existir
+    try {
+      const storedProjects = localStorage.getItem('projects');
+      if (storedProjects) {
+        const parsedProjects = JSON.parse(storedProjects);
+        const updatedProjects = parsedProjects.filter((project: any) => project.id !== id);
+        localStorage.setItem('projects', JSON.stringify(updatedProjects));
+      }
+    } catch (error) {
+      console.error('Erro ao remover projeto do localStorage:', error);
+    }
+  };
+  
   const filteredProjetos = projetos.filter(
-    projeto => projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    projeto => projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -863,7 +1023,11 @@ export default function Dashboard() {
             ) : filteredProjetos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProjetos.map((projeto) => (
-                  <ProjetoCard key={projeto.id} projeto={projeto} />
+                  <ProjetoCard 
+                    key={projeto.id} 
+                    projeto={projeto} 
+                    onDelete={handleDeleteProject}
+                  />
                 ))}
               </div>
             ) : (
