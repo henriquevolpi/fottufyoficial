@@ -2,6 +2,11 @@ import { users, type User, type InsertUser, projects, type Project, type InsertP
 import { nanoid } from "nanoid";
 
 // Memory storage implementation
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -21,6 +26,9 @@ export interface IStorage {
   finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined>;
   archiveProject(id: number): Promise<Project | undefined>;
   reopenProject(id: number): Promise<Project | undefined>;
+  
+  // Session store
+  sessionStore: any;
 }
 
 export class MemStorage implements IStorage {
@@ -28,12 +36,16 @@ export class MemStorage implements IStorage {
   private projects: Map<number, Project>;
   private userId: number;
   private projectId: number;
+  public sessionStore: any;
 
   constructor() {
     this.users = new Map();
     this.projects = new Map();
     this.userId = 1;
     this.projectId = 1;
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // limpar sessões expiradas a cada 24 horas
+    });
     
     // Add default admin user
     this.createUser({

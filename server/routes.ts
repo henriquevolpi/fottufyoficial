@@ -6,15 +6,7 @@ import { insertUserSchema, insertProjectSchema, WebhookPayload } from "@shared/s
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
-
-// Extend Request interface for auth
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
+import { setupAuth } from "./auth";
 
 // Basic authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
