@@ -74,12 +74,18 @@ export class MemStorage implements IStorage {
 
   async createUser(userData: InsertUser): Promise<User> {
     const id = this.userId++;
-    const now = new Date().toISOString();
+    const now = new Date();
     
+    // Garantir que role e status estejam definidos
     const user: User = {
       id,
-      ...userData,
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      role: userData.role || "photographer",
+      status: userData.status || "active",
       createdAt: now,
+      subscription_id: userData.subscription_id || null,
       lastEvent: null,
     };
     
@@ -156,7 +162,7 @@ export class MemStorage implements IStorage {
 
   async createProject(projectData: InsertProject, photos: Photo[]): Promise<Project> {
     const id = this.projectId++;
-    const now = new Date().toISOString();
+    const now = new Date();
     
     // Process photos if any
     const processedPhotos = photos.map(photo => ({
@@ -166,10 +172,14 @@ export class MemStorage implements IStorage {
     
     const project: Project = {
       id,
-      ...projectData,
-      photos: processedPhotos,
-      selectedPhotos: [],
+      name: projectData.name,
+      status: projectData.status || "pending",
       createdAt: now,
+      clientName: projectData.clientName,
+      clientEmail: projectData.clientEmail,
+      photographerId: projectData.photographerId,
+      photos: processedPhotos,
+      selectedPhotos: []
     };
     
     this.projects.set(id, project);
