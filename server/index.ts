@@ -2,6 +2,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Definir variável de ambiente para a sessão se não estiver definida
+if (!process.env.SESSION_SECRET) {
+  process.env.SESSION_SECRET = "studio-foto-session-secret-key-2023";
+  console.log("SESSION_SECRET definido com valor padrão");
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

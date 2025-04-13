@@ -29,7 +29,7 @@ function RootRedirect() {
         setLocation("/dashboard");
       }
     } else {
-      console.log("Redirecionando para /login");
+      console.log("Redirecionando para /auth");
       setLocation("/auth");
     }
   }, [user, setLocation]);
