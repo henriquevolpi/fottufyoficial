@@ -11,7 +11,7 @@ import Project from "@/pages/project";
 import ProjectView from "@/pages/project-view";
 import Admin from "@/pages/admin";
 import { useAuth } from "./providers/auth-provider";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function ProtectedRoute({ component: Component, adminOnly = false }: { component: React.ComponentType, adminOnly?: boolean }) {
   const { user, isAuthenticated } = useAuth();
@@ -71,6 +71,11 @@ function RootRedirect() {
   return null;
 }
 
+function ProjectViewPublicRoute({ params }: { params: { id: string }}) {
+  // Componente de rota pública que permite acesso direto à visualização do projeto
+  return <ProjectView params={params} />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -79,7 +84,9 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/upload" component={Upload} />
       <Route path="/project/:id" component={Project} />
-      <Route path="/project-view/:id" component={ProjectView} />
+      <Route path="/project-view/:id">
+        {(params) => <ProjectViewPublicRoute params={params} />}
+      </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={Admin} adminOnly={true} />}
       </Route>

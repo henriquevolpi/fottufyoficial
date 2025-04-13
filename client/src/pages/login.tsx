@@ -79,6 +79,19 @@ export default function Login() {
         >
           Ir diretamente para o Dashboard (Demo)
         </Button>
+        
+        <Button
+          onClick={() => {
+            // Para acessar diretamente a página do cliente (contorna a autenticação)
+            localStorage.setItem("project_view_bypass", "true");
+            const projectId = 2; // ID do projeto exemplo
+            window.location.href = `/project-view/${projectId}`;
+          }}
+          variant="outline"
+          className="text-sm mt-4"
+        >
+          Ver Exemplo de Página do Cliente
+        </Button>
       </div>
     </div>
   );
