@@ -94,17 +94,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           throw new Error('ID do projeto não fornecido');
         }
         
-        const projectIdNum = parseInt(projectId);
-        if (isNaN(projectIdNum)) {
-          console.error('ID do projeto inválido:', projectId);
-          throw new Error('ID do projeto inválido');
-        }
-        
-        console.log('Buscando projeto com ID:', projectIdNum);
+        // Não validamos o formato do ID, apenas verificamos se existe
+        console.log('Buscando projeto com ID (sem validação de formato):', projectId);
         
         // Tenta buscar do backend primeiro
         try {
-          const response = await fetch(`/api/projects/${projectIdNum}`);
+          // Melhorado para usar o ID original da URL, não apenas números
+          console.log('Buscando projeto com ID original:', projectId);
+          const response = await fetch(`/api/projects/${projectId}`);
+          
           if (response.ok) {
             const projectData = await response.json();
             console.log('Projeto carregado da API:', projectData);
@@ -124,6 +122,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             setSelectedPhotos(preSelectedPhotos);
             setIsFinalized(!!adaptedProject.finalizado);
             return;
+          } else {
+            const error = await response.json();
+            console.error('Erro da API:', error);
           }
         } catch (apiError) {
           console.error('Erro ao buscar da API:', apiError);
@@ -148,11 +149,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           throw new Error('Erro ao ler dados dos projetos');
         }
         
-        // Aqui fazemos a busca pelo ID como número
-        const foundProject = projects.find(p => p.id === projectIdNum);
+        // Aqui fazemos a busca pelo ID original (string ou número)
+        const foundProject = projects.find(p => {
+          // Comparamos o ID diretamente ou como string
+          return p.id.toString() === projectId || p.id === parseInt(projectId);
+        });
         
         if (!foundProject) {
-          console.error('Projeto não encontrado com ID:', projectIdNum);
+          console.error('Projeto não encontrado com ID:', projectId);
           throw new Error('Projeto não encontrado');
         }
         
@@ -278,7 +282,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       
       // Tenta finalizar via API primeiro
       try {
-        const response = await fetch(`/api/projects/${project.id}/finalize`, {
+        // Usa o mesmo ID usado para buscar o projeto
+        console.log(`Finalizando seleção para projeto ${projectId} com ${selectedIds.length} fotos`);
+        
+        const response = await fetch(`/api/projects/${projectId}/finalize`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -297,7 +304,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           setFinalizationSuccess(true);
           return;
         } else {
-          console.error('Erro ao finalizar via API:', await response.text());
+          const errorData = await response.json();
+          console.error('Erro ao finalizar via API:', errorData);
           // Continuar para tentar usar localStorage como fallback
         }
       } catch (apiError) {

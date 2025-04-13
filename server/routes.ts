@@ -315,19 +315,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get project by ID - Rota pública para clientes visualizarem seus projetos
   app.get("/api/projects/:id", async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id);
-      
-      if (isNaN(projectId)) {
-        return res.status(400).json({ message: "Invalid project ID" });
-      }
+      const idParam = req.params.id;
       
       // Adicionando logs para debug
-      console.log(`Buscando projeto com ID: ${projectId}`);
+      console.log(`Buscando projeto com ID: ${idParam}`);
       
-      const project = await storage.getProject(projectId);
+      // Primeiro tentamos buscar pelo ID numérico (formato backend)
+      let projectId = parseInt(idParam);
+      let project = !isNaN(projectId) ? await storage.getProject(projectId) : null;
+      
+      // Se não encontrar, tenta buscar nos projetos do localStorage (formato frontend)
+      if (!project) {
+        console.log(`Projeto com ID numérico ${projectId} não encontrado, verificando projetos do localStorage`);
+        
+        // Buscar todos os projetos e tentar encontrar um com o ID correspondente
+        const allProjects = await storage.getProjects();
+        project = allProjects.find(p => p.id.toString() === idParam);
+        
+        // Se ainda não encontrou, tentamos buscar como um timestamp
+        if (!project) {
+          const timestampId = parseInt(idParam);
+          if (!isNaN(timestampId)) {
+            console.log(`Tentando buscar como timestamp: ${timestampId}`);
+            project = allProjects.find(p => p.id === timestampId);
+          }
+        }
+      }
       
       if (!project) {
-        console.log(`Projeto com ID ${projectId} não encontrado`);
+        console.log(`Projeto com ID ${idParam} não encontrado em nenhum formato`);
         return res.status(404).json({ message: "Project not found" });
       }
       
@@ -402,14 +418,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Finalize project selections (public)
   app.patch("/api/projects/:id/finalize", async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id);
+      const idParam = req.params.id;
       const { selectedPhotos } = req.body;
       
       if (!Array.isArray(selectedPhotos)) {
         return res.status(400).json({ message: "Selected photos must be an array" });
       }
       
-      const project = await storage.getProject(projectId);
+      console.log(`Finalizando seleção de fotos para projeto ${idParam}. Fotos selecionadas: ${selectedPhotos.length}`);
+      
+      // Primeiro tentamos buscar pelo ID numérico (formato backend)
+      let projectId = parseInt(idParam);
+      let project = !isNaN(projectId) ? await storage.getProject(projectId) : null;
+      
+      // Se não encontrar, tenta buscar nos projetos do localStorage (formato frontend)
+      if (!project) {
+        console.log(`Projeto com ID numérico ${projectId} não encontrado, verificando projetos do localStorage`);
+        
+        // Buscar todos os projetos e tentar encontrar um com o ID correspondente
+        const allProjects = await storage.getProjects();
+        project = allProjects.find(p => p.id.toString() === idParam);
+        
+        // Se ainda não encontrou, tentamos buscar como um timestamp
+        if (!project) {
+          const timestampId = parseInt(idParam);
+          if (!isNaN(timestampId)) {
+            console.log(`Tentando buscar como timestamp: ${timestampId}`);
+            project = allProjects.find(p => p.id === timestampId);
+            
+            if (project) {
+              projectId = project.id;
+            }
+          }
+        } else {
+          projectId = project.id;
+        }
+      }
       
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
