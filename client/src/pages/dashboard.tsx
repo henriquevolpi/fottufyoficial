@@ -16,7 +16,9 @@ import {
   Loader2,
   X,
   Link,
-  RotateCcw
+  RotateCcw,
+  CreditCard,
+  Settings
 } from "lucide-react";
 import { 
   Tabs, 
@@ -27,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -854,6 +857,38 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [projetos, setProjetos] = useState<any[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  
+  // Verificar se há parâmetros de assinatura na URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const subscriptionStatus = params.get('subscription_status');
+    const planType = params.get('plan');
+    
+    if (subscriptionStatus === 'success' && planType) {
+      // Mostrar notificação de assinatura confirmada
+      const planName = getPlanName(planType);
+      
+      toast({
+        title: "✅ Assinatura confirmada!",
+        description: `Seu plano ${planName} está ativo agora.`,
+        duration: 5000,
+      });
+      
+      // Limpar parâmetros da URL sem recarregar a página
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [toast]);
+  
+  // Obter nome do plano baseado no tipo
+  const getPlanName = (planType: string) => {
+    switch(planType) {
+      case 'basic': return 'Básico';
+      case 'standard': return 'Padrão';
+      case 'professional': return 'Profissional';
+      default: return planType;
+    }
+  };
   
   useEffect(() => {
     try {

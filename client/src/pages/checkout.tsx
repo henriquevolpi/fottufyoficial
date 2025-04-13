@@ -62,9 +62,9 @@ const CheckoutForm = ({ planType }: { planType: string }) => {
         
         setPaymentStatus('success');
         
-        // Após alguns segundos, redirecione para o dashboard
+        // Após alguns segundos, redirecione para o dashboard com parâmetro de sucesso
         setTimeout(() => {
-          setLocation('/dashboard');
+          setLocation('/dashboard?subscription_status=success&plan=' + planType);
         }, 2000);
       }
     } catch (err) {
@@ -89,7 +89,7 @@ const CheckoutForm = ({ planType }: { planType: string }) => {
           Seu plano foi atualizado com sucesso. Você será redirecionado em alguns segundos.
         </p>
         <Button asChild>
-          <Link href="/dashboard">Ir para o Dashboard</Link>
+          <Link href={`/dashboard?subscription_status=success&plan=${planType}`}>Ir para o Dashboard</Link>
         </Button>
       </div>
     );
