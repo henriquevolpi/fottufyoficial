@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,9 @@ import {
   PlusCircle, 
   Search, 
   Filter, 
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2,
+  X
 } from "lucide-react";
 import { 
   Tabs, 
@@ -24,6 +26,26 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Dados fictícios para projetos
 const PROJETOS_EXEMPLO = [
@@ -176,6 +198,332 @@ function ProjetoCard({ projeto }: { projeto: any }) {
   );
 }
 
+// Componente de Modal para Upload de Novos Projetos
+function UploadModal({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Schema do formulário
+  const formSchema = z.object({
+    nome: z.string().min(3, "Nome do projeto deve ter pelo menos 3 caracteres"),
+    clienteNome: z.string().min(2, "Nome do cliente deve ter pelo menos 2 caracteres"),
+    clienteEmail: z.string().email("E-mail inválido"),
+  });
+  
+  // Formulário para dados do projeto
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nome: "",
+      clienteNome: "",
+      clienteEmail: ""
+    }
+  });
+  
+  // Limpar formulário ao fechar
+  useEffect(() => {
+    if (!open) {
+      form.reset();
+      setSelectedFiles([]);
+      setThumbnails(prev => {
+        // Limpar URLs de objeto
+        prev.forEach(url => URL.revokeObjectURL(url));
+        return [];
+      });
+      setIsDragging(false);
+    }
+  }, [open, form]);
+
+  // Manipuladores de evento para drag & drop
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      setSelectedFiles(prev => [...prev, ...imageFiles]);
+      
+      // Criar thumbnails
+      const newThumbnails = imageFiles.map(file => URL.createObjectURL(file));
+      setThumbnails(prev => [...prev, ...newThumbnails]);
+    }
+  }, []);
+
+  // Manipulador para seleção de arquivos pelo input file
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      setSelectedFiles(prev => [...prev, ...imageFiles]);
+      
+      // Criar thumbnails
+      const newThumbnails = imageFiles.map(file => URL.createObjectURL(file));
+      setThumbnails(prev => [...prev, ...newThumbnails]);
+    }
+  };
+  
+  // Remover um arquivo específico
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    
+    // Revogar URL e remover
+    URL.revokeObjectURL(thumbnails[index]);
+    setThumbnails(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Enviar formulário
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "Nenhum arquivo selecionado",
+        description: "Por favor, selecione pelo menos uma foto para upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      // Em uma aplicação real, esta parte seria uma chamada à API
+      // Aqui vamos simular armazenando no localStorage
+      
+      // Criar um novo ID baseado no timestamp atual
+      const newProjectId = Date.now();
+      
+      // Simular URLs para as fotos (em um servidor real, estas seriam URLs reais após upload)
+      const projectPhotos = selectedFiles.map((file, index) => ({
+        id: `photo-${newProjectId}-${index}`,
+        filename: file.name,
+        url: thumbnails[index], // Em um app real, esta seria a URL do servidor
+        selected: false
+      }));
+      
+      // Criar objeto do projeto
+      const newProject = {
+        id: newProjectId,
+        nome: values.nome,
+        cliente: values.clienteNome,
+        emailCliente: values.clienteEmail,
+        data: new Date().toISOString(),
+        status: "pendente",
+        fotos: projectPhotos.length,
+        selecionadas: 0,
+        fotografoId: 1, // Aqui seria o ID do usuário logado
+        photos: projectPhotos
+      };
+      
+      // Obter projetos existentes ou iniciar array vazio
+      const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+      
+      // Adicionar novo projeto
+      const updatedProjects = [...existingProjects, newProject];
+      
+      // Salvar no localStorage
+      localStorage.setItem('projects', JSON.stringify(updatedProjects));
+      
+      // Exibir notificação de sucesso
+      toast({
+        title: "Projeto criado com sucesso!",
+        description: `Projeto "${values.nome}" criado com ${projectPhotos.length} fotos.`,
+      });
+      
+      // Fechar modal
+      onClose();
+      
+      // Forçar atualização da lista de projetos (em uma app real usaríamos react-query)
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Erro ao criar projeto:', error);
+      toast({
+        title: "Erro ao criar projeto",
+        description: "Ocorreu um erro ao tentar criar o projeto. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Criar Novo Projeto</DialogTitle>
+          <DialogDescription>
+            Preencha os detalhes do projeto e faça upload das fotos.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Projeto</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Casamento João e Maria" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="clienteNome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Cliente</FormLabel>
+                    <FormControl>
+                      <Input placeholder="João Silva" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="clienteEmail"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>E-mail do Cliente</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email"
+                        placeholder="cliente@exemplo.com" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div>
+              <FormLabel htmlFor="photos">Fotos</FormLabel>
+              <div
+                className={`mt-2 border-2 border-dashed rounded-md ${
+                  isDragging ? 'border-primary bg-primary/5' : 'border-border'
+                } relative`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <input
+                  id="photos"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                />
+                
+                <div className="py-8 text-center">
+                  <Camera className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Selecionar Arquivos
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    ou arraste e solte imagens aqui
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {selectedFiles.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">
+                  {selectedFiles.length} {selectedFiles.length === 1 ? 'arquivo selecionado' : 'arquivos selecionados'}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {thumbnails.map((thumbnail, i) => (
+                    <div key={i} className="group relative rounded-md overflow-hidden h-24">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${thumbnail})` }}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
+                          type="button"
+                          onClick={() => removeFile(i)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2">
+                        <p className="text-white text-xs truncate">{selectedFiles[i].name}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isUploading}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Criar Projeto"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Componente de estatísticas
 function Estatisticas() {
   return (
@@ -241,11 +589,13 @@ function Estatisticas() {
 
 // Página principal do Dashboard
 export default function Dashboard() {
+  const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [projetos, setProjetos] = useState<any[]>([]);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
   useEffect(() => {
     try {
