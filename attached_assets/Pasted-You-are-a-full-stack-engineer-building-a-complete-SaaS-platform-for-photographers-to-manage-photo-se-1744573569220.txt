@@ -1,0 +1,119 @@
+You are a full-stack engineer building a complete SaaS platform for photographers to manage photo selection by clients. Below is the full specification — build the entire app structure in a clean, functional and modular way. 
+
+Use React + TailwindCSS + shadcn/ui components + lucide-react icons.  
+Pages should be connected, functional, and responsive.  
+Use localStorage or JSON files to simulate database initially.
+
+---
+
+📌 ROUTES NEEDED
+
+- `/login` → login for photographers and admin
+- `/register` → photographer registration
+- `/dashboard` → main dashboard for photographers
+- `/upload` → upload photos to new project (or use modal in dashboard)
+- `/project/:id` → public page for clients to view & select photos
+- `/admin` → admin dashboard (only for admin)
+- `/webhook` → POST endpoint to handle payment status updates
+
+---
+
+🔐 AUTHENTICATION
+
+- Email + password login
+- Register new photographer with name, email, password
+- Admin login: hardcoded (admin@admin.com / 123456)
+- After login:
+   - photographer → `/dashboard`
+   - admin → `/admin`
+- Protect all routes accordingly
+- Store logged user in localStorage
+- Only `status: active` users can access dashboard/upload
+
+User model:
+- id, name, email, password, role (photographer | admin), status (active | suspended | canceled), createdAt, subscription_id
+
+---
+
+📸 DASHBOARD (`/dashboard`)
+
+- List all photographer's projects:
+   - Project name, client email, date, status
+   - Total photos uploaded
+   - Number of photos selected by client
+   - Button to copy public link (`/project/:id`)
+   - Button to reopen project (if finalized)
+   - Button to archive project
+- Filter projects by status: pending, reviewed, archived
+- “Create New Project” opens modal or goes to `/upload`
+
+Project model:
+- id, name, clientName, clientEmail, photographerId
+- status: pending | reviewed | reopened | archived
+- photos: [{ id, url, filename }]
+- selectedPhotos: [photoId]
+- createdAt
+
+---
+
+🖼️ CLIENT GALLERY (`/project/:id`)
+
+- Public page, no login needed
+- Show grid of photos
+- Click to select/deselect photo
+- Show photo filename (under or on hover)
+- Floating button: "Finalize Selection"
+- Visual counter: "5 of 20 selected"
+- After finalizing: disable selections, show thank-you message
+
+---
+
+🛡️ ADMIN DASHBOARD (`/admin`)
+
+- View all users (table):
+   - ID, name, email, status, subscription_id, createdAt, last webhook event
+- Admin can:
+   - Add new user manually
+   - Edit user info
+   - Change user status (active, suspended, canceled)
+   - Delete user
+   - View user’s projects
+- Protect this route strictly for admin
+
+---
+
+💳 PAYMENT WEBHOOK (`/webhook`)
+
+- POST endpoint to simulate payment events
+- Match user by `email` or `subscription_id`
+- Update user status:
+   - `payment.approved` → status: active
+   - `payment.failed` → status: suspended
+   - `subscription.canceled` → status: canceled
+- Save event timestamp and type to user's lastEvent
+
+Example payload:
+```json
+{
+  "type": "payment.approved",
+  "email": "client@example.com",
+  "subscription_id": "sub_abc123",
+  "timestamp": "2025-04-13T12:00:00Z"
+}
+
+🧱 COMPONENTS TO BUILD
+
+UploadModal (drag & drop + inputs)
+PhotoCard (with selection state)
+ProjectCard (dashboard)
+LoginForm, RegisterForm
+AdminUserTable
+Toasts (on selection, status change, copy link, etc.)
+🖥️ TECH STACK
+
+React
+TailwindCSS
+shadcn/ui (UI components)
+lucide-react (icons)
+Store users and projects in localStorage or JSON file
+Optional backend (server.js) for webhook and persistence
