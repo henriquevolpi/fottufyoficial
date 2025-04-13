@@ -272,6 +272,7 @@ function ProjetoCard({ projeto }: { projeto: any }) {
             e.stopPropagation();
             // Copiar o link para o cliente
             const clientUrl = `${window.location.origin}/project-view/${projeto.id}`;
+            console.log("Copiando link do cliente:", clientUrl);
             navigator.clipboard.writeText(clientUrl);
             toast({
               title: "Link copiado",
@@ -720,21 +721,17 @@ export default function Dashboard() {
         console.log("Nenhum usuário encontrado no localStorage");
       }
       
-      // Carregar projetos do localStorage (se houver)
-      const storedProjects = localStorage.getItem('projects');
-      if (storedProjects) {
-        const parsedProjects = JSON.parse(storedProjects);
-        setProjetos(parsedProjects);
+      // Limpar e reinicializar dados
+      localStorage.removeItem('projects');
+      console.log("Forçando inicialização dos projetos de exemplo");
+      
+      // Salvar exemplos no localStorage e definir dados
+      localStorage.setItem('projects', JSON.stringify(PROJETOS_EXEMPLO));
+      
+      setTimeout(() => {
+        setProjetos(PROJETOS_EXEMPLO);
         setIsLoading(false);
-      } else {
-        // Se não houver projetos no localStorage, simular com exemplos
-        setTimeout(() => {
-          setProjetos(PROJETOS_EXEMPLO);
-          // Salvar exemplos no localStorage para uso futuro
-          localStorage.setItem('projects', JSON.stringify(PROJETOS_EXEMPLO));
-          setIsLoading(false);
-        }, 600);
-      }
+      }, 600);
       
     } catch (e) {
       console.error("Erro ao carregar dados:", e);
