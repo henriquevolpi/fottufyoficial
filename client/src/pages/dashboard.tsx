@@ -313,10 +313,12 @@ function ProjetoCard({ projeto }: { projeto: any }) {
 // Componente de Modal para Upload de Novos Projetos
 function UploadModal({
   open,
-  onClose
+  onClose,
+  onProjectCreated
 }: {
   open: boolean;
   onClose: () => void;
+  onProjectCreated?: (newProject: any) => void;
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -467,8 +469,10 @@ function UploadModal({
       // Fechar modal
       onClose();
       
-      // Forçar atualização da lista de projetos (em uma app real usaríamos react-query)
-      window.location.reload();
+      // Atualizar a lista de projetos atualizando o estado (melhor que reload da página)
+      if (onProjectCreated) {
+        onProjectCreated(newProject);
+      }
       
     } catch (error) {
       console.error('Erro ao criar projeto:', error);
@@ -721,17 +725,28 @@ export default function Dashboard() {
         console.log("Nenhum usuário encontrado no localStorage");
       }
       
-      // Limpar e reinicializar dados
-      localStorage.removeItem('projects');
-      console.log("Forçando inicialização dos projetos de exemplo");
+      // Carregar projetos existentes ou inicializar com exemplos
+      const projetosStr = localStorage.getItem('projects');
       
-      // Salvar exemplos no localStorage e definir dados
-      localStorage.setItem('projects', JSON.stringify(PROJETOS_EXEMPLO));
-      
-      setTimeout(() => {
-        setProjetos(PROJETOS_EXEMPLO);
-        setIsLoading(false);
-      }, 600);
+      if (projetosStr) {
+        // Já temos projetos salvos, vamos usá-los
+        const projetosSalvos = JSON.parse(projetosStr);
+        console.log("Projetos carregados do localStorage:", projetosSalvos.length);
+        
+        setTimeout(() => {
+          setProjetos(projetosSalvos);
+          setIsLoading(false);
+        }, 600);
+      } else {
+        // Não temos projetos salvos, inicializar com exemplos
+        console.log("Não há projetos salvos. Inicializando com exemplos.");
+        localStorage.setItem('projects', JSON.stringify(PROJETOS_EXEMPLO));
+        
+        setTimeout(() => {
+          setProjetos(PROJETOS_EXEMPLO);
+          setIsLoading(false);
+        }, 600);
+      }
       
     } catch (e) {
       console.error("Erro ao carregar dados:", e);
