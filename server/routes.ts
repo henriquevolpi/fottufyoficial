@@ -400,7 +400,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       ];
       
+      // Verificar o limite de uploads do usuário
+      const photoCount = photos.length;
+      const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
+      
+      if (!hasUploadLimit) {
+        return res.status(403).json({ 
+          message: "Limite de uploads atingido", 
+          error: "UPLOAD_LIMIT_REACHED",
+          details: "Você atingiu o limite de uploads do seu plano atual. Faça upgrade para continuar enviando fotos."
+        });
+      }
+      
+      // Criar o projeto
       const project = await storage.createProject(projectData, photos);
+      
+      // Atualizar contador de uploads
+      await storage.updateUploadUsage(req.user.id, photoCount);
       
       res.status(201).json(project);
     } catch (error) {
@@ -564,9 +580,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // ==================== Webhook Route ====================
+  // ==================== Subscription Routes ====================
   
-  // Payment webhook
+  // Obter planos de assinatura
+  app.get("/api/subscription/plans", authenticate, async (req: Request, res: Response) => {
+    try {
+      // Retornar os planos de assinatura disponíveis
+      const plans = {
+        FREE: { ...SUBSCRIPTION_PLANS.FREE, current: req.user?.planType === 'free' },
+        BASIC: { ...SUBSCRIPTION_PLANS.BASIC, current: req.user?.planType === 'basic' },
+        STANDARD: { ...SUBSCRIPTION_PLANS.STANDARD, current: req.user?.planType === 'standard' },
+        PROFESSIONAL: { ...SUBSCRIPTION_PLANS.PROFESSIONAL, current: req.user?.planType === 'professional' },
+      };
+      
+      // Incluir estatísticas do usuário atual
+      const userStats = {
+        uploadLimit: req.user?.uploadLimit || 0,
+        usedUploads: req.user?.usedUploads || 0,
+        remainingUploads: (req.user?.uploadLimit || 0) - (req.user?.usedUploads || 0),
+        planType: req.user?.planType || 'free',
+        subscriptionStatus: req.user?.subscriptionStatus || 'inactive',
+        subscriptionEndDate: req.user?.subscriptionEndDate
+      };
+      
+      res.json({ plans, userStats });
+    } catch (error) {
+      console.error("Erro ao buscar planos de assinatura:", error);
+      res.status(500).json({ message: "Falha ao buscar planos de assinatura" });
+    }
+  });
+  
+  // Rota para atualizar o plano de assinatura
+  app.post("/api/subscription/upgrade", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { planType } = req.body;
+      
+      if (!planType || !['free', 'basic', 'standard', 'professional'].includes(planType)) {
+        return res.status(400).json({ message: "Tipo de plano inválido" });
+      }
+      
+      // Na implementação real, aqui integraríamos com o Stripe para processar o pagamento
+      // e criar/atualizar a assinatura. Como é uma simulação, atualizamos diretamente.
+      
+      const updatedUser = await storage.updateUserSubscription(req.user?.id || 0, planType);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Remover dados sensíveis antes de enviar resposta
+      const { password, ...userInfo } = updatedUser;
+      
+      res.json({ 
+        message: "Assinatura atualizada com sucesso",
+        plan: planType,
+        user: userInfo
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar assinatura:", error);
+      res.status(500).json({ message: "Falha ao atualizar assinatura" });
+    }
+  });
+  
+  // ==================== Webhook Routes ====================
+  
+  // Generic payment webhook (compatibilidade com sistemas legados)
   app.post("/api/webhook", async (req: Request, res: Response) => {
     try {
       // Validate webhook payload
@@ -600,6 +678,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid webhook payload", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to process webhook" });
+    }
+  });
+  
+  // Stripe webhook
+  app.post("/api/webhook/stripe", async (req: Request, res: Response) => {
+    try {
+      // Verificar assinatura (em um cenário real, faríamos verificação com o Stripe)
+      // Para implementar verificação de assinatura, precisaríamos do webhookSecret do Stripe
+      
+      // Em ambiente de produção, usaríamos:
+      // const sig = req.headers['stripe-signature'];
+      // const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      
+      // Processar eventos de assinatura Stripe
+      const event = req.body;
+      
+      if (!event || !event.type || !event.data) {
+        return res.status(400).json({ error: "Evento inválido" });
+      }
+      
+      if (event.type.startsWith('subscription.')) {
+        // Processar eventos relacionados a assinaturas
+        const updatedUser = await storage.handleStripeWebhook(event);
+        
+        if (!updatedUser) {
+          return res.status(404).json({ 
+            message: "User not found",
+            event: "processed",
+            status: "warning"
+          });
+        }
+        
+        return res.json({
+          message: "Stripe webhook processado com sucesso",
+          event: event.type,
+          status: "success"
+        });
+      }
+      
+      // Outros eventos Stripe não processados
+      return res.json({ 
+        message: "Evento não processado",
+        event: event.type,
+        status: "ignored"
+      });
+    } catch (error) {
+      console.error("Erro ao processar webhook do Stripe:", error);
+      res.status(500).json({ message: "Falha ao processar webhook do Stripe" });
     }
   });
 

@@ -157,6 +157,150 @@ export class MemStorage implements IStorage {
     const deleted = this.users.delete(id);
     return deleted;
   }
+  
+  // Métodos de gerenciamento de assinatura
+  async updateUserSubscription(userId: number, planType: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    // Obter informações do plano
+    let plan;
+    switch(planType) {
+      case "basic":
+        plan = SUBSCRIPTION_PLANS.BASIC;
+        break;
+      case "standard":
+        plan = SUBSCRIPTION_PLANS.STANDARD;
+        break;
+      case "professional":
+        plan = SUBSCRIPTION_PLANS.PROFESSIONAL;
+        break;
+      default:
+        plan = SUBSCRIPTION_PLANS.FREE;
+    }
+    
+    // Definir datas de início e fim da assinatura
+    const now = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1); // Assinatura válida por 1 mês
+    
+    // Atualizar usuário com os dados do plano
+    const updatedUser = await this.updateUser(userId, {
+      planType,
+      uploadLimit: plan.uploadLimit,
+      subscriptionStartDate: now,
+      subscriptionEndDate: endDate,
+      subscriptionStatus: "active",
+      status: "active", // Garantir que o usuário esteja ativo
+    });
+    
+    return updatedUser;
+  }
+  
+  async updateStripeInfo(userId: number, customerId: string, subscriptionId: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = await this.updateUser(userId, {
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+    });
+    
+    return updatedUser;
+  }
+  
+  async handleStripeWebhook(payload: SubscriptionWebhookPayload): Promise<User | undefined> {
+    // Encontrar usuário pelo customerId ou pelo email
+    let user = await this.getUserByStripeCustomerId(payload.data.customer.id);
+    
+    if (!user) {
+      // Tentar buscar por email se disponível
+      const email = payload.data.customer.email;
+      if (email) {
+        user = await this.getUserByEmail(email);
+      }
+    }
+    
+    if (!user) return undefined;
+    
+    // Atualizar status da assinatura com base no evento
+    let subscriptionStatus = user.subscriptionStatus;
+    let userStatus = user.status;
+    
+    switch(payload.type) {
+      case "subscription.created":
+      case "subscription.updated":
+        if (payload.data.subscription.status === "active") {
+          subscriptionStatus = "active";
+          userStatus = "active";
+        } else if (payload.data.subscription.status === "canceled") {
+          subscriptionStatus = "inactive";
+          // Não alteramos o status do usuário quando a assinatura é cancelada
+        }
+        break;
+      case "subscription.cancelled":
+        subscriptionStatus = "inactive";
+        break;
+    }
+    
+    // Calcular data de expiração se disponível
+    let subscriptionEndDate = user.subscriptionEndDate;
+    if (payload.data.subscription.current_period_end) {
+      subscriptionEndDate = new Date(payload.data.subscription.current_period_end * 1000);
+    }
+    
+    // Atualizar o usuário
+    const updatedUser = await this.updateUser(user.id, {
+      subscriptionStatus,
+      status: userStatus,
+      subscriptionEndDate,
+      stripeSubscriptionId: payload.data.subscription.id,
+      lastEvent: {
+        type: payload.type,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    
+    return updatedUser;
+  }
+  
+  // Métodos de gerenciamento de uploads
+  async checkUploadLimit(userId: number, count: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // Verificar se assinatura está ativa
+    if (user.subscriptionStatus !== "active" && user.planType !== "free") {
+      return false;
+    }
+    
+    // Verificar se o usuário tem limite disponível
+    const uploadLimit = user.uploadLimit || 0;
+    const usedUploads = user.usedUploads || 0;
+    const availableUploads = uploadLimit - usedUploads;
+    return availableUploads >= count;
+  }
+  
+  async updateUploadUsage(userId: number, addCount: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    // Calcular novo valor de uploads usados
+    const currentUsed = user.usedUploads || 0;
+    let newUsedUploads = currentUsed + addCount;
+    
+    // Garantir que não fique negativo
+    if (newUsedUploads < 0) {
+      newUsedUploads = 0;
+    }
+    
+    // Atualizar usuário
+    const updatedUser = await this.updateUser(userId, {
+      usedUploads: newUsedUploads,
+    });
+    
+    return updatedUser;
+  }
 
   async handleWebhookEvent(payload: WebhookPayload): Promise<User | undefined> {
     // Try to find user by email or subscription_id
