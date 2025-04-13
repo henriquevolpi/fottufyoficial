@@ -787,6 +787,46 @@ function UploadModal({
 
 // Componente de estatísticas
 function Estatisticas() {
+  const [, setLocation] = useLocation();
+  const [user] = useState<any>(() => {
+    try {
+      const userData = localStorage.getItem("user");
+      return userData ? JSON.parse(userData) : null;
+    } catch (e) {
+      console.error("Erro ao carregar usuário do localStorage:", e);
+      return null;
+    }
+  });
+  
+  // Formatar tipo de plano para exibição
+  const getPlanDisplayInfo = (planType: string) => {
+    switch(planType) {
+      case 'basic': return { name: 'Básico', color: 'bg-blue-100', textColor: 'text-blue-600' };
+      case 'standard': return { name: 'Padrão', color: 'bg-green-100', textColor: 'text-green-600' };
+      case 'professional': return { name: 'Profissional', color: 'bg-purple-100', textColor: 'text-purple-600' };
+      default: return { name: 'Gratuito', color: 'bg-gray-100', textColor: 'text-gray-600' };
+    }
+  };
+  
+  const planInfo = user?.subscription?.plan 
+    ? getPlanDisplayInfo(user.subscription.plan) 
+    : { name: 'Gratuito', color: 'bg-gray-100', textColor: 'text-gray-600' };
+  
+  // Calcular uso de armazenamento
+  const getUsagePercentage = () => {
+    if (!user?.subscription?.uploadLimit) return 0;
+    
+    // Handle unlimited plan
+    if (user.subscription.uploadLimit === -1) return 0;
+    
+    const used = user.uploadUsage || 0;
+    const limit = user.subscription.uploadLimit;
+    return Math.min(Math.round((used / limit) * 100), 100);
+  };
+  
+  const usagePercentage = getUsagePercentage();
+  const isUnlimited = user?.subscription?.uploadLimit === -1;
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <Card>
@@ -819,27 +859,59 @@ function Estatisticas() {
       
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Clientes</p>
-              <h3 className="text-2xl font-bold mt-1">36</h3>
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Plano Atual</p>
+                <h3 className="text-xl font-bold mt-1">{planInfo.name}</h3>
+              </div>
+              <div className={`h-12 w-12 ${planInfo.color} rounded-full flex items-center justify-center`}>
+                <CreditCard className={`h-6 w-6 ${planInfo.textColor}`} />
+              </div>
             </div>
-            <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <Users className="h-6 w-6 text-purple-600" />
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-auto"
+              onClick={() => setLocation('/subscription')}
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              Gerenciar Assinatura
+            </Button>
           </div>
         </CardContent>
       </Card>
       
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Tempo Médio</p>
-              <h3 className="text-2xl font-bold mt-1">3.2 dias</h3>
-            </div>
-            <div className="h-12 w-12 bg-amber-100 rounded-full flex items-center justify-center">
-              <Clock className="h-6 w-6 text-amber-600" />
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-full">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm font-medium text-gray-500">Uso de Upload</p>
+                  <p className="text-sm font-medium">
+                    {isUnlimited ? (
+                      <Badge className="bg-purple-100 text-purple-600 hover:bg-purple-100">Ilimitado</Badge>
+                    ) : (
+                      `${usagePercentage}%`
+                    )}
+                  </p>
+                </div>
+                {!isUnlimited && (
+                  <Progress 
+                    value={usagePercentage} 
+                    className="h-2 mt-2"
+                    color={usagePercentage > 90 ? "bg-red-500" : ""}
+                  />
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isUnlimited ? (
+                    "Seu plano permite uploads ilimitados"
+                  ) : (
+                    `${user?.uploadUsage || 0} de ${user?.subscription?.uploadLimit || 0} fotos`
+                  )}
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
