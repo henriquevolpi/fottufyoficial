@@ -62,9 +62,9 @@ const CheckoutForm = ({ planType }: { planType: string }) => {
         
         setPaymentStatus('success');
         
-        // Após alguns segundos, redirecione para a página de assinaturas
+        // Após alguns segundos, redirecione para o dashboard
         setTimeout(() => {
-          setLocation('/subscription');
+          setLocation('/dashboard');
         }, 2000);
       }
     } catch (err) {
@@ -89,7 +89,7 @@ const CheckoutForm = ({ planType }: { planType: string }) => {
           Seu plano foi atualizado com sucesso. Você será redirecionado em alguns segundos.
         </p>
         <Button asChild>
-          <Link href="/subscription">Voltar para Assinaturas</Link>
+          <Link href="/dashboard">Ir para o Dashboard</Link>
         </Button>
       </div>
     );
