@@ -16,9 +16,12 @@ export default function Login() {
   const handleLogin = async (values: LoginFormValues) => {
     try {
       setIsLoading(true);
-      await login(values.email, values.password);
+      console.log("Login.tsx: Tentando fazer login com:", values.email);
       
-      // Redirect is handled in the auth provider
+      await login(values.email, values.password);
+      console.log("Login.tsx: Login bem-sucedido");
+      
+      // Não precisamos fazer nada aqui, o redirecionamento é tratado no AuthProvider
     } catch (error) {
       console.error("Erro de login:", error);
       toast({

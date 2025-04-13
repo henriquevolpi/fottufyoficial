@@ -17,20 +17,27 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
   const [, setLocation] = useLocation();
 
   useEffect(() => {
+    console.log("ProtectedRoute - isAuthenticated:", isAuthenticated, "user:", user);
+    
     if (!isAuthenticated) {
+      console.log("ProtectedRoute - Usuário não autenticado, redirecionando para /login");
       setLocation("/login");
       return;
     }
 
     if (adminOnly && user?.role !== "admin") {
+      console.log("ProtectedRoute - Usuário não é admin, redirecionando para /dashboard");
       setLocation("/dashboard");
       return;
     }
 
     if (user?.status !== "active" && !adminOnly) {
+      console.log("ProtectedRoute - Usuário não está ativo, redirecionando para /login");
       setLocation("/login");
       return;
     }
+    
+    console.log("ProtectedRoute - Usuário autorizado a acessar esta rota");
   }, [isAuthenticated, user, adminOnly, setLocation]);
 
   if (!isAuthenticated) return null;

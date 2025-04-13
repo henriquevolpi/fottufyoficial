@@ -24,16 +24,17 @@ export default function Register() {
       });
       
       toast({
-        title: "Registration successful",
-        description: "You can now log in with your credentials.",
+        title: "Registro realizado com sucesso",
+        description: "Você já pode entrar com suas credenciais.",
       });
       
       // Redirect to login
       setLocation("/login");
     } catch (error) {
+      console.error("Erro no registro:", error);
       toast({
-        title: "Registration failed",
-        description: "Failed to create account. Please try again.",
+        title: "Falha no registro",
+        description: "Não foi possível criar a conta. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
