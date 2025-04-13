@@ -185,7 +185,7 @@ function ProjetoCard({ projeto }: { projeto: any }) {
             navigator.clipboard.writeText(clientUrl);
             toast({
               title: "Link copiado",
-              description: "Link para o cliente copiad para a área de transferência.",
+              description: "Link para o cliente copiado para a área de transferência.",
             });
           }}
         >
