@@ -62,6 +62,12 @@ const requireActiveUser = (req: Request, res: Response, next: Function) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
+  // Inicializar Stripe
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn('Chave secreta do Stripe não encontrada. As funcionalidades de pagamento não funcionarão corretamente.');
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  
   // Configure auth with Passport.js and sessions
   setupAuth(app);
   
@@ -608,6 +614,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao buscar planos de assinatura:", error);
       res.status(500).json({ message: "Falha ao buscar planos de assinatura" });
+    }
+  });
+  
+  // Rota para criar intent de pagamento no Stripe
+  app.post("/api/create-payment-intent", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { planType, amount } = req.body;
+      
+      if (!planType) {
+        return res.status(400).json({ message: "Tipo de plano é obrigatório" });
+      }
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valor inválido" });
+      }
+      
+      // Verificar se temos o Stripe inicializado
+      if (!stripe) {
+        return res.status(500).json({ 
+          message: "Erro no serviço de pagamento", 
+          details: "Stripe não está configurado corretamente" 
+        });
+      }
+      
+      // Armazenar os metadados do plano para usar após o pagamento ser concluído
+      const metadata = {
+        userId: req.user?.id.toString() || '',
+        planType,
+        userEmail: req.user?.email || '',
+      };
+      
+      // Criar o PaymentIntent no Stripe
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Stripe trabalha com centavos
+        currency: "brl",
+        metadata,
+        description: `Assinatura do plano ${planType.toUpperCase()} - PhotoSelect`,
+      });
+      
+      // Retornar o client_secret para o frontend fazer a confirmação
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error("Erro ao criar intent de pagamento:", error);
+      res.status(500).json({ 
+        message: "Falha ao processar pagamento", 
+        details: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
     }
   });
   

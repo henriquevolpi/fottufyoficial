@@ -213,7 +213,7 @@ export default function Checkout() {
     clientSecret,
     appearance: {
       theme: 'stripe' as const,
-      labels: 'floating',
+      labels: 'floating' as const,
     },
   };
 
