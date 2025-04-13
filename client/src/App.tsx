@@ -11,6 +11,7 @@ import ProjectEdit from "@/pages/project-edit";
 import Admin from "@/pages/admin";
 import AuthPage from "@/pages/auth-page";
 import SubscriptionPage from "@/pages/subscription";
+import Checkout from "@/pages/checkout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -55,6 +56,7 @@ function Router() {
         {(params) => <ProjectViewPublicRoute params={params} />}
       </Route>
       <ProtectedRoute path="/subscription" component={SubscriptionPage} />
+      <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />
       <Route path="/">
         {() => <RootRedirect />}

@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
 import { setupAuth } from "./auth";
+import Stripe from 'stripe';
 
 // Basic authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {

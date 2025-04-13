@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
 interface Plan {
   name: string;
@@ -39,13 +40,14 @@ interface SubscriptionData {
 export default function SubscriptionPlans() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   const { data: subscriptionData, isLoading, error } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription/plans"],
     enabled: !!user,
   });
   
-  // Mutation para atualizar o plano de assinatura
+  // Mutation para atualizar o plano de assinatura (apenas para plano gratuito)
   const upgradeMutation = useMutation({
     mutationFn: async (planType: string) => {
       const res = await apiRequest("POST", "/api/subscription/upgrade", { planType });
@@ -70,8 +72,14 @@ export default function SubscriptionPlans() {
     },
   });
   
-  const handleUpgrade = (planType: string) => {
-    upgradeMutation.mutate(planType);
+  const handleUpgrade = (planType: string, price: number) => {
+    // Se for o plano gratuito, fazemos a atualização direta
+    if (price === 0) {
+      upgradeMutation.mutate(planType);
+    } else {
+      // Para planos pagos, redirecionamos para a página de checkout
+      setLocation(`/checkout?plan=${planType}`);
+    }
   };
   
   if (isLoading) {
@@ -190,7 +198,7 @@ export default function SubscriptionPlans() {
                 className="w-full"
                 variant={plan.current ? "outline" : "default"}
                 disabled={plan.current || upgradeMutation.isPending}
-                onClick={() => handleUpgrade(plan.type)}
+                onClick={() => handleUpgrade(plan.type, plan.price)}
               >
                 {plan.current 
                   ? "Plano Atual" 
