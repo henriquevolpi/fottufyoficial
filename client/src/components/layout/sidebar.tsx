@@ -1,7 +1,8 @@
+import React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
-import { Home, Images, Plus, Settings, Users, LogOut } from "lucide-react";
+import { Home, Images, Plus, Settings, Users, LogOut, CreditCard } from "lucide-react";
 import UserMenu from "@/components/user-menu";
 
 interface SidebarItem {
@@ -30,6 +31,11 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
       title: "New Project",
       href: "/upload",
       icon: <Plus className="mr-3 h-6 w-6" />,
+    },
+    {
+      title: "Assinaturas",
+      href: "/subscription",
+      icon: <CreditCard className="mr-3 h-6 w-6" />,
     },
     {
       title: "Users",

@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertProjectSchema, WebhookPayload } from "@shared/schema";
+import { insertUserSchema, insertProjectSchema, WebhookPayload, SUBSCRIPTION_PLANS } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
