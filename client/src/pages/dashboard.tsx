@@ -1,121 +1,56 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import Sidebar from "@/components/layout/sidebar";
-import ProjectCard from "@/components/project-card";
-import UploadModal from "@/components/upload-modal";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 import { useAuth } from "@/providers/auth-provider";
-import { Project } from "@shared/schema";
-import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [filter, setFilter] = useState<string>("all");
-
-  const { data: projects = [], isLoading } = useQuery<Project[]>({
-    queryKey: ['/api/projects'],
-  });
-
-  // Filter projects based on selected status
-  const filteredProjects = filter === "all"
-    ? projects
-    : projects.filter(project => project.status === filter);
-
-  const getFilterButtonClass = (status: string) => {
-    return filter === status
-      ? "px-3 py-2 font-medium text-sm rounded-md bg-primary-100 text-primary-800"
-      : "px-3 py-2 font-medium text-sm rounded-md text-gray-600 hover:bg-gray-100";
-  };
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    console.log("Dashboard carregado - usuário:", user);
+  }, [user]);
 
   return (
-    <Sidebar>
-      <div className="py-6 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="inline-flex items-center"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Project
-          </Button>
-        </div>
-
-        {/* Project filters */}
-        <div className="mt-6 flex space-x-2 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            className={getFilterButtonClass("all")}
-            onClick={() => setFilter("all")}
-          >
-            All Projects
-          </button>
-          <button
-            className={getFilterButtonClass("pending")}
-            onClick={() => setFilter("pending")}
-          >
-            Pending
-          </button>
-          <button
-            className={getFilterButtonClass("reviewed")}
-            onClick={() => setFilter("reviewed")}
-          >
-            Reviewed
-          </button>
-          <button
-            className={getFilterButtonClass("reopened")}
-            onClick={() => setFilter("reopened")}
-          >
-            Reopened
-          </button>
-          <button
-            className={getFilterButtonClass("archived")}
-            onClick={() => setFilter("archived")}
-          >
-            Archived
-          </button>
-        </div>
-
-        {/* Projects grid */}
-        {isLoading ? (
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white overflow-hidden shadow rounded-lg h-64 animate-pulse">
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-gray-400">Loading...</p>
-                </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold text-gray-900 mb-4">
+            Dashboard do Fotógrafo
+          </h1>
+          <p className="text-xl text-gray-500 mb-8">
+            Bem-vindo(a) ao seu painel de controle, {user?.name || "fotógrafo"}.
+          </p>
+          
+          <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-lg p-6">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Seus dados</h2>
+              <div className="bg-gray-50 p-4 rounded-md mb-6">
+                <p className="text-gray-700"><strong>ID:</strong> {user?.id}</p>
+                <p className="text-gray-700"><strong>Nome:</strong> {user?.name}</p>
+                <p className="text-gray-700"><strong>Email:</strong> {user?.email}</p>
+                <p className="text-gray-700"><strong>Função:</strong> {user?.role}</p>
+                <p className="text-gray-700"><strong>Status:</strong> {user?.status}</p>
               </div>
-            ))}
+              
+              <div className="flex justify-center gap-4 mt-8">
+                <Button
+                  onClick={() => setLocation("/upload")}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Novo Projeto
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation("/login")}
+                >
+                  Sair
+                </Button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <>
-            {filteredProjects.length === 0 ? (
-              <div className="mt-6 bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-8 flex flex-col items-center justify-center">
-                  <p className="text-gray-500 mb-4">No projects found.</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsUploadModalOpen(true)}
-                  >
-                    Create Your First Project
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+        </div>
       </div>
-
-      <UploadModal 
-        open={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-      />
-    </Sidebar>
+    </div>
   );
 }
