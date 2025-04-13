@@ -58,14 +58,79 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [finalizationSuccess, setFinalizationSuccess] = useState(false);
   
+  // Função para adaptar o formato do projeto (servidor ou localStorage)
+  const adaptProject = (project: any): Project => {
+    // Mapeie o formato do servidor (name, clientName) para o formato do frontend (nome, cliente)
+    // ou vice-versa
+    return {
+      id: project.id,
+      nome: project.name || project.nome,
+      cliente: project.clientName || project.cliente,
+      emailCliente: project.clientEmail || project.emailCliente,
+      data: project.createdAt || project.data,
+      status: project.status,
+      fotos: project.photos ? project.photos.length : project.fotos,
+      selecionadas: project.selectedPhotos ? project.selectedPhotos.length : project.selecionadas,
+      fotografoId: project.photographerId || project.fotografoId,
+      photos: project.photos ? project.photos.map((p: any) => ({
+        id: p.id,
+        url: p.url,
+        filename: p.filename,
+        selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
+      })) : [],
+      finalizado: project.status === "reviewed" || project.finalizado
+    };
+  };
+
   // Carregar dados do projeto
   useEffect(() => {
     const loadProject = async () => {
       try {
         setLoading(true);
         
-        // Em um app real, buscaríamos o projeto a partir da API
-        // Aqui vamos obter do localStorage
+        // Verificar se o ID é um número válido
+        if (!projectId) {
+          console.error('ID do projeto não fornecido');
+          throw new Error('ID do projeto não fornecido');
+        }
+        
+        const projectIdNum = parseInt(projectId);
+        if (isNaN(projectIdNum)) {
+          console.error('ID do projeto inválido:', projectId);
+          throw new Error('ID do projeto inválido');
+        }
+        
+        console.log('Buscando projeto com ID:', projectIdNum);
+        
+        // Tenta buscar do backend primeiro
+        try {
+          const response = await fetch(`/api/projects/${projectIdNum}`);
+          if (response.ok) {
+            const projectData = await response.json();
+            console.log('Projeto carregado da API:', projectData);
+            const adaptedProject = adaptProject(projectData);
+            setProject(adaptedProject);
+            
+            // Inicializar seleções se houver
+            const preSelectedPhotos = new Set<string>();
+            if (adaptedProject.photos) {
+              adaptedProject.photos.forEach(photo => {
+                if (photo.selected) {
+                  preSelectedPhotos.add(photo.id);
+                }
+              });
+            }
+            
+            setSelectedPhotos(preSelectedPhotos);
+            setIsFinalized(!!adaptedProject.finalizado);
+            return;
+          }
+        } catch (apiError) {
+          console.error('Erro ao buscar da API:', apiError);
+          // Continuar para tentar buscar do localStorage
+        }
+        
+        // Fallback para localStorage se a API falhar
         const storedProjects = localStorage.getItem('projects');
         if (!storedProjects) {
           console.log('Nenhum projeto encontrado no localStorage');
@@ -82,20 +147,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           console.error('Erro ao parsear projetos:', e);
           throw new Error('Erro ao ler dados dos projetos');
         }
-        
-        // Verificar se o ID é um número válido
-        if (!projectId) {
-          console.error('ID do projeto não fornecido');
-          throw new Error('ID do projeto não fornecido');
-        }
-        
-        const projectIdNum = parseInt(projectId);
-        if (isNaN(projectIdNum)) {
-          console.error('ID do projeto inválido:', projectId);
-          throw new Error('ID do projeto inválido');
-        }
-        
-        console.log('Buscando projeto com ID:', projectIdNum);
         
         // Aqui fazemos a busca pelo ID como número
         const foundProject = projects.find(p => p.id === projectIdNum);
@@ -157,11 +208,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   };
   
   // Salvar seleções atuais sem finalizar
-  const saveSelections = () => {
+  const saveSelections = async () => {
     if (!project) return;
     
     try {
-      // Obter projetos existentes
+      // Array para guardar IDs das fotos selecionadas
+      const selectedIds = Array.from(selectedPhotos);
+      
+      // Tenta salvar via API primeiro - embora não tenhamos um endpoint específico para isso
+      // No futuro, se implementarmos, poderia ser usado aqui
+      
+      // Usar localStorage como fallback para salvar seleções temporárias
       const storedProjects = localStorage.getItem('projects');
       if (!storedProjects) {
         throw new Error('Erro ao salvar seleção: projetos não encontrados');
@@ -215,6 +272,41 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     
     try {
       setIsSubmitting(true);
+      
+      // Array para guardar IDs das fotos selecionadas
+      const selectedIds = Array.from(selectedPhotos);
+      
+      // Tenta finalizar via API primeiro
+      try {
+        const response = await fetch(`/api/projects/${project.id}/finalize`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ selectedPhotos: selectedIds }),
+        });
+        
+        if (response.ok) {
+          console.log('Seleção finalizada com sucesso via API');
+          
+          // Simular uma pequena demora para melhorar UX
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Atualizar a UI
+          setIsFinalized(true);
+          setFinalizationSuccess(true);
+          return;
+        } else {
+          console.error('Erro ao finalizar via API:', await response.text());
+          // Continuar para tentar usar localStorage como fallback
+        }
+      } catch (apiError) {
+        console.error('Erro ao finalizar via API:', apiError);
+        // Continuar para tentar usar localStorage como fallback
+      }
+      
+      // Fallback para localStorage
+      console.log('Usando localStorage como fallback para finalização');
       
       // Obter projetos existentes
       const storedProjects = localStorage.getItem('projects');
