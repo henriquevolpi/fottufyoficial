@@ -61,7 +61,11 @@ const requireActiveUser = (req: Request, res: Response, next: Function) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // ==================== Auth Routes ====================
+  // Configure auth with Passport.js and sessions
+  setupAuth(app);
+  
+  // ==================== Auth Routes ==================== 
+  // (basic routes handled by setupAuth)
   
   // Login route
   app.post("/api/login", async (req: Request, res: Response) => {
