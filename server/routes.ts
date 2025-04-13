@@ -312,18 +312,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get project by ID
+  // Get project by ID - Rota pública para clientes visualizarem seus projetos
   app.get("/api/projects/:id", async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.id);
+      
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      // Adicionando logs para debug
+      console.log(`Buscando projeto com ID: ${projectId}`);
+      
       const project = await storage.getProject(projectId);
       
       if (!project) {
+        console.log(`Projeto com ID ${projectId} não encontrado`);
         return res.status(404).json({ message: "Project not found" });
       }
       
+      console.log(`Projeto encontrado: ${project.name}`);
+      
+      // Esta é uma rota pública, então retornamos o projeto completo
+      // Em um ambiente de produção, poderíamos adicionar alguma forma de autenticação
+      // como um token único para cada cliente, mas para simplificar, mantemos público
       res.json(project);
     } catch (error) {
+      console.error(`Erro ao buscar projeto: ${error}`);
       res.status(500).json({ message: "Failed to retrieve project" });
     }
   });

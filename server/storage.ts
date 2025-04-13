@@ -148,7 +148,68 @@ export class MemStorage implements IStorage {
 
   // Project methods
   async getProject(id: number): Promise<Project | undefined> {
-    return this.projects.get(id);
+    console.log(`MemStorage: Buscando projeto ID=${id}`);
+    console.log(`MemStorage: Projetos disponíveis: ${Array.from(this.projects.keys()).join(", ")}`);
+    
+    const project = this.projects.get(id);
+    
+    if (project) {
+      console.log(`MemStorage: Projeto encontrado: ${project.name}`);
+    } else {
+      console.log(`MemStorage: Projeto ID=${id} não encontrado`);
+      
+      // Se não temos projetos, vamos inicializar alguns dados de exemplo
+      if (this.projects.size === 0) {
+        console.log("MemStorage: Inicializando projetos de exemplo...");
+        this.initializeExampleProjects();
+        return this.projects.get(id);
+      }
+    }
+    
+    return project;
+  }
+  
+  // Método auxiliar para inicializar dados de exemplo
+  private initializeExampleProjects(): void {
+    const exampleProjects = [
+      {
+        id: 1,
+        name: "Casamento Ana e Pedro",
+        status: "pending",
+        createdAt: new Date("2023-05-15"),
+        clientName: "Ana Silva",
+        clientEmail: "ana@example.com",
+        photographerId: 1,
+        photos: Array(5).fill(null).map((_, i) => ({
+          id: `foto-casamento-${i+1}`,
+          url: `https://source.unsplash.com/random/800x600?wedding&sig=${i}`,
+          filename: `DSC_${1000 + i}.jpg`
+        })),
+        selectedPhotos: []
+      },
+      {
+        id: 2,
+        name: "Ensaio de 15 Anos - Júlia",
+        status: "pending",
+        createdAt: new Date("2023-06-20"),
+        clientName: "Júlia Mendes",
+        clientEmail: "julia@example.com",
+        photographerId: 1,
+        photos: Array(5).fill(null).map((_, i) => ({
+          id: `foto-15anos-${i+1}`,
+          url: `https://source.unsplash.com/random/800x600?portrait&sig=${i}`,
+          filename: `IMG_${2000 + i}.jpg`
+        })),
+        selectedPhotos: []
+      }
+    ];
+    
+    exampleProjects.forEach(project => {
+      this.projects.set(project.id, project);
+    });
+    
+    this.projectId = Math.max(...exampleProjects.map(p => p.id)) + 1;
+    console.log(`MemStorage: ${exampleProjects.length} projetos de exemplo criados. Próximo ID: ${this.projectId}`);
   }
 
   async getProjects(photographerId?: number): Promise<Project[]> {
