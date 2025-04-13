@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Upload, X, Image } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,16 +21,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/providers/auth-provider";
-import { Upload, Image } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
+// Schema para validação do formulário
 const uploadFormSchema = z.object({
-  name: z.string().min(2, { message: "Project name must be at least 2 characters" }),
-  clientName: z.string().min(2, { message: "Client name must be at least 2 characters" }),
-  clientEmail: z.string().email({ message: "Please enter a valid email address" }),
+  nome: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  cliente: z.string().min(3, { message: "Cliente deve ter pelo menos 3 caracteres" }),
+  emailCliente: z.string().email({ message: "Email inválido" }),
+  dataEvento: z.string().min(1, { message: "Data é obrigatória" }),
+  observacoes: z.string().optional(),
 });
 
 type UploadFormValues = z.infer<typeof uploadFormSchema>;
@@ -40,134 +41,216 @@ interface UploadModalProps {
 }
 
 export default function UploadModal({ open, onClose }: UploadModalProps) {
-  const { user } = useAuth();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
     defaultValues: {
-      name: "",
-      clientName: "",
-      clientEmail: "",
+      nome: "",
+      cliente: "",
+      emailCliente: "",
+      dataEvento: new Date().toISOString().substring(0, 10),
+      observacoes: "",
     },
   });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      setSelectedFiles(Array.from(files));
-    }
-  };
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      setSelectedFiles(Array.from(files));
-    }
-  }, []);
-
   const onSubmit = async (values: UploadFormValues) => {
-    if (selectedFiles.length === 0) {
+    if (files.length === 0) {
       toast({
-        title: "No files selected",
-        description: "Please select at least one photo to upload.",
+        title: "Nenhuma foto selecionada",
+        description: "Por favor, selecione pelo menos uma foto para o projeto.",
         variant: "destructive",
       });
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      setIsUploading(true);
+      // Simular conversão das imagens para URLs
+      const photoUrls = previews.map((preview, index) => ({
+        id: `photo-${Date.now()}-${index}`,
+        url: preview,
+        filename: files[index].name,
+        selected: false,
+      }));
 
-      // Create a new FormData instance
-      const formData = new FormData();
-      
-      // Append the form values
-      formData.append("name", values.name);
-      formData.append("clientName", values.clientName);
-      formData.append("clientEmail", values.clientEmail);
-      formData.append("photographerId", user?.id?.toString() || "");
-      
-      // Append all files
-      selectedFiles.forEach((file, index) => {
-        formData.append(`photos`, file);
-      });
+      // Obter projetos existentes do localStorage (se houver)
+      const existingProjects = localStorage.getItem('projects')
+        ? JSON.parse(localStorage.getItem('projects')!)
+        : [];
 
-      // Simulate API call for now since we're using localStorage
-      // In a real app, this would be a fetch/axios call with FormData
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
+      // Criar novo projeto
+      const newProject = {
+        id: Date.now(),
+        nome: values.nome,
+        cliente: values.cliente,
+        emailCliente: values.emailCliente,
+        data: values.dataEvento,
+        observacoes: values.observacoes || "",
+        status: "pendente",
+        fotos: photoUrls.length,
+        selecionadas: 0,
+        fotografoId: 1, // ID fixo para simulação
+        photos: photoUrls,
+        createdAt: new Date().toISOString(),
+      };
 
-      if (!response.ok) {
-        throw new Error("Failed to create project");
-      }
+      // Adicionar o novo projeto à lista
+      const updatedProjects = [newProject, ...existingProjects];
+      localStorage.setItem('projects', JSON.stringify(updatedProjects));
 
+      // Simular um pequeno atraso para feedback visual
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Mostrar feedback de sucesso
       toast({
-        title: "Project created",
-        description: `Successfully created project "${values.name}"`,
+        title: "Projeto criado com sucesso",
+        description: `O projeto "${values.nome}" foi criado com ${photoUrls.length} fotos.`,
       });
 
-      // Reset form and close modal
+      // Limpar estado e fechar modal
       form.reset();
-      setSelectedFiles([]);
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      setFiles([]);
+      setPreviews([]);
       onClose();
+
     } catch (error) {
+      console.error("Erro ao criar projeto:", error);
       toast({
-        title: "Error",
-        description: "Failed to create project. Please try again.",
+        title: "Erro ao criar projeto",
+        description: "Ocorreu um erro ao tentar criar o projeto. Tente novamente.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(
+      file => file.type.startsWith("image/")
+    );
+
+    if (droppedFiles.length === 0) {
+      toast({
+        title: "Arquivos inválidos",
+        description: "Por favor, selecione apenas arquivos de imagem.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addFiles(droppedFiles);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+
+    const selectedFiles = Array.from(e.target.files).filter(
+      file => file.type.startsWith("image/")
+    );
+    
+    addFiles(selectedFiles);
+    
+    // Limpar o input para permitir selecionar os mesmos arquivos novamente
+    e.target.value = "";
+  };
+
+  const addFiles = (newFiles: File[]) => {
+    const combinedFiles = [...files, ...newFiles];
+    setFiles(combinedFiles);
+
+    // Criar previews para as novas imagens
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        if (e.target?.result) {
+          setPreviews(prev => [...prev, e.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = [...files];
+    newFiles.splice(index, 1);
+    setFiles(newFiles);
+
+    const newPreviews = [...previews];
+    newPreviews.splice(index, 1);
+    setPreviews(newPreviews);
+  };
+
+  // Limpar o estado quando o modal for fechado
+  const handleClose = () => {
+    if (!isSubmitting) {
+      form.reset();
+      setFiles([]);
+      setPreviews([]);
+      onClose();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md md:max-w-lg">
+    <Dialog open={open} onOpenChange={isSubmitting ? undefined : handleClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>Novo Projeto</DialogTitle>
           <DialogDescription>
-            Fill in the project details and upload your photos.
+            Preencha os dados do projeto e faça upload das fotos.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="nome"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                  <FormLabel>Nome do Projeto</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Wedding Photos, Family Portrait, etc." 
-                      {...field} 
+                    <Input placeholder="Ensaio de Casamento" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cliente"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Cliente</FormLabel>
+                  <FormControl>
+                    <Input placeholder="João e Maria" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="emailCliente"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email do Cliente</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="cliente@email.com"
+                      type="email"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -177,15 +260,12 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
 
             <FormField
               control={form.control}
-              name="clientName"
+              name="dataEvento"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Client Name</FormLabel>
+                  <FormLabel>Data do Evento</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="John Doe" 
-                      {...field} 
-                    />
+                    <Input type="date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,15 +274,15 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
 
             <FormField
               control={form.control}
-              name="clientEmail"
+              name="observacoes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Client Email</FormLabel>
+                  <FormLabel>Observações</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="client@example.com" 
-                      {...field} 
+                    <Textarea
+                      placeholder="Observações adicionais sobre o projeto..."
+                      className="resize-none"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -210,71 +290,103 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               )}
             />
 
-            <div>
-              <FormLabel>Photos</FormLabel>
-              <div 
-                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
-                  isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300'
+            <div className="space-y-2">
+              <FormLabel>Fotos</FormLabel>
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center ${
+                  isDragging ? "border-primary bg-primary/10" : "border-gray-300"
                 }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
+                onDragOver={e => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleFileDrop}
               >
-                <div className="space-y-1 text-center">
-                  <Image className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <label
-                      htmlFor="file-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                    >
-                      <span>Upload files</span>
-                      <input
-                        id="file-upload"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        multiple
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        ref={fileInputRef}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    PNG, JPG, GIF up to 10MB each
+                <div className="flex flex-col items-center">
+                  <Upload className="h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-sm text-gray-600 mb-2">
+                    Arraste e solte as fotos aqui, ou
                   </p>
-                  {selectedFiles.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium text-gray-700">
-                        {selectedFiles.length} {selectedFiles.length === 1 ? 'file' : 'files'} selected
-                      </p>
-                    </div>
-                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      document.getElementById("file-upload")?.click();
+                    }}
+                  >
+                    Selecione do computador
+                  </Button>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    JPG, PNG, GIF até 10MB
+                  </p>
                 </div>
               </div>
+
+              {previews.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">
+                    {previews.length} foto{previews.length !== 1 ? "s" : ""} selecionada{previews.length !== 1 ? "s" : ""}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {previews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <div className="relative aspect-square rounded-md overflow-hidden border">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="object-cover w-full h-full"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-white hover:text-red-400"
+                              onClick={() => removeFile(index)}
+                            >
+                              <X className="h-6 w-6" />
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs truncate mt-1">
+                          {files[index]?.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <DialogFooter className="sm:justify-between">
+            <DialogFooter>
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={onClose}
-                disabled={isUploading}
+                onClick={handleClose}
+                disabled={isSubmitting}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button 
-                type="submit"
-                disabled={isUploading}
+                type="submit" 
+                disabled={isSubmitting}
               >
-                {isUploading ? (
+                {isSubmitting ? (
                   <>
-                    <Upload className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando...
                   </>
                 ) : (
-                  'Create Project'
+                  "Criar Projeto"
                 )}
               </Button>
             </DialogFooter>

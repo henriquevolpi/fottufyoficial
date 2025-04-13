@@ -14,7 +14,9 @@ import {
   Filter, 
   ArrowUpRight,
   Loader2,
-  X
+  X,
+  Link,
+  RotateCcw
 } from "lucide-react";
 import { 
   Tabs, 
@@ -170,6 +172,25 @@ function ProjetoCard({ projeto }: { projeto: any }) {
         >
           Ver Detalhes
           <ArrowUpRight className="h-3 w-3 ml-1" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-blue-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Copiar o link para o cliente
+            const clientUrl = `${window.location.origin}/project-view/${projeto.id}`;
+            navigator.clipboard.writeText(clientUrl);
+            toast({
+              title: "Link copiado",
+              description: "Link para o cliente copiad para a área de transferência.",
+            });
+          }}
+        >
+          Link do Cliente
+          <Link className="h-3 w-3 ml-1" />
         </Button>
         
         {status === "arquivado" && (
