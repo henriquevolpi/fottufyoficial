@@ -1056,7 +1056,11 @@ export default function Dashboard() {
                   projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
                 )
                 .map((projeto) => (
-                  <ProjetoCard key={projeto.id} projeto={projeto} />
+                  <ProjetoCard 
+                    key={projeto.id} 
+                    projeto={projeto} 
+                    onDelete={handleDeleteProject}
+                  />
                 ))
               }
             </div>
@@ -1071,7 +1075,11 @@ export default function Dashboard() {
                   projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
                 )
                 .map((projeto) => (
-                  <ProjetoCard key={projeto.id} projeto={projeto} />
+                  <ProjetoCard 
+                    key={projeto.id} 
+                    projeto={projeto} 
+                    onDelete={handleDeleteProject}
+                  />
                 ))
               }
             </div>
@@ -1086,7 +1094,11 @@ export default function Dashboard() {
                   projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
                 )
                 .map((projeto) => (
-                  <ProjetoCard key={projeto.id} projeto={projeto} />
+                  <ProjetoCard 
+                    key={projeto.id} 
+                    projeto={projeto} 
+                    onDelete={handleDeleteProject}
+                  />
                 ))
               }
             </div>
