@@ -26,6 +26,7 @@ export interface IStorage {
   finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined>;
   archiveProject(id: number): Promise<Project | undefined>;
   reopenProject(id: number): Promise<Project | undefined>;
+  deleteProject(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: any;
@@ -302,6 +303,22 @@ export class MemStorage implements IStorage {
     this.projects.set(id, updatedProject);
     
     return updatedProject;
+  }
+  
+  // Método para deletar um projeto
+  async deleteProject(id: number): Promise<boolean> {
+    console.log(`MemStorage: Tentando deletar projeto ID=${id}`);
+    const project = this.projects.get(id);
+    
+    if (!project) {
+      console.log(`MemStorage: Projeto ID=${id} não encontrado para deleção`);
+      return false;
+    }
+    
+    const deleted = this.projects.delete(id);
+    console.log(`MemStorage: Projeto ID=${id} ${deleted ? 'deletado com sucesso' : 'falha ao deletar'}`);
+    
+    return deleted;
   }
 }
 

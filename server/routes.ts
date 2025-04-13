@@ -520,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if photographer ID matches authenticated user
-      if (project.photographerId !== req.user.id && req.user.role !== "admin") {
+      if (project.photographerId !== req.user?.id && req.user?.role !== "admin") {
         return res.status(403).json({ message: "Cannot reopen projects of other photographers" });
       }
       
@@ -533,6 +533,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedProject);
     } catch (error) {
       res.status(500).json({ message: "Failed to reopen project" });
+    }
+  });
+  
+  // Delete project (photographer only)
+  app.delete("/api/projects/:id", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Projeto não encontrado" });
+      }
+      
+      // Verificar se o fotógrafo é o dono do projeto ou se é admin
+      if (project.photographerId !== req.user?.id && req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Você não tem permissão para excluir este projeto" });
+      }
+      
+      const deleted = await storage.deleteProject(projectId);
+      
+      if (!deleted) {
+        return res.status(500).json({ message: "Falha ao excluir projeto" });
+      }
+      
+      res.json({ success: true, message: "Projeto excluído com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir projeto:", error);
+      res.status(500).json({ message: "Falha ao excluir projeto" });
     }
   });
   
