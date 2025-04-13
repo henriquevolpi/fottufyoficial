@@ -65,15 +65,48 @@ export default function ProjectView() {
         // Aqui vamos obter do localStorage
         const storedProjects = localStorage.getItem('projects');
         if (!storedProjects) {
+          console.log('Nenhum projeto encontrado no localStorage');
           throw new Error('Projeto não encontrado');
         }
         
-        const projects: Project[] = JSON.parse(storedProjects);
-        const projectId = params.id ? parseInt(params.id) : 0;
+        // Log para debug
+        console.log('Projetos armazenados:', JSON.parse(storedProjects));
+        
+        let projects: Project[] = [];
+        try {
+          projects = JSON.parse(storedProjects);
+        } catch (e) {
+          console.error('Erro ao parsear projetos:', e);
+          throw new Error('Erro ao ler dados dos projetos');
+        }
+        
+        // Verificar se o ID é um número válido
+        if (!params.id) {
+          console.error('ID do projeto não fornecido');
+          throw new Error('ID do projeto não fornecido');
+        }
+        
+        const projectId = parseInt(params.id);
+        if (isNaN(projectId)) {
+          console.error('ID do projeto inválido:', params.id);
+          throw new Error('ID do projeto inválido');
+        }
+        
+        console.log('Buscando projeto com ID:', projectId);
+        
         const foundProject = projects.find(p => p.id === projectId);
         
         if (!foundProject) {
+          console.error('Projeto não encontrado com ID:', projectId);
           throw new Error('Projeto não encontrado');
+        }
+        
+        console.log('Projeto encontrado:', foundProject);
+        
+        // Verificar se o projeto tem a propriedade photos
+        if (!foundProject.photos || !Array.isArray(foundProject.photos)) {
+          console.error('Projeto sem fotos ou formato inválido');
+          foundProject.photos = []; // Garantir que existe um array vazio se não houver fotos
         }
         
         setProject(foundProject);

@@ -55,37 +55,127 @@ const PROJETOS_EXEMPLO = [
     id: 1,
     nome: "Casamento Rodrigo e Ana",
     cliente: "Rodrigo Silva",
+    emailCliente: "rodrigo.silva@example.com",
     data: "2023-04-15",
     status: "pendente",
-    fotos: 124,
-    selecionadas: 0
+    fotos: 3,
+    selecionadas: 0,
+    fotografoId: 1,
+    photos: [
+      {
+        id: "photo-1",
+        url: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "casal-1.jpg",
+        selected: false
+      },
+      {
+        id: "photo-2",
+        url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "casal-2.jpg",
+        selected: false
+      },
+      {
+        id: "photo-3",
+        url: "https://images.unsplash.com/photo-1546032996-6dfacbacbf3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "casal-3.jpg",
+        selected: false
+      }
+    ]
   },
   {
     id: 2,
     nome: "Aniversário de 15 anos - Maria",
     cliente: "Família Souza",
+    emailCliente: "souza.familia@example.com",
     data: "2023-03-22",
     status: "revisado",
-    fotos: 86,
-    selecionadas: 32
+    fotos: 3,
+    selecionadas: 2,
+    fotografoId: 1,
+    photos: [
+      {
+        id: "photo-4",
+        url: "https://images.unsplash.com/photo-1551972578-f3e955bf9887?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "aniversario-1.jpg",
+        selected: true
+      },
+      {
+        id: "photo-5",
+        url: "https://images.unsplash.com/photo-1525373698358-041e3a460346?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "aniversario-2.jpg",
+        selected: true
+      },
+      {
+        id: "photo-6",
+        url: "https://images.unsplash.com/photo-1533294452740-9da4c4f8a416?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "aniversario-3.jpg",
+        selected: false
+      }
+    ]
   },
   {
     id: 3,
     nome: "Ensaio Corporativo - Tech Inc",
     cliente: "Tech Incorporated",
+    emailCliente: "contato@techinc.example.com",
     data: "2023-02-08",
     status: "finalizado",
-    fotos: 45,
-    selecionadas: 18
+    fotos: 3,
+    selecionadas: 2,
+    fotografoId: 1,
+    photos: [
+      {
+        id: "photo-7",
+        url: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "corporativo-1.jpg",
+        selected: true
+      },
+      {
+        id: "photo-8",
+        url: "https://images.unsplash.com/photo-1573164574511-73c773193279?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "corporativo-2.jpg",
+        selected: true
+      },
+      {
+        id: "photo-9",
+        url: "https://images.unsplash.com/photo-1551836022-aadb801c60e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "corporativo-3.jpg",
+        selected: false
+      }
+    ],
+    finalizado: true
   },
   {
     id: 4,
     nome: "Evento de Lançamento - Natura",
     cliente: "Natura Cosméticos",
+    emailCliente: "eventos@natura.example.com",
     data: "2023-01-30",
     status: "arquivado",
-    fotos: 93,
-    selecionadas: 40
+    fotos: 3,
+    selecionadas: 3,
+    fotografoId: 1,
+    photos: [
+      {
+        id: "photo-10",
+        url: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "evento-1.jpg",
+        selected: true
+      },
+      {
+        id: "photo-11",
+        url: "https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "evento-2.jpg",
+        selected: true
+      },
+      {
+        id: "photo-12",
+        url: "https://images.unsplash.com/photo-1505236858219-8359eb29e329?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+        filename: "evento-3.jpg",
+        selected: true
+      }
+    ],
+    finalizado: true
   }
 ];
 
