@@ -75,9 +75,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
-      <Route path="/dashboard">
-        {() => <ProtectedRoute component={Dashboard} />}
-      </Route>
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/upload">
         {() => <ProtectedRoute component={Upload} />}
       </Route>

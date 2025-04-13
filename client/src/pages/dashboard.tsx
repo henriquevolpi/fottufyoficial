@@ -1,15 +1,26 @@
-import { useEffect } from "react";
-import { useAuth } from "@/providers/auth-provider";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<any>(null);
   
   useEffect(() => {
-    console.log("Dashboard carregado - usuário:", user);
-  }, [user]);
+    try {
+      // Obter usuário do localStorage
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+        console.log("Dashboard carregado - usuário:", userData);
+      } else {
+        console.log("Nenhum usuário encontrado no localStorage");
+      }
+    } catch (e) {
+      console.error("Erro ao obter usuário:", e);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
