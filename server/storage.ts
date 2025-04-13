@@ -274,6 +274,11 @@ export class MemStorage implements IStorage {
       return false;
     }
     
+    // Se o usuário tem plano ilimitado (uploadLimit < 0), sempre retorna true
+    if (user.uploadLimit < 0) {
+      return true;
+    }
+    
     // Verificar se o usuário tem limite disponível
     const uploadLimit = user.uploadLimit || 0;
     const usedUploads = user.usedUploads || 0;

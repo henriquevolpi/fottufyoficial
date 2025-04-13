@@ -133,9 +133,13 @@ export default function SubscriptionPlans() {
             <CardTitle className="text-sm font-medium">Uploads Restantes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats.remainingUploads}</div>
+            <div className="text-2xl font-bold">
+              {userStats.uploadLimit < 0 ? "Ilimitado" : userStats.remainingUploads}
+            </div>
             <p className="text-xs text-muted-foreground">
-              De {userStats.uploadLimit} disponíveis
+              {userStats.uploadLimit < 0 
+                ? "Sem limite de uploads" 
+                : `De ${userStats.uploadLimit} disponíveis`}
             </p>
           </CardContent>
         </Card>
@@ -147,7 +151,9 @@ export default function SubscriptionPlans() {
           <CardContent>
             <div className="text-2xl font-bold">{userStats.usedUploads}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((userStats.usedUploads / userStats.uploadLimit) * 100)}% do limite
+              {userStats.uploadLimit < 0 
+                ? "Plano ilimitado" 
+                : `${Math.round((userStats.usedUploads / Math.max(1, userStats.uploadLimit)) * 100)}% do limite`}
             </p>
           </CardContent>
         </Card>
