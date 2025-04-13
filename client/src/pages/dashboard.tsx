@@ -609,17 +609,32 @@ export default function Dashboard() {
         console.log("Nenhum usuário encontrado no localStorage");
       }
       
-      // Simular carregamento de projetos
-      setTimeout(() => {
-        setProjetos(PROJETOS_EXEMPLO);
+      // Carregar projetos do localStorage (se houver)
+      const storedProjects = localStorage.getItem('projects');
+      if (storedProjects) {
+        const parsedProjects = JSON.parse(storedProjects);
+        setProjetos(parsedProjects);
         setIsLoading(false);
-      }, 800);
+      } else {
+        // Se não houver projetos no localStorage, simular com exemplos
+        setTimeout(() => {
+          setProjetos(PROJETOS_EXEMPLO);
+          // Salvar exemplos no localStorage para uso futuro
+          localStorage.setItem('projects', JSON.stringify(PROJETOS_EXEMPLO));
+          setIsLoading(false);
+        }, 600);
+      }
       
     } catch (e) {
-      console.error("Erro ao obter usuário:", e);
+      console.error("Erro ao carregar dados:", e);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Ocorreu um erro ao carregar os projetos. Por favor, recarregue a página.",
+        variant: "destructive",
+      });
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -662,7 +677,7 @@ export default function Dashboard() {
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <Button 
               className="inline-flex items-center"
-              onClick={() => setLocation("/upload")}
+              onClick={() => setIsUploadModalOpen(true)}
             >
               <PlusCircle className="h-5 w-5 mr-2" />
               Novo Projeto
@@ -799,6 +814,12 @@ export default function Dashboard() {
           </p>
         </div>
       </footer>
+      
+      {/* Modal de Upload de Projeto */}
+      <UploadModal 
+        open={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+      />
     </div>
   );
 }

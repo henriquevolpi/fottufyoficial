@@ -8,6 +8,7 @@ import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import Upload from "@/pages/upload";
 import Project from "@/pages/project";
+import ProjectView from "@/pages/project-view";
 import Admin from "@/pages/admin";
 import { useAuth } from "./providers/auth-provider";
 import { useEffect } from "react";
@@ -78,6 +79,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/upload" component={Upload} />
       <Route path="/project/:id" component={Project} />
+      <Route path="/project-view/:id" component={ProjectView} />
       <Route path="/admin">
         {() => <ProtectedRoute component={Admin} adminOnly={true} />}
       </Route>
