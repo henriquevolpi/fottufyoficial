@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 // Dados fictícios para projetos
 const PROJETOS_EXEMPLO = [
@@ -67,6 +68,8 @@ const PROJETOS_EXEMPLO = [
 // Componente de card para projetos recentes
 function ProjetoCard({ projeto }: { projeto: any }) {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [status, setStatus] = useState(projeto.status);
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -74,6 +77,7 @@ function ProjetoCard({ projeto }: { projeto: any }) {
       case "revisado": return "bg-blue-100 text-blue-800";
       case "finalizado": return "bg-green-100 text-green-800";
       case "arquivado": return "bg-gray-100 text-gray-800";
+      case "reaberto": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -81,6 +85,29 @@ function ProjetoCard({ projeto }: { projeto: any }) {
   const formatarData = (dataStr: string) => {
     const data = new Date(dataStr);
     return data.toLocaleDateString('pt-BR');
+  };
+  
+  const handleReabrirProjeto = () => {
+    // Simular reabertura do projeto
+    toast({
+      title: "Projeto reaberto",
+      description: `O projeto "${projeto.nome}" foi reaberto com sucesso.`,
+    });
+    
+    // Em um app real, faríamos uma chamada API para atualizar o status
+    projeto.status = "reaberto";
+    setStatus("reaberto");
+  };
+  
+  const handleEditarGaleria = () => {
+    // Simulação - em uma aplicação real, redirecionaria para uma página de edição
+    toast({
+      title: "Edição de galeria",
+      description: `Abrindo galeria do projeto "${projeto.nome}" para edição.`,
+    });
+    
+    // Redirecionar para uma página fictícia de edição de galeria
+    setLocation(`/project/${projeto.id}/edit`);
   };
   
   return (
@@ -91,8 +118,8 @@ function ProjetoCard({ projeto }: { projeto: any }) {
             <CardTitle className="text-lg font-bold">{projeto.nome}</CardTitle>
             <CardDescription className="text-sm mt-1">{projeto.cliente}</CardDescription>
           </div>
-          <Badge className={getStatusColor(projeto.status)}>
-            {projeto.status.charAt(0).toUpperCase() + projeto.status.slice(1)}
+          <Badge className={getStatusColor(status)}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
         </div>
       </CardHeader>
@@ -112,7 +139,7 @@ function ProjetoCard({ projeto }: { projeto: any }) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-end">
+      <CardFooter className="p-4 pt-0 flex flex-wrap gap-2 justify-end">
         <Button 
           variant="outline" 
           size="sm"
@@ -122,6 +149,28 @@ function ProjetoCard({ projeto }: { projeto: any }) {
           Ver Detalhes
           <ArrowUpRight className="h-3 w-3 ml-1" />
         </Button>
+        
+        {status === "arquivado" && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800"
+            onClick={handleReabrirProjeto}
+          >
+            Reabrir Projeto
+          </Button>
+        )}
+        
+        {(status === "pendente" || status === "revisado" || status === "reaberto") && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800"
+            onClick={handleEditarGaleria}
+          >
+            Editar Galeria
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

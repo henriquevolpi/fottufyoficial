@@ -76,9 +76,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/upload">
-        {() => <ProtectedRoute component={Upload} />}
-      </Route>
+      <Route path="/upload" component={Upload} />
       <Route path="/project/:id" component={Project} />
       <Route path="/admin">
         {() => <ProtectedRoute component={Admin} adminOnly={true} />}
