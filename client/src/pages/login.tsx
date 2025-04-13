@@ -20,9 +20,10 @@ export default function Login() {
       
       // Redirect is handled in the auth provider
     } catch (error) {
+      console.error("Erro de login:", error);
       toast({
-        title: "Login failed",
-        description: "Invalid email or password. Please try again.",
+        title: "Falha no login",
+        description: "E-mail ou senha inválidos. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {

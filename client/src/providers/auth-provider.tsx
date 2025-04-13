@@ -46,19 +46,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Login function
   const login = async (email: string, password: string) => {
     try {
+      console.log("Tentando fazer login com:", email);
       const response = await apiRequest("POST", "/api/login", { email, password });
       const data = await response.json();
+      
+      if (!data.user) {
+        console.error("Usuário não encontrado na resposta:", data);
+        throw new Error("Resposta inválida do servidor");
+      }
+      
+      console.log("Login bem-sucedido:", data.user);
       setUser(data.user);
       setIsAuthenticated(true);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       // Redirect based on role
       if (data.user.role === "admin") {
+        console.log("Redirecionando para /admin");
         setLocation("/admin");
       } else {
+        console.log("Redirecionando para /dashboard");
         setLocation("/dashboard");
       }
+      
+      return data.user;
     } catch (error) {
+      console.error("Erro ao fazer login:", error);
       throw error;
     }
   };
@@ -70,8 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(false);
     setLocation("/login");
     toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso.",
     });
   };
 

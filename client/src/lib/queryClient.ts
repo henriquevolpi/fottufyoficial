@@ -12,15 +12,29 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-
-  await throwIfResNotOk(res);
-  return res;
+  console.log(`Fazendo requisição ${method} para ${url}`, data ? data : '');
+  
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+    
+    console.log(`Resposta recebida de ${url}:`, res.status, res.statusText);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Erro na requisição para ${url}:`, res.status, errorText);
+      throw new Error(`${res.status}: ${errorText || res.statusText}`);
+    }
+    
+    return res;
+  } catch (error) {
+    console.error(`Falha na requisição ${method} para ${url}:`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -17,18 +17,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
 export const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().email({ message: "Por favor, insira um endereço de e-mail válido" }),
+  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
   rememberMe: z.boolean().optional(),
 });
 
 export const registerSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres" }),
+  email: z.string().email({ message: "Por favor, insira um endereço de e-mail válido" }),
+  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
+  confirmPassword: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
+  message: "As senhas não coincidem",
   path: ["confirmPassword"],
 });
 
@@ -56,16 +56,16 @@ export function LoginForm({ onSubmit, isLoading = false, onSwitchToRegister }: L
     <div className="max-w-md w-full space-y-8">
       <div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
+          Entre na sua conta
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Or{" "}
+          Ou{" "}
           <button
             type="button"
             onClick={onSwitchToRegister}
-            className="font-medium text-primary-600 hover:text-primary-500"
+            className="font-medium text-blue-600 hover:text-blue-500"
           >
-            register as a photographer
+            registre-se como fotógrafo
           </button>
         </p>
       </div>
@@ -78,14 +78,14 @@ export function LoginForm({ onSubmit, isLoading = false, onSwitchToRegister }: L
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="sr-only">Email address</FormLabel>
+                  <FormLabel className="sr-only">Endereço de e-mail</FormLabel>
                   <FormControl>
                     <Input
                       id="email-address"
                       type="email"
                       autoComplete="email"
                       className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:z-10"
-                      placeholder="Email address"
+                      placeholder="Endereço de e-mail"
                       {...field}
                     />
                   </FormControl>
@@ -106,7 +106,7 @@ export function LoginForm({ onSubmit, isLoading = false, onSwitchToRegister }: L
                         type={showPassword ? "text" : "password"}
                         autoComplete="current-password"
                         className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:z-10"
-                        placeholder="Password"
+                        placeholder="Senha"
                         {...field}
                       />
                       <button
@@ -145,15 +145,15 @@ export function LoginForm({ onSubmit, isLoading = false, onSwitchToRegister }: L
                     htmlFor="remember-me"
                     className="ml-2 block text-sm text-gray-900"
                   >
-                    Remember me
+                    Lembrar-me
                   </label>
                 </FormItem>
               )}
             />
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
-                Forgot your password?
+              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                Esqueceu sua senha?
               </a>
             </div>
           </div>
@@ -161,13 +161,13 @@ export function LoginForm({ onSubmit, isLoading = false, onSwitchToRegister }: L
           <div>
             <Button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg"
               disabled={isLoading}
             >
               <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                <Lock className="h-5 w-5 text-primary-500 group-hover:text-primary-400" />
+                <Lock className="h-5 w-5 text-blue-400 group-hover:text-blue-300" />
               </span>
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </div>
         </form>
@@ -199,16 +199,16 @@ export function RegisterForm({ onSubmit, isLoading = false, onSwitchToLogin }: R
     <div className="max-w-md w-full space-y-8">
       <div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create a new account
+          Crie uma nova conta
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Already have an account?{" "}
+          Já tem uma conta?{" "}
           <button
             type="button"
             onClick={onSwitchToLogin}
-            className="font-medium text-primary-600 hover:text-primary-500"
+            className="font-medium text-blue-600 hover:text-blue-500"
           >
-            Sign in
+            Entrar
           </button>
         </p>
       </div>
@@ -228,7 +228,7 @@ export function RegisterForm({ onSubmit, isLoading = false, onSwitchToLogin }: R
                       type="text"
                       autoComplete="name"
                       className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:z-10"
-                      placeholder="Full name"
+                      placeholder="Nome completo"
                       {...field}
                     />
                   </FormControl>
@@ -248,7 +248,7 @@ export function RegisterForm({ onSubmit, isLoading = false, onSwitchToLogin }: R
                       type="email"
                       autoComplete="email"
                       className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:z-10"
-                      placeholder="Email address"
+                      placeholder="Endereço de e-mail"
                       {...field}
                     />
                   </FormControl>
@@ -269,7 +269,7 @@ export function RegisterForm({ onSubmit, isLoading = false, onSwitchToLogin }: R
                         type={showPassword ? "text" : "password"}
                         autoComplete="new-password"
                         className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:z-10"
-                        placeholder="Password"
+                        placeholder="Senha"
                         {...field}
                       />
                       <button
@@ -302,7 +302,7 @@ export function RegisterForm({ onSubmit, isLoading = false, onSwitchToLogin }: R
                         type={showConfirmPassword ? "text" : "password"}
                         autoComplete="new-password"
                         className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:z-10"
-                        placeholder="Confirm password"
+                        placeholder="Confirmar senha"
                         {...field}
                       />
                       <button
@@ -327,10 +327,10 @@ export function RegisterForm({ onSubmit, isLoading = false, onSwitchToLogin }: R
           <div>
             <Button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg"
               disabled={isLoading}
             >
-              {isLoading ? "Registering..." : "Register account"}
+              {isLoading ? "Registrando..." : "Registrar conta"}
             </Button>
           </div>
         </form>

@@ -40,6 +40,29 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
   return <Component />;
 }
 
+function RootRedirect() {
+  const { isAuthenticated, user } = useAuth();
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    console.log("RootRedirect - Autenticado:", isAuthenticated, "Usuário:", user);
+    if (isAuthenticated) {
+      if (user?.role === "admin") {
+        console.log("Redirecionando para /admin");
+        setLocation("/admin");
+      } else {
+        console.log("Redirecionando para /dashboard");
+        setLocation("/dashboard");
+      }
+    } else {
+      console.log("Redirecionando para /login");
+      setLocation("/login");
+    }
+  }, [isAuthenticated, user, setLocation]);
+  
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -56,24 +79,7 @@ function Router() {
         {() => <ProtectedRoute component={Admin} adminOnly={true} />}
       </Route>
       <Route path="/">
-        {() => {
-          const { isAuthenticated, user } = useAuth();
-          const [, setLocation] = useLocation();
-          
-          useEffect(() => {
-            if (isAuthenticated) {
-              if (user?.role === "admin") {
-                setLocation("/admin");
-              } else {
-                setLocation("/dashboard");
-              }
-            } else {
-              setLocation("/login");
-            }
-          }, [isAuthenticated, user, setLocation]);
-          
-          return null;
-        }}
+        {() => <RootRedirect />}
       </Route>
       <Route component={NotFound} />
     </Switch>

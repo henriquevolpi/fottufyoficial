@@ -74,28 +74,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Login route
   app.post("/api/login", async (req: Request, res: Response) => {
     try {
+      console.log("Recebida requisição de login:", req.body);
       const { email, password } = req.body;
       
       if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
+        console.warn("Tentativa de login sem email ou senha");
+        return res.status(400).json({ message: "Email e senha são obrigatórios" });
       }
       
+      console.log("Buscando usuário pelo email:", email);
       const user = await storage.getUserByEmail(email);
       
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid email or password" });
+      if (!user) {
+        console.warn(`Usuário não encontrado para o email: ${email}`);
+        return res.status(401).json({ message: "Email ou senha inválidos" });
       }
+      
+      if (user.password !== password) {
+        console.warn(`Senha incorreta para o usuário: ${email}`);
+        return res.status(401).json({ message: "Email ou senha inválidos" });
+      }
+      
+      console.log(`Login bem-sucedido para: ${email}, ID: ${user.id}, Função: ${user.role}`);
       
       // In a real app, we would create and return a JWT token here
       // For now, we'll return the user
+      const userData = {
+        ...user,
+        password: undefined, // Don't send password back to client
+      };
+      
       res.json({ 
-        user: {
-          ...user,
-          password: undefined, // Don't send password back to client
-        }
+        user: userData
       });
     } catch (error) {
-      res.status(500).json({ message: "Login failed" });
+      console.error("Erro durante o login:", error);
+      res.status(500).json({ message: "Falha no login, tente novamente mais tarde" });
     }
   });
   
@@ -387,12 +401,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate that all selected photos exist in the project
+      if (!project.photos || !Array.isArray(project.photos)) {
+        return res.status(400).json({ message: "Projeto não contém fotos para seleção" });
+      }
+      
       const validPhotoIds = project.photos.map(photo => photo.id);
       const invalidPhotoIds = selectedPhotos.filter(id => !validPhotoIds.includes(id));
       
       if (invalidPhotoIds.length > 0) {
         return res.status(400).json({ 
-          message: "Some selected photos don't exist in this project",
+          message: "Algumas fotos selecionadas não existem neste projeto",
           invalidIds: invalidPhotoIds
         });
       }
