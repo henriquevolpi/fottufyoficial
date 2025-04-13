@@ -1,0 +1,506 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { z } from "zod";
+import { insertUserSchema, insertProjectSchema, WebhookPayload } from "@shared/schema";
+import path from "path";
+import fs from "fs";
+import { nanoid } from "nanoid";
+
+// Extend Request interface for auth
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
+}
+
+// Basic authentication middleware
+const authenticate = async (req: Request, res: Response, next: Function) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  
+  const [type, token] = authHeader.split(" ");
+  
+  if (type !== "Bearer" || !token) {
+    return res.status(401).json({ message: "Invalid authentication" });
+  }
+  
+  // In a real app, this would validate JWT tokens
+  // For now, we're simulating auth with a basic check
+  const userId = token;
+  
+  try {
+    const user = await storage.getUser(parseInt(userId));
+    
+    if (!user) {
+      return res.status(401).json({ message: "Invalid authentication token" });
+    }
+    
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(500).json({ message: "Authentication error" });
+  }
+};
+
+// Admin role check middleware
+const requireAdmin = (req: Request, res: Response, next: Function) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  
+  next();
+};
+
+// Status check middleware
+const requireActiveUser = (req: Request, res: Response, next: Function) => {
+  if (!req.user || req.user.status !== "active") {
+    return res.status(403).json({ message: "Your account is not active" });
+  }
+  
+  next();
+};
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  const httpServer = createServer(app);
+  
+  // ==================== Auth Routes ====================
+  
+  // Login route
+  app.post("/api/login", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+      
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      
+      // In a real app, we would create and return a JWT token here
+      // For now, we'll return the user
+      res.json({ 
+        user: {
+          ...user,
+          password: undefined, // Don't send password back to client
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+  
+  // Register route
+  app.post("/api/register", async (req: Request, res: Response) => {
+    try {
+      const userData = insertUserSchema.parse({
+        ...req.body,
+        role: "photographer", // Force role to be photographer
+        status: "active",     // Default to active status
+      });
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      
+      if (existingUser) {
+        return res.status(400).json({ message: "Email is already in use" });
+      }
+      
+      const user = await storage.createUser(userData);
+      
+      res.status(201).json({ 
+        user: {
+          ...user,
+          password: undefined, // Don't send password back to client
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid registration data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+  
+  // ==================== User Routes ====================
+  
+  // Get all users (admin only)
+  app.get("/api/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getUsers();
+      
+      // Don't send passwords back to client
+      const sanitizedUsers = users.map(user => ({
+        ...user,
+        password: undefined,
+      }));
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+  
+  // Get user by ID (admin or self)
+  app.get("/api/users/:id", authenticate, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Check if user is requesting own data or is admin
+      if (req.user.id !== userId && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized to access this user" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = user;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve user" });
+    }
+  });
+  
+  // Create user (admin only)
+  app.post("/api/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      
+      if (existingUser) {
+        return res.status(400).json({ message: "Email is already in use" });
+      }
+      
+      const user = await storage.createUser(userData);
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = user;
+      
+      res.status(201).json(sanitizedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+  
+  // Update user (admin or self)
+  app.patch("/api/users/:id", authenticate, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Check if user is updating own data or is admin
+      const isAdmin = req.user.role === "admin";
+      const isSelf = req.user.id === userId;
+      
+      if (!isAdmin && !isSelf) {
+        return res.status(403).json({ message: "Not authorized to update this user" });
+      }
+      
+      // If not admin, restrict which fields can be updated
+      const userData = req.body;
+      
+      if (!isAdmin) {
+        // Regular users can only update certain fields
+        const allowedFields = ["name", "password"];
+        
+        Object.keys(userData).forEach(key => {
+          if (!allowedFields.includes(key)) {
+            delete userData[key];
+          }
+        });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = updatedUser;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  // Delete user (admin only)
+  app.delete("/api/users/:id", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Can't delete own account
+      if (user.id === req.user.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      const deleted = await storage.deleteUser(userId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+  
+  // ==================== Project Routes ====================
+  
+  // Get all projects (filtered by photographer if not admin)
+  app.get("/api/projects", authenticate, async (req: Request, res: Response) => {
+    try {
+      let projects;
+      
+      if (req.user.role === "admin") {
+        // Admins can see all projects
+        projects = await storage.getProjects();
+      } else {
+        // Photographers can only see their own projects
+        projects = await storage.getProjects(req.user.id);
+      }
+      
+      res.json(projects);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve projects" });
+    }
+  });
+  
+  // Get project by ID
+  app.get("/api/projects/:id", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(project);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve project" });
+    }
+  });
+  
+  // Create project (authenticated photographer)
+  app.post("/api/projects", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      // In a real app, this would use multer to handle file uploads
+      // For now, we'll simulate the file uploads
+      
+      const { name, clientName, clientEmail, photographerId } = req.body;
+      
+      // Validate project data
+      const projectData = insertProjectSchema.parse({
+        name,
+        clientName,
+        clientEmail,
+        photographerId: parseInt(photographerId),
+      });
+      
+      // Check if photographer ID matches authenticated user
+      if (projectData.photographerId !== req.user.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Cannot create projects for other photographers" });
+      }
+      
+      // Simulate photo processing
+      const photos = [
+        { 
+          id: '', // Will be set by storage
+          url: 'https://images.unsplash.com/photo-1529634597503-139d3726fed5', 
+          filename: 'wedding_photo_1.jpg' 
+        },
+        { 
+          id: '', // Will be set by storage
+          url: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b', 
+          filename: 'wedding_photo_2.jpg' 
+        },
+        { 
+          id: '', // Will be set by storage
+          url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6', 
+          filename: 'wedding_photo_3.jpg' 
+        },
+        { 
+          id: '', // Will be set by storage
+          url: 'https://images.unsplash.com/photo-1519741497674-611481863552', 
+          filename: 'wedding_photo_4.jpg' 
+        }
+      ];
+      
+      const project = await storage.createProject(projectData, photos);
+      
+      res.status(201).json(project);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid project data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create project" });
+    }
+  });
+  
+  // Finalize project selections (public)
+  app.patch("/api/projects/:id/finalize", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { selectedPhotos } = req.body;
+      
+      if (!Array.isArray(selectedPhotos)) {
+        return res.status(400).json({ message: "Selected photos must be an array" });
+      }
+      
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Validate that all selected photos exist in the project
+      const validPhotoIds = project.photos.map(photo => photo.id);
+      const invalidPhotoIds = selectedPhotos.filter(id => !validPhotoIds.includes(id));
+      
+      if (invalidPhotoIds.length > 0) {
+        return res.status(400).json({ 
+          message: "Some selected photos don't exist in this project",
+          invalidIds: invalidPhotoIds
+        });
+      }
+      
+      const updatedProject = await storage.finalizeProjectSelection(projectId, selectedPhotos);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(updatedProject);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to finalize project selections" });
+    }
+  });
+  
+  // Archive project (photographer only)
+  app.patch("/api/projects/:id/archive", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Check if photographer ID matches authenticated user
+      if (project.photographerId !== req.user.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Cannot archive projects of other photographers" });
+      }
+      
+      const updatedProject = await storage.archiveProject(projectId);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(updatedProject);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to archive project" });
+    }
+  });
+  
+  // Reopen project (photographer only)
+  app.patch("/api/projects/:id/reopen", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Check if photographer ID matches authenticated user
+      if (project.photographerId !== req.user.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Cannot reopen projects of other photographers" });
+      }
+      
+      const updatedProject = await storage.reopenProject(projectId);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(updatedProject);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reopen project" });
+    }
+  });
+  
+  // ==================== Webhook Route ====================
+  
+  // Payment webhook
+  app.post("/api/webhook", async (req: Request, res: Response) => {
+    try {
+      // Validate webhook payload
+      const webhookPayloadSchema = z.object({
+        type: z.string(),
+        email: z.string().email(),
+        subscription_id: z.string(),
+        timestamp: z.string().datetime(),
+      });
+      
+      const payload = webhookPayloadSchema.parse(req.body);
+      
+      // Process the webhook event
+      const updatedUser = await storage.handleWebhookEvent(payload);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ 
+          message: "User not found",
+          event: "processed",
+          status: "warning"
+        });
+      }
+      
+      res.json({ 
+        message: "Webhook processed successfully",
+        event: payload.type,
+        userStatus: updatedUser.status
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid webhook payload", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to process webhook" });
+    }
+  });
+
+  return httpServer;
+}
