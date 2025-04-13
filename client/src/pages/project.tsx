@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PhotoCard from "@/components/photo-card";
 import { Project } from "@shared/schema";
-import { Check } from "lucide-react";
+import { Check, Edit, ArrowLeftCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -18,6 +18,7 @@ import {
 
 export default function ProjectView() {
   const { id } = useParams<{ id: string }>();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
@@ -96,20 +97,41 @@ export default function ProjectView() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back and Edit buttons */}
+        <div className="flex justify-between items-center mb-6">
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2"
+            onClick={() => setLocation("/dashboard")}
+          >
+            <ArrowLeftCircle className="h-5 w-5" />
+            Voltar para Dashboard
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setLocation(`/project/${id}/edit`)}
+          >
+            <Edit className="h-4 w-4" />
+            Editar Galeria
+          </Button>
+        </div>
+        
         <div className="text-center mb-12">
           <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
             {project.name}
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
             {isFinalized
-              ? "Thank you for making your selection."
-              : "Select the photos you'd like to keep by clicking on them."}
+              ? "Obrigado por fazer sua seleção."
+              : "Selecione as fotos que você gostaria de manter clicando nelas."}
           </p>
           <div className="mt-4 inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700">
             <span className="font-medium">{selectedPhotos.length}</span>
-            <span className="mx-1">of</span>
+            <span className="mx-1">de</span>
             <span className="font-medium">{project.photos?.length || 0}</span>
-            <span className="ml-1">selected</span>
+            <span className="ml-1">selecionadas</span>
           </div>
         </div>
         

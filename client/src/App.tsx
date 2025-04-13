@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Upload from "@/pages/upload";
 import Project from "@/pages/project";
 import ProjectView from "@/pages/project-view";
+import ProjectEdit from "@/pages/project-edit";
 import Admin from "@/pages/admin";
 import { useAuth } from "./providers/auth-provider";
 import { useEffect, useState } from "react";
@@ -84,6 +85,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/upload" component={Upload} />
       <Route path="/project/:id" component={Project} />
+      <Route path="/project/:id/edit" component={ProjectEdit} />
       <Route path="/project-view/:id">
         {(params) => <ProjectViewPublicRoute params={params} />}
       </Route>
