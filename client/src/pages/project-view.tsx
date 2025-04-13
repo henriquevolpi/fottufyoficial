@@ -43,9 +43,12 @@ interface Project {
   finalizado?: boolean;
 }
 
-export default function ProjectView() {
-  const params = useParams<{ id: string }>();
+export default function ProjectView({ params }: { params?: { id: string } }) {
+  const urlParams = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  
+  // Use os parâmetros passados ou os da URL
+  const projectId = params?.id || urlParams.id;
   const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,23 +84,24 @@ export default function ProjectView() {
         }
         
         // Verificar se o ID é um número válido
-        if (!params.id) {
+        if (!projectId) {
           console.error('ID do projeto não fornecido');
           throw new Error('ID do projeto não fornecido');
         }
         
-        const projectId = parseInt(params.id);
-        if (isNaN(projectId)) {
-          console.error('ID do projeto inválido:', params.id);
+        const projectIdNum = parseInt(projectId);
+        if (isNaN(projectIdNum)) {
+          console.error('ID do projeto inválido:', projectId);
           throw new Error('ID do projeto inválido');
         }
         
-        console.log('Buscando projeto com ID:', projectId);
+        console.log('Buscando projeto com ID:', projectIdNum);
         
-        const foundProject = projects.find(p => p.id === projectId);
+        // Aqui fazemos a busca pelo ID como número
+        const foundProject = projects.find(p => p.id === projectIdNum);
         
         if (!foundProject) {
-          console.error('Projeto não encontrado com ID:', projectId);
+          console.error('Projeto não encontrado com ID:', projectIdNum);
           throw new Error('Projeto não encontrado');
         }
         
@@ -135,7 +139,7 @@ export default function ProjectView() {
     };
     
     loadProject();
-  }, [params.id, toast]);
+  }, [projectId, toast]);
   
   // Alternar seleção de foto
   const togglePhotoSelection = (photoId: string) => {

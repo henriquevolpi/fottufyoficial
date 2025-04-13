@@ -84,6 +84,51 @@ export default function Login() {
           onClick={() => {
             // Para acessar diretamente a página do cliente (contorna a autenticação)
             localStorage.setItem("project_view_bypass", "true");
+            
+            // Inicializar os dados de projetos se não existirem
+            if (!localStorage.getItem('projects')) {
+              // Criar dados de exemplo para demonstração
+              const exampleProjects = [
+                {
+                  id: 1,
+                  nome: "Casamento Ana e Pedro",
+                  cliente: "Ana Silva",
+                  emailCliente: "ana@example.com",
+                  data: "2023-05-15",
+                  status: "pendente",
+                  fotos: 50,
+                  selecionadas: 0,
+                  fotografoId: 1,
+                  photos: Array(50).fill(null).map((_, i) => ({
+                    id: `foto-${i+1}`,
+                    url: `https://source.unsplash.com/random/800x600?wedding&sig=${i}`,
+                    filename: `DSC_${1000 + i}.jpg`,
+                    selected: false
+                  }))
+                },
+                {
+                  id: 2,
+                  nome: "Ensaio de 15 Anos - Júlia",
+                  cliente: "Júlia Mendes",
+                  emailCliente: "julia@example.com",
+                  data: "2023-06-20",
+                  status: "pendente",
+                  fotos: 30,
+                  selecionadas: 0,
+                  fotografoId: 1,
+                  photos: Array(30).fill(null).map((_, i) => ({
+                    id: `foto-${i+1}`,
+                    url: `https://source.unsplash.com/random/800x600?portrait&sig=${i}`,
+                    filename: `IMG_${2000 + i}.jpg`,
+                    selected: false
+                  }))
+                }
+              ];
+              
+              localStorage.setItem('projects', JSON.stringify(exampleProjects));
+              console.log("Dados de exemplo inicializados com sucesso!");
+            }
+            
             const projectId = 2; // ID do projeto exemplo
             window.location.href = `/project-view/${projectId}`;
           }}
