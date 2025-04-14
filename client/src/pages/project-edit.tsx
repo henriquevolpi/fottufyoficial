@@ -84,6 +84,138 @@ export default function ProjectEdit() {
     setNewPhotos(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
+  
+  // Função para fazer upload das novas fotos para o projeto
+  const uploadPhotos = async () => {
+    if (!project || newPhotos.length === 0) return;
+    
+    try {
+      setIsUploading(true);
+      
+      // Processar as fotos para upload (converter para URL base64 para simplificar)
+      const processedPhotos = await Promise.all(
+        newPhotos.map(async (file) => {
+          // Gerar um ID único para a foto
+          const photoId = nanoid();
+          
+          // Ler o arquivo como base64 para salvar no localStorage
+          const reader = new FileReader();
+          const base64Promise = new Promise<string>((resolve) => {
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+          
+          const url = await base64Promise;
+          
+          return {
+            id: photoId,
+            url: url,
+            filename: file.name,
+            selected: false
+          };
+        })
+      );
+      
+      // Primeiro tentar usar a API
+      try {
+        // Em um sistema real, faríamos upload para o servidor usando FormData
+        // Aqui, simulamos adicionando as fotos ao projeto existente
+        const response = await fetch(`/api/projects/${project.id}/photos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ photos: processedPhotos }),
+        });
+        
+        if (response.ok) {
+          // Sucesso! Limpar as fotos carregadas
+          clearPhotos();
+          
+          toast({
+            title: "Fotos adicionadas com sucesso",
+            description: `${processedPhotos.length} nova(s) foto(s) adicionada(s) ao projeto.`,
+          });
+          
+          // Recarregar o projeto para mostrar as novas fotos
+          setTimeout(() => {
+            setLocation(`/project/${project.id}`);
+          }, 1000);
+          
+          return;
+        } else {
+          console.error("Erro ao adicionar fotos:", await response.text());
+          // Continuar com o fallback para localStorage
+        }
+      } catch (apiError) {
+        console.error("Erro na API ao adicionar fotos:", apiError);
+        // Continuar com fallback para localStorage
+      }
+      
+      // Fallback: Atualizar no localStorage
+      const storedProjects = localStorage.getItem('projects');
+      if (!storedProjects) {
+        throw new Error('Erro ao atualizar: projetos não encontrados');
+      }
+      
+      const projects = JSON.parse(storedProjects);
+      const projectIndex = projects.findIndex((p: any) => p.id === project.id);
+      
+      if (projectIndex === -1) {
+        throw new Error('Erro ao atualizar: projeto não encontrado');
+      }
+      
+      // Atualizar o projeto com as novas fotos
+      const updatedProject = { ...projects[projectIndex] };
+      
+      // Garantir que o projeto tenha um array de fotos
+      if (!updatedProject.photos) {
+        updatedProject.photos = [];
+      }
+      
+      // Adicionar as novas fotos ao projeto
+      updatedProject.photos = [...updatedProject.photos, ...processedPhotos];
+      
+      // Atualizar o contador de fotos
+      updatedProject.fotos = updatedProject.photos.length;
+      
+      // Salvar no localStorage
+      projects[projectIndex] = updatedProject;
+      localStorage.setItem('projects', JSON.stringify(projects));
+      
+      // Limpar as fotos carregadas
+      clearPhotos();
+      
+      toast({
+        title: "Fotos adicionadas com sucesso",
+        description: `${processedPhotos.length} nova(s) foto(s) adicionada(s) ao projeto.`,
+      });
+      
+      // Recarregar o projeto para mostrar as novas fotos
+      setTimeout(() => {
+        setLocation(`/project/${project.id}`);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Erro ao adicionar fotos:', error);
+      toast({
+        title: "Erro ao adicionar fotos",
+        description: "Ocorreu um problema ao adicionar novas fotos ao projeto.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  // Limpar todas as fotos da lista de upload
+  const clearPhotos = () => {
+    // Liberar todas as URLs de preview
+    photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    
+    setNewPhotos([]);
+    setPhotoPreviewUrls([]);
+  };
 
   // Inicializar o formulário com react-hook-form
   const form = useForm<ProjectEditFormValues>({
@@ -461,6 +593,82 @@ export default function ProjectEdit() {
               </div>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+      
+      {/* Seção para adicionar novas fotos */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Adicionar Novas Fotos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div 
+            {...getRootProps()} 
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <div className="flex flex-col items-center justify-center gap-2">
+              <ImagePlus className="h-10 w-10 text-gray-400" />
+              <h3 className="text-lg font-medium">
+                {isDragActive ? "Solte as imagens aqui..." : "Arraste e solte as fotos aqui"}
+              </h3>
+              <p className="text-sm text-gray-500">
+                ou clique para selecionar arquivos
+              </p>
+            </div>
+          </div>
+          
+          {/* Previews das fotos selecionadas */}
+          {photoPreviewUrls.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-medium mb-3">Novas fotos selecionadas ({photoPreviewUrls.length})</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {photoPreviewUrls.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square overflow-hidden rounded-md border bg-gray-50">
+                      <img 
+                        src={url} 
+                        alt={`Preview ${index}`} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md border hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4 text-red-500" />
+                    </button>
+                    <p className="text-xs text-gray-500 truncate mt-1">
+                      {newPhotos[index]?.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Botão para fazer upload */}
+              <div className="mt-4 flex justify-end">
+                <Button 
+                  onClick={uploadPhotos}
+                  disabled={isUploading || photoPreviewUrls.length === 0}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Adicionar Fotos ao Projeto
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
