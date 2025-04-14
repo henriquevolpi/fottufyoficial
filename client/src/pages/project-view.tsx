@@ -381,8 +381,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           <p className="text-gray-600 mb-6">
             O projeto que você está tentando acessar não existe ou foi removido.
           </p>
-          <Button onClick={() => setLocation("/")}>
-            Voltar para a Página Inicial
+          <Button onClick={() => setLocation("/dashboard")}>
+            Voltar para o Dashboard
           </Button>
         </div>
       </div>
@@ -457,9 +457,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <Button 
               variant="outline" 
               className="mt-2"
-              onClick={() => setLocation("/")}
+              onClick={() => setLocation("/dashboard")}
             >
-              Voltar para Início
+              Voltar para o Dashboard
             </Button>
           </div>
         ) : null}
