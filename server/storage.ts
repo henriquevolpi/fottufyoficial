@@ -63,14 +63,8 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000 // limpar sessões expiradas a cada 24 horas
     });
     
-    // Add default admin user
-    this.createUser({
-      name: "Admin User",
-      email: "admin@admin.com",
-      password: "123456",
-      role: "admin",
-      status: "active",
-    });
+    // Não criamos mais usuário admin por padrão
+    // Usuários serão criados apenas via registro
   }
 
   // User methods
