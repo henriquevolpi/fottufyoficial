@@ -81,10 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem("user");
     setUser(null);
     setIsAuthenticated(false);
-    setLocation("/login");
+    setLocation("/auth");
     toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso.",
+      title: "Logout successful",
+      description: "You have been successfully logged out.",
     });
   };
 
