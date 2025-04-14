@@ -124,11 +124,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <dt className="text-sm font-medium text-gray-500">Client</dt>
-            <dd className="mt-1 text-sm text-gray-900">{project.clientName || project.cliente}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{project.clientName || (project as any).cliente}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Email</dt>
-            <dd className="mt-1 text-sm text-gray-900">{project.clientEmail || project.emailCliente}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{project.clientEmail || (project as any).emailCliente}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Total Photos</dt>
