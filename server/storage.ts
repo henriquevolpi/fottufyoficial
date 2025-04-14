@@ -450,17 +450,59 @@ export class MemStorage implements IStorage {
   }
 
   async finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined> {
+    console.log(`MemStorage: Finalizando seleção para projeto ID=${id}, fotos selecionadas: ${selectedPhotos.length}`);
+    
     const project = this.projects.get(id);
-    if (!project) return undefined;
+    if (!project) {
+      console.log(`MemStorage: Projeto ID=${id} não encontrado para finalização`);
+      
+      // Buscar em todos os projetos, talvez haja uma questão com o formato do ID
+      const allProjects = Array.from(this.projects.values());
+      const foundProject = allProjects.find(p => p.id.toString() === id.toString());
+      
+      if (!foundProject) {
+        console.log(`MemStorage: Projeto ID=${id} não encontrado em nenhum formato`);
+        return undefined;
+      }
+      
+      console.log(`MemStorage: Projeto ID=${id} encontrado com ID alternativo: ${foundProject.id}`);
+      
+      // Atualizar projeto com fotos selecionadas e mudar status para "reviewed"
+      const updatedProject = {
+        ...foundProject,
+        selectedPhotos,
+        status: "reviewed",
+      };
+      
+      // Garantir que as fotos tenham o estado correto de seleção
+      if (updatedProject.photos) {
+        updatedProject.photos = updatedProject.photos.map(photo => ({
+          ...photo,
+          selected: selectedPhotos.includes(photo.id)
+        }));
+      }
+      
+      this.projects.set(foundProject.id, updatedProject);
+      return updatedProject;
+    }
 
-    // Update project with selected photos and set status to reviewed
+    // Atualizar projeto com fotos selecionadas e mudar status para "reviewed"
     const updatedProject = {
       ...project,
       selectedPhotos,
       status: "reviewed",
     };
     
+    // Garantir que as fotos tenham o estado correto de seleção
+    if (updatedProject.photos) {
+      updatedProject.photos = updatedProject.photos.map(photo => ({
+        ...photo,
+        selected: selectedPhotos.includes(photo.id)
+      }));
+    }
+    
     this.projects.set(id, updatedProject);
+    console.log(`MemStorage: Projeto ID=${id} finalizado com sucesso`);
     return updatedProject;
   }
 

@@ -177,10 +177,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         // Estratégia 3: Busca por correspondência parcial
         if (!foundProject) {
           foundProject = projects.find(p => {
-            if (typeof p.id === 'string' && typeof projectId === 'string') {
-              return p.id.includes(projectId) || projectId.includes(p.id);
-            }
-            return false;
+            const pid = p.id.toString();
+            const searchId = projectId.toString();
+            return pid.includes(searchId) || searchId.includes(pid);
           });
           if (foundProject) {
             console.log('Projeto encontrado pela estratégia 3 (correspondência parcial)');
