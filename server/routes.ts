@@ -392,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Check if photographer ID matches authenticated user
-      if (projectData.photographerId !== req.user.id && req.user.role !== "admin") {
+      if (req.user && (projectData.photographerId !== req.user.id && req.user.role !== "admin")) {
         return res.status(403).json({ message: "Cannot create projects for other photographers" });
       }
       
@@ -439,14 +439,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar o limite de uploads do usuário
       const photoCount = processedPhotos.length;
-      const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
       
-      if (!hasUploadLimit) {
-        return res.status(403).json({ 
-          message: "Limite de uploads atingido", 
-          error: "UPLOAD_LIMIT_REACHED",
-          details: "Você atingiu o limite de uploads do seu plano atual. Faça upgrade para continuar enviando fotos."
-        });
+      if (req.user) {
+        const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
+        
+        if (!hasUploadLimit) {
+          return res.status(403).json({ 
+            message: "Limite de uploads atingido", 
+            error: "UPLOAD_LIMIT_REACHED",
+            details: "Você atingiu o limite de uploads do seu plano atual. Faça upgrade para continuar enviando fotos."
+          });
+        }
       }
       
       // Criar o projeto
@@ -454,7 +457,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Projeto criado com ID: ${project.id}`);
       
       // Atualizar contador de uploads
-      await storage.updateUploadUsage(req.user.id, photoCount);
+      if (req.user) {
+        await storage.updateUploadUsage(req.user.id, photoCount);
+      }
       
       res.status(201).json(project);
     } catch (error) {
@@ -547,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if photographer ID matches authenticated user
-      if (project.photographerId !== req.user.id && req.user.role !== "admin") {
+      if (req.user && (project.photographerId !== req.user.id && req.user.role !== "admin")) {
         return res.status(403).json({ message: "Cannot archive projects of other photographers" });
       }
       
