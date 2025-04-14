@@ -1323,10 +1323,14 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projetos
                   .filter(projeto => projeto.status === "arquivado")
-                  .filter(projeto => 
-                    projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                    projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
+                  .filter(projeto => {
+                    // Verificar se os campos existem antes de acessá-los (compatibilidade)
+                    const projectName = projeto.nome || projeto.name || '';
+                    const clientName = projeto.cliente || projeto.clientName || '';
+                    
+                    return projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                  })
                   .map((projeto) => (
                     <ProjetoCard 
                       key={projeto.id} 

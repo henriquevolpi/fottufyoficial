@@ -18,7 +18,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const [isReopening, setIsReopening] = useState(false);
   
   // Format date - handle both createdAt or data (compatibility)
-  const dateValue = project.createdAt || project.data;
+  const dateValue = project.createdAt || (project as any).data;
   const formattedDate = new Date(dateValue).toLocaleDateString('pt-BR', {
     year: 'numeric',
     month: 'long',
@@ -108,7 +108,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     <Card className="overflow-hidden">
       <div className="px-4 py-5 sm:px-6 flex justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
+          <h3 className="text-lg font-medium text-gray-900">{project.name || (project as any).nome}</h3>
           <p className="mt-1 text-sm text-gray-500">
             Created on {formattedDate}
           </p>
@@ -124,11 +124,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <dt className="text-sm font-medium text-gray-500">Client</dt>
-            <dd className="mt-1 text-sm text-gray-900">{project.clientName}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{project.clientName || project.cliente}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Email</dt>
-            <dd className="mt-1 text-sm text-gray-900">{project.clientEmail}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{project.clientEmail || project.emailCliente}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Total Photos</dt>
