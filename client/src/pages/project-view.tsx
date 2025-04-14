@@ -563,9 +563,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               onClick={() => togglePhotoSelection(photo.id)}
             >
               <div className="relative h-64">
-                <div 
-                  className="absolute inset-0 bg-cover bg-center" 
-                  style={{ backgroundImage: `url(${photo.url})` }}
+                <img
+                  src={photo.url}
+                  alt={photo.filename}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
+                    console.log(`Erro ao carregar imagem ${photo.id}, usando fallback`);
+                  }}
                 />
                 
                 {/* Selection indicator */}

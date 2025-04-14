@@ -37,13 +37,15 @@ export default function PhotoCard({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative w-full h-60 bg-gray-200 rounded-lg overflow-hidden group-hover:opacity-75">
-        {/* Using placeholder image */}
-        <div 
-          className="w-full h-full object-cover" 
-          style={{ 
-            backgroundImage: `url(${url})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+        {/* Usando tag img para garantir carregamento correto */}
+        <img 
+          src={url} 
+          alt={filename}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // Fallback para uma imagem padrão caso a URL original falhe
+            e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
+            console.log(`Erro ao carregar imagem ${id}, usando fallback`);
           }}
         />
         <div className={cn(
