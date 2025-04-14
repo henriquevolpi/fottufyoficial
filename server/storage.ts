@@ -263,17 +263,17 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) return false;
     
-    // Verificar se assinatura está ativa
+    // Check if subscription is active
     if (user.subscriptionStatus !== "active" && user.planType !== "free") {
       return false;
     }
     
-    // Se o usuário tem plano ilimitado (uploadLimit < 0), sempre retorna true
-    if (user.uploadLimit < 0) {
+    // If user has unlimited plan (uploadLimit < 0), always return true
+    if (user.uploadLimit !== null && user.uploadLimit < 0) {
       return true;
     }
     
-    // Verificar se o usuário tem limite disponível
+    // Check if user has available upload quota
     const uploadLimit = user.uploadLimit || 0;
     const usedUploads = user.usedUploads || 0;
     const availableUploads = uploadLimit - usedUploads;
@@ -284,16 +284,18 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) return undefined;
     
-    // Calcular novo valor de uploads usados
+    // Calculate new value for used uploads
     const currentUsed = user.usedUploads || 0;
     let newUsedUploads = currentUsed + addCount;
     
-    // Garantir que não fique negativo
+    // Ensure it never goes below zero
     if (newUsedUploads < 0) {
       newUsedUploads = 0;
     }
     
-    // Atualizar usuário
+    console.log(`Upload usage updated for user ${userId}: ${currentUsed} → ${newUsedUploads} (added ${addCount})`);
+    
+    // Update user
     const updatedUser = await this.updateUser(userId, {
       usedUploads: newUsedUploads,
     });
@@ -363,10 +365,10 @@ export class MemStorage implements IStorage {
   
   // Método auxiliar para inicializar dados de exemplo
   private initializeExampleProjects(): void {
-    // Não inicializamos mais projetos de exemplo
-    // Cada usuário começará com uma lista vazia de projetos
+    // No example projects will be initialized
+    // Each user will start with an empty project list
     this.projectId = 1;
-    console.log("MemStorage: Nenhum projeto de exemplo será criado. Usuários começarão com uma lista vazia.");
+    console.log("MemStorage: No example projects will be created. Users will start with an empty list.");
   }
 
   async getProjects(photographerId?: number): Promise<Project[]> {

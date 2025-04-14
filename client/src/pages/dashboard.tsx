@@ -968,9 +968,9 @@ function Estatisticas() {
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
                   {isUnlimited ? (
-                    "Seu plano permite uploads ilimitados"
+                    "Your plan allows unlimited uploads"
                   ) : (
-                    `${user?.uploadUsage || 0} de ${user?.subscription?.uploadLimit || 0} fotos`
+                    `${user?.uploadUsage || 0} of ${user?.subscription?.uploadLimit || 0} photos`
                   )}
                 </p>
               </div>

@@ -490,9 +490,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!hasUploadLimit) {
           return res.status(403).json({ 
-            message: "Limite de uploads atingido", 
+            message: "Upload limit reached", 
             error: "UPLOAD_LIMIT_REACHED",
-            details: "Você atingiu o limite de uploads do seu plano atual. Faça upgrade para continuar enviando fotos."
+            details: "You have reached the upload limit for your current plan. Please upgrade to continue uploading photos."
           });
         }
       }
@@ -682,7 +682,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user && req.user.role !== "admin") {
         const canUpload = await storage.checkUploadLimit(req.user.id, photos.length);
         if (!canUpload) {
-          return res.status(403).json({ message: "Upload limit exceeded" });
+          return res.status(403).json({ 
+            message: "Upload limit exceeded", 
+            error: "UPLOAD_LIMIT_REACHED",
+            details: "You have reached the upload limit for your current plan. Please upgrade to continue uploading photos."
+          });
         }
         
         // Atualizar o uso de upload
