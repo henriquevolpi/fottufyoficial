@@ -97,16 +97,41 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         // Não validamos o formato do ID, apenas verificamos se existe
         console.log('Buscando projeto com ID (sem validação de formato):', projectId);
         
-        // Tenta buscar do backend primeiro
+        // Tenta buscar do backend primeiro com mais detalhes de debug
         try {
           // Melhorado para usar o ID original da URL, não apenas números
           console.log('Buscando projeto com ID original:', projectId);
           const response = await fetch(`/api/projects/${projectId}`);
           
+          console.log('Status da resposta API:', response.status);
+          
           if (response.ok) {
             const projectData = await response.json();
             console.log('Projeto carregado da API:', projectData);
+            
+            // Adicionar log detalhado para debug do projeto retornado
+            console.log('Propriedades do projeto retornado:',
+              Object.keys(projectData).map(key => `${key}: ${typeof projectData[key]} - ${
+                Array.isArray(projectData[key]) 
+                  ? `Array com ${projectData[key].length} itens` 
+                  : typeof projectData[key] === 'object' && projectData[key] !== null
+                    ? JSON.stringify(projectData[key]).substring(0, 100) + '...' 
+                    : projectData[key]
+              }`)
+            );
+            
+            // Verificar se tem array de fotos
+            if (projectData.photos) {
+              console.log(`Projeto tem ${projectData.photos.length} fotos`);
+              if (projectData.photos.length > 0) {
+                console.log('Exemplo da primeira foto:', JSON.stringify(projectData.photos[0]));
+              }
+            } else {
+              console.warn('Projeto não tem fotos ou array de fotos é null/undefined');
+            }
+            
             const adaptedProject = adaptProject(projectData);
+            console.log('Projeto após adaptação:', adaptedProject);
             setProject(adaptedProject);
             
             // Inicializar seleções se houver
@@ -121,6 +146,25 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             
             setSelectedPhotos(preSelectedPhotos);
             setIsFinalized(!!adaptedProject.finalizado);
+            
+            // Atualizar o localStorage para manter consistência
+            const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+            
+            // Verificar se o projeto já existe no localStorage
+            const existingIndex = storedProjects.findIndex((p: any) => p.id.toString() === projectId);
+            
+            if (existingIndex >= 0) {
+              // Atualizar o projeto existente
+              storedProjects[existingIndex] = adaptedProject;
+              console.log('Projeto existente atualizado no localStorage');
+            } else {
+              // Adicionar o novo projeto
+              storedProjects.push(adaptedProject);
+              console.log('Novo projeto adicionado ao localStorage');
+            }
+            
+            localStorage.setItem('projects', JSON.stringify(storedProjects));
+            
             return;
           } else {
             const error = await response.json();

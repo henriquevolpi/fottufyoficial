@@ -646,10 +646,15 @@ function UploadModal({
       const updatedProjects = [...existingProjects, adaptedProject];
       localStorage.setItem('projects', JSON.stringify(updatedProjects));
       
-      // Exibir notificação de sucesso
+      // Gerar link público para compartilhamento
+      const projectLink = `${window.location.origin}/project-view/${newProject.id}`;
+      console.log("Link para compartilhamento criado:", projectLink);
+      
+      // Exibir notificação de sucesso com instruções para copiar o link
       toast({
         title: "Projeto criado com sucesso!",
-        description: `Projeto "${values.nome}" criado com ID ${newProject.id}.`,
+        description: `Projeto "${values.nome}" criado com ID ${newProject.id}. Você pode compartilhar o link com o cliente.`,
+        duration: 5000,
       });
       
       // Fechar modal
