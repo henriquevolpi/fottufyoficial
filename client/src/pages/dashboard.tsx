@@ -987,12 +987,12 @@ export default function Dashboard() {
           setIsLoading(false);
         }, 600);
       } else {
-        // Não temos projetos salvos, inicializar com exemplos
-        console.log("Não há projetos salvos. Inicializando com exemplos.");
-        localStorage.setItem('projects', JSON.stringify(PROJETOS_EXEMPLO));
+        // Não temos projetos salvos, inicializar com array vazio
+        console.log("Não há projetos salvos. Iniciando com dashboard vazio.");
+        localStorage.setItem('projects', JSON.stringify([]));
         
         setTimeout(() => {
-          setProjetos(PROJETOS_EXEMPLO);
+          setProjetos([]);
           setIsLoading(false);
         }, 600);
       }
@@ -1137,7 +1137,7 @@ export default function Dashboard() {
                   />
                 ))}
               </div>
-            ) : (
+            ) : searchTerm ? (
               <div className="text-center py-12">
                 <h3 className="mt-2 text-lg font-medium text-gray-900">
                   Nenhum projeto encontrado
@@ -1151,64 +1151,125 @@ export default function Dashboard() {
                   </Button>
                 </div>
               </div>
+            ) : (
+              <div className="text-center py-12">
+                <Camera className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                  Nenhum projeto ainda
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Clique no botão "Novo Projeto" acima para criar sua primeira galeria.
+                </p>
+                <div className="mt-6">
+                  <Button onClick={() => setIsUploadModalOpen(true)}>
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Criar Primeiro Projeto
+                  </Button>
+                </div>
+              </div>
             )}
           </TabsContent>
           
           <TabsContent value="pendentes">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projetos
-                .filter(projeto => projeto.status === "pendente")
-                .filter(projeto => 
-                  projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((projeto) => (
-                  <ProjetoCard 
-                    key={projeto.id} 
-                    projeto={projeto} 
-                    onDelete={handleDeleteProject}
-                  />
-                ))
-              }
-            </div>
+            {projetos.filter(projeto => projeto.status === "pendente").length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projetos
+                  .filter(projeto => projeto.status === "pendente")
+                  .filter(projeto => 
+                    projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((projeto) => (
+                    <ProjetoCard 
+                      key={projeto.id} 
+                      projeto={projeto} 
+                      onDelete={handleDeleteProject}
+                    />
+                  ))
+                }
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="mt-2 text-lg font-medium text-gray-900">
+                  Nenhum projeto pendente
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Crie um novo projeto para começar.
+                </p>
+                <div className="mt-6">
+                  <Button onClick={() => setIsUploadModalOpen(true)}>
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Criar Projeto
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="revisados">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projetos
-                .filter(projeto => projeto.status === "revisado")
-                .filter(projeto => 
-                  projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((projeto) => (
-                  <ProjetoCard 
-                    key={projeto.id} 
-                    projeto={projeto} 
-                    onDelete={handleDeleteProject}
-                  />
-                ))
-              }
-            </div>
+            {projetos.filter(projeto => projeto.status === "revisado").length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projetos
+                  .filter(projeto => projeto.status === "revisado")
+                  .filter(projeto => 
+                    projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((projeto) => (
+                    <ProjetoCard 
+                      key={projeto.id} 
+                      projeto={projeto} 
+                      onDelete={handleDeleteProject}
+                    />
+                  ))
+                }
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="mt-2 text-lg font-medium text-gray-900">
+                  Nenhum projeto revisado
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Os projetos aparecerão aqui depois que os clientes fizerem suas seleções.
+                </p>
+                <div className="mt-6">
+                  <Button onClick={() => setIsUploadModalOpen(true)}>
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Criar Projeto
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="arquivados">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projetos
-                .filter(projeto => projeto.status === "arquivado")
-                .filter(projeto => 
-                  projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((projeto) => (
-                  <ProjetoCard 
-                    key={projeto.id} 
-                    projeto={projeto} 
-                    onDelete={handleDeleteProject}
-                  />
-                ))
-              }
-            </div>
+            {projetos.filter(projeto => projeto.status === "arquivado").length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projetos
+                  .filter(projeto => projeto.status === "arquivado")
+                  .filter(projeto => 
+                    projeto.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    projeto.cliente.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((projeto) => (
+                    <ProjetoCard 
+                      key={projeto.id} 
+                      projeto={projeto} 
+                      onDelete={handleDeleteProject}
+                    />
+                  ))
+                }
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="mt-2 text-lg font-medium text-gray-900">
+                  Nenhum projeto arquivado
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Os projetos concluídos que você arquivar aparecerão aqui.
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>

@@ -357,11 +357,10 @@ export class MemStorage implements IStorage {
     } else {
       console.log(`MemStorage: Projeto ID=${id} não encontrado`);
       
-      // Se não temos projetos, vamos inicializar alguns dados de exemplo
+      // Não inicializamos mais projetos de exemplo automaticamente
       if (this.projects.size === 0) {
-        console.log("MemStorage: Inicializando projetos de exemplo...");
-        this.initializeExampleProjects();
-        return this.projects.get(id);
+        console.log("MemStorage: Nenhum projeto encontrado e nenhum exemplo será criado.");
+        return undefined;
       }
     }
     
