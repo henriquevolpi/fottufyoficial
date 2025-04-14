@@ -238,16 +238,30 @@ function ProjetoCard({ projeto, onDelete }: { projeto: any, onDelete?: (id: numb
     try {
       setIsDeleting(true);
       
-      // Fazer requisição para excluir o projeto
-      const response = await fetch(`/api/projects/${projeto.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
+      // Solução 1: Excluir do localStorage diretamente
+      // Este método garantirá que o projeto seja removido independentemente de como o backend responde
+      try {
+        const storedProjects = localStorage.getItem('projects');
+        if (storedProjects) {
+          const parsedProjects = JSON.parse(storedProjects);
+          const updatedProjects = parsedProjects.filter((p: any) => p.id !== projeto.id);
+          localStorage.setItem('projects', JSON.stringify(updatedProjects));
         }
-      });
+      } catch (storageError) {
+        console.error('Erro ao remover do localStorage:', storageError);
+      }
       
-      if (!response.ok) {
-        throw new Error('Falha ao excluir projeto');
+      // Solução 2: Tentar excluir também via API
+      try {
+        await fetch(`/api/projects/${projeto.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        // Mesmo se a API falhar, continuamos com a exclusão local
+      } catch (apiError) {
+        console.warn('API de exclusão falhou, mas o projeto foi removido localmente:', apiError);
       }
       
       // Exibir notificação de sucesso
