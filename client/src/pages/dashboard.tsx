@@ -1003,8 +1003,8 @@ export default function Dashboard() {
       const planName = getPlanName(planType);
       
       toast({
-        title: "✅ Assinatura confirmada!",
-        description: `Seu plano ${planName} está ativo agora.`,
+        title: "✅ Subscription confirmed!",
+        description: `Your ${planName} plan is now active.`,
         duration: 5000,
       });
       
@@ -1014,12 +1014,12 @@ export default function Dashboard() {
     }
   }, [toast]);
   
-  // Obter nome do plano baseado no tipo
+  // Get plan name based on plan type
   const getPlanName = (planType: string) => {
     switch(planType) {
-      case 'basic': return 'Básico';
-      case 'standard': return 'Padrão';
-      case 'professional': return 'Profissional';
+      case 'basic': return 'Basic';
+      case 'standard': return 'Standard';
+      case 'professional': return 'Professional';
       default: return planType;
     }
   };
@@ -1031,12 +1031,12 @@ export default function Dashboard() {
       if (userStr) {
         const userData = JSON.parse(userStr);
         setUser(userData);
-        console.log("Dashboard carregado - usuário:", userData);
+        console.log("Dashboard loaded - user:", userData);
       } else {
-        console.log("Nenhum usuário encontrado no localStorage");
+        console.log("No user found in localStorage");
       }
       
-      // Carregar projetos existentes ou inicializar com exemplos
+      // Load existing projects or initialize with empty array
       const projetosStr = localStorage.getItem('projects');
       
       if (projetosStr) {
@@ -1060,10 +1060,10 @@ export default function Dashboard() {
       }
       
     } catch (e) {
-      console.error("Erro ao carregar dados:", e);
+      console.error("Error loading data:", e);
       toast({
-        title: "Erro ao carregar dados",
-        description: "Ocorreu um erro ao carregar os projetos. Por favor, recarregue a página.",
+        title: "Error loading data",
+        description: "An error occurred while loading projects. Please refresh the page.",
         variant: "destructive",
       });
       setIsLoading(false);
