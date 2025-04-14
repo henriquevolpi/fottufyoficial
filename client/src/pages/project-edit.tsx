@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +14,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftCircle, Loader2, Save } from "lucide-react";
+import { ArrowLeftCircle, Loader2, Save, Upload, X, ImagePlus } from "lucide-react";
 import { Project } from "@shared/schema";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useDropzone } from "react-dropzone";
+import { nanoid } from "nanoid";
 
 // Esquema para validação do formulário
 const projectEditSchema = z.object({
@@ -39,6 +41,49 @@ export default function ProjectEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  // Função para lidar com os arquivos selecionados via drag-n-drop
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    // Filtrar apenas imagens
+    const imageFiles = acceptedFiles.filter(file => 
+      file.type.startsWith('image/')
+    );
+    
+    if (imageFiles.length === 0) {
+      toast({
+        title: "Arquivos inválidos",
+        description: "Por favor, selecione apenas arquivos de imagem.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Gerar URLs de preview para as imagens
+    const newUrls = imageFiles.map(file => URL.createObjectURL(file));
+    
+    setNewPhotos(prev => [...prev, ...imageFiles]);
+    setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
+  }, [toast]);
+  
+  // Configurar o dropzone
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+    }
+  });
+  
+  // Remover uma foto da lista de upload
+  const removePhoto = (index: number) => {
+    // Liberar URL de preview
+    URL.revokeObjectURL(photoPreviewUrls[index]);
+    
+    setNewPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
 
   // Inicializar o formulário com react-hook-form
   const form = useForm<ProjectEditFormValues>({
