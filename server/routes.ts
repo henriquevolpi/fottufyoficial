@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertProjectSchema, WebhookPayload, SUBSCRIPTION_PLANS } from "@shared/schema";
+import { insertUserSchema, insertProjectSchema, WebhookPayload, SUBSCRIPTION_PLANS, Project } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
@@ -333,34 +333,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Adicionando logs para debug
       console.log(`Buscando projeto com ID: ${idParam}`);
       
-      // Primeiro tentamos buscar pelo ID numérico (formato backend)
-      let projectId = parseInt(idParam);
-      let project = !isNaN(projectId) ? await storage.getProject(projectId) : null;
+      // Tentar várias estratégias para encontrar o projeto pelo ID fornecido
       
-      // Se não encontrar, tenta buscar nos projetos do localStorage (formato frontend)
+      // Estratégia 1: Buscar diretamente pelo ID como número (para IDs numéricos)
+      let project: Project | undefined;
+      if (!isNaN(parseInt(idParam))) {
+        const numericId = parseInt(idParam);
+        console.log(`Estratégia 1: Buscando projeto com ID numérico ${numericId}`);
+        project = await storage.getProject(numericId);
+      }
+      
+      // Estratégia 2: Verificar todos os projetos e comparar como string
       if (!project) {
-        console.log(`Projeto com ID numérico ${projectId} não encontrado, verificando projetos do localStorage`);
-        
-        // Buscar todos os projetos e tentar encontrar um com o ID correspondente
+        console.log("Estratégia 2: Buscando projeto com comparação de string");
         const allProjects = await storage.getProjects();
         project = allProjects.find(p => p.id.toString() === idParam);
-        
-        // Se ainda não encontrou, tentamos buscar como um timestamp
-        if (!project) {
-          const timestampId = parseInt(idParam);
-          if (!isNaN(timestampId)) {
-            console.log(`Tentando buscar como timestamp: ${timestampId}`);
-            project = allProjects.find(p => p.id === timestampId);
-          }
+      }
+      
+      // Estratégia 3: Se for um ID longo (timestamp), tentar converter e buscar
+      if (!project && idParam.length > 8) {
+        console.log(`Estratégia 3: Buscando como possível timestamp: ${idParam}`);
+        const timestampId = parseInt(idParam);
+        if (!isNaN(timestampId)) {
+          const allProjects = await storage.getProjects();
+          project = allProjects.find(p => p.id === timestampId);
         }
       }
       
+      // Estratégia 4: Verificar se o ID está contido ou contém outro ID (match parcial)
       if (!project) {
-        console.log(`Projeto com ID ${idParam} não encontrado em nenhum formato`);
+        console.log("Estratégia 4: Verificando correspondência parcial de IDs");
+        const allProjects = await storage.getProjects();
+        project = allProjects.find(p => {
+          const projectIdStr = p.id.toString();
+          return projectIdStr.includes(idParam) || idParam.includes(projectIdStr);
+        });
+      }
+      
+      // Se ainda não encontrou, informar que o projeto não existe
+      if (!project) {
+        console.log(`Projeto com ID ${idParam} não encontrado após todas as tentativas`);
         return res.status(404).json({ message: "Project not found" });
       }
       
-      console.log(`Projeto encontrado: ${project.name}`);
+      console.log(`Projeto encontrado: ID=${project.id}, Nome=${project.name}`);
+      console.log(`Status do projeto: ${project.status}`);
+      console.log(`Total de fotos: ${project.photos?.length || 0}`);
       
       // Esta é uma rota pública, então retornamos o projeto completo
       // Em um ambiente de produção, poderíamos adicionar alguma forma de autenticação
@@ -482,32 +500,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Finalizando seleção de fotos para projeto ${idParam}. Fotos selecionadas: ${selectedPhotos.length}`);
       
-      // Primeiro tentamos buscar pelo ID numérico (formato backend)
-      let projectId = parseInt(idParam);
-      let project = !isNaN(projectId) ? await storage.getProject(projectId) : null;
+      // Usar as mesmas estratégias da rota GET para encontrar o projeto
+      // Estratégia 1: Buscar diretamente pelo ID como número (para IDs numéricos)
+      let project: any;
+      let projectId = 0;
       
-      // Se não encontrar, tenta buscar nos projetos do localStorage (formato frontend)
+      if (!isNaN(parseInt(idParam))) {
+        projectId = parseInt(idParam);
+        console.log(`Estratégia 1: Buscando projeto com ID numérico ${projectId}`);
+        project = await storage.getProject(projectId);
+      }
+      
+      // Estratégia 2: Verificar todos os projetos e comparar como string
       if (!project) {
-        console.log(`Projeto com ID numérico ${projectId} não encontrado, verificando projetos do localStorage`);
-        
-        // Buscar todos os projetos e tentar encontrar um com o ID correspondente
+        console.log("Estratégia 2: Buscando projeto com comparação de string");
         const allProjects = await storage.getProjects();
         project = allProjects.find(p => p.id.toString() === idParam);
-        
-        // Se ainda não encontrou, tentamos buscar como um timestamp
-        if (!project) {
-          const timestampId = parseInt(idParam);
-          if (!isNaN(timestampId)) {
-            console.log(`Tentando buscar como timestamp: ${timestampId}`);
-            project = allProjects.find(p => p.id === timestampId);
-            
-            if (project) {
-              projectId = project.id;
-            }
-          }
-        } else {
-          projectId = project.id;
+        if (project) projectId = project.id;
+      }
+      
+      // Estratégia 3: Se for um ID longo (timestamp), tentar converter e buscar
+      if (!project && idParam.length > 8) {
+        console.log(`Estratégia 3: Buscando como possível timestamp: ${idParam}`);
+        const timestampId = parseInt(idParam);
+        if (!isNaN(timestampId)) {
+          const allProjects = await storage.getProjects();
+          project = allProjects.find(p => p.id === timestampId);
+          if (project) projectId = project.id;
         }
+      }
+      
+      // Estratégia 4: Verificar se o ID está contido ou contém outro ID (match parcial)
+      if (!project) {
+        console.log("Estratégia 4: Verificando correspondência parcial de IDs");
+        const allProjects = await storage.getProjects();
+        project = allProjects.find(p => {
+          const projectIdStr = p.id.toString();
+          return projectIdStr.includes(idParam) || idParam.includes(projectIdStr);
+        });
+        if (project) projectId = project.id;
       }
       
       if (!project) {
