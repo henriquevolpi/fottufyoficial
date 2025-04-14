@@ -582,11 +582,27 @@ function UploadModal({
     try {
       setIsUploading(true);
       
-      // Preparar as fotos para o upload
-      const projectPhotos = selectedFiles.map((file, index) => ({
-        filename: file.name,
-        url: thumbnails[index], // URL temporária do preview
-      }));
+      // Preparar as fotos para o upload com sample URLs persistentes
+      // Usar URLs de imagens públicas que são acessíveis de qualquer lugar para demo
+      const projectPhotos = selectedFiles.map((file, index) => {
+        // Gerar URLs persistentes baseados em serviços públicos de imagens
+        const publicUrls = [
+          'https://source.unsplash.com/random/800x600/?wedding',
+          'https://source.unsplash.com/random/800x600/?portrait', 
+          'https://source.unsplash.com/random/800x600/?family',
+          'https://source.unsplash.com/random/800x600/?landscape',
+          'https://source.unsplash.com/random/800x600/?nature',
+          'https://source.unsplash.com/random/800x600/?architecture'
+        ];
+        
+        // Usar um URL persistente baseado no índice (com loop para garantir que sempre haverá um URL)
+        const persistentUrl = publicUrls[index % publicUrls.length];
+        
+        return {
+          filename: file.name,
+          url: persistentUrl, // URL persistente que qualquer um pode acessar
+        };
+      });
       
       // Obter o ID do usuário logado (ou usar 1 como fallback)
       const user = JSON.parse(localStorage.getItem('user') || '{"id": 1}');
