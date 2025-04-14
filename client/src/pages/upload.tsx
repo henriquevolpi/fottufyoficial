@@ -19,6 +19,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { Upload, Image } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { nanoid } from "nanoid";
 
 const uploadFormSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters" }),

@@ -180,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       
       // Check if user is requesting own data or is admin
-      if (req.user.id !== userId && req.user.role !== "admin") {
+      if (req.user && req.user.id !== userId && req.user.role !== "admin") {
         return res.status(403).json({ message: "Not authorized to access this user" });
       }
       
@@ -231,8 +231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       
       // Check if user is updating own data or is admin
-      const isAdmin = req.user.role === "admin";
-      const isSelf = req.user.id === userId;
+      const isAdmin = req.user?.role === "admin";
+      const isSelf = req.user?.id === userId;
       
       if (!isAdmin && !isSelf) {
         return res.status(403).json({ message: "Not authorized to update this user" });
@@ -285,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Can't delete own account
-      if (user.id === req.user.id) {
+      if (req.user && user.id === req.user.id) {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
       
@@ -308,12 +308,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let projects;
       
-      if (req.user.role === "admin") {
+      if (req.user?.role === "admin") {
         // Admins can see all projects
         projects = await storage.getProjects();
-      } else {
+      } else if (req.user) {
         // Photographers can only see their own projects
         projects = await storage.getProjects(req.user.id);
+      } else {
+        // Usuário não autenticado
+        return res.status(401).json({ message: "Não autorizado" });
       }
       
       res.json(projects);
