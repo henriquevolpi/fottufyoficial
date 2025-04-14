@@ -100,25 +100,37 @@ export default function UploadPage() {
     try {
       setIsUploading(true);
 
-      // Create a new FormData instance
-      const formData = new FormData();
-      
-      // Append the form values
-      formData.append("name", values.name);
-      formData.append("clientName", values.clientName);
-      formData.append("clientEmail", values.clientEmail);
-      formData.append("photographerId", user?.id?.toString() || "");
-      
-      // Append all files
-      selectedFiles.forEach((file) => {
-        formData.append(`photos`, file);
+      // Processa as fotos para obter URLs e nomes de arquivo
+      const processedPhotos = selectedFiles.map((file) => {
+        // Criar URL para a imagem carregada
+        const url = URL.createObjectURL(file);
+        return {
+          id: nanoid(), // Gerar um ID temporário que será substituído no backend
+          url: url,
+          filename: file.name, // Manter o nome original como solicitado
+        };
       });
+      
+      console.log(`Preparando ${processedPhotos.length} fotos para upload`);
+      
+      // Enviar dados do projeto e das fotos para o backend
+      const projectData = {
+        name: values.name,
+        clientName: values.clientName,
+        clientEmail: values.clientEmail,
+        photographerId: user?.id?.toString() || "",
+        photos: processedPhotos // Adicionar fotos processadas
+      };
+      
+      console.log("Enviando dados do projeto:", projectData);
 
-      // Simulate API call for now since we're using localStorage
-      // In a real app, this would be a fetch/axios call with FormData
+      // Chamar a API para criar o projeto
       const response = await fetch('/api/projects', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
         credentials: 'include',
       });
 

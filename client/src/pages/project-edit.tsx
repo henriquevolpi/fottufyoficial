@@ -120,12 +120,14 @@ export default function ProjectEdit() {
       try {
         // Em um sistema real, faríamos upload para o servidor usando FormData
         // Aqui, simulamos adicionando as fotos ao projeto existente
+        console.log(`Enviando ${processedPhotos.length} fotos para o projeto ${project.id}`);
         const response = await fetch(`/api/projects/${project.id}/photos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ photos: processedPhotos }),
+          credentials: 'include',
         });
         
         if (response.ok) {

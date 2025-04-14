@@ -1,0 +1,50 @@
+⚠️ Please do not break any existing working features (authentication, dashboard layout, subscription system, Stripe, etc). Only fix the main issue described below.
+
+---
+
+🧩 MAIN ISSUE: The client project link is not working correctly because the project and uploaded photos are not being properly saved in the backend.
+
+When I create a gallery and click the “Client Link”, the URL (e.g. `/project-view/:id`) shows:
+> “Project not found — The project you're trying to access doesn't exist or was removed.”
+
+This means the project and photos are either not stored in the backend or not connected properly.
+
+---
+
+✅ What needs to be implemented:
+
+1. **Backend Project Creation:**
+   - When a new gallery is created and photos are uploaded:
+     - Save the project to the database with:
+       - Project ID
+       - Project name
+       - Client name and email
+       - Photographer/owner ID
+       - Creation date
+     - Save all uploaded photos with:
+       - Original file name (⚠️ **do not rename the files**)
+       - Photo URL or path
+       - Project ID (as foreign key)
+       - `selected: false` (default)
+
+2. **Client Gallery Page (`/project-view/:id`):**
+   - Use the `:id` to fetch the project from the backend
+   - Load all associated photos from the project
+   - Display them in a grid for the client
+   - Allow the client to:
+     - Select and deselect photos (toggle selection)
+     - Show visual indicator when a photo is selected
+     - Click “Finalize Selection” button
+   - When finalized:
+     - Save the selected photo IDs (set `selected: true` in the backend)
+     - Keep the data tied to that specific project only
+
+---
+
+📎 Additional Notes:
+- Each project must be uniquely stored and retrievable by its own ID.
+- Uploaded photos must be fully connected to their project.
+- Do not use mock IDs or temporary frontend-only data.
+- Keep the **original file names** of all uploaded images. Do not rename them during upload or save.
+
+Please confirm when this is implemented and fully working.

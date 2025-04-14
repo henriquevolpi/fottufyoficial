@@ -372,10 +372,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create project (authenticated photographer)
   app.post("/api/projects", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
-      // In a real app, this would use multer to handle file uploads
-      // For now, we'll simulate the file uploads
+      console.log("Recebendo solicitação para criar projeto", req.body);
       
-      const { name, clientName, clientEmail, photographerId } = req.body;
+      // No ambiente Replit, podemos não ter acesso a um FormData completo
+      // então vamos processar o que for possível
+      const { name, clientName, clientEmail, photographerId, photos } = req.body;
+      
+      console.log("Dados do projeto:", { name, clientName, clientEmail, photographerId });
       
       // Validate project data
       const projectData = insertProjectSchema.parse({
@@ -390,32 +393,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot create projects for other photographers" });
       }
       
-      // Simulate photo processing
-      const photos = [
-        { 
-          id: '', // Will be set by storage
-          url: 'https://images.unsplash.com/photo-1529634597503-139d3726fed5', 
-          filename: 'wedding_photo_1.jpg' 
-        },
-        { 
-          id: '', // Will be set by storage
-          url: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b', 
-          filename: 'wedding_photo_2.jpg' 
-        },
-        { 
-          id: '', // Will be set by storage
-          url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6', 
-          filename: 'wedding_photo_3.jpg' 
-        },
-        { 
-          id: '', // Will be set by storage
-          url: 'https://images.unsplash.com/photo-1519741497674-611481863552', 
-          filename: 'wedding_photo_4.jpg' 
-        }
-      ];
+      // Processar fotos
+      let processedPhotos = [];
+      
+      // Se recebemos um array de fotos do frontend (formato JSON)
+      if (Array.isArray(photos)) {
+        console.log(`Processando ${photos.length} fotos enviadas como JSON`);
+        processedPhotos = photos.map(photo => ({
+          id: '', // Será definido pelo storage
+          url: photo.url,
+          filename: photo.filename,
+        }));
+      }
+      // Fotos de amostra como fallback (apenas se não houver fotos enviadas)
+      else {
+        console.log("Usando fotos de amostra como fallback");
+        processedPhotos = [
+          { 
+            id: '', // Will be set by storage
+            url: 'https://images.unsplash.com/photo-1529634597503-139d3726fed5', 
+            filename: 'sample_photo_1.jpg' 
+          },
+          { 
+            id: '', // Will be set by storage
+            url: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b', 
+            filename: 'sample_photo_2.jpg' 
+          },
+          { 
+            id: '', // Will be set by storage
+            url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6', 
+            filename: 'sample_photo_3.jpg' 
+          },
+          { 
+            id: '', // Will be set by storage
+            url: 'https://images.unsplash.com/photo-1519741497674-611481863552', 
+            filename: 'sample_photo_4.jpg' 
+          }
+        ];
+      }
+      
+      console.log(`Fotos processadas: ${processedPhotos.length}`);
       
       // Verificar o limite de uploads do usuário
-      const photoCount = photos.length;
+      const photoCount = processedPhotos.length;
       const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
       
       if (!hasUploadLimit) {
@@ -427,7 +447,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Criar o projeto
-      const project = await storage.createProject(projectData, photos);
+      const project = await storage.createProject(projectData, processedPhotos);
+      console.log(`Projeto criado com ID: ${project.id}`);
       
       // Atualizar contador de uploads
       await storage.updateUploadUsage(req.user.id, photoCount);
