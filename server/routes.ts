@@ -566,6 +566,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Adicionar novas fotos a um projeto existente
+  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const { photos } = req.body;
+      
+      if (!Array.isArray(photos) || photos.length === 0) {
+        return res.status(400).json({ message: "No photos provided" });
+      }
+      
+      // Verificar se o projeto existe
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Verificar se o usuário é o fotógrafo do projeto
+      if (req.user && project.photographerId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "You don't have permission to edit this project" });
+      }
+      
+      // Verificar o limite de upload do usuário (se não for admin)
+      if (req.user && req.user.role !== "admin") {
+        const canUpload = await storage.checkUploadLimit(req.user.id, photos.length);
+        if (!canUpload) {
+          return res.status(403).json({ message: "Upload limit exceeded" });
+        }
+        
+        // Atualizar o uso de upload
+        await storage.updateUploadUsage(req.user.id, photos.length);
+      }
+      
+      // Em um sistema real, aqui processaríamos os uploads para armazenamento em nuvem
+      // Neste exemplo, apenas atualizamos o projeto com as novas fotos
+      const formattedPhotos = photos.map((photo: any) => ({
+        id: photo.id,
+        url: photo.url,
+        filename: photo.filename
+      }));
+      
+      // Atualizar o projeto com as novas fotos
+      const updatedProject = await storage.updateProject(projectId, {
+        photos: [...(project.photos || []), ...formattedPhotos]
+      });
+      
+      if (!updatedProject) {
+        return res.status(400).json({ message: "Failed to add photos to project" });
+      }
+      
+      res.status(200).json({ 
+        message: "Photos added successfully", 
+        count: photos.length 
+      });
+    } catch (error) {
+      console.error("Erro ao adicionar fotos:", error);
+      res.status(500).json({ message: "Failed to add photos to project" });
+    }
+  });
+  
   // Delete project (photographer only)
   app.delete("/api/projects/:id", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
