@@ -1118,7 +1118,7 @@ export default function Dashboard() {
                 <p className="text-gray-500">{user?.email}</p>
               </div>
               <Button variant="outline" onClick={handleLogout}>
-                Sair
+                Logout
               </Button>
             </div>
           </div>
@@ -1138,7 +1138,7 @@ export default function Dashboard() {
               onClick={() => setIsUploadModalOpen(true)}
             >
               <PlusCircle className="h-5 w-5 mr-2" />
-              Novo Projeto
+              New Project
             </Button>
           </div>
         </div>
@@ -1148,10 +1148,10 @@ export default function Dashboard() {
         <Tabs defaultValue="todos" className="w-full">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <TabsList className="mb-4 sm:mb-0">
-              <TabsTrigger value="todos">Todos</TabsTrigger>
-              <TabsTrigger value="pendentes">Pendentes</TabsTrigger>
-              <TabsTrigger value="revisados">Revisados</TabsTrigger>
-              <TabsTrigger value="arquivados">Arquivados</TabsTrigger>
+              <TabsTrigger value="todos">All</TabsTrigger>
+              <TabsTrigger value="pendentes">Pending</TabsTrigger>
+              <TabsTrigger value="revisados">Reviewed</TabsTrigger>
+              <TabsTrigger value="arquivados">Archived</TabsTrigger>
             </TabsList>
             
             <div className="flex w-full sm:w-auto space-x-2">
@@ -1159,7 +1159,7 @@ export default function Dashboard() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="text"
-                  placeholder="Buscar projetos..."
+                  placeholder="Search projects..."
                   className="pl-8 h-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -1208,14 +1208,14 @@ export default function Dashboard() {
             ) : searchTerm ? (
               <div className="text-center py-12">
                 <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Nenhum projeto encontrado
+                  No projects found
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Não encontramos projetos correspondentes à sua busca.
+                  We couldn't find any projects matching your search.
                 </p>
                 <div className="mt-6">
                   <Button onClick={() => setSearchTerm("")}>
-                    Limpar filtros
+                    Clear filters
                   </Button>
                 </div>
               </div>
@@ -1223,15 +1223,15 @@ export default function Dashboard() {
               <div className="text-center py-12">
                 <Camera className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-4 text-lg font-medium text-gray-900">
-                  Nenhum projeto ainda
+                  No projects yet
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Clique no botão "Novo Projeto" acima para criar sua primeira galeria.
+                  Click the "New Project" button above to create your first gallery.
                 </p>
                 <div className="mt-6">
                   <Button onClick={() => setIsUploadModalOpen(true)}>
                     <PlusCircle className="h-5 w-5 mr-2" />
-                    Criar Primeiro Projeto
+                    Create First Project
                   </Button>
                 </div>
               </div>
@@ -1263,15 +1263,15 @@ export default function Dashboard() {
             ) : (
               <div className="text-center py-12">
                 <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Nenhum projeto pendente
+                  No pending projects
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Crie um novo projeto para começar.
+                  Create a new project to get started.
                 </p>
                 <div className="mt-6">
                   <Button onClick={() => setIsUploadModalOpen(true)}>
                     <PlusCircle className="h-5 w-5 mr-2" />
-                    Criar Projeto
+                    Create Project
                   </Button>
                 </div>
               </div>
@@ -1303,15 +1303,15 @@ export default function Dashboard() {
             ) : (
               <div className="text-center py-12">
                 <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Nenhum projeto revisado
+                  No reviewed projects
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Os projetos aparecerão aqui depois que os clientes fizerem suas seleções.
+                  Projects will appear here after clients have made their selections.
                 </p>
                 <div className="mt-6">
                   <Button onClick={() => setIsUploadModalOpen(true)}>
                     <PlusCircle className="h-5 w-5 mr-2" />
-                    Criar Projeto
+                    Create Project
                   </Button>
                 </div>
               </div>
@@ -1343,10 +1343,10 @@ export default function Dashboard() {
             ) : (
               <div className="text-center py-12">
                 <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Nenhum projeto arquivado
+                  No archived projects
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Os projetos concluídos que você arquivar aparecerão aqui.
+                  Completed projects that you archive will appear here.
                 </p>
               </div>
             )}
@@ -1357,7 +1357,7 @@ export default function Dashboard() {
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500">
-            © 2023 PhotoFlow. Todos os direitos reservados.
+            © 2023 PhotoFlow. All rights reserved.
           </p>
         </div>
       </footer>
