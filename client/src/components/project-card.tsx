@@ -42,12 +42,12 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   
   // Copy public link to clipboard
   const copyLinkToClipboard = () => {
-    // Get the current hostname dynamically
-    const url = `${window.location.origin}/project/${project.id}`;
+    // Get the current hostname dynamically - usar a rota pública project-view
+    const url = `${window.location.origin}/project-view/${project.id}`;
     navigator.clipboard.writeText(url);
     toast({
-      title: "Link copied",
-      description: "Project link copied to clipboard.",
+      title: "Link copiado",
+      description: "Link público do projeto copiado para a área de transferência.",
     });
   };
   

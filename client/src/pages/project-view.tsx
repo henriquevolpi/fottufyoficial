@@ -149,11 +149,43 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           throw new Error('Erro ao ler dados dos projetos');
         }
         
-        // Aqui fazemos a busca pelo ID original (string ou número)
-        const foundProject = projects.find(p => {
-          // Comparamos o ID diretamente ou como string
-          return p.id.toString() === projectId || p.id === parseInt(projectId);
-        });
+        // Estratégias múltiplas para encontrar o projeto pelo ID
+        console.log('Tentando diferentes estratégias para encontrar o projeto com ID:', projectId);
+        console.log('Total de projetos no localStorage:', projects.length);
+        
+        // Log de todos os IDs para debug
+        console.log('IDs disponíveis:', projects.map(p => `${p.id} (${typeof p.id})`));
+        
+        // Tentar várias estratégias para encontrar o projeto
+        let foundProject = null;
+        
+        // Estratégia 1: Busca direta pelo ID como string
+        foundProject = projects.find(p => p.id.toString() === projectId);
+        if (foundProject) {
+          console.log('Projeto encontrado pela estratégia 1 (ID como string)');
+        }
+        
+        // Estratégia 2: Tentar converter o ID para número
+        if (!foundProject && !isNaN(parseInt(projectId))) {
+          const numericId = parseInt(projectId);
+          foundProject = projects.find(p => p.id === numericId);
+          if (foundProject) {
+            console.log('Projeto encontrado pela estratégia 2 (ID como número)');
+          }
+        }
+        
+        // Estratégia 3: Busca por correspondência parcial
+        if (!foundProject) {
+          foundProject = projects.find(p => {
+            if (typeof p.id === 'string' && typeof projectId === 'string') {
+              return p.id.includes(projectId) || projectId.includes(p.id);
+            }
+            return false;
+          });
+          if (foundProject) {
+            console.log('Projeto encontrado pela estratégia 3 (correspondência parcial)');
+          }
+        }
         
         if (!foundProject) {
           console.error('Projeto não encontrado com ID:', projectId);
@@ -323,7 +355,21 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       }
       
       const projects: Project[] = JSON.parse(storedProjects);
-      const projectIndex = projects.findIndex(p => p.id === project.id);
+      
+      // Tentar encontrar o projeto de várias formas
+      let projectIndex = projects.findIndex(p => p.id === project.id);
+      
+      // Se não encontrar pelo id como número, tentar como string
+      if (projectIndex === -1) {
+        projectIndex = projects.findIndex(p => p.id.toString() === project.id.toString());
+      }
+      
+      // Se ainda não encontrou, verificar com o ID da URL
+      if (projectIndex === -1 && projectId) {
+        projectIndex = projects.findIndex(p => p.id.toString() === projectId);
+      }
+      
+      console.log('Projeto encontrado no localStorage no índice:', projectIndex);
       
       if (projectIndex === -1) {
         throw new Error('Erro ao finalizar: projeto não encontrado');
