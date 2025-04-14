@@ -582,47 +582,74 @@ function UploadModal({
     try {
       setIsUploading(true);
       
-      // Em uma aplicação real, esta parte seria uma chamada à API
-      // Aqui vamos simular armazenando no localStorage
-      
-      // Criar um novo ID baseado no timestamp atual
-      const newProjectId = Date.now();
-      
-      // Simular URLs para as fotos (em um servidor real, estas seriam URLs reais após upload)
+      // Preparar as fotos para o upload
       const projectPhotos = selectedFiles.map((file, index) => ({
-        id: `photo-${newProjectId}-${index}`,
         filename: file.name,
-        url: thumbnails[index], // Em um app real, esta seria a URL do servidor
-        selected: false
+        url: thumbnails[index], // URL temporária do preview
       }));
       
-      // Criar objeto do projeto
-      const newProject = {
-        id: newProjectId,
-        nome: values.nome,
-        cliente: values.clienteNome,
-        emailCliente: values.clienteEmail,
-        data: new Date().toISOString(),
-        status: "pendente",
-        fotos: projectPhotos.length,
-        selecionadas: 0,
-        fotografoId: 1, // Aqui seria o ID do usuário logado
+      // Obter o ID do usuário logado (ou usar 1 como fallback)
+      const user = JSON.parse(localStorage.getItem('user') || '{"id": 1}');
+      
+      // Preparar dados do projeto para a API
+      const projectData = {
+        name: values.nome,
+        clientName: values.clienteNome,
+        clientEmail: values.clienteEmail,
+        photographerId: user.id,
         photos: projectPhotos
       };
       
-      // Obter projetos existentes ou iniciar array vazio
+      console.log("Enviando projeto para a API:", projectData);
+      
+      // Enviar para a API
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+        credentials: 'include' // Importante para enviar cookies
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro da API:", errorData);
+        throw new Error(errorData.message || "Erro ao criar projeto");
+      }
+      
+      // Obter o projeto criado com o ID gerado pelo backend
+      const newProject = await response.json();
+      console.log("Projeto criado com sucesso na API:", newProject);
+      
+      // Adaptar o formato para o frontend
+      const adaptedProject = {
+        id: newProject.id,
+        nome: newProject.name,
+        cliente: newProject.clientName,
+        emailCliente: newProject.clientEmail,
+        data: newProject.createdAt || new Date().toISOString(),
+        status: newProject.status || "pendente",
+        fotos: newProject.photos ? newProject.photos.length : 0,
+        selecionadas: 0,
+        fotografoId: newProject.photographerId,
+        photos: newProject.photos ? newProject.photos.map((p: any) => ({
+          id: p.id,
+          filename: p.filename,
+          url: p.url,
+          selected: false
+        })) : []
+      };
+      
+      // Armazenar também no localStorage para compatibilidade
       const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-      
-      // Adicionar novo projeto
-      const updatedProjects = [...existingProjects, newProject];
-      
-      // Salvar no localStorage
+      const updatedProjects = [...existingProjects, adaptedProject];
       localStorage.setItem('projects', JSON.stringify(updatedProjects));
       
       // Exibir notificação de sucesso
       toast({
         title: "Projeto criado com sucesso!",
-        description: `Projeto "${values.nome}" criado com ${projectPhotos.length} fotos.`,
+        description: `Projeto "${values.nome}" criado com ID ${newProject.id}.`,
       });
       
       // Fechar modal

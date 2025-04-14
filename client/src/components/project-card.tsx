@@ -17,38 +17,46 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const [isArchiving, setIsArchiving] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
   
-  // Format date
-  const formattedDate = new Date(project.createdAt).toLocaleDateString('en-US', {
+  // Format date - handle both createdAt or data (compatibility)
+  const dateValue = project.createdAt || project.data;
+  const formattedDate = new Date(dateValue).toLocaleDateString('pt-BR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
   
-  // Status badge color
+  // Status badge color - handle both English and Portuguese statuses
   const getBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'yellow';
-      case 'reviewed':
-        return 'green';
-      case 'reopened':
-        return 'blue';
-      case 'archived':
-        return 'gray';
-      default:
-        return 'secondary';
-    }
+    const statusLower = status.toLowerCase();
+    
+    // English statuses
+    if (statusLower === 'pending' || statusLower === 'pendente') return 'yellow';
+    if (statusLower === 'reviewed' || statusLower === 'finalizado' || statusLower === 'revisado') return 'green';
+    if (statusLower === 'reopened' || statusLower === 'reaberto') return 'blue';
+    if (statusLower === 'archived' || statusLower === 'arquivado') return 'gray';
+    
+    return 'secondary';
   };
   
   // Copy public link to clipboard
   const copyLinkToClipboard = () => {
-    // Get the current hostname dynamically - usar a rota pública project-view
-    const url = `${window.location.origin}/project-view/${project.id}`;
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "Link copiado",
-      description: "Link público do projeto copiado para a área de transferência.",
-    });
+    try {
+      // Get the current hostname dynamically - usar a rota pública project-view
+      const url = `${window.location.origin}/project-view/${project.id}`;
+      console.log("Copiando link do cliente:", url);
+      navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copiado",
+        description: "Link público do projeto copiado para a área de transferência.",
+      });
+    } catch (error) {
+      console.error("Erro ao copiar link:", error);
+      toast({
+        title: "Erro ao copiar link",
+        description: "Não foi possível copiar o link para a área de transferência.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Archive project
