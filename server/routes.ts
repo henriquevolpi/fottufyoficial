@@ -9,6 +9,69 @@ import { nanoid } from "nanoid";
 import { setupAuth } from "./auth";
 import Stripe from 'stripe';
 import { upload } from "./index";
+import http from "http";
+import https from "https";
+
+// Helper function to download an image from a URL to the uploads directory
+async function downloadImage(url: string, filename: string): Promise<string> {
+  // Create a unique filename with the original extension
+  const id = nanoid();
+  const extension = path.extname(filename) || '.jpg';
+  const targetFilename = `${id}${extension}`;
+  const targetPath = path.join("uploads", targetFilename);
+  
+  console.log(`Downloading image from ${url} to ${targetPath}`);
+
+  return new Promise((resolve, reject) => {
+    // Choose http or https based on the URL
+    const client = url.startsWith('https') ? https : http;
+    
+    const request = client.get(url, (response) => {
+      // Handle redirects
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        const redirectUrl = response.headers.location;
+        if (redirectUrl) {
+          console.log(`Following redirect to ${redirectUrl}`);
+          downloadImage(redirectUrl, filename)
+            .then(resolve)
+            .catch(reject);
+          return;
+        }
+      }
+      
+      // Check if the response is successful
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to download image: ${response.statusCode}`));
+        return;
+      }
+      
+      // Create a write stream to save the file
+      const fileStream = fs.createWriteStream(targetPath);
+      response.pipe(fileStream);
+      
+      fileStream.on('finish', () => {
+        fileStream.close();
+        console.log(`Successfully downloaded image to ${targetPath}`);
+        resolve(`/uploads/${targetFilename}`);
+      });
+      
+      fileStream.on('error', (err) => {
+        fs.unlink(targetPath, () => {}); // Clean up any partially downloaded file
+        reject(err);
+      });
+    });
+    
+    request.on('error', (err) => {
+      reject(err);
+    });
+    
+    // Set a timeout for the request
+    request.setTimeout(10000, () => {
+      request.abort();
+      reject(new Error(`Request timeout downloading image from ${url}`));
+    });
+  });
+}
 
 // Basic authentication middleware - MODIFICADO PARA BYPASS DE AUTENTICAÇÃO EM DESENVOLVIMENTO
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -510,52 +573,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (Array.isArray(photos)) {
         // Direct array of photo objects
         console.log(`Processing ${photos.length} photos sent as JSON array`);
-        processedPhotos = photos.map(photo => {
+        // Process and download photos sequentially 
+        processedPhotos = [];
+        
+        // Use a for loop to handle async operations in sequence
+        for (const photo of photos) {
           let url = photo.url;
           let id = nanoid();
           
-          // Handle external URLs like Unsplash: keep the URL but set a unique ID
-          if (url.startsWith('http')) {
-            console.log(`External photo URL: ${url} with ID: ${id}`);
-          } else {
-            // Local uploads: fix paths
-            url = `/uploads/${path.basename(url)}`;
+          try {
+            // Handle external URLs like Unsplash: download the image to local storage
+            if (url.startsWith('http')) {
+              console.log(`External photo URL: ${url} with ID: ${id}`);
+              
+              try {
+                // Attempt to download the image
+                const localUrl = await downloadImage(url, photo.filename);
+                url = localUrl; // Use the local URL after successful download
+                console.log(`Successfully downloaded external image to: ${url}`);
+              } catch (err) {
+                console.error(`Failed to download external image from ${url}: ${err.message}`);
+                // Keep the external URL if download fails
+              }
+            } else {
+              // Local uploads: fix paths
+              url = `/uploads/${path.basename(url)}`;
+            }
+            
+            console.log(`JSON photo: ${photo.filename}, URL: ${url}, ID: ${id}`);
+            
+            processedPhotos.push({
+              id: id,
+              url: url,
+              filename: photo.filename,
+            });
+          } catch (error) {
+            console.error(`Error processing photo ${photo.filename}: ${error.message}`);
           }
-          
-          console.log(`JSON photo: ${photo.filename}, URL: ${url}, ID: ${id}`);
-          
-          return {
-            id: id,
-            url: url,
-            filename: photo.filename,
-          };
-        });
+        }
       }
       else if (photosData) {
         // Try to parse the photosData JSON string
         try {
           const parsedPhotosData = JSON.parse(photosData);
           console.log(`Processing ${parsedPhotosData.length} photos from photosData JSON`);
-          processedPhotos = parsedPhotosData.map(photo => {
+          // Process and download photos sequentially 
+          processedPhotos = [];
+          
+          // Use a for loop to handle async operations in sequence
+          for (const photo of parsedPhotosData) {
             let url = photo.url;
             let id = nanoid();
             
-            // Handle external URLs like Unsplash: keep the URL but set a unique ID
-            if (url.startsWith('http')) {
-              console.log(`External photo URL: ${url} with ID: ${id}`);
-            } else {
-              // Local uploads: fix paths
-              url = `/uploads/${path.basename(url)}`;
+            try {
+              // Handle external URLs like Unsplash: download the image to local storage
+              if (url.startsWith('http')) {
+                console.log(`External photo URL: ${url} with ID: ${id}`);
+                
+                try {
+                  // Attempt to download the image
+                  const localUrl = await downloadImage(url, photo.filename);
+                  url = localUrl; // Use the local URL after successful download
+                  console.log(`Successfully downloaded external image to: ${url}`);
+                } catch (err) {
+                  console.error(`Failed to download external image from ${url}: ${err.message}`);
+                  // Keep the external URL if download fails
+                }
+              } else {
+                // Local uploads: fix paths
+                url = `/uploads/${path.basename(url)}`;
+              }
+              
+              console.log(`JSON photosData: ${photo.filename}, URL: ${url}, ID: ${id}`);
+              
+              processedPhotos.push({
+                id: id,
+                url: url,
+                filename: photo.filename,
+              });
+            } catch (error) {
+              console.error(`Error processing photosData ${photo.filename}: ${error.message}`);
             }
-            
-            console.log(`JSON photosData: ${photo.filename}, URL: ${url}, ID: ${id}`);
-            
-            return {
-              id: id,
-              url: url,
-              filename: photo.filename,
-            };
-          });
+          }
         } catch (error) {
           console.error("Error parsing photosData JSON:", error);
         }
@@ -819,20 +918,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`Processing ${photoCount} photos from JSON data`);
         
-        processedPhotos = photos.map((photo: any) => {
-          // Ensure the URL is a properly formed path
-          const url = photo.url.startsWith('http') 
-            ? photo.url  // Keep external URLs as-is
-            : `/uploads/${path.basename(photo.url)}`;  // Fix local paths
-            
-          console.log(`JSON photo for existing project: ${photo.filename}, URL: ${url}`);
+        // Process and download photos sequentially 
+        processedPhotos = [];
+        
+        // Use a for loop to handle async operations in sequence
+        for (const photo of photos) {
+          let url = photo.url;
+          let id = photo.id || nanoid();
           
-          return {
-            id: photo.id || nanoid(),
-            url: url,
-            filename: photo.filename
-          };
-        });
+          try {
+            // Handle external URLs like Unsplash: download the image to local storage
+            if (url.startsWith('http')) {
+              console.log(`External photo URL: ${url} with ID: ${id}`);
+              
+              try {
+                // Attempt to download the image
+                const localUrl = await downloadImage(url, photo.filename);
+                url = localUrl; // Use the local URL after successful download
+                console.log(`Successfully downloaded external image to: ${url}`);
+              } catch (err: any) {
+                console.error(`Failed to download external image from ${url}: ${err.message}`);
+                // Keep the external URL if download fails
+              }
+            } else {
+              // Local uploads: fix paths
+              url = `/uploads/${path.basename(url)}`;
+            }
+            
+            console.log(`JSON photo for existing project: ${photo.filename}, URL: ${url}, ID: ${id}`);
+            
+            processedPhotos.push({
+              id: id,
+              url: url,
+              filename: photo.filename
+            });
+          } catch (error: any) {
+            console.error(`Error processing photo for existing project ${photo.filename}: ${error.message}`);
+          }
+        }
       }
       
       if (processedPhotos.length === 0) {
