@@ -490,18 +490,18 @@ function UploadModal({
   const { user } = useAuth();
   
   const uploadSchema = z.object({
-    nome: z.string().min(3, "Nome do projeto é obrigatório"),
-    cliente: z.string().min(3, "Nome do cliente é obrigatório"),
-    emailCliente: z.string().email("Email inválido"),
-    data: z.string().min(1, "A data é obrigatória"),
+    projectName: z.string().min(3, "Project name is required"),
+    clientName: z.string().min(3, "Client name is required"),
+    clientEmail: z.string().email("Invalid email"),
+    data: z.string().min(1, "Date is required"),
   });
   
   const form = useForm<z.infer<typeof uploadSchema>>({
     resolver: zodResolver(uploadSchema),
     defaultValues: {
-      nome: "",
-      cliente: "",
-      emailCliente: "",
+      projectName: "",
+      clientName: "",
+      clientEmail: "",
       data: new Date().toISOString().split('T')[0],
     },
   });
@@ -542,9 +542,9 @@ function UploadModal({
       
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('projectName', data.nome);
-      formData.append('clientName', data.cliente);
-      formData.append('clientEmail', data.emailCliente);
+      formData.append('projectName', data.projectName);
+      formData.append('clientName', data.clientName);
+      formData.append('clientEmail', data.clientEmail);
       formData.append('data', data.data);
       
       // Add photographer ID from the user context
@@ -572,8 +572,8 @@ function UploadModal({
       
       // Show success notification
       toast({
-        title: "Projeto criado com sucesso",
-        description: `O projeto "${data.nome}" foi criado com ${selectedFiles.length} fotos.`,
+        title: "Project created successfully",
+        description: `Project "${data.projectName}" was created with ${selectedFiles.length} photos.`,
       });
       
       // Call onUpload callback with the created project
@@ -585,10 +585,10 @@ function UploadModal({
       form.reset();
       onClose();
     } catch (error) {
-      console.error("Erro durante o upload:", error);
+      console.error("Error during upload:", error);
       toast({
-        title: "Erro ao criar projeto",
-        description: "Ocorreu um erro durante o upload. Por favor, tente novamente.",
+        title: "Error creating project",
+        description: "An error occurred during the upload. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -600,9 +600,9 @@ function UploadModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Criar Novo Projeto</DialogTitle>
+          <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Preencha os dados do projeto e faça o upload das fotos.
+            Fill in the project details and upload the photos.
           </DialogDescription>
         </DialogHeader>
         
@@ -610,12 +610,12 @@ function UploadModal({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="nome"
+              name="projectName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Projeto</FormLabel>
+                  <FormLabel>Project Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Casamento João e Maria" {...field} />
+                    <Input placeholder="Ex: John and Mary's Wedding" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -624,12 +624,12 @@ function UploadModal({
             
             <FormField
               control={form.control}
-              name="cliente"
+              name="clientName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Cliente</FormLabel>
+                  <FormLabel>Client Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: João Silva" {...field} />
+                    <Input placeholder="Ex: John Smith" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -638,12 +638,12 @@ function UploadModal({
             
             <FormField
               control={form.control}
-              name="emailCliente"
+              name="clientEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email do Cliente</FormLabel>
+                  <FormLabel>Client Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="cliente@exemplo.com" {...field} />
+                    <Input placeholder="client@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -655,7 +655,7 @@ function UploadModal({
               name="data"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data do Evento</FormLabel>
+                  <FormLabel>Event Date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -666,7 +666,7 @@ function UploadModal({
             
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">
-                Fotos do Projeto
+                Project Photos
               </label>
               <div className="border border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition relative">
                 <input
@@ -680,10 +680,10 @@ function UploadModal({
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <Camera className="h-8 w-8 text-gray-400" />
                   <p className="text-sm text-gray-500">
-                    Clique ou arraste fotos para fazer upload
+                    Click or drag photos to upload
                   </p>
                   <p className="text-xs text-gray-400">
-                    (Formatos aceitos: JPG, PNG, WEBP)
+                    (Accepted formats: JPG, PNG, WEBP)
                   </p>
                 </div>
               </div>
