@@ -510,22 +510,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (Array.isArray(photos)) {
         // Direct array of photo objects
         console.log(`Processing ${photos.length} photos sent as JSON array`);
-        processedPhotos = photos.map(photo => ({
-          id: '', // Will be set by storage
-          url: photo.url,
-          filename: photo.filename,
-        }));
+        processedPhotos = photos.map(photo => {
+          // Ensure the URL is a properly formed path
+          const url = photo.url.startsWith('http') 
+            ? photo.url  // Keep external URLs as-is
+            : `/uploads/${path.basename(photo.url)}`;  // Fix local paths
+            
+          console.log(`JSON photo: ${photo.filename}, URL: ${url}`);
+          
+          return {
+            id: '', // Will be set by storage
+            url: url,
+            filename: photo.filename,
+          };
+        });
       }
       else if (photosData) {
         // Try to parse the photosData JSON string
         try {
           const parsedPhotosData = JSON.parse(photosData);
           console.log(`Processing ${parsedPhotosData.length} photos from photosData JSON`);
-          processedPhotos = parsedPhotosData.map(photo => ({
-            id: '', // Will be set by storage
-            url: photo.url,
-            filename: photo.filename,
-          }));
+          processedPhotos = parsedPhotosData.map(photo => {
+            // Ensure the URL is a properly formed path
+            const url = photo.url.startsWith('http') 
+              ? photo.url  // Keep external URLs as-is
+              : `/uploads/${path.basename(photo.url)}`;  // Fix local paths
+              
+            console.log(`JSON photosData: ${photo.filename}, URL: ${url}`);
+            
+            return {
+              id: '', // Will be set by storage
+              url: url,
+              filename: photo.filename,
+            };
+          });
         } catch (error) {
           console.error("Error parsing photosData JSON:", error);
         }
@@ -537,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processedPhotos = uploadedFiles.map(file => {
           // Create a web-accessible URL path to the uploaded file
           const fileUrl = `/uploads/${path.basename(file.path)}`;
-          console.log(`File path: ${file.path}, URL: ${fileUrl}`);
+          console.log(`File uploaded: ${file.originalname}, Path: ${file.path}, URL: ${fileUrl}`);
           
           return {
             id: '', // Will be set by storage
@@ -781,11 +799,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`Processing ${photoCount} photos from JSON data`);
         
-        processedPhotos = photos.map((photo: any) => ({
-          id: photo.id || nanoid(),
-          url: photo.url,
-          filename: photo.filename
-        }));
+        processedPhotos = photos.map((photo: any) => {
+          // Ensure the URL is a properly formed path
+          const url = photo.url.startsWith('http') 
+            ? photo.url  // Keep external URLs as-is
+            : `/uploads/${path.basename(photo.url)}`;  // Fix local paths
+            
+          console.log(`JSON photo for existing project: ${photo.filename}, URL: ${url}`);
+          
+          return {
+            id: photo.id || nanoid(),
+            url: url,
+            filename: photo.filename
+          };
+        });
       }
       
       if (processedPhotos.length === 0) {

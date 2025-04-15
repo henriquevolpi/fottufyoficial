@@ -121,6 +121,11 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       }
 
       const newProject = await response.json();
+      console.log("Projeto criado com sucesso na API:", newProject);
+      
+      // Create link for sharing (useful for console debugging)
+      const shareableLink = `${window.location.origin}/project-view/${newProject.id}`;
+      console.log("Link para compartilhamento criado:", shareableLink);
 
       // Show success message
       toast({
@@ -128,7 +133,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
         description: `Project "${values.nome}" was created with ${files.length} photos.`,
       });
 
-      // Reset form and close modal
+      // Reset form and close modal only after project creation is confirmed
       form.reset();
       setFiles([]);
       setPreviews([]);
