@@ -34,6 +34,8 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import {
   Form,
   FormControl,
@@ -850,44 +852,41 @@ function UploadModal({
 // Componente de estatísticas
 function Estatisticas() {
   const [, setLocation] = useLocation();
-  const [user] = useState<any>(() => {
-    try {
-      const userData = localStorage.getItem("user");
-      return userData ? JSON.parse(userData) : null;
-    } catch (e) {
-      console.error("Erro ao carregar usuário do localStorage:", e);
-      return null;
-    }
+  
+  // Fetch user stats from API
+  const { data: stats, isLoading, error } = useQuery({
+    queryKey: ['/api/user/stats'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
   // Formatar tipo de plano para exibição
   const getPlanDisplayInfo = (planType: string) => {
     switch(planType) {
-      case 'basic': return { name: 'Básico', color: 'bg-blue-100', textColor: 'text-blue-600' };
-      case 'standard': return { name: 'Padrão', color: 'bg-green-100', textColor: 'text-green-600' };
-      case 'professional': return { name: 'Profissional', color: 'bg-purple-100', textColor: 'text-purple-600' };
-      default: return { name: 'Gratuito', color: 'bg-gray-100', textColor: 'text-gray-600' };
+      case 'basic': return { name: 'Basic', color: 'bg-blue-100', textColor: 'text-blue-600' };
+      case 'standard': return { name: 'Standard', color: 'bg-green-100', textColor: 'text-green-600' };
+      case 'professional': return { name: 'Professional', color: 'bg-purple-100', textColor: 'text-purple-600' };
+      default: return { name: 'Free', color: 'bg-gray-100', textColor: 'text-gray-600' };
     }
   };
   
-  const planInfo = user?.subscription?.plan 
-    ? getPlanDisplayInfo(user.subscription.plan) 
-    : { name: 'Gratuito', color: 'bg-gray-100', textColor: 'text-gray-600' };
+  const planInfo = stats?.planInfo?.name
+    ? getPlanDisplayInfo(stats.planInfo.name) 
+    : { name: 'Free', color: 'bg-gray-100', textColor: 'text-gray-600' };
   
   // Calcular uso de armazenamento
   const getUsagePercentage = () => {
-    if (!user?.subscription?.uploadLimit) return 0;
+    if (!stats?.planInfo?.uploadLimit) return 0;
     
     // Handle unlimited plan
-    if (user.subscription.uploadLimit === -1) return 0;
+    if (stats.planInfo.uploadLimit === -1) return 0;
     
-    const used = user.uploadUsage || 0;
-    const limit = user.subscription.uploadLimit;
+    const used = stats.planInfo.usedUploads || 0;
+    const limit = stats.planInfo.uploadLimit;
     return Math.min(Math.round((used / limit) * 100), 100);
   };
   
   const usagePercentage = getUsagePercentage();
-  const isUnlimited = user?.subscription?.uploadLimit === -1;
+  const isUnlimited = stats?.planInfo?.uploadLimit === -1;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -895,8 +894,12 @@ function Estatisticas() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Projetos Ativos</p>
-              <h3 className="text-2xl font-bold mt-1">12</h3>
+              <p className="text-sm font-medium text-gray-500">Active Projects</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mt-1" />
+              ) : (
+                <h3 className="text-2xl font-bold mt-1">{stats?.activeProjects || 0}</h3>
+              )}
             </div>
             <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
               <FileText className="h-6 w-6 text-blue-600" />
@@ -909,8 +912,12 @@ function Estatisticas() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Fotos Este Mês</p>
-              <h3 className="text-2xl font-bold mt-1">1.284</h3>
+              <p className="text-sm font-medium text-gray-500">Photos This Month</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mt-1" />
+              ) : (
+                <h3 className="text-2xl font-bold mt-1">{stats?.photosThisMonth || 0}</h3>
+              )}
             </div>
             <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
               <Camera className="h-6 w-6 text-green-600" />
@@ -924,8 +931,12 @@ function Estatisticas() {
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <p className="text-sm font-medium text-gray-500">Plano Atual</p>
-                <h3 className="text-xl font-bold mt-1">{planInfo.name}</h3>
+                <p className="text-sm font-medium text-gray-500">Current Plan</p>
+                {isLoading ? (
+                  <Skeleton className="h-6 w-24 mt-1" />
+                ) : (
+                  <h3 className="text-xl font-bold mt-1">{planInfo.name}</h3>
+                )}
               </div>
               <div className={`h-12 w-12 ${planInfo.color} rounded-full flex items-center justify-center`}>
                 <CreditCard className={`h-6 w-6 ${planInfo.textColor}`} />
@@ -938,7 +949,7 @@ function Estatisticas() {
               onClick={() => setLocation('/subscription')}
             >
               <Settings className="h-4 w-4 mr-1" />
-              Gerenciar Assinatura
+              Manage Subscription
             </Button>
           </div>
         </CardContent>
@@ -950,29 +961,37 @@ function Estatisticas() {
             <div className="flex items-center justify-between mb-2">
               <div className="w-full">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium text-gray-500">Uso de Upload</p>
-                  <p className="text-sm font-medium">
-                    {isUnlimited ? (
-                      <Badge className="bg-purple-100 text-purple-600 hover:bg-purple-100">Ilimitado</Badge>
-                    ) : (
-                      `${usagePercentage}%`
-                    )}
-                  </p>
+                  <p className="text-sm font-medium text-gray-500">Upload Usage</p>
+                  {isLoading ? (
+                    <Skeleton className="h-4 w-10" />
+                  ) : (
+                    <p className="text-sm font-medium">
+                      {isUnlimited ? (
+                        <Badge className="bg-purple-100 text-purple-600 hover:bg-purple-100">Unlimited</Badge>
+                      ) : (
+                        `${usagePercentage}%`
+                      )}
+                    </p>
+                  )}
                 </div>
-                {!isUnlimited && (
+                {!isLoading && !isUnlimited && (
                   <Progress 
                     value={usagePercentage} 
                     className="h-2 mt-2"
                     color={usagePercentage > 90 ? "bg-red-500" : ""}
                   />
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {isUnlimited ? (
-                    "Your plan allows unlimited uploads"
-                  ) : (
-                    `${user?.uploadUsage || 0} of ${user?.subscription?.uploadLimit || 0} photos`
-                  )}
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-full mt-1" />
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isUnlimited ? (
+                      "Your plan allows unlimited uploads"
+                    ) : (
+                      `${stats?.planInfo?.usedUploads || 0} of ${stats?.planInfo?.uploadLimit || 0} photos`
+                    )}
+                  </p>
+                )}
               </div>
             </div>
           </div>
