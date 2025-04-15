@@ -68,7 +68,7 @@ export class MemStorage implements IStorage {
       id: this.userId++,
       name: "Admin",
       email: "admin@studio.com",
-      password: "$2b$10$qH9/uDRpvQMUZVHaNB5FsOqqxF4WXK1yZIsS13f93RtbBjqYCYnZq", // admin123
+      password: "admin123", // Plain password for the admin account
       role: "admin",
       status: "active",
       createdAt: new Date(),

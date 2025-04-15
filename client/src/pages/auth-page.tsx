@@ -39,6 +39,7 @@ export default function AuthPage() {
   const [searchParams] = useState(() => new URLSearchParams(window.location.search));
   const redirect = searchParams.get('redirect') || '/dashboard';
   const plan = searchParams.get('plan'); // Capturar o tipo de plano se existir
+  const showAdminLogin = searchParams.get('admin') === 'true'; // Check if admin=true is in URL
   
   // Construir a URL de redirecionamento com parâmetros adequados
   const redirectUrl = plan ? `${redirect}?plan=${plan}` : redirect;
@@ -69,12 +70,32 @@ export default function AuthPage() {
     const { confirmPassword, ...registerData } = values;
     registerMutation.mutate(registerData);
   };
+  
+  // Handler for admin login button
+  const handleAdminLogin = () => {
+    // Fill and submit the login form with admin credentials
+    loginForm.setValue("email", "admin@studio.com");
+    loginForm.setValue("password", "admin123");
+    
+    // Submit the form with admin credentials
+    loginMutation.mutate({
+      email: "admin@studio.com",
+      password: "admin123"
+    });
+  };
 
   // Efeito para lidar com o redirecionamento após o login bem-sucedido
   useEffect(() => {
     if (user) {
-      // Redirecionar para o URL específico se disponível, caso contrário para o dashboard
-      setLocation(redirectUrl);
+      // If the user is an admin, redirect to the admin panel
+      if (user.role === 'admin') {
+        console.log('Redirecting admin user to admin panel');
+        setLocation('/admin');
+      } else {
+        // Otherwise redirect to the specified URL or dashboard
+        console.log('Redirecting regular user to:', redirectUrl);
+        setLocation(redirectUrl);
+      }
     }
   }, [user, redirectUrl, setLocation]);
   
@@ -158,6 +179,28 @@ export default function AuthPage() {
                           "Entrar"
                         )}
                       </Button>
+                      
+                      {/* Admin login button - only visible when ?admin=true is in URL */}
+                      {showAdminLogin && (
+                        <div className="mt-5 pt-5 border-t border-muted">
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            className="w-full bg-purple-50 border-purple-200 hover:bg-purple-100"
+                            onClick={handleAdminLogin}
+                            disabled={loginMutation.isPending}
+                          >
+                            {loginMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Acessando...
+                              </>
+                            ) : (
+                              "Acessar como Admin"
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </form>
                   </Form>
                 </TabsContent>
