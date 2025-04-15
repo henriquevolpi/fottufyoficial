@@ -191,7 +191,7 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
   // while maintaining backward compatibility
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [status, setStatus] = useState(projeto.status);
+  const [status, setStatus] = useState(project.status);
   const [showSelectionsModal, setShowSelectionsModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -207,35 +207,35 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
     }
   };
   
-  const formatarData = (dataStr: string) => {
-    const data = new Date(dataStr);
-    return data.toLocaleDateString('pt-BR');
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US');
   };
   
-  const handleReabrirProjeto = () => {
-    // Simular reabertura do projeto
+  const handleReopenProject = () => {
+    // Simulate reopening the project
     toast({
-      title: "Projeto reaberto",
-      description: `O projeto "${projeto.nome}" foi reaberto com sucesso.`,
+      title: "Project reopened",
+      description: `Project "${project.nome}" has been reopened successfully.`,
     });
     
-    // Em um app real, faríamos uma chamada API para atualizar o status
-    projeto.status = "reaberto";
+    // In a real app, we would make an API call to update the status
+    project.status = "reaberto";
     setStatus("reaberto");
   };
   
-  const handleEditarGaleria = () => {
-    // Simulação - em uma aplicação real, redirecionaria para uma página de edição
+  const handleEditGallery = () => {
+    // Simulation - in a real app, would redirect to an edit page
     toast({
-      title: "Edição de galeria",
-      description: `Abrindo galeria do projeto "${projeto.nome}" para edição.`,
+      title: "Edit gallery",
+      description: `Opening project "${project.nome}" gallery for editing.`,
     });
     
-    // Redirecionar para uma página fictícia de edição de galeria
-    setLocation(`/project/${projeto.id}/edit`);
+    // Redirect to a project edit page
+    setLocation(`/project/${project.id}/edit`);
   };
   
-  const handleVerSelecoes = () => {
+  const handleViewSelections = () => {
     setShowSelectionsModal(true);
   };
   
@@ -308,7 +308,7 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
       <CardContent className="p-4 pt-0">
         <div className="flex items-center text-sm text-gray-500 mt-2">
           <Calendar className="h-4 w-4 mr-1" />
-          <span>{formatarData(projeto.data)}</span>
+          <span>{formatDate(projeto.data)}</span>
         </div>
         <div className="flex justify-between mt-3">
           <div className="flex items-center text-sm">
@@ -334,15 +334,15 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
             <X className="h-3 w-3 ml-1" />
           </Button>
           
-          {/* Botão de ver seleções - disponível para projetos com seleções */}
+          {/* View selections button - available for projects with selections */}
           {projeto.selecionadas > 0 && (
             <Button 
               variant="ghost" 
               size="sm"
               className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-              onClick={handleVerSelecoes}
+              onClick={handleViewSelections}
             >
-              Ver Seleções
+              View Selections
               <FileText className="h-3 w-3 ml-1" />
             </Button>
           )}
@@ -384,9 +384,9 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
               variant="outline" 
               size="sm"
               className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800"
-              onClick={handleReabrirProjeto}
+              onClick={handleReopenProject}
             >
-              Reabrir Projeto
+              Reopen Project
               <RotateCcw className="h-3 w-3 ml-1" />
             </Button>
           )}
@@ -396,9 +396,9 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
               variant="outline" 
               size="sm"
               className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800"
-              onClick={handleEditarGaleria}
+              onClick={handleEditGallery}
             >
-              Editar Galeria
+              Edit Gallery
             </Button>
           )}
         </div>
