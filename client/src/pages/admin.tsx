@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { User, SUBSCRIPTION_PLANS } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import AdminLayout from "@/components/layout/admin-layout";
 import { format } from "date-fns";
 
 // UI Components
@@ -319,25 +320,26 @@ export default function Admin() {
   };
   
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="bg-white border-b shadow-sm">
-        <div className="container mx-auto py-4 px-4 sm:px-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <Button 
-                onClick={() => setAddUserDialogOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
+    <AdminLayout>
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-white border-b shadow-sm">
+          <div className="container mx-auto py-4 px-4 sm:px-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+              <div className="flex items-center space-x-4">
+                <Button 
+                  onClick={() => setAddUserDialogOpen(true)}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-      
-      <main className="flex-1 bg-gray-50">
+        </header>
+        
+        <main className="flex-1 bg-gray-50">
         <div className="container mx-auto py-6 px-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-2">
@@ -929,6 +931,7 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

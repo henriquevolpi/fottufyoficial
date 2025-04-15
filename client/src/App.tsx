@@ -15,6 +15,7 @@ import Checkout from "@/pages/checkout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
+import AdminLayout from "@/components/layout/admin-layout";
 
 function RootRedirect() {
   const { user } = useAuth();

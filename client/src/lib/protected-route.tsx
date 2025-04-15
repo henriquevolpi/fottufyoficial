@@ -30,8 +30,10 @@ export function ProtectedRoute({
           return <Redirect to="/auth" />;
         }
 
+        // If the route is admin-only but the user is not an admin, redirect to dashboard
         if (adminOnly && user.role !== "admin") {
-          return <Redirect to="/" />;
+          console.log(`Access denied: ${user.email} (${user.role}) tried to access admin-only route ${path}`);
+          return <Redirect to="/dashboard" />;
         }
 
         return <Component />;
