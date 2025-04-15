@@ -983,8 +983,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete project (photographer only)
   app.delete("/api/projects/:id", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id);
-      const project = await storage.getProject(projectId);
+      const idParam = req.params.id;
+      const project = await storage.getProject(idParam);
       
       if (!project) {
         return res.status(404).json({ message: "Projeto não encontrado" });
@@ -995,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Você não tem permissão para excluir este projeto" });
       }
       
-      const deleted = await storage.deleteProject(projectId);
+      const deleted = await storage.deleteProject(project.id);
       
       if (!deleted) {
         return res.status(500).json({ message: "Falha ao excluir projeto" });
