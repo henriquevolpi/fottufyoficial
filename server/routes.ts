@@ -511,15 +511,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Direct array of photo objects
         console.log(`Processing ${photos.length} photos sent as JSON array`);
         processedPhotos = photos.map(photo => {
-          // Ensure the URL is a properly formed path
-          const url = photo.url.startsWith('http') 
-            ? photo.url  // Keep external URLs as-is
-            : `/uploads/${path.basename(photo.url)}`;  // Fix local paths
-            
-          console.log(`JSON photo: ${photo.filename}, URL: ${url}`);
+          let url = photo.url;
+          let id = nanoid();
+          
+          // Handle external URLs like Unsplash: keep the URL but set a unique ID
+          if (url.startsWith('http')) {
+            console.log(`External photo URL: ${url} with ID: ${id}`);
+          } else {
+            // Local uploads: fix paths
+            url = `/uploads/${path.basename(url)}`;
+          }
+          
+          console.log(`JSON photo: ${photo.filename}, URL: ${url}, ID: ${id}`);
           
           return {
-            id: '', // Will be set by storage
+            id: id,
             url: url,
             filename: photo.filename,
           };
@@ -531,15 +537,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const parsedPhotosData = JSON.parse(photosData);
           console.log(`Processing ${parsedPhotosData.length} photos from photosData JSON`);
           processedPhotos = parsedPhotosData.map(photo => {
-            // Ensure the URL is a properly formed path
-            const url = photo.url.startsWith('http') 
-              ? photo.url  // Keep external URLs as-is
-              : `/uploads/${path.basename(photo.url)}`;  // Fix local paths
-              
-            console.log(`JSON photosData: ${photo.filename}, URL: ${url}`);
+            let url = photo.url;
+            let id = nanoid();
+            
+            // Handle external URLs like Unsplash: keep the URL but set a unique ID
+            if (url.startsWith('http')) {
+              console.log(`External photo URL: ${url} with ID: ${id}`);
+            } else {
+              // Local uploads: fix paths
+              url = `/uploads/${path.basename(url)}`;
+            }
+            
+            console.log(`JSON photosData: ${photo.filename}, URL: ${url}, ID: ${id}`);
             
             return {
-              id: '', // Will be set by storage
+              id: id,
               url: url,
               filename: photo.filename,
             };
@@ -573,7 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("No photos found in request, using a placeholder");
         processedPhotos = [
           { 
-            id: '', // Will be set by storage
+            id: nanoid(),
             url: 'https://via.placeholder.com/800x600?text=No+Photo+Uploaded', 
             filename: 'placeholder.jpg' 
           }
