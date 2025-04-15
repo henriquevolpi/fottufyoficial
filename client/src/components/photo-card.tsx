@@ -26,6 +26,9 @@ export default function PhotoCard({
     }
   };
 
+  // Format image URL for display
+  const displayUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+
   return (
     <div 
       className={cn(
@@ -35,11 +38,19 @@ export default function PhotoCard({
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      title={`ID: ${id}\nURL: ${url}`}
     >
       <div className="relative w-full h-60 bg-gray-200 rounded-lg overflow-hidden group-hover:opacity-75">
+        {/* Debug info overlay when hovering */}
+        {isHovered && (
+          <div className="absolute top-0 left-0 bg-black bg-opacity-70 text-white text-xs p-1 z-10 max-w-full overflow-hidden">
+            ID: {id?.substring(0, 8)}... 
+          </div>
+        )}
+        
         {/* Improved image loading with better URL handling */}
         <img 
-          src={url.startsWith('http') ? url : `${window.location.origin}${url}`} 
+          src={displayUrl} 
           alt={filename}
           className="w-full h-full object-cover"
           onError={(e) => {

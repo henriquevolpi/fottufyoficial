@@ -563,14 +563,31 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               onClick={() => togglePhotoSelection(photo.id)}
             >
               <div className="relative h-64">
+                {/* Debug info - will show in development only */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="absolute top-0 left-0 bg-black bg-opacity-70 text-white text-xs p-1 z-10 max-w-full overflow-hidden">
+                    ID: {photo.id?.substring(0, 8)}...
+                  </div>
+                )}
+                
                 <img
-                  src={photo.url}
+                  src={photo.url.startsWith('http') ? photo.url : `${window.location.origin}${photo.url}`}
                   alt={photo.filename}
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
-                    console.log(`Error loading image ${photo.id}, using fallback`);
+                    console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
+                    // Try again with just the ID as a fallback method
+                    if (!photo.url.includes('/uploads/')) {
+                      const fallbackUrl = `/uploads/${photo.id}`;
+                      console.log(`Trying fallback URL: ${fallbackUrl}`);
+                      e.currentTarget.src = fallbackUrl;
+                    } else {
+                      // Last resort - use a placeholder
+                      e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
+                      console.log(`Falling back to placeholder for image ${photo.id}`);
+                    }
                   }}
+                  title={`ID: ${photo.id}\nURL: ${photo.url}`}
                 />
                 
                 {/* Selection indicator */}
