@@ -479,20 +479,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Removida verificação de autenticação para facilitar testes
   app.post("/api/projects", async (req: Request, res: Response) => {
     try {
-      console.log("Recebendo solicitação para criar projeto", req.body);
+      console.log("Receiving request to create project", req.body);
       
-      // No ambiente Replit, podemos não ter acesso a um FormData completo
-      // então vamos processar o que for possível
-      const { name, clientName, clientEmail, photographerId, photos } = req.body;
+      // Extract project data from request body
+      const { name, clientName, clientEmail, photographerId, photos, photosData } = req.body;
       
-      console.log("Dados do projeto:", { name, clientName, clientEmail, photographerId });
+      console.log("Project data:", { name, clientName, clientEmail, photographerId });
       
       // Validate project data
       const projectData = insertProjectSchema.parse({
         name,
         clientName,
         clientEmail,
-        photographerId: parseInt(photographerId),
+        photographerId: parseInt(photographerId || '1'),
       });
       
       // Check if photographer ID matches authenticated user
@@ -500,41 +499,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot create projects for other photographers" });
       }
       
-      // Processar fotos
+      // Process photos
       let processedPhotos = [];
       
-      // Se recebemos um array de fotos do frontend (formato JSON)
+      // Check if we received photos as FormData or JSON
       if (Array.isArray(photos)) {
-        console.log(`Processando ${photos.length} fotos enviadas como JSON`);
+        // Direct array of photo objects
+        console.log(`Processing ${photos.length} photos sent as JSON array`);
         processedPhotos = photos.map(photo => ({
-          id: '', // Será definido pelo storage
+          id: '', // Will be set by storage
           url: photo.url,
           filename: photo.filename,
         }));
       }
-      // Fotos de amostra como fallback (apenas se não houver fotos enviadas)
-      else {
-        console.log("Usando fotos de amostra como fallback");
+      else if (photosData) {
+        // Try to parse the photosData JSON string
+        try {
+          const parsedPhotosData = JSON.parse(photosData);
+          console.log(`Processing ${parsedPhotosData.length} photos from photosData JSON`);
+          processedPhotos = parsedPhotosData.map(photo => ({
+            id: '', // Will be set by storage
+            url: photo.url,
+            filename: photo.filename,
+          }));
+        } catch (error) {
+          console.error("Error parsing photosData JSON:", error);
+        }
+      }
+      // Check if files were uploaded as multipart form data
+      else if (req.files && Array.isArray(req.files)) {
+        console.log(`Processing ${req.files.length} photos from multipart form-data`);
+        processedPhotos = req.files.map(file => ({
+          id: '', // Will be set by storage
+          url: file.path || file.buffer.toString('base64'),
+          filename: file.originalname || file.name || 'photo.jpg',
+        }));
+      }
+      // If no photos were provided through any method, use a single placeholder
+      if (processedPhotos.length === 0) {
+        console.log("No photos found in request, using a placeholder");
         processedPhotos = [
           { 
             id: '', // Will be set by storage
-            url: 'https://images.unsplash.com/photo-1529634597503-139d3726fed5', 
-            filename: 'sample_photo_1.jpg' 
-          },
-          { 
-            id: '', // Will be set by storage
-            url: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b', 
-            filename: 'sample_photo_2.jpg' 
-          },
-          { 
-            id: '', // Will be set by storage
-            url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6', 
-            filename: 'sample_photo_3.jpg' 
-          },
-          { 
-            id: '', // Will be set by storage
-            url: 'https://images.unsplash.com/photo-1519741497674-611481863552', 
-            filename: 'sample_photo_4.jpg' 
+            url: 'https://via.placeholder.com/800x600?text=No+Photo+Uploaded', 
+            filename: 'placeholder.jpg' 
           }
         ];
       }

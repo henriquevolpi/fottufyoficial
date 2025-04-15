@@ -71,35 +71,56 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
     setIsSubmitting(true);
 
     try {
-      // Convert base64 images to a format ready for API submission
-      const photoData = previews.map((preview, index) => ({
-        url: preview, // Using the data URL for now, will be stored by the server
-        filename: files[index].name,
-      }));
+      // Create FormData for sending files
+      const formData = new FormData();
+      
+      // Add project data
+      formData.append('name', values.nome);
+      formData.append('clientName', values.cliente);
+      formData.append('clientEmail', values.emailCliente);
+      formData.append('date', values.dataEvento);
+      formData.append('notes', values.observacoes || "");
+      formData.append('photographerId', '1'); // Using default ID
+      
+      // Add photos to FormData
+      files.forEach((file, index) => {
+        // Each file needs to be appended with a unique name
+        formData.append(`photo_${index}`, file);
+        
+        // Also send the filename separately
+        formData.append(`filename_${index}`, file.name);
+      });
+      
+      // Add total count of photos
+      formData.append('photoCount', files.length.toString());
 
-      // Create project data according to API requirements
-      const projectData = {
-        name: values.nome,
-        clientName: values.cliente,
-        clientEmail: values.emailCliente,
-        date: values.dataEvento,
-        notes: values.observacoes || "",
-        photographerId: 1, // Using default ID
-        photos: photoData
-      };
+      // Use a fallback approach for browsers that don't support FormData properly
+      // Create JSON photosData as a backup
+      const photoDataJson = JSON.stringify(
+        files.map((file, index) => ({
+          url: previews[index],
+          filename: file.name
+        }))
+      );
+      formData.append('photosData', photoDataJson);
 
-      // Send data to API endpoint
+      // Send data to API endpoint using FormData
       const response = await fetch('/api/projects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
+        // Don't set Content-Type header - browser sets it with boundary
+        body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create project');
+        let errorMessage = 'Failed to create project';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If we can't parse JSON, use the status text
+          errorMessage = `Server error: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const newProject = await response.json();
@@ -107,7 +128,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       // Show success message
       toast({
         title: "Project created successfully",
-        description: `Project "${values.nome}" was created with ${photoData.length} photos.`,
+        description: `Project "${values.nome}" was created with ${files.length} photos.`,
       });
 
       // Reset form and close modal
