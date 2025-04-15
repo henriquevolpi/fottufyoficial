@@ -191,7 +191,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
   // while maintaining backward compatibility
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [status, setStatus] = useState(project.status);
+  const [status, setStatus] = useState(project?.status || "pending");
   const [showSelectionsModal, setShowSelectionsModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -199,10 +199,15 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pendente": return "bg-yellow-100 text-yellow-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
       case "revisado": return "bg-blue-100 text-blue-800";
+      case "reviewed": return "bg-blue-100 text-blue-800";
       case "finalizado": return "bg-green-100 text-green-800";
+      case "completed": return "bg-green-100 text-green-800";
       case "arquivado": return "bg-gray-100 text-gray-800";
+      case "archived": return "bg-gray-100 text-gray-800";
       case "reaberto": return "bg-purple-100 text-purple-800";
+      case "reopened": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -216,7 +221,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
     // Simulate reopening the project
     toast({
       title: "Project reopened",
-      description: `Project "${project.nome}" has been reopened successfully.`,
+      description: `Project "${project?.nome || 'Untitled'}" has been reopened successfully.`,
     });
     
     // In a real app, we would make an API call to update the status
@@ -297,8 +302,8 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <CardHeader className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">{project.nome}</CardTitle>
-            <CardDescription className="text-sm mt-1">{project.cliente}</CardDescription>
+            <CardTitle className="text-lg font-bold">{project?.nome || "Untitled Project"}</CardTitle>
+            <CardDescription className="text-sm mt-1">{project?.cliente || "Unknown Client"}</CardDescription>
           </div>
           <Badge className={getStatusColor(status)}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -308,16 +313,16 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <CardContent className="p-4 pt-0">
         <div className="flex items-center text-sm text-gray-500 mt-2">
           <Calendar className="h-4 w-4 mr-1" />
-          <span>{formatDate(project.data)}</span>
+          <span>{formatDate(project?.data || new Date().toISOString())}</span>
         </div>
         <div className="flex justify-between mt-3">
           <div className="flex items-center text-sm">
             <Camera className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project.fotos} photos</span>
+            <span>{project?.fotos || 0} photos</span>
           </div>
           <div className="flex items-center text-sm">
             <FileText className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project.selecionadas} selected</span>
+            <span>{project?.selecionadas || 0} selected</span>
           </div>
         </div>
       </CardContent>
@@ -1092,7 +1097,7 @@ export default function Dashboard() {
                   {filteredProjects.map((project) => (
                     <ProjectCard 
                       key={project.id} 
-                      projeto={project} 
+                      project={project} 
                       onDelete={handleDeleteProject}
                     />
                   ))}
@@ -1140,7 +1145,7 @@ export default function Dashboard() {
                     {filteredProjects.map((project) => (
                       <ProjectCard 
                         key={project.id} 
-                        projeto={project} 
+                        project={project} 
                         onDelete={handleDeleteProject}
                       />
                     ))}
