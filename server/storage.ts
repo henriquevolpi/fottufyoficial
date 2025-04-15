@@ -434,11 +434,11 @@ export class MemStorage implements IStorage {
       
       console.log(`MemStorage: Projeto ID=${id} encontrado com ID alternativo: ${foundProject.id}`);
       
-      // Atualizar projeto com fotos selecionadas e mudar status para "reviewed"
+      // Atualizar projeto com fotos selecionadas e mudar status para "completed"
       const updatedProject = {
         ...foundProject,
         selectedPhotos,
-        status: "reviewed",
+        status: "completed",
       };
       
       // Garantir que as fotos tenham o estado correto de seleção
@@ -453,11 +453,11 @@ export class MemStorage implements IStorage {
       return updatedProject;
     }
 
-    // Atualizar projeto com fotos selecionadas e mudar status para "reviewed"
+    // Atualizar projeto com fotos selecionadas e mudar status para "completed"
     const updatedProject = {
       ...project,
       selectedPhotos,
-      status: "reviewed",
+      status: "completed",
     };
     
     // Garantir que as fotos tenham o estado correto de seleção
@@ -469,7 +469,7 @@ export class MemStorage implements IStorage {
     }
     
     this.projects.set(id, updatedProject);
-    console.log(`MemStorage: Projeto ID=${id} finalizado com sucesso`);
+    console.log(`MemStorage: Projeto ID=${id} finalizado com sucesso (status: completed)`);
     return updatedProject;
   }
 
