@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Check, 
   Loader2, 
   CheckCircle2, 
   Clock, 
-  ArrowLeftCircle 
+  ArrowLeftCircle,
+  ShieldAlert
 } from "lucide-react";
 import {
   Dialog,
@@ -50,6 +52,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Use os parâmetros passados ou os da URL
   const projectId = params?.id || urlParams.id;
   const { toast } = useToast();
+  const { user } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
@@ -57,6 +60,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [isFinalized, setIsFinalized] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [finalizationSuccess, setFinalizationSuccess] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
@@ -132,6 +136,20 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             
             const adaptedProject = adaptProject(projectData);
             console.log('Projeto após adaptação:', adaptedProject);
+            
+            // SECURITY CHECK: If user is logged in, check if they own this project
+            if (user && user.id !== adaptedProject.fotografoId && user.role !== 'admin') {
+              console.log(`Acesso negado: usuário ${user.id} tentando acessar projeto do fotógrafo ${adaptedProject.fotografoId}`);
+              setAccessDenied(true);
+              setLoading(false);
+              toast({
+                title: "Acesso negado",
+                description: "Você não tem permissão para visualizar este projeto.",
+                variant: "destructive",
+              });
+              return;
+            }
+            
             setProject(adaptedProject);
             
             // Inicializar seleções se houver
@@ -243,6 +261,19 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           foundProject.photos = []; // Garantir que existe um array vazio se não houver fotos
         }
         
+        // SECURITY CHECK: If user is logged in, check if they own this project from local storage
+        if (user && user.id !== foundProject.fotografoId && user.role !== 'admin') {
+          console.log(`Acesso negado: usuário ${user.id} tentando acessar projeto do fotógrafo ${foundProject.fotografoId} (localStorage)`);
+          setAccessDenied(true);
+          setLoading(false);
+          toast({
+            title: "Acesso negado",
+            description: "Você não tem permissão para visualizar este projeto.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         setProject(foundProject);
         
         // Se o projeto já tiver seleções salvas, carregá-las
@@ -269,7 +300,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
     
     loadProject();
-  }, [projectId, toast]);
+  }, [projectId, toast, user]);
   
   // Alternar seleção de foto
   const togglePhotoSelection = (photoId: string) => {
@@ -458,6 +489,23 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-lg text-gray-600">Carregando galeria...</p>
+      </div>
+    );
+  }
+  
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md p-6 bg-white shadow-lg rounded-lg">
+          <ShieldAlert className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Acesso Negado</h1>
+          <p className="text-gray-600 mb-6">
+            Você não tem permissão para visualizar este projeto, pois ele pertence a outro fotógrafo.
+          </p>
+          <Button onClick={() => setLocation("/dashboard")}>
+            Voltar para o Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
