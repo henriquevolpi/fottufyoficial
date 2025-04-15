@@ -919,20 +919,7 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         
-        // Try to get from localStorage first
-        let storedProjects = localStorage.getItem('projects');
-        if (storedProjects) {
-          const parsedProjects = JSON.parse(storedProjects);
-          if (parsedProjects.length > 0) {
-            console.log("Projects loaded from localStorage:", parsedProjects.length);
-            setProjects(parsedProjects);
-            setFilteredProjects(parsedProjects);
-            setIsLoading(false);
-            return;
-          }
-        }
-        
-        // If not in localStorage, fetch from API
+        // Always fetch from API to ensure we only see current user's projects
         const response = await fetch('/api/projects');
         
         if (!response.ok) {
@@ -942,8 +929,10 @@ export default function Dashboard() {
         const data = await response.json();
         console.log("Projects loaded from API:", data.length);
         
-        // Save to localStorage for future use
-        localStorage.setItem('projects', JSON.stringify(data));
+        // Save to localStorage with user-specific key to avoid mixing projects between users
+        if (user && user.id) {
+          localStorage.setItem(`projects_user_${user.id}`, JSON.stringify(data));
+        }
         
         setProjects(data);
         setFilteredProjects(data);
@@ -963,8 +952,16 @@ export default function Dashboard() {
       }
     };
     
-    fetchProjects();
-  }, [toast]);
+    // Only fetch if user is authenticated
+    if (user && user.id) {
+      fetchProjects();
+    } else {
+      // If no user, reset projects
+      setProjects([]);
+      setFilteredProjects([]);
+      setIsLoading(false);
+    }
+  }, [toast, user]);
   
   const handleLogout = () => {
     // First remove from localStorage for backwards compatibility
@@ -1001,13 +998,16 @@ export default function Dashboard() {
       // Update filtered projects as well
       setFilteredProjects(prevProjects => prevProjects.filter(project => project.id !== id));
       
-      // Update localStorage to reflect deletion
+      // Update user-specific localStorage to reflect deletion
       try {
-        const storedProjects = localStorage.getItem('projects');
-        if (storedProjects) {
-          const parsedProjects = JSON.parse(storedProjects);
-          const updatedProjects = parsedProjects.filter((p: any) => p.id !== id);
-          localStorage.setItem('projects', JSON.stringify(updatedProjects));
+        if (user && user.id) {
+          const storageKey = `projects_user_${user.id}`;
+          const storedProjects = localStorage.getItem(storageKey);
+          if (storedProjects) {
+            const parsedProjects = JSON.parse(storedProjects);
+            const updatedProjects = parsedProjects.filter((p: any) => p.id !== id);
+            localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+          }
         }
       } catch (storageError) {
         console.error('Error updating localStorage:', storageError);
