@@ -79,13 +79,36 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
     "User:", req.user);
   
-  // DESENVOLVIMENTO: Bypass de autenticação
+  // DESENVOLVIMENTO: Verificar autenticação
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    // Usuário já está autenticado pela sessão
+    console.log(`Usuário autenticado pela sessão: ID=${req.user?.id}`);
+    return next();
+  }
+  
+  // Para usuários não autenticados via sessão, usar cookie auth-bypass ou o cabeçalho
   if (!req.user) {
-    console.log("Usando usuário de teste para desenvolvimento");
+    // Verificar se há um token ou usuário de teste na sessão
+    if (req.headers['x-user-id']) {
+      // Autenticação via header para testes
+      const userId = parseInt(req.headers['x-user-id'] as string);
+      if (!isNaN(userId)) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          console.log(`Usuário carregado do header x-user-id: ${userId}`);
+          req.user = user;
+          return next();
+        }
+      }
+    }
+    
+    // Se chegou aqui, não há usuário autenticado, usar o bypass para desenvolvimento
+    console.log("GET /api/user - Status de autenticação: false");
+    console.log("Retornando usuário de teste para GET /api/user");
     req.user = {
       id: 1,
-      name: "Usuário Desenvolvimento",
-      email: "dev@example.com",
+      name: "Usuário de Teste",
+      email: "teste@example.com",
       role: "photographer",
       status: "active",
       planType: "standard",
@@ -465,12 +488,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projects = await storage.getProjects();
       } else if (req.user) {
         // Photographers can only see their own projects
+        console.log(`Filtrando projetos para o fotógrafo ID=${req.user.id}`);
         projects = await storage.getProjects(req.user.id);
       } else {
         // Usuário não autenticado
         return res.status(401).json({ message: "Não autorizado" });
       }
       
+      console.log(`Retornando ${projects.length} projetos para o usuário ID=${req.user?.id}`);
       res.json(projects);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve projects" });
