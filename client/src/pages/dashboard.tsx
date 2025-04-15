@@ -847,14 +847,14 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   
-  // Estado para gerenciar projetos
-  const [projetos, setProjetos] = useState<any[]>([]);
-  const [filteredProjetos, setFilteredProjetos] = useState<any[]>([]);
+  // State for managing projects
+  const [projects, setProjects] = useState<any[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
   const [currentTab, setCurrentTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   
-  // Estado para o modal de upload
+  // State for upload modal
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   
   // Carregar projetos
@@ -868,9 +868,9 @@ export default function Dashboard() {
         if (storedProjects) {
           const parsedProjects = JSON.parse(storedProjects);
           if (parsedProjects.length > 0) {
-            console.log("Projetos carregados do localStorage:", parsedProjects.length);
-            setProjetos(parsedProjects);
-            setFilteredProjetos(parsedProjects);
+            console.log("Projects loaded from localStorage:", parsedProjects.length);
+            setProjects(parsedProjects);
+            setFilteredProjects(parsedProjects);
             setIsLoading(false);
             return;
           }
@@ -880,17 +880,17 @@ export default function Dashboard() {
         const response = await fetch('/api/projects');
         
         if (!response.ok) {
-          throw new Error("Erro ao carregar projetos");
+          throw new Error("Error loading projects");
         }
         
         const data = await response.json();
-        console.log("Projetos carregados da API:", data.length);
+        console.log("Projects loaded from API:", data.length);
         
         // Save to localStorage for future use
         localStorage.setItem('projects', JSON.stringify(data));
         
-        setProjetos(data);
-        setFilteredProjetos(data);
+        setProjects(data);
+        setFilteredProjects(data);
       } catch (e) {
         console.error("Error loading data:", e);
         toast({
@@ -899,9 +899,9 @@ export default function Dashboard() {
           variant: "destructive",
         });
         
-        // Fallback to example projects if API call fails
-        setProjetos(PROJETOS_EXEMPLO);
-        setFilteredProjetos(PROJETOS_EXEMPLO);
+        // Fallback to empty projects array if API call fails
+        setProjects([]);
+        setFilteredProjects([]);
       } finally {
         setIsLoading(false);
       }
@@ -922,63 +922,63 @@ export default function Dashboard() {
     setLocation("/auth");
   };
   
-  // Handler para exclusão de projeto
+  // Handler for project deletion
   const handleDeleteProject = (id: number) => {
-    // Remover o projeto do estado
-    setProjetos(prevProjetos => prevProjetos.filter(projeto => projeto.id !== id));
+    // Remove project from state
+    setProjects(prevProjects => prevProjects.filter(project => project.id !== id));
     
-    // Atualizar projetos filtrados também
-    setFilteredProjetos(prevProjetos => prevProjetos.filter(projeto => projeto.id !== id));
+    // Update filtered projects as well
+    setFilteredProjects(prevProjects => prevProjects.filter(project => project.id !== id));
   };
   
-  // Handler para criação de projeto
+  // Handler for project creation
   const handleProjectCreated = (newProject: any) => {
-    const updatedProjetos = [newProject, ...projetos];
-    setProjetos(updatedProjetos);
+    const updatedProjects = [newProject, ...projects];
+    setProjects(updatedProjects);
     
-    // Atualizar projetos filtrados com base na aba atual
+    // Update filtered projects based on current tab
     if (currentTab === "all" || newProject.status === getStatusFilter(currentTab)) {
-      setFilteredProjetos([newProject, ...filteredProjetos]);
+      setFilteredProjects([newProject, ...filteredProjects]);
     }
     
-    // Atualizar localStorage
-    localStorage.setItem('projects', JSON.stringify(updatedProjetos));
+    // Update localStorage
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
   };
   
-  // Função para converter a aba atual em um filtro de status
+  // Function to convert the current tab to a status filter
   const getStatusFilter = (tab: string) => {
     switch (tab) {
-      case "pending": return "pendente";
-      case "reviewed": return "revisado";
-      case "completed": return "finalizado";
-      case "archived": return "arquivado";
+      case "pending": return "pending";
+      case "reviewed": return "reviewed";
+      case "completed": return "completed";
+      case "archived": return "archived";
       default: return "";
     }
   };
   
   // Filter projects by tab and search query
   useEffect(() => {
-    let filtered = [...projetos];
+    let filtered = [...projects];
     
     // Apply tab filter
     if (currentTab !== "all") {
       const statusFilter = getStatusFilter(currentTab);
-      filtered = filtered.filter(projeto => projeto.status === statusFilter);
+      filtered = filtered.filter(project => project.status === statusFilter);
     }
     
     // Apply search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        projeto => 
-          projeto.nome.toLowerCase().includes(query) ||
-          projeto.cliente.toLowerCase().includes(query) ||
-          projeto.emailCliente.toLowerCase().includes(query)
+        project => 
+          project.nome.toLowerCase().includes(query) ||
+          project.cliente.toLowerCase().includes(query) ||
+          project.emailCliente.toLowerCase().includes(query)
       );
     }
     
-    setFilteredProjetos(filtered);
-  }, [currentTab, searchQuery, projetos]);
+    setFilteredProjects(filtered);
+  }, [currentTab, searchQuery, projects]);
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1003,7 +1003,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <div>
-                  <p className="font-medium">{user?.name || "Usuário"}</p>
+                  <p className="font-medium">{user?.name || "User"}</p>
                   <p className="text-gray-500">{user?.email}</p>
                 </div>
                 <Button variant="outline" onClick={handleLogout}>
@@ -1070,7 +1070,7 @@ export default function Dashboard() {
                     </Card>
                   ))}
                 </div>
-              ) : filteredProjetos.length === 0 ? (
+              ) : filteredProjects.length === 0 ? (
                 <div className="text-center py-12 border border-dashed rounded-lg">
                   <Camera className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-1">No projects found</h3>
@@ -1087,10 +1087,10 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProjetos.map((projeto) => (
+                  {filteredProjects.map((project) => (
                     <ProjetoCard 
-                      key={projeto.id} 
-                      projeto={projeto} 
+                      key={project.id} 
+                      projeto={project} 
                       onDelete={handleDeleteProject}
                     />
                   ))}
@@ -1121,24 +1121,24 @@ export default function Dashboard() {
                       </Card>
                     ))}
                   </div>
-                ) : filteredProjetos.length === 0 ? (
+                ) : filteredProjects.length === 0 ? (
                   <div className="text-center py-12 border border-dashed rounded-lg">
                     <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Clock className="h-6 w-6 text-gray-400" />
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-1">
-                      Nenhum projeto {getStatusFilter(tab)}
+                      No {getStatusFilter(tab)} projects
                     </h3>
                     <p className="text-gray-500 mb-4">
-                      Os projetos aparecerão aqui quando forem marcados como {getStatusFilter(tab)}.
+                      Projects will appear here when they are marked as {getStatusFilter(tab)}.
                     </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjetos.map((projeto) => (
+                    {filteredProjects.map((project) => (
                       <ProjetoCard 
-                        key={projeto.id} 
-                        projeto={projeto} 
+                        key={project.id} 
+                        projeto={project} 
                         onDelete={handleDeleteProject}
                       />
                     ))}
