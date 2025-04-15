@@ -342,11 +342,30 @@ export class MemStorage implements IStorage {
   }
 
   // Project methods
-  async getProject(id: number): Promise<Project | undefined> {
+  async getProject(id: number | string): Promise<Project | undefined> {
     console.log(`MemStorage: Buscando projeto ID=${id}`);
     console.log(`MemStorage: Projetos disponíveis: ${Array.from(this.projects.keys()).join(", ")}`);
     
-    const project = this.projects.get(id);
+    let project: Project | undefined;
+    
+    // If we got a numeric ID, try to fetch directly
+    if (typeof id === 'number') {
+      project = this.projects.get(id);
+    } else {
+      // If we got a string, it might be a publicId
+      // First check if it's a numeric string we can convert to a number
+      const numericId = parseInt(id);
+      if (!isNaN(numericId)) {
+        project = this.projects.get(numericId);
+      }
+      
+      // If not found, try to find by publicId
+      if (!project) {
+        const allProjects = Array.from(this.projects.values());
+        project = allProjects.find(p => p.publicId === id);
+        console.log(`MemStorage: Buscando por publicId="${id}", encontrado: ${!!project}`);
+      }
+    }
     
     if (project) {
       console.log(`MemStorage: Projeto encontrado: ${project.name}`);

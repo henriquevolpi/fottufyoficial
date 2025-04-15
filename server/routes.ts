@@ -502,58 +502,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get project by ID - Rota pública para clientes visualizarem seus projetos
+  // Get project by ID or publicId - Rota pública para clientes visualizarem seus projetos
   app.get("/api/projects/:id", async (req: Request, res: Response) => {
     try {
       const idParam = req.params.id;
       
       // Adicionando logs para debug
-      console.log(`Buscando projeto com ID: ${idParam}`);
+      console.log(`Buscando projeto com ID ou publicId: ${idParam}`);
       
-      // Tentar várias estratégias para encontrar o projeto pelo ID fornecido
-      
-      // Estratégia 1: Buscar diretamente pelo ID como número (para IDs numéricos)
-      let project: Project | undefined;
-      if (!isNaN(parseInt(idParam))) {
-        const numericId = parseInt(idParam);
-        console.log(`Estratégia 1: Buscando projeto com ID numérico ${numericId}`);
-        project = await storage.getProject(numericId);
-      }
-      
-      // Estratégia 2: Verificar todos os projetos e comparar como string
-      if (!project) {
-        console.log("Estratégia 2: Buscando projeto com comparação de string");
-        const allProjects = await storage.getProjects();
-        project = allProjects.find(p => p.id.toString() === idParam);
-      }
-      
-      // Estratégia 3: Se for um ID longo (timestamp), tentar converter e buscar
-      if (!project && idParam.length > 8) {
-        console.log(`Estratégia 3: Buscando como possível timestamp: ${idParam}`);
-        const timestampId = parseInt(idParam);
-        if (!isNaN(timestampId)) {
-          const allProjects = await storage.getProjects();
-          project = allProjects.find(p => p.id === timestampId);
-        }
-      }
-      
-      // Estratégia 4: Verificar se o ID está contido ou contém outro ID (match parcial)
-      if (!project) {
-        console.log("Estratégia 4: Verificando correspondência parcial de IDs");
-        const allProjects = await storage.getProjects();
-        project = allProjects.find(p => {
-          const projectIdStr = p.id.toString();
-          return projectIdStr.includes(idParam) || idParam.includes(projectIdStr);
-        });
-      }
+      // Pass the ID directly to storage, which now handles both numeric IDs and string publicIds
+      const project = await storage.getProject(idParam);
       
       // Se ainda não encontrou, informar que o projeto não existe
       if (!project) {
-        console.log(`Projeto com ID ${idParam} não encontrado após todas as tentativas`);
+        console.log(`Projeto com ID/publicId ${idParam} não encontrado`);
         return res.status(404).json({ message: "Project not found" });
       }
       
-      console.log(`Projeto encontrado: ID=${project.id}, Nome=${project.name}`);
+      console.log(`Projeto encontrado: ID=${project.id}, Nome=${project.name}, PublicId=${project.publicId}`);
       console.log(`Status do projeto: ${project.status}`);
       console.log(`Total de fotos: ${project.photos?.length || 0}`);
       
@@ -786,45 +752,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Finalizando seleção de fotos para projeto ${idParam}. Fotos selecionadas: ${selectedPhotos.length}`);
       
-      // Usar as mesmas estratégias da rota GET para encontrar o projeto
-      // Estratégia 1: Buscar diretamente pelo ID como número (para IDs numéricos)
-      let project: any;
+      // Find the project by ID or publicId
+      const project = await storage.getProject(idParam);
       let projectId = 0;
       
-      if (!isNaN(parseInt(idParam))) {
-        projectId = parseInt(idParam);
-        console.log(`Estratégia 1: Buscando projeto com ID numérico ${projectId}`);
-        project = await storage.getProject(projectId);
-      }
-      
-      // Estratégia 2: Verificar todos os projetos e comparar como string
-      if (!project) {
-        console.log("Estratégia 2: Buscando projeto com comparação de string");
-        const allProjects = await storage.getProjects();
-        project = allProjects.find(p => p.id.toString() === idParam);
-        if (project) projectId = project.id;
-      }
-      
-      // Estratégia 3: Se for um ID longo (timestamp), tentar converter e buscar
-      if (!project && idParam.length > 8) {
-        console.log(`Estratégia 3: Buscando como possível timestamp: ${idParam}`);
-        const timestampId = parseInt(idParam);
-        if (!isNaN(timestampId)) {
-          const allProjects = await storage.getProjects();
-          project = allProjects.find(p => p.id === timestampId);
-          if (project) projectId = project.id;
-        }
-      }
-      
-      // Estratégia 4: Verificar se o ID está contido ou contém outro ID (match parcial)
-      if (!project) {
-        console.log("Estratégia 4: Verificando correspondência parcial de IDs");
-        const allProjects = await storage.getProjects();
-        project = allProjects.find(p => {
-          const projectIdStr = p.id.toString();
-          return projectIdStr.includes(idParam) || idParam.includes(projectIdStr);
-        });
-        if (project) projectId = project.id;
+      if (project) {
+        projectId = project.id;
+        console.log(`Projeto encontrado: ID=${project.id}, Nome=${project.name}, PublicId=${project.publicId}`);
       }
       
       if (!project) {
@@ -861,8 +795,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Archive project (photographer only)
   app.patch("/api/projects/:id/archive", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id);
-      const project = await storage.getProject(projectId);
+      const idParam = req.params.id;
+      const project = await storage.getProject(idParam);
       
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
@@ -873,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot archive projects of other photographers" });
       }
       
-      const updatedProject = await storage.archiveProject(projectId);
+      const updatedProject = await storage.archiveProject(project.id);
       
       if (!updatedProject) {
         return res.status(404).json({ message: "Project not found" });
@@ -888,8 +822,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reopen project (photographer only)
   app.patch("/api/projects/:id/reopen", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id);
-      const project = await storage.getProject(projectId);
+      const idParam = req.params.id;
+      const project = await storage.getProject(idParam);
       
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
@@ -900,7 +834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot reopen projects of other photographers" });
       }
       
-      const updatedProject = await storage.reopenProject(projectId);
+      const updatedProject = await storage.reopenProject(project.id);
       
       if (!updatedProject) {
         return res.status(404).json({ message: "Project not found" });
@@ -915,16 +849,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Adicionar novas fotos a um projeto existente
   app.post("/api/projects/:id/photos", authenticate, requireActiveUser, upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
-      const projectId = parseInt(req.params.id);
-      if (isNaN(projectId)) {
-        return res.status(400).json({ message: "Invalid project ID" });
-      }
+      const idParam = req.params.id;
       
       // Verificar se o projeto existe
-      const project = await storage.getProject(projectId);
+      const project = await storage.getProject(idParam);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
+      
+      // Get the numeric ID for storage operations
+      const projectId = project.id;
       
       // Verificar se o usuário é o fotógrafo do projeto
       if (req.user && project.photographerId !== req.user.id && req.user.role !== 'admin') {
