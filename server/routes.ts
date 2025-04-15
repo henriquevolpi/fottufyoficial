@@ -549,15 +549,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Receiving request to create project", req.body);
       
       // Extract project data from request body
-      const { name, clientName, clientEmail, photographerId, photos, photosData } = req.body;
+      // When using FormData, form fields come as strings instead of JSON objects
+      const { nome, clienteNome, clienteEmail, photographerId, photos, photosData } = req.body;
       
-      console.log("Project data:", { name, clientName, clientEmail, photographerId });
+      // Use fields from FormData format or fallback to JSON format
+      const projectName = nome || req.body.name;
+      const clientName = clienteNome || req.body.clientName; 
+      const clientEmail = clienteEmail || req.body.clientEmail;
+      
+      console.log("Project data:", { projectName, clientName, clientEmail, photographerId });
       
       // Validate project data
       const projectData = insertProjectSchema.parse({
-        name,
-        clientName,
-        clientEmail,
+        name: projectName,
+        clientName: clientName,
+        clientEmail: clientEmail,
         photographerId: parseInt(photographerId || '1'),
       });
       
@@ -659,21 +665,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error parsing photosData JSON:", error);
         }
       }
-      // Check if files were uploaded as multipart form data
+      // Prioritize files uploaded as multipart form data
       else if (req.files && Array.isArray(req.files)) {
         console.log(`Processing ${req.files.length} photos from multipart form-data`);
         const uploadedFiles = req.files as Express.Multer.File[];
         processedPhotos = uploadedFiles.map(file => {
-          // Extract the file ID from the filename (which should be id.ext)
+          // Generate a unique ID for the photo
+          const id = nanoid();
+          
+          // Get the filename saved on disk
           const filename = path.basename(file.path);
-          const id = path.parse(filename).name; // Get filename without extension
           
           // Create a web-accessible URL path to the uploaded file
           const fileUrl = `/uploads/${filename}`;
           console.log(`File uploaded: ${file.originalname}, Saved as: ${filename}, URL: ${fileUrl}`);
           
           return {
-            id: id, // Use the filename without extension as the ID
+            id: id,
             url: fileUrl,
             filename: file.originalname || 'photo.jpg',
           };
@@ -896,16 +904,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Convert uploaded files to photo objects
         processedPhotos = uploadedFiles.map(file => {
-          // Extract the file ID from the filename (which should be id.ext)
+          // Generate a unique ID for the photo
+          const id = nanoid();
+          
+          // Get the filename saved on disk
           const filename = path.basename(file.path);
-          const id = path.parse(filename).name; // Get filename without extension
           
           // Create a web-accessible URL path to the uploaded file
           const fileUrl = `/uploads/${filename}`;
           console.log(`File uploaded to project ${projectId}: ${file.originalname}, Saved as: ${filename}, URL: ${fileUrl}`);
           
           return {
-            id: id, // Use the filename without extension as the ID
+            id: id,
             url: fileUrl,
             filename: file.originalname || 'photo.jpg',
           };
