@@ -63,8 +63,28 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000 // limpar sessões expiradas a cada 24 horas
     });
     
-    // Não criamos mais usuário admin por padrão
-    // Usuários serão criados apenas via registro
+    // Create a default admin user for testing
+    const adminUser: User = {
+      id: this.userId++,
+      name: "Admin",
+      email: "admin@studio.com",
+      password: "$2b$10$qH9/uDRpvQMUZVHaNB5FsOqqxF4WXK1yZIsS13f93RtbBjqYCYnZq", // admin123
+      role: "admin",
+      status: "active",
+      createdAt: new Date(),
+      planType: "professional",
+      uploadLimit: -1, // unlimited uploads
+      usedUploads: 0,
+      subscriptionStartDate: new Date(),
+      subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+      subscriptionStatus: "active",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscription_id: null,
+      lastEvent: null
+    };
+    
+    this.users.set(adminUser.id, adminUser);
   }
 
   // User methods
