@@ -10,7 +10,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
+  const { loginMutation } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -60,25 +60,47 @@ export default function Login() {
       />
       
       <div className="mt-6">
-        <Button
-          onClick={() => {
-            // Criar um usuário fictício - para fins de demonstração
-            localStorage.setItem("user", JSON.stringify({
-              id: 1,
-              name: "Usuário Fotógrafo",
-              email: "teste@fotografia.com",
-              role: "photographer",
-              status: "active"
-            }));
-            
-            console.log("Redirecionando diretamente para dashboard");
-            window.location.href = "/dashboard";
-          }}
-          variant="outline"
-          className="text-sm"
-        >
-          Ir diretamente para o Dashboard (Demo)
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            onClick={() => {
+              // Criar um usuário fotógrafo - para fins de demonstração
+              localStorage.setItem("user", JSON.stringify({
+                id: 1,
+                name: "Usuário Fotógrafo",
+                email: "teste@fotografia.com",
+                role: "photographer",
+                status: "active"
+              }));
+              
+              console.log("Redirecionando para dashboard");
+              window.location.href = "/dashboard";
+            }}
+            variant="outline"
+            className="text-sm"
+          >
+            Acessar como Fotógrafo
+          </Button>
+          
+          <Button
+            onClick={() => {
+              // Criar um usuário admin - para fins de demonstração
+              localStorage.setItem("user", JSON.stringify({
+                id: 2,
+                name: "Admin",
+                email: "admin@fotografia.com",
+                role: "admin",
+                status: "active"
+              }));
+              
+              console.log("Redirecionando para admin");
+              window.location.href = "/admin";
+            }}
+            variant="outline"
+            className="text-sm bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+          >
+            Acessar como Admin
+          </Button>
+        </div>
         
         <div className="relative mt-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4">
           <h3 className="text-sm font-semibold mb-2">Acesso para Clientes</h3>
