@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, logoutMutation } = useAuth();
 
   // Redirect to dashboard if not admin
-  if (user && user.role !== "admin") {
-    setLocation("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      console.log("Non-admin user detected, redirecting to dashboard:", user);
+      setLocation("/dashboard");
+    } else if (!user) {
+      console.log("No user detected, redirecting to auth");
+      setLocation("/auth");
+    } else {
+      console.log("Admin user confirmed:", user);
+    }
+  }, [user, setLocation]);
   
   const handleLogout = async () => {
     try {
@@ -48,7 +55,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-white hover:bg-purple-700 hover:text-white"
-                onClick={() => navigate("/admin")}
+                onClick={() => setLocation("/admin")}
               >
                 <Users className="mr-2 h-4 w-4" />
                 User Management
@@ -58,7 +65,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-white hover:bg-purple-700 hover:text-white"
-                onClick={() => navigate("/admin/dashboard")}
+                onClick={() => setLocation("/admin/dashboard")}
               >
                 <LayoutGrid className="mr-2 h-4 w-4" />
                 Dashboard
@@ -68,7 +75,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-white hover:bg-purple-700 hover:text-white"
-                onClick={() => navigate("/admin/settings")}
+                onClick={() => setLocation("/admin/settings")}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
@@ -78,7 +85,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-white hover:bg-purple-700 hover:text-white"
-                onClick={() => navigate("/admin/stats")}
+                onClick={() => setLocation("/admin/stats")}
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Statistics
@@ -105,28 +112,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <Button 
             variant="ghost" 
             className="text-white hover:bg-purple-700"
-            onClick={() => navigate("/admin")}
+            onClick={() => setLocation("/admin")}
           >
             <Users className="h-6 w-6" />
           </Button>
           <Button 
             variant="ghost" 
             className="text-white hover:bg-purple-700"
-            onClick={() => navigate("/admin/dashboard")}
+            onClick={() => setLocation("/admin/dashboard")}
           >
             <LayoutGrid className="h-6 w-6" />
           </Button>
           <Button 
             variant="ghost" 
             className="text-white hover:bg-purple-700"
-            onClick={() => navigate("/admin/settings")}
+            onClick={() => setLocation("/admin/settings")}
           >
             <Settings className="h-6 w-6" />
           </Button>
           <Button 
             variant="ghost" 
             className="text-white hover:bg-purple-700"
-            onClick={() => navigate("/admin/stats")}
+            onClick={() => setLocation("/admin/stats")}
           >
             <BarChart3 className="h-6 w-6" />
           </Button>
