@@ -125,28 +125,9 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
         lastEvent: null
       };
     } else {
-      // Se chegou aqui, não há usuário autenticado, usar o bypass para desenvolvimento
-      console.log("GET /api/user - Status de autenticação: false");
-      console.log("Retornando usuário de teste para GET /api/user");
-      req.user = {
-        id: 1,
-        name: "Usuário de Teste",
-        email: "teste@example.com",
-        role: "photographer",
-        status: "active",
-        planType: "standard",
-        uploadLimit: 5000,
-        usedUploads: 0,
-        subscriptionStatus: "active",
-        subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(),
-        password: "password123",
-        subscriptionStartDate: new Date(),
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        subscription_id: null,
-        lastEvent: null
-      };
+      // No authenticated user and no override, do not bypass authentication
+      console.log("No authenticated user and no override, returning 401");
+      return res.status(401).json({ message: "Não autorizado" });
     }
   }
   
