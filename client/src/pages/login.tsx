@@ -83,17 +83,43 @@ export default function Login() {
           
           <Button
             onClick={() => {
-              // Criar um usuário admin - para fins de demonstração
-              localStorage.setItem("user", JSON.stringify({
-                id: 2,
-                name: "Admin",
-                email: "admin@fotografia.com",
-                role: "admin",
-                status: "active"
-              }));
+              // Use our new admin account with login API
+              const adminLogin = {
+                email: "admin@studio.com",
+                password: "admin123"
+              };
               
-              console.log("Redirecionando para admin");
-              window.location.href = "/admin";
+              fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(adminLogin)
+              })
+              .then(response => response.json())
+              .then(data => {
+                console.log("Admin login response:", data);
+                if (data.user) {
+                  localStorage.setItem("user", JSON.stringify(data.user));
+                  console.log("Redirecionando para admin");
+                  window.location.href = "/admin";
+                } else {
+                  console.error("Falha no login admin:", data);
+                  toast({
+                    title: "Falha no login admin",
+                    description: data.message || "Erro desconhecido",
+                    variant: "destructive"
+                  });
+                }
+              })
+              .catch(error => {
+                console.error("Erro ao fazer login admin:", error);
+                toast({
+                  title: "Erro de conexão",
+                  description: "Não foi possível conectar ao servidor",
+                  variant: "destructive"
+                });
+              });
             }}
             variant="outline"
             className="text-sm bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"

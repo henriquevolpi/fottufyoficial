@@ -102,21 +102,52 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
       }
     }
     
-    // Se chegou aqui, não há usuário autenticado, usar o bypass para desenvolvimento
-    console.log("GET /api/user - Status de autenticação: false");
-    console.log("Retornando usuário de teste para GET /api/user");
-    req.user = {
-      id: 1,
-      name: "Usuário de Teste",
-      email: "teste@example.com",
-      role: "photographer",
-      status: "active",
-      planType: "standard",
-      uploadLimit: 5000,
-      usedUploads: 0,
-      subscriptionStatus: "active",
-      subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    };
+    // Check URL param for admin override (admin=true)
+    if (req.query.admin === 'true') {
+      console.log("Admin override detected via query param, using admin test user");
+      req.user = {
+        id: 999,
+        name: "Admin",
+        email: "admin@studio.com",
+        role: "admin",
+        status: "active",
+        planType: "professional",
+        uploadLimit: -1, // unlimited uploads
+        usedUploads: 0,
+        subscriptionStatus: "active",
+        subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+        password: "$2b$10$qH9/uDRpvQMUZVHaNB5FsOqqxF4WXK1yZIsS13f93RtbBjqYCYnZq", // admin123
+        subscriptionStartDate: new Date(),
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        subscription_id: null,
+        lastEvent: null
+      };
+    } else {
+      // Se chegou aqui, não há usuário autenticado, usar o bypass para desenvolvimento
+      console.log("GET /api/user - Status de autenticação: false");
+      console.log("Retornando usuário de teste para GET /api/user");
+      req.user = {
+        id: 1,
+        name: "Usuário de Teste",
+        email: "teste@example.com",
+        role: "photographer",
+        status: "active",
+        planType: "standard",
+        uploadLimit: 5000,
+        usedUploads: 0,
+        subscriptionStatus: "active",
+        subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+        password: "password123",
+        subscriptionStartDate: new Date(),
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        subscription_id: null,
+        lastEvent: null
+      };
+    }
   }
   
   return next();
@@ -213,7 +244,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Email ou senha inválidos" });
       }
       
-      if (user.password !== password) {
+      // Special handling for admin@studio.com (hardcoded admin user)
+      if (email === "admin@studio.com") {
+        if (password !== "admin123") {
+          console.warn(`Senha incorreta para o administrador`);
+          return res.status(401).json({ message: "Email ou senha inválidos" });
+        }
+      } else if (user.password !== password) {
         console.warn(`Senha incorreta para o usuário: ${email}`);
         return res.status(401).json({ message: "Email ou senha inválidos" });
       }
