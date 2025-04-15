@@ -964,9 +964,16 @@ export default function Dashboard() {
   }, [toast, user]);
   
   const handleLogout = () => {
-    // First remove from localStorage for backwards compatibility
+    // First remove user data from localStorage
     localStorage.removeItem("user");
+    
+    // Clear both the old and new format of project data
     localStorage.removeItem("projects");
+    
+    // Also remove user-specific project data if there's a user
+    if (user && user.id) {
+      localStorage.removeItem(`projects_user_${user.id}`);
+    }
     
     // Then trigger the logout mutation to clear the auth state
     logoutMutation.mutate();
@@ -1044,8 +1051,11 @@ export default function Dashboard() {
       setFilteredProjects([newProject, ...filteredProjects]);
     }
     
-    // Update localStorage
-    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+    // Update user-specific localStorage
+    if (user && user.id) {
+      const storageKey = `projects_user_${user.id}`;
+      localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+    }
   };
   
   // Function to convert the current tab to a status filter
