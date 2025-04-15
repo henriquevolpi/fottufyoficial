@@ -843,6 +843,17 @@ function Statistics() {
               : `${planInfo.percentageUsed}% of upload limit used`}
           </p>
         </CardContent>
+        <CardFooter>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={() => setLocation("/subscription")}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Manage Subscription
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
