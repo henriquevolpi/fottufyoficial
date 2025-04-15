@@ -776,36 +776,47 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   
   // Calculate percentage based on real user data
   const calculatePlanInfo = () => {
-    if (!userQuery.data || !data) return null;
-    
-    // If user data exists, extract plan info from both endpoints
+    // Always ensure we have real data from API
     const user = userQuery.data;
     const stats = data;
     
-    // Convert Portuguese plan names to English if needed
-    let planType = (user.planType || "free").toLowerCase();
-    if (planType === "gratuito") planType = "free";
-    if (planType === "basico" || planType === "básico") planType = "basic";
-    if (planType === "padrao" || planType === "padrão") planType = "standard";
-    if (planType === "ilimitado") planType = "unlimited";
-    
-    // Get real upload limits based on user data
-    const uploadLimit = user.uploadLimit || 50;
-    const usedUploads = user.usedUploads || 0;
-    
-    // Calculate percentage
-    const percentageUsed = uploadLimit > 0 ? Math.round((usedUploads / uploadLimit) * 100) : 0;
-    
-    // Use actual planInfo from stats if available
-    if (stats.planInfo) {
+    // Special case for new accounts or missing data - show free plan with 0 usage
+    if (!user) {
       return {
-        planType: planType,
-        // Prefer stats.planInfo values when available, fall back to user values
-        uploadLimit: stats.planInfo.uploadLimit || uploadLimit,
-        usedUploads: stats.planInfo.usedUploads || usedUploads,
-        percentageUsed: percentageUsed
+        planType: "free",
+        uploadLimit: 50,
+        usedUploads: 0,
+        percentageUsed: 0
       };
     }
+    
+    // Convert Portuguese plan names to English for consistency
+    let planType = (user.planType || "free").toLowerCase();
+    if (planType === "gratuito") planType = "free";
+    if (planType === "basico" || planType === "básico") planType = "basic"; 
+    if (planType === "padrao" || planType === "padrão") planType = "standard";
+    if (planType === "ilimitado") planType = "unlimited";
+    if (planType === "profissional") planType = "professional";
+    
+    // Default values if we don't have stats yet
+    let uploadLimit = user.uploadLimit || 50;
+    let usedUploads = user.usedUploads || 0;
+    
+    // Override with stats-specific values if available
+    if (stats && stats.planInfo) {
+      // Use the more accurate values from the stats endpoint
+      uploadLimit = stats.planInfo.uploadLimit || uploadLimit;
+      usedUploads = stats.planInfo.usedUploads || usedUploads;
+    }
+    
+    // For new accounts, ensure we display real-time correct data
+    if (planType === "free" && !("planType" in user)) {
+      uploadLimit = 50;
+      usedUploads = 0;
+    }
+    
+    // Calculate percentage with safety check for divide-by-zero
+    const percentageUsed = uploadLimit > 0 ? Math.round((usedUploads / uploadLimit) * 100) : 0;
     
     return {
       planType: planType,

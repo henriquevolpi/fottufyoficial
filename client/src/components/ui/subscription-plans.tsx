@@ -48,8 +48,8 @@ export default function SubscriptionPlans() {
     enabled: !!user,
     // Use explicit fetcher that normalizes response data
     queryFn: async ({ queryKey }) => {
-      const url = queryKey[0];
-      const response = await fetch(url.toString());
+      const url = queryKey[0] as string;
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch subscription plans');
       }
