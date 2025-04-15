@@ -415,7 +415,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           <DialogHeader>
             <DialogTitle>Delete Project</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the project "{project.nome}"? This action cannot be undone.
+              Are you sure you want to delete the project "{project?.nome || 'Untitled'}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
@@ -447,9 +447,9 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Selected Photos - {project.nome}</DialogTitle>
+            <DialogTitle>Selected Photos - {project?.nome || 'Untitled Project'}</DialogTitle>
             <DialogDescription>
-              The client selected {project.selecionadas} of {project.fotos} photos.
+              The client selected {project?.selecionadas || 0} of {project?.fotos || 0} photos.
             </DialogDescription>
           </DialogHeader>
           
