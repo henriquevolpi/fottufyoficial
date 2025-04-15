@@ -692,7 +692,7 @@ function UploadModal({
             {thumbnails.length > 0 && (
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">
-                  {thumbnails.length} foto(s) selecionada(s)
+                  {thumbnails.length} photo(s) selected
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {thumbnails.map((thumbnail, i) => (
@@ -723,16 +723,16 @@ function UploadModal({
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose} disabled={isUploading}>
-                Cancelar
+                Cancel
               </Button>
               <Button type="submit" disabled={isUploading}>
                 {isUploading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
+                    Uploading...
                   </>
                 ) : (
-                  "Criar Projeto"
+                  "Create Project"
                 )}
               </Button>
             </DialogFooter>
@@ -743,15 +743,15 @@ function UploadModal({
   );
 }
 
-// Componente de estatísticas do dashboard
-function Estatisticas() {
-  // Dados de exemplo para estatísticas
+// Dashboard statistics component
+function Statistics() {
+  // Statistics data
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/user/stats"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
-  // Plano do usuário atual
+  // Current user plan
   const userQuery = useQuery<any>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
@@ -766,12 +766,12 @@ function Estatisticas() {
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      {/* Card de projetos ativos */}
+      {/* Active projects card */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <BarChart className="h-5 w-5 mr-2 text-blue-500" />
-            Projetos Ativos
+            Active Projects
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -783,19 +783,19 @@ function Estatisticas() {
                 {data?.activeProjects || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Projetos em andamento
+                Projects in progress
               </p>
             </>
           )}
         </CardContent>
       </Card>
       
-      {/* Card de uploads deste mês */}
+      {/* Monthly uploads card */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <Camera className="h-5 w-5 mr-2 text-green-500" />
-            Uploads do Mês
+            Monthly Uploads
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -807,24 +807,24 @@ function Estatisticas() {
                 {data?.photosThisMonth || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Fotos enviadas este mês
+                Photos uploaded this month
               </p>
             </>
           )}
         </CardContent>
       </Card>
       
-      {/* Card de uso de upload */}
+      {/* Upload usage card */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <CreditCard className="h-5 w-5 mr-2 text-purple-500" />
-            Plano: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
+            Plan: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-1">
-            <span className="text-sm text-gray-500">Uso de upload</span>
+            <span className="text-sm text-gray-500">Upload Usage</span>
             <span className="text-sm font-medium">
               {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
             </span>
@@ -832,8 +832,8 @@ function Estatisticas() {
           <Progress value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} className="h-2" />
           <p className="text-xs text-gray-500 mt-2">
             {planInfo.planType === "unlimited" 
-              ? "Plano com uploads ilimitados" 
-              : `${planInfo.percentageUsed}% do limite utilizado`}
+              ? "Plan with unlimited uploads" 
+              : `${planInfo.percentageUsed}% of upload limit used`}
           </p>
         </CardContent>
       </Card>
@@ -841,7 +841,7 @@ function Estatisticas() {
   );
 }
 
-// Componente principal do Dashboard
+// Main Dashboard component
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -993,7 +993,7 @@ export default function Dashboard() {
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
-                Novo Projeto
+                New Project
               </Button>
               
               <div className="flex items-center border-l pl-4 ml-2">
@@ -1016,17 +1016,17 @@ export default function Dashboard() {
       </header>
       
       <main className="container mx-auto py-8 px-4">
-        <Estatisticas />
+        <Statistics />
         
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="text-xl font-bold text-gray-900">Meus Projetos</h2>
+            <h2 className="text-xl font-bold text-gray-900">My Projects</h2>
             
             <div className="flex items-center w-full sm:w-auto gap-2">
               <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
-                  placeholder="Buscar projetos..."
+                  placeholder="Search projects..."
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -1041,11 +1041,11 @@ export default function Dashboard() {
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
             <TabsList className="mb-6">
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="pending">Pendentes</TabsTrigger>
-              <TabsTrigger value="reviewed">Revisados</TabsTrigger>
-              <TabsTrigger value="completed">Finalizados</TabsTrigger>
-              <TabsTrigger value="archived">Arquivados</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="reviewed">Reviewed</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="archived">Archived</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
@@ -1073,16 +1073,16 @@ export default function Dashboard() {
               ) : filteredProjetos.length === 0 ? (
                 <div className="text-center py-12 border border-dashed rounded-lg">
                   <Camera className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhum projeto encontrado</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No projects found</h3>
                   <p className="text-gray-500 mb-6">
                     {searchQuery 
-                      ? "Tente ajustar os filtros ou termos de busca" 
-                      : "Comece criando seu primeiro projeto fotográfico"
+                      ? "Try adjusting your filters or search terms" 
+                      : "Start by creating your first photo project"
                     }
                   </p>
                   <Button onClick={() => setUploadModalOpen(true)}>
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Criar Novo Projeto
+                    Create New Project
                   </Button>
                 </div>
               ) : (
