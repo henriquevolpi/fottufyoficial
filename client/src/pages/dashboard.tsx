@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   BarChart, 
   Camera, 
@@ -35,7 +36,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import {
   Form,
   FormControl,
@@ -446,7 +447,7 @@ function ProjetoCard({ projeto, onDelete }: { projeto: any, onDelete?: (id: numb
           </DialogHeader>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
-            {projeto.photos.filter(photo => photo.selected).map((photo) => (
+            {projeto.photos.filter((photo: any) => photo.selected).map((photo: any) => (
               <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
                 <img 
                   src={photo.url} 
@@ -471,316 +472,223 @@ function ProjetoCard({ projeto, onDelete }: { projeto: any, onDelete?: (id: numb
   );
 }
 
-// Componente de Modal para Upload de Novos Projetos
+// Componente para o modal de upload
 function UploadModal({
   open,
   onClose,
-  onProjectCreated
+  onUpload,
 }: {
   open: boolean;
   onClose: () => void;
-  onProjectCreated?: (newProject: any) => void;
+  onUpload: (data: any) => void;
 }) {
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Schema do formulário
-  const formSchema = z.object({
-    nome: z.string().min(3, "Nome do projeto deve ter pelo menos 3 caracteres"),
-    clienteNome: z.string().min(2, "Nome do cliente deve ter pelo menos 2 caracteres"),
-    clienteEmail: z.string().email("E-mail inválido"),
+  const uploadSchema = z.object({
+    nome: z.string().min(3, "Nome do projeto é obrigatório"),
+    cliente: z.string().min(3, "Nome do cliente é obrigatório"),
+    emailCliente: z.string().email("Email inválido"),
+    data: z.string().min(1, "A data é obrigatória"),
   });
   
-  // Formulário para dados do projeto
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof uploadSchema>>({
+    resolver: zodResolver(uploadSchema),
     defaultValues: {
       nome: "",
-      clienteNome: "",
-      clienteEmail: ""
-    }
+      cliente: "",
+      emailCliente: "",
+      data: new Date().toISOString().split('T')[0],
+    },
   });
   
-  // Limpar formulário ao fechar
-  useEffect(() => {
-    if (!open) {
-      form.reset();
-      setSelectedFiles([]);
-      setThumbnails(prev => {
-        // Limpar URLs de objeto
-        prev.forEach(url => URL.revokeObjectURL(url));
-        return [];
-      });
-      setIsDragging(false);
-    }
-  }, [open, form]);
-
-  // Manipuladores de evento para drag & drop
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-      setSelectedFiles(prev => [...prev, ...imageFiles]);
-      
-      // Criar thumbnails
-      const newThumbnails = imageFiles.map(file => URL.createObjectURL(file));
-      setThumbnails(prev => [...prev, ...newThumbnails]);
-    }
-  }, []);
-
-  // Manipulador para seleção de arquivos pelo input file
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-      setSelectedFiles(prev => [...prev, ...imageFiles]);
-      
-      // Criar thumbnails
-      const newThumbnails = imageFiles.map(file => URL.createObjectURL(file));
-      setThumbnails(prev => [...prev, ...newThumbnails]);
-    }
+    if (!event.target.files || event.target.files.length === 0) return;
+    
+    const newFiles = Array.from(event.target.files);
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+    
+    // Generate thumbnails for preview
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setThumbnails((prev) => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
   
-  // Remover um arquivo específico
   const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    
-    // Revogar URL e remover
-    URL.revokeObjectURL(thumbnails[index]);
-    setThumbnails(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setThumbnails((prev) => prev.filter((_, i) => i !== index));
   };
-
-  // Enviar formulário
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  
+  const onSubmit = async (data: z.infer<typeof uploadSchema>) => {
     if (selectedFiles.length === 0) {
       toast({
         title: "Nenhum arquivo selecionado",
-        description: "Por favor, selecione pelo menos uma foto para upload.",
+        description: "Por favor, selecione ao menos uma foto para o projeto.",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
       setIsUploading(true);
       
-      // Create a FormData object to send files and project data together
+      // Create FormData for file upload
       const formData = new FormData();
+      formData.append('nome', data.nome);
+      formData.append('cliente', data.cliente);
+      formData.append('emailCliente', data.emailCliente);
+      formData.append('data', data.data);
       
-      // Add project metadata
-      formData.append("nome", values.nome);
-      formData.append("clienteNome", values.clienteNome);
-      formData.append("clienteEmail", values.clienteEmail);
-      
-      // Get the user ID (or use 1 as fallback)
-      const user = JSON.parse(localStorage.getItem('user') || '{"id": 1}');
-      formData.append("photographerId", user.id.toString());
-      
-      // Add all selected files to the FormData
+      // Append each file to FormData
       selectedFiles.forEach((file) => {
-        formData.append("photos", file);
+        formData.append('photos', file);
       });
       
-      console.log("Preparando upload de projeto com", selectedFiles.length, "fotos");
-      
-      // Send the FormData to the API
+      // Make API request with FormData
       const response = await fetch('/api/projects', {
         method: 'POST',
-        body: formData, // No Content-Type header needed - browser sets it automatically with correct boundary
-        credentials: 'include' // Important for sending cookies
+        body: formData,
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erro da API:", errorData);
-        throw new Error(errorData.message || "Erro ao criar projeto");
+        throw new Error("Erro ao criar projeto");
       }
       
-      // Obter o projeto criado com o ID gerado pelo backend
-      const newProject = await response.json();
-      console.log("Projeto criado com sucesso na API:", newProject);
+      const result = await response.json();
+      console.log("Projeto criado:", result);
       
-      // Adaptar o formato para o frontend
-      const adaptedProject = {
-        id: newProject.id,
-        nome: newProject.name,
-        cliente: newProject.clientName,
-        emailCliente: newProject.clientEmail,
-        data: newProject.createdAt || new Date().toISOString(),
-        status: newProject.status || "pendente",
-        fotos: newProject.photos ? newProject.photos.length : 0,
-        selecionadas: 0,
-        fotografoId: newProject.photographerId,
-        photos: newProject.photos ? newProject.photos.map((p: any) => ({
-          id: p.id,
-          filename: p.filename,
-          url: p.url,
-          selected: false
-        })) : []
-      };
-      
-      // Armazenar também no localStorage para compatibilidade
-      const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-      const updatedProjects = [...existingProjects, adaptedProject];
-      localStorage.setItem('projects', JSON.stringify(updatedProjects));
-      
-      // Gerar link público para compartilhamento
-      const projectLink = `${window.location.origin}/project-view/${newProject.id}`;
-      console.log("Link para compartilhamento criado:", projectLink);
-      
-      // Exibir notificação de sucesso com instruções para copiar o link
+      // Show success notification
       toast({
-        title: "Projeto criado com sucesso!",
-        description: `Projeto "${values.nome}" criado com ID ${newProject.id}. Você pode compartilhar o link com o cliente.`,
-        duration: 5000,
+        title: "Projeto criado com sucesso",
+        description: `O projeto "${data.nome}" foi criado com ${selectedFiles.length} fotos.`,
       });
       
-      // Fechar modal
+      // Call onUpload callback with the created project
+      onUpload(result);
+      
+      // Reset form and close modal
+      setSelectedFiles([]);
+      setThumbnails([]);
+      form.reset();
       onClose();
-      
-      // Atualizar a lista de projetos atualizando o estado (melhor que reload da página)
-      if (onProjectCreated) {
-        onProjectCreated(newProject);
-      }
-      
     } catch (error) {
-      console.error('Erro ao criar projeto:', error);
+      console.error("Erro durante o upload:", error);
       toast({
         title: "Erro ao criar projeto",
-        description: "Ocorreu um erro ao tentar criar o projeto. Por favor, tente novamente.",
+        description: "Ocorreu um erro durante o upload. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
     }
   };
-
-  if (!open) return null;
-
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Criar Novo Projeto</DialogTitle>
           <DialogDescription>
-            Preencha os detalhes do projeto e faça upload das fotos.
+            Preencha os dados do projeto e faça o upload das fotos.
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="nome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Projeto</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Casamento João e Maria" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="clienteNome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Cliente</FormLabel>
-                    <FormControl>
-                      <Input placeholder="João Silva" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="clienteEmail"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>E-mail do Cliente</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email"
-                        placeholder="cliente@exemplo.com" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="nome"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Projeto</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Casamento João e Maria" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div>
-              <FormLabel htmlFor="photos">Fotos</FormLabel>
-              <div
-                className={`mt-2 border-2 border-dashed rounded-md ${
-                  isDragging ? 'border-primary bg-primary/5' : 'border-border'
-                } relative`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
+            <FormField
+              control={form.control}
+              name="cliente"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Cliente</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: João Silva" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="emailCliente"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email do Cliente</FormLabel>
+                  <FormControl>
+                    <Input placeholder="cliente@exemplo.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="data"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data do Evento</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-2">
+                Fotos do Projeto
+              </label>
+              <div className="border border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition relative">
                 <input
-                  id="photos"
                   type="file"
-                  className="hidden"
                   accept="image/*"
                   multiple
                   onChange={handleFileChange}
-                  ref={fileInputRef}
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                  disabled={isUploading}
                 />
-                
-                <div className="py-8 text-center">
-                  <Camera className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Selecionar Arquivos
-                    </Button>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    ou arraste e solte imagens aqui
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <Camera className="h-8 w-8 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    Clique ou arraste fotos para fazer upload
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    (Formatos aceitos: JPG, PNG, WEBP)
                   </p>
                 </div>
               </div>
             </div>
             
-            {selectedFiles.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium mb-2">
-                  {selectedFiles.length} {selectedFiles.length === 1 ? 'arquivo selecionado' : 'arquivos selecionados'}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {thumbnails.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium mb-2">
+                  {thumbnails.length} foto(s) selecionada(s)
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {thumbnails.map((thumbnail, i) => (
                     <div key={i} className="group relative rounded-md overflow-hidden h-24">
                       <div
@@ -829,249 +737,183 @@ function UploadModal({
   );
 }
 
-// Componente de estatísticas
+// Componente de estatísticas do dashboard
 function Estatisticas() {
-  const [, setLocation] = useLocation();
-  
-  // Fetch user stats from API
-  const { data: stats, isLoading, error } = useQuery({
-    queryKey: ['/api/user/stats'],
+  // Dados de exemplo para estatísticas
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ["/api/user/stats"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
-  // Formatar tipo de plano para exibição
-  const getPlanDisplayInfo = (planType: string) => {
-    switch(planType) {
-      case 'basic': return { name: 'Basic', color: 'bg-blue-100', textColor: 'text-blue-600' };
-      case 'standard': return { name: 'Standard', color: 'bg-green-100', textColor: 'text-green-600' };
-      case 'professional': return { name: 'Professional', color: 'bg-purple-100', textColor: 'text-purple-600' };
-      default: return { name: 'Free', color: 'bg-gray-100', textColor: 'text-gray-600' };
-    }
+  // Plano do usuário atual
+  const userQuery = useQuery<any>({
+    queryKey: ["/api/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+  
+  const planInfo = userQuery.data?.planInfo || {
+    planType: "free",
+    uploadLimit: 50,
+    usedUploads: 23,
+    percentageUsed: 46
   };
-  
-  const planInfo = stats?.planInfo?.name
-    ? getPlanDisplayInfo(stats.planInfo.name) 
-    : { name: 'Free', color: 'bg-gray-100', textColor: 'text-gray-600' };
-  
-  // Calcular uso de armazenamento
-  const getUsagePercentage = () => {
-    if (!stats?.planInfo?.uploadLimit) return 0;
-    
-    // Handle unlimited plan
-    if (stats.planInfo.uploadLimit === -1) return 0;
-    
-    const used = stats.planInfo.usedUploads || 0;
-    const limit = stats.planInfo.uploadLimit;
-    return Math.min(Math.round((used / limit) * 100), 100);
-  };
-  
-  const usagePercentage = getUsagePercentage();
-  const isUnlimited = stats?.planInfo?.uploadLimit === -1;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Card de projetos ativos */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Active Projects</p>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16 mt-1" />
-              ) : (
-                <h3 className="text-2xl font-bold mt-1">{stats?.activeProjects || 0}</h3>
-              )}
-            </div>
-            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <FileText className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center">
+            <BarChart className="h-5 w-5 mr-2 text-blue-500" />
+            Projetos Ativos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-10 w-16" />
+          ) : (
+            <>
+              <div className="text-3xl font-bold">
+                {data?.activeProjects || 0}
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Projetos em andamento
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
       
+      {/* Card de uploads deste mês */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Photos This Month</p>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16 mt-1" />
-              ) : (
-                <h3 className="text-2xl font-bold mt-1">{stats?.photosThisMonth || 0}</h3>
-              )}
-            </div>
-            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-              <Camera className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center">
+            <Camera className="h-5 w-5 mr-2 text-green-500" />
+            Uploads do Mês
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-10 w-16" />
+          ) : (
+            <>
+              <div className="text-3xl font-bold">
+                {data?.photosThisMonth || 0}
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Fotos enviadas este mês
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
       
+      {/* Card de uso de upload */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Current Plan</p>
-                {isLoading ? (
-                  <Skeleton className="h-6 w-24 mt-1" />
-                ) : (
-                  <h3 className="text-xl font-bold mt-1">{planInfo.name}</h3>
-                )}
-              </div>
-              <div className={`h-12 w-12 ${planInfo.color} rounded-full flex items-center justify-center`}>
-                <CreditCard className={`h-6 w-6 ${planInfo.textColor}`} />
-              </div>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-auto"
-              onClick={() => setLocation('/subscription')}
-            >
-              <Settings className="h-4 w-4 mr-1" />
-              Manage Subscription
-            </Button>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center">
+            <CreditCard className="h-5 w-5 mr-2 text-purple-500" />
+            Plano: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm text-gray-500">Uso de upload</span>
+            <span className="text-sm font-medium">
+              {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
+            </span>
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <div className="w-full">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium text-gray-500">Upload Usage</p>
-                  {isLoading ? (
-                    <Skeleton className="h-4 w-10" />
-                  ) : (
-                    <p className="text-sm font-medium">
-                      {isUnlimited ? (
-                        <Badge className="bg-purple-100 text-purple-600 hover:bg-purple-100">Unlimited</Badge>
-                      ) : (
-                        `${usagePercentage}%`
-                      )}
-                    </p>
-                  )}
-                </div>
-                {!isLoading && !isUnlimited && (
-                  <Progress 
-                    value={usagePercentage} 
-                    className="h-2 mt-2"
-                    color={usagePercentage > 90 ? "bg-red-500" : ""}
-                  />
-                )}
-                {isLoading ? (
-                  <Skeleton className="h-4 w-full mt-1" />
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {isUnlimited ? (
-                      "Your plan allows unlimited uploads"
-                    ) : (
-                      `${stats?.planInfo?.usedUploads || 0} of ${stats?.planInfo?.uploadLimit || 0} photos`
-                    )}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          <Progress value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} className="h-2" />
+          <p className="text-xs text-gray-500 mt-2">
+            {planInfo.planType === "unlimited" 
+              ? "Plano com uploads ilimitados" 
+              : `${planInfo.percentageUsed}% do limite utilizado`}
+          </p>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// Página principal do Dashboard
+// Componente principal do Dashboard
 export default function Dashboard() {
-  const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
   const [, setLocation] = useLocation();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const { user, logoutMutation } = useAuth();
+  
+  // Estado para gerenciar projetos
   const [projetos, setProjetos] = useState<any[]>([]);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [filteredProjetos, setFilteredProjetos] = useState<any[]>([]);
+  const [currentTab, setCurrentTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Verificar se há parâmetros de assinatura na URL
+  // Estado para o modal de upload
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  
+  // Carregar projetos
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const subscriptionStatus = params.get('subscription_status');
-    const planType = params.get('plan');
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Try to get from localStorage first
+        let storedProjects = localStorage.getItem('projects');
+        if (storedProjects) {
+          const parsedProjects = JSON.parse(storedProjects);
+          if (parsedProjects.length > 0) {
+            console.log("Projetos carregados do localStorage:", parsedProjects.length);
+            setProjetos(parsedProjects);
+            setFilteredProjetos(parsedProjects);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // If not in localStorage, fetch from API
+        const response = await fetch('/api/projects');
+        
+        if (!response.ok) {
+          throw new Error("Erro ao carregar projetos");
+        }
+        
+        const data = await response.json();
+        console.log("Projetos carregados da API:", data.length);
+        
+        // Save to localStorage for future use
+        localStorage.setItem('projects', JSON.stringify(data));
+        
+        setProjetos(data);
+        setFilteredProjetos(data);
+      } catch (e) {
+        console.error("Error loading data:", e);
+        toast({
+          title: "Error loading data",
+          description: "An error occurred while loading projects. Please refresh the page.",
+          variant: "destructive",
+        });
+        
+        // Fallback to example projects if API call fails
+        setProjetos(PROJETOS_EXEMPLO);
+        setFilteredProjetos(PROJETOS_EXEMPLO);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    if (subscriptionStatus === 'success' && planType) {
-      // Mostrar notificação de assinatura confirmada
-      const planName = getPlanName(planType);
-      
-      toast({
-        title: "✅ Subscription confirmed!",
-        description: `Your ${planName} plan is now active.`,
-        duration: 5000,
-      });
-      
-      // Limpar parâmetros da URL sem recarregar a página
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
+    fetchProjects();
   }, [toast]);
   
-  // Get plan name based on plan type
-  const getPlanName = (planType: string) => {
-    switch(planType) {
-      case 'basic': return 'Basic';
-      case 'standard': return 'Standard';
-      case 'professional': return 'Professional';
-      default: return planType;
-    }
-  };
-  
-  useEffect(() => {
-    try {
-      // Obter usuário do localStorage
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        console.log("Dashboard loaded - user:", userData);
-      } else {
-        console.log("No user found in localStorage");
-      }
-      
-      // Load existing projects or initialize with empty array
-      const projetosStr = localStorage.getItem('projects');
-      
-      if (projetosStr) {
-        // Já temos projetos salvos, vamos usá-los
-        const projetosSalvos = JSON.parse(projetosStr);
-        console.log("Projetos carregados do localStorage:", projetosSalvos.length);
-        
-        setTimeout(() => {
-          setProjetos(projetosSalvos);
-          setIsLoading(false);
-        }, 600);
-      } else {
-        // Não temos projetos salvos, inicializar com array vazio
-        console.log("Não há projetos salvos. Iniciando com dashboard vazio.");
-        localStorage.setItem('projects', JSON.stringify([]));
-        
-        setTimeout(() => {
-          setProjetos([]);
-          setIsLoading(false);
-        }, 600);
-      }
-      
-    } catch (e) {
-      console.error("Error loading data:", e);
-      toast({
-        title: "Error loading data",
-        description: "An error occurred while loading projects. Please refresh the page.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
-  }, [toast]);
-
   const handleLogout = () => {
+    // First remove from localStorage for backwards compatibility
     localStorage.removeItem("user");
-    setLocation("/login");
+    localStorage.removeItem("projects");
+    
+    // Then trigger the logout mutation to clear the auth state
+    logoutMutation.mutate();
+    
+    // Redirect to auth page after logout
+    setLocation("/auth");
   };
   
   // Handler para exclusão de projeto
@@ -1079,296 +921,234 @@ export default function Dashboard() {
     // Remover o projeto do estado
     setProjetos(prevProjetos => prevProjetos.filter(projeto => projeto.id !== id));
     
-    // Remover também do localStorage, se existir
-    try {
-      const storedProjects = localStorage.getItem('projects');
-      if (storedProjects) {
-        const parsedProjects = JSON.parse(storedProjects);
-        const updatedProjects = parsedProjects.filter((project: any) => project.id !== id);
-        localStorage.setItem('projects', JSON.stringify(updatedProjects));
-      }
-    } catch (error) {
-      console.error('Erro ao remover projeto do localStorage:', error);
+    // Atualizar projetos filtrados também
+    setFilteredProjetos(prevProjetos => prevProjetos.filter(projeto => projeto.id !== id));
+  };
+  
+  // Handler para criação de projeto
+  const handleProjectCreated = (newProject: any) => {
+    const updatedProjetos = [newProject, ...projetos];
+    setProjetos(updatedProjetos);
+    
+    // Atualizar projetos filtrados com base na aba atual
+    if (currentTab === "all" || newProject.status === getStatusFilter(currentTab)) {
+      setFilteredProjetos([newProject, ...filteredProjetos]);
+    }
+    
+    // Atualizar localStorage
+    localStorage.setItem('projects', JSON.stringify(updatedProjetos));
+  };
+  
+  // Função para converter a aba atual em um filtro de status
+  const getStatusFilter = (tab: string) => {
+    switch (tab) {
+      case "pending": return "pendente";
+      case "reviewed": return "revisado";
+      case "completed": return "finalizado";
+      case "archived": return "arquivado";
+      default: return "";
     }
   };
   
-  const filteredProjetos = projetos.filter(
-    projeto => {
-      // Verificar se os campos existem antes de acessá-los (compatibilidade com backend/frontend)
-      const projectName = projeto.nome || projeto.name || '';
-      const clientName = projeto.cliente || projeto.clientName || '';
-      
-      return projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             clientName.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter projects by tab and search query
+  useEffect(() => {
+    let filtered = [...projetos];
+    
+    // Apply tab filter
+    if (currentTab !== "all") {
+      const statusFilter = getStatusFilter(currentTab);
+      filtered = filtered.filter(projeto => projeto.status === statusFilter);
     }
-  );
-
+    
+    // Apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        projeto => 
+          projeto.nome.toLowerCase().includes(query) ||
+          projeto.cliente.toLowerCase().includes(query) ||
+          projeto.emailCliente.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredProjetos(filtered);
+  }, [currentTab, searchQuery, projetos]);
+  
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              PhotoFlow
-            </h1>
+      <header className="bg-white border-b">
+        <div className="container mx-auto py-4 px-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">PhotoFlow</h1>
+            
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-right">
-                <p className="text-gray-900 font-medium">{user?.name}</p>
-                <p className="text-gray-500">{user?.email}</p>
-              </div>
-              <Button variant="outline" onClick={handleLogout}>
-                Logout
+              <Button 
+                onClick={() => setUploadModalOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Novo Projeto
               </Button>
+              
+              <div className="flex items-center border-l pl-4 ml-2">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                  <span className="text-gray-700 font-medium">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium">{user?.name || "Usuário"}</p>
+                  <p className="text-gray-500">{user?.email}</p>
+                </div>
+                <Button variant="outline" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="md:flex md:items-center md:justify-between mb-6">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
-              Dashboard
-            </h2>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <Button 
-              className="inline-flex items-center"
-              onClick={() => setIsUploadModalOpen(true)}
-            >
-              <PlusCircle className="h-5 w-5 mr-2" />
-              New Project
-            </Button>
-          </div>
-        </div>
-        
+      <main className="container mx-auto py-8 px-4">
         <Estatisticas />
         
-        <Tabs defaultValue="todos" className="w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <TabsList className="mb-4 sm:mb-0">
-              <TabsTrigger value="todos">All</TabsTrigger>
-              <TabsTrigger value="pendentes">Pending</TabsTrigger>
-              <TabsTrigger value="revisados">Reviewed</TabsTrigger>
-              <TabsTrigger value="arquivados">Archived</TabsTrigger>
-            </TabsList>
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h2 className="text-xl font-bold text-gray-900">Meus Projetos</h2>
             
-            <div className="flex w-full sm:w-auto space-x-2">
-              <div className="relative flex-grow">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="text"
-                  placeholder="Search projects..."
-                  className="pl-8 h-9"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+            <div className="flex items-center w-full sm:w-auto gap-2">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Buscar projetos..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" className="h-9 w-9">
+              
+              <Button variant="outline" size="icon" className="shrink-0">
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
           </div>
           
-          <TabsContent value="todos">
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader className="p-4">
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-4 w-2/4 mt-2" />
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-1/3" />
+          <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="pending">Pendentes</TabsTrigger>
+              <TabsTrigger value="reviewed">Revisados</TabsTrigger>
+              <TabsTrigger value="completed">Finalizados</TabsTrigger>
+              <TabsTrigger value="archived">Arquivados</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="mt-0">
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array(6).fill(null).map((_, index) => (
+                    <Card key={index} className="overflow-hidden">
+                      <CardHeader className="p-4">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <Skeleton className="h-4 w-1/3 mb-2" />
                         <div className="flex justify-between">
                           <Skeleton className="h-4 w-1/4" />
                           <Skeleton className="h-4 w-1/4" />
                         </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-end">
-                      <Skeleton className="h-8 w-24" />
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : filteredProjetos.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjetos.map((projeto) => (
-                  <ProjetoCard 
-                    key={projeto.id} 
-                    projeto={projeto} 
-                    onDelete={handleDeleteProject}
-                  />
-                ))}
-              </div>
-            ) : searchTerm ? (
-              <div className="text-center py-12">
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  No projects found
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  We couldn't find any projects matching your search.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => setSearchTerm("")}>
-                    Clear filters
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0">
+                        <Skeleton className="h-8 w-full" />
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredProjetos.length === 0 ? (
+                <div className="text-center py-12 border border-dashed rounded-lg">
+                  <Camera className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhum projeto encontrado</h3>
+                  <p className="text-gray-500 mb-6">
+                    {searchQuery 
+                      ? "Tente ajustar os filtros ou termos de busca" 
+                      : "Comece criando seu primeiro projeto fotográfico"
+                    }
+                  </p>
+                  <Button onClick={() => setUploadModalOpen(true)}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Criar Novo Projeto
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Camera className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
-                  No projects yet
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Click the "New Project" button above to create your first gallery.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => setIsUploadModalOpen(true)}>
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    Create First Project
-                  </Button>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="pendentes">
-            {projetos.filter(projeto => projeto.status === "pendente").length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projetos
-                  .filter(projeto => projeto.status === "pendente")
-                  .filter(projeto => {
-                    // Verificar se os campos existem antes de acessá-los (compatibilidade)
-                    const projectName = projeto.nome || projeto.name || '';
-                    const clientName = projeto.cliente || projeto.clientName || '';
-                    
-                    return projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          clientName.toLowerCase().includes(searchTerm.toLowerCase());
-                  })
-                  .map((projeto) => (
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProjetos.map((projeto) => (
                     <ProjetoCard 
                       key={projeto.id} 
                       projeto={projeto} 
                       onDelete={handleDeleteProject}
                     />
-                  ))
-                }
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  No pending projects
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Create a new project to get started.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => setIsUploadModalOpen(true)}>
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    Create Project
-                  </Button>
+                  ))}
                 </div>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="revisados">
-            {projetos.filter(projeto => projeto.status === "revisado").length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projetos
-                  .filter(projeto => projeto.status === "revisado")
-                  .filter(projeto => {
-                    // Verificar se os campos existem antes de acessá-los (compatibilidade)
-                    const projectName = projeto.nome || projeto.name || '';
-                    const clientName = projeto.cliente || projeto.clientName || '';
-                    
-                    return projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          clientName.toLowerCase().includes(searchTerm.toLowerCase());
-                  })
-                  .map((projeto) => (
-                    <ProjetoCard 
-                      key={projeto.id} 
-                      projeto={projeto} 
-                      onDelete={handleDeleteProject}
-                    />
-                  ))
-                }
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  No reviewed projects
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Projects will appear here after clients have made their selections.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => setIsUploadModalOpen(true)}>
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    Create Project
-                  </Button>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="arquivados">
-            {projetos.filter(projeto => projeto.status === "arquivado").length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projetos
-                  .filter(projeto => projeto.status === "arquivado")
-                  .filter(projeto => {
-                    // Verificar se os campos existem antes de acessá-los (compatibilidade)
-                    const projectName = projeto.nome || projeto.name || '';
-                    const clientName = projeto.cliente || projeto.clientName || '';
-                    
-                    return projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          clientName.toLowerCase().includes(searchTerm.toLowerCase());
-                  })
-                  .map((projeto) => (
-                    <ProjetoCard 
-                      key={projeto.id} 
-                      projeto={projeto} 
-                      onDelete={handleDeleteProject}
-                    />
-                  ))
-                }
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  No archived projects
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Completed projects that you archive will appear here.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              )}
+            </TabsContent>
+            
+            {["pending", "reviewed", "completed", "archived"].map(tab => (
+              <TabsContent key={tab} value={tab} className="mt-0">
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array(3).fill(null).map((_, index) => (
+                      <Card key={index} className="overflow-hidden">
+                        <CardHeader className="p-4">
+                          <Skeleton className="h-6 w-3/4 mb-2" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <Skeleton className="h-4 w-1/3 mb-2" />
+                          <div className="flex justify-between">
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-4 w-1/4" />
+                          </div>
+                        </CardContent>
+                        <CardFooter className="p-4 pt-0">
+                          <Skeleton className="h-8 w-full" />
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                ) : filteredProjetos.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed rounded-lg">
+                    <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                      Nenhum projeto {getStatusFilter(tab)}
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Os projetos aparecerão aqui quando forem marcados como {getStatusFilter(tab)}.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredProjetos.map((projeto) => (
+                      <ProjetoCard 
+                        key={projeto.id} 
+                        projeto={projeto} 
+                        onDelete={handleDeleteProject}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
       </main>
       
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500">
-            © 2023 PhotoFlow. All rights reserved.
-          </p>
-        </div>
-      </footer>
-      
-      {/* Modal de Upload de Projeto */}
+      {/* Modal para upload de novos projetos */}
       <UploadModal 
-        open={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-        onProjectCreated={(newProject) => {
-          // Adicionar o novo projeto à lista de projetos existentes
-          setProjetos(prevProjetos => [...prevProjetos, newProject]);
-        }}
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUpload={handleProjectCreated}
       />
     </div>
   );
