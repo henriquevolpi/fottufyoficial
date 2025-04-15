@@ -577,14 +577,24 @@ function UploadModal({
       const result = await response.json();
       console.log("Project created:", result);
       
+      // Format project data to match expected structure in the dashboard
+      const formattedProject = {
+        ...result,
+        nome: result.name,                  // Map API field "name" to UI field "nome"
+        cliente: result.clientName,         // Map API field "clientName" to UI field "cliente"
+        emailCliente: result.clientEmail,   // Map API field "clientEmail" to UI field "emailCliente"
+        fotos: result.photos ? result.photos.length : 0,  // Set photo count based on photos array length
+        selecionadas: result.selectedPhotos ? result.selectedPhotos.length : 0  // Selected photos count
+      };
+      
       // Show success notification
       toast({
         title: "Project created successfully",
         description: `Project "${data.projectName}" was created with ${selectedFiles.length} photos.`,
       });
       
-      // Call onUpload callback with the created project
-      onUpload(result);
+      // Call onUpload callback with the properly formatted project
+      onUpload(formattedProject);
       
       // Reset form and close modal
       setSelectedFiles([]);
