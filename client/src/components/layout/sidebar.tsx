@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/hooks/use-auth";
 import { Home, Images, Plus, Settings, Users, LogOut, CreditCard } from "lucide-react";
 import UserMenu from "@/components/user-menu";
 
@@ -14,7 +14,7 @@ interface SidebarItem {
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   
   const sidebarItems: SidebarItem[] = [
     {
@@ -87,7 +87,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
               ))}
               
               <button
-                onClick={logout}
+                onClick={() => logoutMutation.mutate()}
                 className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white"
               >
                 <LogOut className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-300" />
