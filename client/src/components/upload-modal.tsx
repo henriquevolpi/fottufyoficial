@@ -74,7 +74,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       // Create FormData for sending files
       const formData = new FormData();
       
-      // Add project data
+      // Add project data with names matching the server API fields
       formData.append('name', values.nome);
       formData.append('clientName', values.cliente);
       formData.append('clientEmail', values.emailCliente);
@@ -82,13 +82,10 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       formData.append('notes', values.observacoes || "");
       formData.append('photographerId', '1'); // Using default ID
       
-      // Add photos to FormData
-      files.forEach((file, index) => {
-        // Each file needs to be appended with a unique name
-        formData.append(`photo_${index}`, file);
-        
-        // Also send the filename separately
-        formData.append(`filename_${index}`, file.name);
+      // Add photos to FormData - server expects 'photos' field name for multer
+      files.forEach(file => {
+        // Each file with the same field name 'photos' for multer array handling
+        formData.append('photos', file);
       });
       
       // Add total count of photos

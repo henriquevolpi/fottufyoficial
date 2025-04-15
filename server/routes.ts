@@ -8,6 +8,7 @@ import fs from "fs";
 import { nanoid } from "nanoid";
 import { setupAuth } from "./auth";
 import Stripe from 'stripe';
+import { upload } from "./index";
 
 // Basic authentication middleware - MODIFICADO PARA BYPASS DE AUTENTICAÇÃO EM DESENVOLVIMENTO
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -250,16 +251,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let photosThisMonth = 0;
       userProjects.forEach(project => {
         // Check if project was created this month
-        const projectDate = new Date(project.data);
+        const projectDate = new Date(project.createdAt);
         if (projectDate >= firstDayOfMonth) {
-          photosThisMonth += project.fotos || 0;
+          // Count photos in this project
+          const photoCount = project.photos ? project.photos.length : 0;
+          photosThisMonth += photoCount;
         }
       });
       
       // Calculate total usage in MB (for this example, assume 2MB per photo on average)
       const averagePhotoSizeMB = 2;
       const totalUploadUsageMB = userProjects.reduce((total, project) => {
-        return total + (project.fotos || 0) * averagePhotoSizeMB;
+        const photoCount = project.photos ? project.photos.length : 0;
+        return total + photoCount * averagePhotoSizeMB;
       }, 0);
       
       // Get user details including plan info
@@ -477,7 +481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Create project (authenticated photographer)
   // Removida verificação de autenticação para facilitar testes
-  app.post("/api/projects", async (req: Request, res: Response) => {
+  app.post("/api/projects", upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
       console.log("Receiving request to create project", req.body);
       
@@ -529,11 +533,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if files were uploaded as multipart form data
       else if (req.files && Array.isArray(req.files)) {
         console.log(`Processing ${req.files.length} photos from multipart form-data`);
-        processedPhotos = req.files.map(file => ({
-          id: '', // Will be set by storage
-          url: file.path || file.buffer.toString('base64'),
-          filename: file.originalname || file.name || 'photo.jpg',
-        }));
+        const uploadedFiles = req.files as Express.Multer.File[];
+        processedPhotos = uploadedFiles.map(file => {
+          // Create a web-accessible URL path to the uploaded file
+          const fileUrl = `/uploads/${path.basename(file.path)}`;
+          console.log(`File path: ${file.path}, URL: ${fileUrl}`);
+          
+          return {
+            id: '', // Will be set by storage
+            url: fileUrl,
+            filename: file.originalname || 'photo.jpg',
+          };
+        });
       }
       // If no photos were provided through any method, use a single placeholder
       if (processedPhotos.length === 0) {
@@ -721,17 +732,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Adicionar novas fotos a um projeto existente
-  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.id);
       if (isNaN(projectId)) {
         return res.status(400).json({ message: "Invalid project ID" });
-      }
-      
-      const { photos } = req.body;
-      
-      if (!Array.isArray(photos) || photos.length === 0) {
-        return res.status(400).json({ message: "No photos provided" });
       }
       
       // Verificar se o projeto existe
@@ -745,9 +750,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to edit this project" });
       }
       
+      // Process uploaded files or JSON data
+      let processedPhotos = [];
+      let photoCount = 0;
+      
+      // Check for uploaded files via multer
+      if (req.files && Array.isArray(req.files)) {
+        const uploadedFiles = req.files as Express.Multer.File[];
+        photoCount = uploadedFiles.length;
+        
+        console.log(`Processing ${photoCount} uploaded photos for project ${projectId}`);
+        
+        // Convert uploaded files to photo objects
+        processedPhotos = uploadedFiles.map(file => {
+          // Create a web-accessible URL path to the uploaded file
+          const fileUrl = `/uploads/${path.basename(file.path)}`;
+          console.log(`File path: ${file.path}, URL: ${fileUrl}`);
+          
+          return {
+            id: nanoid(), // Generate a unique ID
+            url: fileUrl,
+            filename: file.originalname || 'photo.jpg',
+          };
+        });
+      } 
+      // Check for photos in JSON format
+      else if (req.body.photos && Array.isArray(req.body.photos)) {
+        const { photos } = req.body;
+        photoCount = photos.length;
+        
+        console.log(`Processing ${photoCount} photos from JSON data`);
+        
+        processedPhotos = photos.map((photo: any) => ({
+          id: photo.id || nanoid(),
+          url: photo.url,
+          filename: photo.filename
+        }));
+      }
+      
+      if (processedPhotos.length === 0) {
+        return res.status(400).json({ message: "No photos provided" });
+      }
+      
       // Verificar o limite de upload do usuário (se não for admin)
       if (req.user && req.user.role !== "admin") {
-        const canUpload = await storage.checkUploadLimit(req.user.id, photos.length);
+        const canUpload = await storage.checkUploadLimit(req.user.id, photoCount);
         if (!canUpload) {
           return res.status(403).json({ 
             message: "Upload limit exceeded", 
@@ -757,20 +804,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Atualizar o uso de upload
-        await storage.updateUploadUsage(req.user.id, photos.length);
+        await storage.updateUploadUsage(req.user.id, photoCount);
       }
-      
-      // Em um sistema real, aqui processaríamos os uploads para armazenamento em nuvem
-      // Neste exemplo, apenas atualizamos o projeto com as novas fotos
-      const formattedPhotos = photos.map((photo: any) => ({
-        id: photo.id,
-        url: photo.url,
-        filename: photo.filename
-      }));
       
       // Atualizar o projeto com as novas fotos
       const updatedProject = await storage.updateProject(projectId, {
-        photos: [...(project.photos || []), ...formattedPhotos]
+        photos: [...(project.photos || []), ...processedPhotos]
       });
       
       if (!updatedProject) {
@@ -779,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({ 
         message: "Photos added successfully", 
-        count: photos.length 
+        count: photoCount
       });
     } catch (error) {
       console.error("Erro ao adicionar fotos:", error);
