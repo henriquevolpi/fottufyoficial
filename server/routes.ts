@@ -995,13 +995,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Você não tem permissão para excluir este projeto" });
       }
       
+      // Log the photo count that will be removed from upload usage
+      const photoCount = project.photos ? project.photos.length : 0;
+      console.log(`Deletando projeto ID=${project.id} com ${photoCount} fotos - removendo do contador de uploads`);
+      
+      // Modified deleteProject will handle the usage count reduction
       const deleted = await storage.deleteProject(project.id);
       
       if (!deleted) {
         return res.status(500).json({ message: "Falha ao excluir projeto" });
       }
       
-      res.json({ success: true, message: "Projeto excluído com sucesso" });
+      // Invalidate user stats after successful deletion
+      console.log(`Projeto ID=${project.id} excluído com sucesso - contador de uploads atualizado`);
+      
+      res.json({ 
+        success: true, 
+        message: "Projeto excluído com sucesso",
+        photosRemoved: photoCount // Include count in response for client-side feedback
+      });
     } catch (error) {
       console.error("Erro ao excluir projeto:", error);
       res.status(500).json({ message: "Falha ao excluir projeto" });

@@ -519,8 +519,20 @@ export class MemStorage implements IStorage {
       return false;
     }
     
+    // Get the photographer ID and photo count before deleting the project
+    const photographerId = project.photographerId;
+    const photoCount = project.photos ? project.photos.length : 0;
+    
+    // Delete the project from storage
     const deleted = this.projects.delete(id);
     console.log(`MemStorage: Projeto ID=${id} ${deleted ? 'deletado com sucesso' : 'falha ao deletar'}`);
+    
+    // If the project was successfully deleted and it had photos, update the photographer's upload usage
+    if (deleted && photoCount > 0) {
+      console.log(`MemStorage: Atualizando contador de uploads para o fotógrafo ID=${photographerId}, reduzindo ${photoCount} fotos`);
+      // Use negative photoCount to reduce the usage
+      await this.updateUploadUsage(photographerId, -photoCount);
+    }
     
     return deleted;
   }

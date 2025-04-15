@@ -36,7 +36,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { getQueryFn, apiRequest } from "@/lib/queryClient";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Form,
   FormControl,
@@ -1005,11 +1005,46 @@ export default function Dashboard() {
   
   // Handler for project deletion
   const handleDeleteProject = (id: number) => {
-    // Remove project from state
-    setProjects(prevProjects => prevProjects.filter(project => project.id !== id));
+    // Find the project to be deleted to get its photo count
+    const projectToDelete = projects.find(project => project.id === id);
+    const photoCount = projectToDelete?.fotos || 0;
     
-    // Update filtered projects as well
-    setFilteredProjects(prevProjects => prevProjects.filter(project => project.id !== id));
+    // Make API call to delete the project
+    fetch(`/api/projects/${id}`, {
+      method: 'DELETE',
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error('Failed to delete project');
+    })
+    .then(data => {
+      console.log('Project deleted successfully:', data);
+      
+      // Remove project from state
+      setProjects(prevProjects => prevProjects.filter(project => project.id !== id));
+      
+      // Update filtered projects as well
+      setFilteredProjects(prevProjects => prevProjects.filter(project => project.id !== id));
+      
+      // Refresh the user stats to update the upload count
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      
+      toast({
+        title: "Project deleted",
+        description: `Project has been deleted successfully. ${photoCount} photos were removed from your usage.`,
+      });
+    })
+    .catch(error => {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
+      });
+    });
   };
   
   // Handler for project creation
