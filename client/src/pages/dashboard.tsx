@@ -185,8 +185,10 @@ const PROJETOS_EXEMPLO = [
   }
 ];
 
-// Componente de card para projetos recentes
-function ProjetoCard({ projeto, onDelete }: { projeto: any, onDelete?: (id: number) => void }) {
+// Component for project cards
+function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: (id: number) => void }) {
+  // Note: We're using parameter renaming (projeto: project) to transition from Portuguese to English
+  // while maintaining backward compatibility
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [status, setStatus] = useState(projeto.status);
@@ -1088,7 +1090,7 @@ export default function Dashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredProjects.map((project) => (
-                    <ProjetoCard 
+                    <ProjectCard 
                       key={project.id} 
                       projeto={project} 
                       onDelete={handleDeleteProject}
@@ -1136,7 +1138,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProjects.map((project) => (
-                      <ProjetoCard 
+                      <ProjectCard 
                         key={project.id} 
                         projeto={project} 
                         onDelete={handleDeleteProject}
@@ -1150,7 +1152,7 @@ export default function Dashboard() {
         </div>
       </main>
       
-      {/* Modal para upload de novos projetos */}
+      {/* Modal for uploading new projects */}
       <UploadModal 
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
