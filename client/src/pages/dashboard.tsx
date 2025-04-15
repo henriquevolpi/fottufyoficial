@@ -768,17 +768,59 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
-  // Current user plan
+  // Current user plan and stats data
   const userQuery = useQuery<any>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
-  const planInfo = userQuery.data?.planInfo || {
+  // Calculate percentage based on real user data
+  const calculatePlanInfo = () => {
+    if (!userQuery.data || !data) return null;
+    
+    // If user data exists, extract plan info from both endpoints
+    const user = userQuery.data;
+    const stats = data;
+    
+    // Convert Portuguese plan names to English if needed
+    let planType = (user.planType || "free").toLowerCase();
+    if (planType === "gratuito") planType = "free";
+    if (planType === "basico" || planType === "básico") planType = "basic";
+    if (planType === "padrao" || planType === "padrão") planType = "standard";
+    if (planType === "ilimitado") planType = "unlimited";
+    
+    // Get real upload limits based on user data
+    const uploadLimit = user.uploadLimit || 50;
+    const usedUploads = user.usedUploads || 0;
+    
+    // Calculate percentage
+    const percentageUsed = uploadLimit > 0 ? Math.round((usedUploads / uploadLimit) * 100) : 0;
+    
+    // Use actual planInfo from stats if available
+    if (stats.planInfo) {
+      return {
+        planType: planType,
+        // Prefer stats.planInfo values when available, fall back to user values
+        uploadLimit: stats.planInfo.uploadLimit || uploadLimit,
+        usedUploads: stats.planInfo.usedUploads || usedUploads,
+        percentageUsed: percentageUsed
+      };
+    }
+    
+    return {
+      planType: planType,
+      uploadLimit: uploadLimit,
+      usedUploads: usedUploads,
+      percentageUsed: percentageUsed
+    };
+  };
+  
+  // Get real-time plan info or provide sensible defaults for new accounts
+  const planInfo = calculatePlanInfo() || {
     planType: "free",
     uploadLimit: 50,
-    usedUploads: 23,
-    percentageUsed: 46
+    usedUploads: 0,
+    percentageUsed: 0
   };
   
   return (

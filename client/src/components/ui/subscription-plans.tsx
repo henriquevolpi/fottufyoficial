@@ -42,9 +42,46 @@ export default function SubscriptionPlans() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
+  // Get subscription plans with correct typing
   const { data: subscriptionData, isLoading, error } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription/plans"],
     enabled: !!user,
+    // Use explicit fetcher that normalizes response data
+    queryFn: async ({ queryKey }) => {
+      const url = queryKey[0];
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription plans');
+      }
+      
+      const data = await response.json();
+      
+      // Normalize plan data to handle Portuguese/English mismatches
+      if (data.userStats) {
+        // Normalize plan type to uppercase for consistency
+        data.userStats.planType = data.userStats.planType.toUpperCase();
+        if (data.userStats.planType === 'GRATUITO') data.userStats.planType = 'FREE';
+        if (data.userStats.planType === 'BÁSICO' || data.userStats.planType === 'BASICO') data.userStats.planType = 'BASIC';
+        if (data.userStats.planType === 'PADRÃO' || data.userStats.planType === 'PADRAO') data.userStats.planType = 'STANDARD';
+        if (data.userStats.planType === 'PROFISSIONAL') data.userStats.planType = 'PROFESSIONAL';
+      }
+      
+      // Mark the current plan
+      if (data.plans && data.userStats) {
+        // Reset current flag for all plans
+        Object.values(data.plans).forEach((plan: any) => {
+          plan.current = false;
+        });
+        
+        // Set current flag for user's plan
+        const userPlanKey = data.userStats.planType;
+        if (data.plans[userPlanKey]) {
+          data.plans[userPlanKey].current = true;
+        }
+      }
+      
+      return data;
+    }
   });
   
   // Mutation para atualizar o plano de assinatura (apenas para plano gratuito)

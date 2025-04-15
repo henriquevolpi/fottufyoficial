@@ -49,6 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (data: User) => {
       queryClient.setQueryData(["/api/user"], data);
+      // Invalidate subscription and stats queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
+      
       toast({
         title: "Login realizado com sucesso",
         description: `Bem-vindo(a), ${data.name}!`,
