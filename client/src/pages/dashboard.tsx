@@ -584,50 +584,30 @@ function UploadModal({
     try {
       setIsUploading(true);
       
-      // Preparar as fotos para o upload com sample URLs persistentes
-      // Usar URLs de imagens públicas que são acessíveis de qualquer lugar para demo
-      const projectPhotos = selectedFiles.map((file, index) => {
-        // Gerar URLs persistentes baseados em serviços públicos de imagens
-        const publicUrls = [
-          'https://source.unsplash.com/random/800x600/?wedding',
-          'https://source.unsplash.com/random/800x600/?portrait', 
-          'https://source.unsplash.com/random/800x600/?family',
-          'https://source.unsplash.com/random/800x600/?landscape',
-          'https://source.unsplash.com/random/800x600/?nature',
-          'https://source.unsplash.com/random/800x600/?architecture'
-        ];
-        
-        // Usar um URL persistente baseado no índice (com loop para garantir que sempre haverá um URL)
-        const persistentUrl = publicUrls[index % publicUrls.length];
-        
-        return {
-          filename: file.name,
-          url: persistentUrl, // URL persistente que qualquer um pode acessar
-        };
+      // Create a FormData object to send files and project data together
+      const formData = new FormData();
+      
+      // Add project metadata
+      formData.append("nome", values.nome);
+      formData.append("clienteNome", values.clienteNome);
+      formData.append("clienteEmail", values.clienteEmail);
+      
+      // Get the user ID (or use 1 as fallback)
+      const user = JSON.parse(localStorage.getItem('user') || '{"id": 1}');
+      formData.append("photographerId", user.id.toString());
+      
+      // Add all selected files to the FormData
+      selectedFiles.forEach((file) => {
+        formData.append("photos", file);
       });
       
-      // Obter o ID do usuário logado (ou usar 1 como fallback)
-      const user = JSON.parse(localStorage.getItem('user') || '{"id": 1}');
+      console.log("Preparando upload de projeto com", selectedFiles.length, "fotos");
       
-      // Preparar dados do projeto para a API
-      const projectData = {
-        name: values.nome,
-        clientName: values.clienteNome,
-        clientEmail: values.clienteEmail,
-        photographerId: user.id,
-        photos: projectPhotos
-      };
-      
-      console.log("Enviando projeto para a API:", projectData);
-      
-      // Enviar para a API
+      // Send the FormData to the API
       const response = await fetch('/api/projects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
-        credentials: 'include' // Importante para enviar cookies
+        body: formData, // No Content-Type header needed - browser sets it automatically with correct boundary
+        credentials: 'include' // Important for sending cookies
       });
       
       if (!response.ok) {
