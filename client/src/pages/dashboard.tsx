@@ -751,7 +751,7 @@ function UploadModal({
 }
 
 // Dashboard statistics component
-function Statistics() {
+function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   // Statistics data
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/user/stats"],
@@ -1034,7 +1034,7 @@ export default function Dashboard() {
       </header>
       
       <main className="container mx-auto py-8 px-4">
-        <Statistics />
+        <Statistics setLocation={setLocation} />
         
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
