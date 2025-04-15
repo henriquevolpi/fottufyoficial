@@ -24,12 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-// Schema para validação do formulário
+// Form validation schema
 const uploadFormSchema = z.object({
-  nome: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
-  cliente: z.string().min(3, { message: "Cliente deve ter pelo menos 3 caracteres" }),
-  emailCliente: z.string().email({ message: "Email inválido" }),
-  dataEvento: z.string().min(1, { message: "Data é obrigatória" }),
+  nome: z.string().min(3, { message: "Project name must be at least 3 characters" }),
+  cliente: z.string().min(3, { message: "Client name must be at least 3 characters" }),
+  emailCliente: z.string().email({ message: "Invalid email address" }),
+  dataEvento: z.string().min(1, { message: "Event date is required" }),
   observacoes: z.string().optional(),
 });
 
@@ -138,8 +138,8 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
 
     if (droppedFiles.length === 0) {
       toast({
-        title: "Arquivos inválidos",
-        description: "Por favor, selecione apenas arquivos de imagem.",
+        title: "Invalid files",
+        description: "Please select only image files.",
         variant: "destructive",
       });
       return;
@@ -203,7 +203,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
         <DialogHeader>
           <DialogTitle>New Project</DialogTitle>
           <DialogDescription>
-            Fill in the project details and upload your photos.
+            Fill in the project details and upload your photos. All fields are required.
           </DialogDescription>
         </DialogHeader>
 
@@ -260,7 +260,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               name="dataEvento"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data do Evento</FormLabel>
+                  <FormLabel>Event Date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -274,10 +274,10 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               name="observacoes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Observações adicionais sobre o projeto..."
+                      placeholder="Additional notes about the project..."
                       className="resize-none"
                       {...field}
                     />
@@ -288,7 +288,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
             />
 
             <div className="space-y-2">
-              <FormLabel>Fotos</FormLabel>
+              <FormLabel>Photos</FormLabel>
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center ${
                   isDragging ? "border-primary bg-primary/10" : "border-gray-300"
@@ -303,7 +303,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
                 <div className="flex flex-col items-center">
                   <Upload className="h-12 w-12 text-gray-400 mb-4" />
                   <p className="text-sm text-gray-600 mb-2">
-                    Arraste e solte as fotos aqui, ou
+                    Drag and drop photos here, or
                   </p>
                   <Button
                     type="button"
@@ -312,7 +312,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
                       document.getElementById("file-upload")?.click();
                     }}
                   >
-                    Selecione do computador
+                    Select from computer
                   </Button>
                   <input
                     id="file-upload"
@@ -323,7 +323,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
                     onChange={handleFileSelect}
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    JPG, PNG, GIF até 10MB
+                    JPG, PNG, GIF up to 10MB
                   </p>
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               {previews.length > 0 && (
                 <div className="mt-4">
                   <p className="text-sm font-medium mb-2">
-                    {previews.length} foto{previews.length !== 1 ? "s" : ""} selecionada{previews.length !== 1 ? "s" : ""}
+                    {previews.length} photo{previews.length !== 1 ? "s" : ""} selected
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {previews.map((preview, index) => (
@@ -371,7 +371,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
-                Cancelar
+                Cancel
               </Button>
               <Button 
                 type="submit" 
@@ -380,10 +380,10 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando...
+                    Creating...
                   </>
                 ) : (
-                  "Criar Projeto"
+                  "Create Project"
                 )}
               </Button>
             </DialogFooter>
