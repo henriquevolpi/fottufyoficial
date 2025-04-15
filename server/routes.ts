@@ -270,7 +270,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== User Routes ====================
   
-  // Get all users (admin only)
+  // Admin API Routes
+
+  // Get all users with filtering options
+  app.get("/api/admin/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Get filter parameters
+      const planType = req.query.planType as string;
+      const status = req.query.status as string;
+      const isDelinquent = req.query.isDelinquent === 'true';
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      let users = await storage.getUsers();
+      
+      // Apply filters if provided
+      if (planType) {
+        users = users.filter(user => user.planType === planType);
+      }
+      
+      if (status) {
+        users = users.filter(user => user.status === status);
+      }
+      
+      if (isDelinquent) {
+        users = users.filter(user => 
+          user.subscriptionStatus === 'inactive' || 
+          user.subscriptionStatus === 'canceled'
+        );
+      }
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        users = users.filter(user => new Date(user.createdAt) >= start);
+      }
+      
+      if (endDate) {
+        const end = new Date(endDate);
+        users = users.filter(user => new Date(user.createdAt) <= end);
+      }
+      
+      // Don't send passwords back to client
+      const sanitizedUsers = users.map(user => ({
+        ...user,
+        password: undefined,
+      }));
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error retrieving users:", error);
+      res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+
+  // Get all users (legacy endpoint - keeping for backward compatibility)
   app.get("/api/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
       const users = await storage.getUsers();
@@ -284,6 +337,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sanitizedUsers);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+  
+  // Set plan for a user
+  app.post("/api/admin/set-plan", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { email, planType } = req.body;
+      
+      if (!email || !planType) {
+        return res.status(400).json({ message: "Email and plan type are required" });
+      }
+      
+      // Validate plan type
+      const validPlans = Object.keys(SUBSCRIPTION_PLANS).map(key => SUBSCRIPTION_PLANS[key].type);
+      if (!validPlans.includes(planType)) {
+        return res.status(400).json({ message: "Invalid plan type" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Set the upload limit based on the plan
+      const planConfig = Object.values(SUBSCRIPTION_PLANS).find(plan => plan.type === planType);
+      const uploadLimit = planConfig ? planConfig.uploadLimit : 0;
+      
+      // Update user with new plan information
+      const updatedUser = await storage.updateUser(user.id, { 
+        planType,
+        uploadLimit,
+        subscriptionStatus: "active",
+        subscriptionStartDate: new Date(),
+        subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user" });
+      }
+      
+      res.json({
+        success: true,
+        user: {
+          ...updatedUser,
+          password: undefined,
+        }
+      });
+    } catch (error) {
+      console.error("Error setting plan:", error);
+      res.status(500).json({ message: "Failed to set plan for user" });
+    }
+  });
+  
+  // Toggle user status (active/suspended)
+  app.post("/api/admin/toggle-user", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { email, status } = req.body;
+      
+      if (!email || !status) {
+        return res.status(400).json({ message: "Email and status are required" });
+      }
+      
+      // Validate status
+      if (!["active", "suspended", "canceled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user status
+      const updatedUser = await storage.updateUser(user.id, { status });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user status" });
+      }
+      
+      res.json({
+        success: true,
+        user: {
+          ...updatedUser,
+          password: undefined,
+        }
+      });
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      res.status(500).json({ message: "Failed to toggle user status" });
+    }
+  });
+  
+  // Add a new user
+  app.post("/api/admin/add-user", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { name, email, password, role, planType } = req.body;
+      
+      if (!name || !email || !password) {
+        return res.status(400).json({ message: "Name, email, and password are required" });
+      }
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Set defaults and validate role
+      const userRole = role === "admin" ? "admin" : "photographer";
+      
+      // Validate plan type and set upload limit
+      let uploadLimit = 0;
+      let userPlanType = planType || "free";
+      
+      const planConfig = Object.values(SUBSCRIPTION_PLANS).find(plan => plan.type === userPlanType);
+      if (planConfig) {
+        uploadLimit = planConfig.uploadLimit;
+      } else {
+        // Default to free plan if invalid plan type
+        userPlanType = "free";
+        uploadLimit = SUBSCRIPTION_PLANS.FREE.uploadLimit;
+      }
+      
+      // Create the new user
+      const newUser = await storage.createUser({
+        name,
+        email,
+        password,
+        role: userRole,
+        status: "active",
+        planType: userPlanType,
+        subscriptionStatus: userPlanType === "free" ? "inactive" : "active",
+      });
+      
+      // Update the user with the upload limit
+      const updatedUser = await storage.updateUser(newUser.id, {
+        uploadLimit,
+        subscriptionStartDate: userPlanType === "free" ? undefined : new Date(),
+        subscriptionEndDate: userPlanType === "free" ? undefined : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      
+      res.status(201).json({
+        success: true,
+        user: {
+          ...(updatedUser || newUser),
+          password: undefined,
+        }
+      });
+    } catch (error) {
+      console.error("Error adding user:", error);
+      res.status(500).json({ message: "Failed to add user" });
     }
   });
   
