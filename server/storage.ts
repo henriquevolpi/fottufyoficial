@@ -439,11 +439,14 @@ export class MemStorage implements IStorage {
   async finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined> {
     console.log(`MemStorage: Finalizando seleção para projeto ID=${id}, fotos selecionadas: ${selectedPhotos.length}`);
     
-    const project = this.projects.get(id);
-    if (!project) {
-      console.log(`MemStorage: Projeto ID=${id} não encontrado para finalização`);
+    // Step 1: Find the project
+    let projectToUpdate = this.projects.get(id);
+    let projectId = id;
+    
+    // If project not found directly, try to find by ID as string
+    if (!projectToUpdate) {
+      console.log(`MemStorage: Projeto ID=${id} não encontrado diretamente, buscando de outra forma`);
       
-      // Buscar em todos os projetos, talvez haja uma questão com o formato do ID
       const allProjects = Array.from(this.projects.values());
       const foundProject = allProjects.find(p => p.id.toString() === id.toString());
       
@@ -452,36 +455,19 @@ export class MemStorage implements IStorage {
         return undefined;
       }
       
-      console.log(`MemStorage: Projeto ID=${id} encontrado com ID alternativo: ${foundProject.id}`);
-      
-      // Atualizar projeto com fotos selecionadas e mudar status para "reviewed"
-      const updatedProject = {
-        ...foundProject,
-        selectedPhotos,
-        status: "reviewed", // Usando "reviewed" conforme definido no schema
-      };
-      
-      // Garantir que as fotos tenham o estado correto de seleção
-      if (updatedProject.photos) {
-        updatedProject.photos = updatedProject.photos.map(photo => ({
-          ...photo,
-          selected: selectedPhotos.includes(photo.id)
-        }));
-      }
-      
-      this.projects.set(foundProject.id, updatedProject);
-      console.log(`MemStorage: Projeto ID=${foundProject.id} finalizado com sucesso (status: reviewed)`);
-      return updatedProject;
+      projectToUpdate = foundProject;
+      projectId = foundProject.id;
+      console.log(`MemStorage: Projeto encontrado com ID=${projectId}`);
     }
-
-    // Atualizar projeto com fotos selecionadas e mudar status para "reviewed"
+    
+    // Step 2: Create a new object with updated properties
     const updatedProject = {
-      ...project,
+      ...projectToUpdate,
       selectedPhotos,
-      status: "reviewed", // Usando "reviewed" conforme definido no schema
+      status: "reviewed" // This is the critical change - using "reviewed" not "completed"
     };
     
-    // Garantir que as fotos tenham o estado correto de seleção
+    // Step 3: Update the photos to mark selected ones
     if (updatedProject.photos) {
       updatedProject.photos = updatedProject.photos.map(photo => ({
         ...photo,
@@ -489,8 +475,17 @@ export class MemStorage implements IStorage {
       }));
     }
     
-    this.projects.set(id, updatedProject);
-    console.log(`MemStorage: Projeto ID=${id} finalizado com sucesso (status: reviewed)`);
+    // Step 4: Save back to the collection
+    this.projects.set(projectId, updatedProject);
+    
+    // Step 5: Verify the update was successful by reading it back
+    const verifiedProject = this.projects.get(projectId);
+    console.log(`MemStorage: Projeto ID=${projectId} atualizado para status="${verifiedProject?.status}"`);
+    
+    // Calculate how many photos were selected
+    const selecionadas = selectedPhotos.length;
+    console.log(`MemStorage: ${selecionadas} fotos foram selecionadas`);
+    
     return updatedProject;
   }
 
