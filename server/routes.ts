@@ -224,6 +224,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to retrieve user" });
     }
   });
+
+  // Get user stats for dashboard
+  app.get("/api/user/stats", authenticate, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get all projects for this user
+      const userProjects = await storage.getProjects(userId);
+      
+      // Calculate active projects (not archived)
+      const activeProjects = userProjects.filter(
+        project => project.status !== "arquivado"
+      ).length;
+      
+      // Calculate photos this month
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+      
+      // Count all photos uploaded this month across all projects
+      let photosThisMonth = 0;
+      userProjects.forEach(project => {
+        // Check if project was created this month
+        const projectDate = new Date(project.data);
+        if (projectDate >= firstDayOfMonth) {
+          photosThisMonth += project.fotos || 0;
+        }
+      });
+      
+      // Calculate total usage in MB (for this example, assume 2MB per photo on average)
+      const averagePhotoSizeMB = 2;
+      const totalUploadUsageMB = userProjects.reduce((total, project) => {
+        return total + (project.fotos || 0) * averagePhotoSizeMB;
+      }, 0);
+      
+      // Get user details including plan info
+      const user = await storage.getUser(userId);
+      
+      // Prepare response
+      const stats = {
+        activeProjects,
+        photosThisMonth,
+        totalUploadUsageMB,
+        planInfo: {
+          name: user?.planType || 'basic',
+          uploadLimit: user?.uploadLimit || 1000,
+          usedUploads: user?.usedUploads || 0
+        }
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error retrieving user stats:", error);
+      res.status(500).json({ message: "Error retrieving user statistics" });
+    }
+  });
   
   // Create user (admin only)
   app.post("/api/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
