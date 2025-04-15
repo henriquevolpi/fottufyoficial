@@ -487,6 +487,7 @@ function UploadModal({
   const [isUploading, setIsUploading] = useState(false);
 
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const uploadSchema = z.object({
     nome: z.string().min(3, "Nome do projeto é obrigatório"),
@@ -541,10 +542,15 @@ function UploadModal({
       
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('nome', data.nome);
-      formData.append('cliente', data.cliente);
-      formData.append('emailCliente', data.emailCliente);
+      formData.append('projectName', data.nome);
+      formData.append('clientName', data.cliente);
+      formData.append('clientEmail', data.emailCliente);
       formData.append('data', data.data);
+      
+      // Add photographer ID from the user context
+      if (user && user.id) {
+        formData.append('photographerId', user.id.toString());
+      }
       
       // Append each file to FormData
       selectedFiles.forEach((file) => {
