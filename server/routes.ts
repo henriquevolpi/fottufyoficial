@@ -557,7 +557,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Status do projeto: ${project.status}`);
       console.log(`Total de fotos: ${project.photos?.length || 0}`);
       
-      // Esta é uma rota pública, então retornamos o projeto completo
+      // SECURITY CHECK: If a user is logged in, make sure they can only view their own projects
+      // We don't restrict this for unauthenticated users to allow public project viewing
+      if (req.user && req.user.role !== 'admin') {
+        if (project.photographerId !== req.user.id) {
+          console.log(`Acesso negado: o usuário ${req.user.id} tentou acessar projeto ${project.id} do fotógrafo ${project.photographerId}`);
+          return res.status(403).json({ message: "You don't have permission to access this project" });
+        }
+        console.log(`Acesso autorizado: o fotógrafo ${req.user.id} está acessando seu próprio projeto ${project.id}`);
+      }
+      
+      // Esta é uma rota pública, então retornamos o projeto completo para clientes
       // Em um ambiente de produção, poderíamos adicionar alguma forma de autenticação
       // como um token único para cada cliente, mas para simplificar, mantemos público
       res.json(project);
