@@ -186,7 +186,7 @@ const PROJETOS_EXEMPLO = [
 ];
 
 // Component for project cards
-function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: (id: number) => void }) {
+function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: number) => void }) {
   // Note: We're using parameter renaming (projeto: project) to transition from Portuguese to English
   // while maintaining backward compatibility
   const [, setLocation] = useLocation();
@@ -249,41 +249,41 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
         const storedProjects = localStorage.getItem('projects');
         if (storedProjects) {
           const parsedProjects = JSON.parse(storedProjects);
-          const updatedProjects = parsedProjects.filter((p: any) => p.id !== projeto.id);
+          const updatedProjects = parsedProjects.filter((p: any) => p.id !== project.id);
           localStorage.setItem('projects', JSON.stringify(updatedProjects));
         }
       } catch (storageError) {
-        console.error('Erro ao remover do localStorage:', storageError);
+        console.error('Error removing from localStorage:', storageError);
       }
       
-      // Solução 2: Tentar excluir também via API
+      // Solution 2: Also try to delete via API
       try {
-        await fetch(`/api/projects/${projeto.id}`, {
+        await fetch(`/api/projects/${project.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
           }
         });
-        // Mesmo se a API falhar, continuamos com a exclusão local
+        // Even if the API fails, we continue with the local deletion
       } catch (apiError) {
-        console.warn('API de exclusão falhou, mas o projeto foi removido localmente:', apiError);
+        console.warn('API deletion failed, but project was removed locally:', apiError);
       }
       
-      // Exibir notificação de sucesso
+      // Show success notification
       toast({
-        title: "Projeto excluído",
-        description: `O projeto "${projeto.nome}" foi excluído com sucesso.`,
+        title: "Project deleted",
+        description: `Project "${project.nome}" was successfully deleted.`,
       });
       
-      // Chamar callback para atualizar a lista de projetos
+      // Call callback to update project list
       if (onDelete) {
-        onDelete(projeto.id);
+        onDelete(project.id);
       }
     } catch (error) {
-      console.error('Erro ao excluir projeto:', error);
+      console.error('Error deleting project:', error);
       toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o projeto. Tente novamente mais tarde.",
+        title: "Error deleting",
+        description: "Could not delete the project. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -297,8 +297,8 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
       <CardHeader className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">{projeto.nome}</CardTitle>
-            <CardDescription className="text-sm mt-1">{projeto.cliente}</CardDescription>
+            <CardTitle className="text-lg font-bold">{project.nome}</CardTitle>
+            <CardDescription className="text-sm mt-1">{project.cliente}</CardDescription>
           </div>
           <Badge className={getStatusColor(status)}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -308,34 +308,34 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
       <CardContent className="p-4 pt-0">
         <div className="flex items-center text-sm text-gray-500 mt-2">
           <Calendar className="h-4 w-4 mr-1" />
-          <span>{formatDate(projeto.data)}</span>
+          <span>{formatDate(project.data)}</span>
         </div>
         <div className="flex justify-between mt-3">
           <div className="flex items-center text-sm">
             <Camera className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{projeto.fotos} fotos</span>
+            <span>{project.fotos} photos</span>
           </div>
           <div className="flex items-center text-sm">
             <FileText className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{projeto.selecionadas} selecionadas</span>
+            <span>{project.selecionadas} selected</span>
           </div>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-wrap gap-2 justify-between">
         <div className="flex gap-2">
-          {/* Botão de excluir projeto */}
+          {/* Delete project button */}
           <Button
             variant="ghost"
             size="sm"
             className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => setShowDeleteConfirm(true)}
           >
-            Excluir
+            Delete
             <X className="h-3 w-3 ml-1" />
           </Button>
           
           {/* View selections button - available for projects with selections */}
-          {projeto.selecionadas > 0 && (
+          {project.selecionadas > 0 && (
             <Button 
               variant="ghost" 
               size="sm"
@@ -353,9 +353,9 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
             variant="outline" 
             size="sm"
             className="text-xs"
-            onClick={() => setLocation(`/project/${projeto.id}`)}
+            onClick={() => setLocation(`/project/${project.id}`)}
           >
-            Ver Detalhes
+            View Details
             <ArrowUpRight className="h-3 w-3 ml-1" />
           </Button>
           
@@ -365,17 +365,17 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
             className="text-xs text-blue-600"
             onClick={(e) => {
               e.stopPropagation();
-              // Copiar o link para o cliente
-              const clientUrl = `${window.location.origin}/project-view/${projeto.id}`;
-              console.log("Copiando link do cliente:", clientUrl);
+              // Copy link for the client
+              const clientUrl = `${window.location.origin}/project-view/${project.id}`;
+              console.log("Copying client link:", clientUrl);
               navigator.clipboard.writeText(clientUrl);
               toast({
-                title: "Link copiado",
-                description: "Link para o cliente copiado para a área de transferência.",
+                title: "Link copied",
+                description: "Client link copied to clipboard.",
               });
             }}
           >
-            Link do Cliente
+            Client Link
             <Link className="h-3 w-3 ml-1" />
           </Button>
           
@@ -404,13 +404,13 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
         </div>
       </CardFooter>
       
-      {/* Modal para confirmar exclusão do projeto */}
+      {/* Delete confirmation modal */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir Projeto</DialogTitle>
+            <DialogTitle>Delete Project</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir o projeto "{projeto.nome}"? Esta ação não pode ser desfeita.
+              Are you sure you want to delete the project "{project.nome}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
@@ -418,7 +418,7 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -428,28 +428,28 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
               {isDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Excluindo...
+                  Deleting...
                 </>
               ) : (
-                "Excluir Projeto"
+                "Delete Project"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* Modal para visualizar seleções */}
+      {/* View selections modal */}
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Fotos Selecionadas - {projeto.nome}</DialogTitle>
+            <DialogTitle>Selected Photos - {project.nome}</DialogTitle>
             <DialogDescription>
-              O cliente selecionou {projeto.selecionadas} de {projeto.fotos} fotos.
+              The client selected {project.selecionadas} of {project.fotos} photos.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
-            {projeto.photos.filter((photo: any) => photo.selected).map((photo: any) => (
+            {project.photos.filter((photo: any) => photo.selected).map((photo: any) => (
               <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
                 <img 
                   src={photo.url} 
@@ -465,7 +465,7 @@ function ProjectCard({ projeto: project, onDelete }: { projeto: any, onDelete?: 
           
           <DialogFooter>
             <Button onClick={() => setShowSelectionsModal(false)}>
-              Fechar
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -566,11 +566,11 @@ function UploadModal({
       });
       
       if (!response.ok) {
-        throw new Error("Erro ao criar projeto");
+        throw new Error("Error creating project");
       }
       
       const result = await response.json();
-      console.log("Projeto criado:", result);
+      console.log("Project created:", result);
       
       // Show success notification
       toast({
