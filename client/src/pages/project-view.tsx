@@ -569,7 +569,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
-                    console.log(`Erro ao carregar imagem ${photo.id}, usando fallback`);
+                    console.log(`Error loading image ${photo.id}, using fallback`);
                   }}
                 />
                 
@@ -594,10 +594,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 >
                   {selectedPhotos.has(photo.id) ? (
                     <>
-                      <Check className="mr-1 h-4 w-4" /> Selecionada
+                      <Check className="mr-1 h-4 w-4" /> Selected
                     </>
                   ) : (
-                    "Selecionar Foto"
+                    "Select Photo"
                   )}
                 </Button>
               </CardContent>
@@ -610,16 +610,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Finalizar seleção</DialogTitle>
+            <DialogTitle>Finalize Selection</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja finalizar sua seleção de fotos? 
-              Após finalizar, não será possível alterar as fotos selecionadas.
+              Are you sure you want to finalize your photo selection?
+              After finalizing, you won't be able to change the selected photos.
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4">
             <p className="font-medium">
-              Você selecionou {selectedPhotos.size} de {project.photos.length} fotos disponíveis.
+              You have selected {selectedPhotos.size} of {project.photos.length} available photos.
             </p>
           </div>
           
@@ -629,7 +629,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               onClick={() => setShowConfirmDialog(false)}
               disabled={isSubmitting}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button 
               onClick={finalizeSelection}
