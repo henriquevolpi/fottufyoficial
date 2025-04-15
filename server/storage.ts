@@ -392,6 +392,7 @@ export class MemStorage implements IStorage {
     
     const project: Project = {
       id,
+      publicId: projectData.publicId, // Use the provided publicId
       name: projectData.name,
       status: projectData.status || "pending",
       createdAt: now,

@@ -137,17 +137,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             const adaptedProject = adaptProject(projectData);
             console.log('Projeto após adaptação:', adaptedProject);
             
-            // SECURITY CHECK: If user is logged in, check if they own this project
+            // Project view is always public for clients
+            // Only log the access attempt but don't block it
             if (user && user.id !== adaptedProject.fotografoId && user.role !== 'admin') {
-              console.log(`Acesso negado: usuário ${user.id} tentando acessar projeto do fotógrafo ${adaptedProject.fotografoId}`);
-              setAccessDenied(true);
-              setLoading(false);
-              toast({
-                title: "Acesso negado",
-                description: "Você não tem permissão para visualizar este projeto.",
-                variant: "destructive",
-              });
-              return;
+              console.log(`Usuário logado ${user.id} acessando projeto do fotógrafo ${adaptedProject.fotografoId} - permitido para visualização pública`);
             }
             
             setProject(adaptedProject);
@@ -261,17 +254,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           foundProject.photos = []; // Garantir que existe um array vazio se não houver fotos
         }
         
-        // SECURITY CHECK: If user is logged in, check if they own this project from local storage
+        // Project view is always public for clients, allow access regardless of user
+        // Only log the access attempt but don't block it
         if (user && user.id !== foundProject.fotografoId && user.role !== 'admin') {
-          console.log(`Acesso negado: usuário ${user.id} tentando acessar projeto do fotógrafo ${foundProject.fotografoId} (localStorage)`);
-          setAccessDenied(true);
-          setLoading(false);
-          toast({
-            title: "Acesso negado",
-            description: "Você não tem permissão para visualizar este projeto.",
-            variant: "destructive",
-          });
-          return;
+          console.log(`Usuário logado ${user.id} acessando projeto do fotógrafo ${foundProject.fotografoId} (localStorage) - permitido para visualização pública`);
         }
         
         setProject(foundProject);

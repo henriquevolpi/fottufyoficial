@@ -596,11 +596,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate project data and ensure photographerId is set to the current user's ID if logged in
       const currentUserId = req.user?.id || parseInt(photographerId || '1');
       
+      // Generate a unique public ID for the project URL
+      const uniquePublicId = nanoid(10); // 10 character unique ID
+      
       const projectData = insertProjectSchema.parse({
         name: name,
         clientName: clientName,
         clientEmail: clientEmail,
         photographerId: currentUserId,
+        publicId: uniquePublicId,
       });
       
       // Check if photographer ID matches authenticated user

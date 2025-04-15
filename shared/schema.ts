@@ -76,6 +76,7 @@ export const SUBSCRIPTION_PLANS = {
 // Project model
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
+  publicId: text("public_id").notNull().unique(), // Used for public URLs
   name: text("name").notNull(),
   clientName: text("client_name").notNull(),
   clientEmail: text("client_email").notNull(),
