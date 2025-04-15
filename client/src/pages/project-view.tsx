@@ -638,10 +638,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Finalizando...
+                  Finalizing...
                 </>
               ) : (
-                "Sim, finalizar seleção"
+                "Yes, finalize selection"
               )}
             </Button>
           </DialogFooter>

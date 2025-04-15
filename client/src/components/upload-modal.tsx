@@ -61,8 +61,8 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
   const onSubmit = async (values: UploadFormValues) => {
     if (files.length === 0) {
       toast({
-        title: "Nenhuma foto selecionada",
-        description: "Por favor, selecione pelo menos uma foto para o projeto.",
+        title: "No photos selected",
+        description: "Please select at least one photo for the project.",
         variant: "destructive",
       });
       return;
@@ -71,59 +71,56 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
     setIsSubmitting(true);
 
     try {
-      // Simular conversão das imagens para URLs
-      const photoUrls = previews.map((preview, index) => ({
-        id: `photo-${Date.now()}-${index}`,
-        url: preview,
+      // Convert base64 images to a format ready for API submission
+      const photoData = previews.map((preview, index) => ({
+        url: preview, // Using the data URL for now, will be stored by the server
         filename: files[index].name,
-        selected: false,
       }));
 
-      // Obter projetos existentes do localStorage (se houver)
-      const existingProjects = localStorage.getItem('projects')
-        ? JSON.parse(localStorage.getItem('projects')!)
-        : [];
-
-      // Criar novo projeto
-      const newProject = {
-        id: Date.now(),
-        nome: values.nome,
-        cliente: values.cliente,
-        emailCliente: values.emailCliente,
-        data: values.dataEvento,
-        observacoes: values.observacoes || "",
-        status: "pendente",
-        fotos: photoUrls.length,
-        selecionadas: 0,
-        fotografoId: 1, // ID fixo para simulação
-        photos: photoUrls,
-        createdAt: new Date().toISOString(),
+      // Create project data according to API requirements
+      const projectData = {
+        name: values.nome,
+        clientName: values.cliente,
+        clientEmail: values.emailCliente,
+        date: values.dataEvento,
+        notes: values.observacoes || "",
+        photographerId: 1, // Using default ID
+        photos: photoData
       };
 
-      // Adicionar o novo projeto à lista
-      const updatedProjects = [newProject, ...existingProjects];
-      localStorage.setItem('projects', JSON.stringify(updatedProjects));
-
-      // Simular um pequeno atraso para feedback visual
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Mostrar feedback de sucesso
-      toast({
-        title: "Projeto criado com sucesso",
-        description: `O projeto "${values.nome}" foi criado com ${photoUrls.length} fotos.`,
+      // Send data to API endpoint
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
       });
 
-      // Limpar estado e fechar modal
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create project');
+      }
+
+      const newProject = await response.json();
+
+      // Show success message
+      toast({
+        title: "Project created successfully",
+        description: `Project "${values.nome}" was created with ${photoData.length} photos.`,
+      });
+
+      // Reset form and close modal
       form.reset();
       setFiles([]);
       setPreviews([]);
       onClose();
 
     } catch (error) {
-      console.error("Erro ao criar projeto:", error);
+      console.error("Error creating project:", error);
       toast({
-        title: "Erro ao criar projeto",
-        description: "Ocorreu um erro ao tentar criar o projeto. Tente novamente.",
+        title: "Error creating project",
+        description: error instanceof Error ? error.message : "An error occurred while creating the project. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -204,9 +201,9 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
     <Dialog open={open} onOpenChange={isSubmitting ? undefined : handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo Projeto</DialogTitle>
+          <DialogTitle>New Project</DialogTitle>
           <DialogDescription>
-            Preencha os dados do projeto e faça upload das fotos.
+            Fill in the project details and upload your photos.
           </DialogDescription>
         </DialogHeader>
 
@@ -217,9 +214,9 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               name="nome"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Projeto</FormLabel>
+                  <FormLabel>Project Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ensaio de Casamento" {...field} />
+                    <Input placeholder="Wedding Photoshoot" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -231,9 +228,9 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               name="cliente"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Cliente</FormLabel>
+                  <FormLabel>Client Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="João e Maria" {...field} />
+                    <Input placeholder="John and Jane Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -245,10 +242,10 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
               name="emailCliente"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email do Cliente</FormLabel>
+                  <FormLabel>Client Email</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="cliente@email.com"
+                      placeholder="client@example.com"
                       type="email"
                       {...field}
                     />
