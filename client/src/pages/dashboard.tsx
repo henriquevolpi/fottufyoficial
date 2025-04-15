@@ -248,30 +248,10 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
     try {
       setIsDeleting(true);
       
-      // Solução 1: Excluir do localStorage diretamente
-      // Este método garantirá que o projeto seja removido independentemente de como o backend responde
-      try {
-        const storedProjects = localStorage.getItem('projects');
-        if (storedProjects) {
-          const parsedProjects = JSON.parse(storedProjects);
-          const updatedProjects = parsedProjects.filter((p: any) => p.id !== project.id);
-          localStorage.setItem('projects', JSON.stringify(updatedProjects));
-        }
-      } catch (storageError) {
-        console.error('Error removing from localStorage:', storageError);
-      }
-      
-      // Solution 2: Also try to delete via API
-      try {
-        await fetch(`/api/projects/${project.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        // Even if the API fails, we continue with the local deletion
-      } catch (apiError) {
-        console.warn('API deletion failed, but project was removed locally:', apiError);
+      // Call the parent component's delete handler
+      // This will trigger the API call and handle all the state updates
+      if (onDelete) {
+        onDelete(project.id);
       }
       
       // Show success notification
@@ -279,11 +259,6 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
         title: "Project deleted",
         description: `Project "${project.nome}" was successfully deleted.`,
       });
-      
-      // Call callback to update project list
-      if (onDelete) {
-        onDelete(project.id);
-      }
     } catch (error) {
       console.error('Error deleting project:', error);
       toast({
@@ -1010,9 +985,7 @@ export default function Dashboard() {
     const photoCount = projectToDelete?.fotos || 0;
     
     // Make API call to delete the project
-    fetch(`/api/projects/${id}`, {
-      method: 'DELETE',
-    })
+    apiRequest('DELETE', `/api/projects/${id}`)
     .then(response => {
       if (response.ok) {
         return response.json();
@@ -1028,9 +1001,23 @@ export default function Dashboard() {
       // Update filtered projects as well
       setFilteredProjects(prevProjects => prevProjects.filter(project => project.id !== id));
       
-      // Refresh the user stats to update the upload count
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      // Update localStorage to reflect deletion
+      try {
+        const storedProjects = localStorage.getItem('projects');
+        if (storedProjects) {
+          const parsedProjects = JSON.parse(storedProjects);
+          const updatedProjects = parsedProjects.filter((p: any) => p.id !== id);
+          localStorage.setItem('projects', JSON.stringify(updatedProjects));
+        }
+      } catch (storageError) {
+        console.error('Error updating localStorage:', storageError);
+      }
+      
+      // Refresh the user data and stats to update the upload count
+      import('@/lib/queryClient').then(({ queryClient }) => {
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      });
       
       toast({
         title: "Project deleted",
