@@ -13,14 +13,13 @@ if (!process.env.SESSION_SECRET) {
 }
 
 // Create upload directory if it doesn't exist
-// Use import.meta.url instead of __dirname for ES modules
-const moduleUrl = new URL(import.meta.url);
-const moduleDir = path.dirname(moduleUrl.pathname);
-const uploadsDir = path.join(moduleDir, '../uploads');
+// Use a direct path relative to the project root
+const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log(`Created uploads directory: ${uploadsDir}`);
 }
+console.log(`Upload directory path: ${uploadsDir}`); // Log for debugging
 
 // Configure multer storage
 const storage = multer.diskStorage({
