@@ -1,0 +1,50 @@
+⚠️ Please apply the following 3 focused fixes — do NOT touch anything else that is currently working.
+
+---
+
+✅ 1. FIX: Projects can't be edited after logout
+Problem:
+- When I create a project while logged in, I can edit it immediately.
+- But if I logout and then log back in, I lose access to edit my own projects.
+Cause:
+- The backend is not correctly checking that the project belongs to the currently logged-in user (photographerId).
+Fix:
+- Ensure each project saves the correct photographerId when created.
+- When accessing/editing a project in the dashboard, the backend should allow access if project.photographerId === loggedInUser.id.
+
+---
+
+✅ 2. FIX: Public client link is wrongly blocked
+Problem:
+- When I open a client gallery link like /project-view/:id, I get a message saying “You cannot view this project because it belongs to another photographer”.
+- This should never happen.
+Clarification:
+- Client links (like /project-view/:id) are meant to be 100% public.
+Fix:
+- The route /project-view/:id should be accessible by anyone, even without login.
+- Do NOT apply any photographerId or session validation on this route.
+- Just load the project and its photos if the public ID is valid.
+
+---
+
+✅ 3. FIX: Project links are not unique
+Problem:
+- The system is using incremental project IDs in URLs like /project-view/1 or /project-view/2.
+- These IDs can collide across different user accounts and expose unrelated projects if guessed.
+Fix:
+- When creating a new project, generate a unique random public ID using something like `nanoid()` and save it as `publicId`.
+- URLs should now use: /project-view/:publicId instead of numeric project.id.
+- In the backend, fetch the project using this `publicId` (not the internal ID).
+
+---
+
+🛑 VERY IMPORTANT: 
+Please do NOT break or modify any of the following that are currently working:
+- Upload functionality
+- Logout
+- Dashboard stats or layout
+- LocalStorage or login/session management
+- Subscription logic
+- Stripe integration
+
+🧠 Make only these 3 fixes, test them carefully, and let me know what changed.

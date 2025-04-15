@@ -593,12 +593,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Project data (raw):", { projectName, clientName, clientEmail, photographerId });
       console.log("Project data (processed):", { name, clientName, clientEmail, photographerId });
       
-      // Validate project data
+      // Validate project data and ensure photographerId is set to the current user's ID if logged in
+      const currentUserId = req.user?.id || parseInt(photographerId || '1');
+      
       const projectData = insertProjectSchema.parse({
         name: name,
         clientName: clientName,
         clientEmail: clientEmail,
-        photographerId: parseInt(photographerId || '1'),
+        photographerId: currentUserId,
       });
       
       // Check if photographer ID matches authenticated user
