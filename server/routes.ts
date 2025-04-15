@@ -553,12 +553,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Processing ${req.files.length} photos from multipart form-data`);
         const uploadedFiles = req.files as Express.Multer.File[];
         processedPhotos = uploadedFiles.map(file => {
+          // Extract the file ID from the filename (which should be id.ext)
+          const filename = path.basename(file.path);
+          const id = path.parse(filename).name; // Get filename without extension
+          
           // Create a web-accessible URL path to the uploaded file
-          const fileUrl = `/uploads/${path.basename(file.path)}`;
-          console.log(`File uploaded: ${file.originalname}, Path: ${file.path}, URL: ${fileUrl}`);
+          const fileUrl = `/uploads/${filename}`;
+          console.log(`File uploaded: ${file.originalname}, Saved as: ${filename}, URL: ${fileUrl}`);
           
           return {
-            id: '', // Will be set by storage
+            id: id, // Use the filename without extension as the ID
             url: fileUrl,
             filename: file.originalname || 'photo.jpg',
           };
@@ -781,12 +785,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Convert uploaded files to photo objects
         processedPhotos = uploadedFiles.map(file => {
+          // Extract the file ID from the filename (which should be id.ext)
+          const filename = path.basename(file.path);
+          const id = path.parse(filename).name; // Get filename without extension
+          
           // Create a web-accessible URL path to the uploaded file
-          const fileUrl = `/uploads/${path.basename(file.path)}`;
-          console.log(`File path: ${file.path}, URL: ${fileUrl}`);
+          const fileUrl = `/uploads/${filename}`;
+          console.log(`File uploaded to project ${projectId}: ${file.originalname}, Saved as: ${filename}, URL: ${fileUrl}`);
           
           return {
-            id: nanoid(), // Generate a unique ID
+            id: id, // Use the filename without extension as the ID
             url: fileUrl,
             filename: file.originalname || 'photo.jpg',
           };

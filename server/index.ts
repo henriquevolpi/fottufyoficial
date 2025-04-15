@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { nanoid } from "nanoid";
 
 // Definir variável de ambiente para a sessão se não estiver definida
 if (!process.env.SESSION_SECRET) {
@@ -27,12 +28,33 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename with original extension
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+    // Generate unique ID for better URL handling
+    const id = nanoid();
+    // Get original extension and ensure it's preserved
+    const ext = path.extname(file.originalname) || getExtensionFromMimeType(file.mimetype);
+    // Final filename format: unique-id.ext
+    cb(null, `${id}${ext}`);
+    
+    // Log for debugging
+    console.log(`File upload: ${file.originalname} → ${id}${ext}`);
   }
 });
+
+// Helper function to get extension from MIME type if original name doesn't have one
+function getExtensionFromMimeType(mimetype: string): string {
+  switch(mimetype) {
+    case 'image/jpeg':
+      return '.jpg';
+    case 'image/png':
+      return '.png';
+    case 'image/gif':
+      return '.gif';
+    case 'image/webp':
+      return '.webp';
+    default:
+      return '.jpg'; // Default to jpg
+  }
+}
 
 // Filter for image files only
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
