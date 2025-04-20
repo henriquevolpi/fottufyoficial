@@ -11,6 +11,7 @@ import Stripe from 'stripe';
 import { upload } from "./index";
 import http from "http";
 import https from "https";
+import bodyParser from "body-parser";
 
 // Helper function to download an image from a URL to the uploads directory
 async function downloadImage(url: string, filename: string): Promise<string> {
