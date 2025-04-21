@@ -151,9 +151,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
   
-  // Configure auth with Passport.js and sessions
-  setupAuth(app);
-  
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)
   

@@ -60,7 +60,9 @@ export class MemStorage implements IStorage {
     this.userId = 1;
     this.projectId = 1;
     this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // limpar sessões expiradas a cada 24 horas
+      checkPeriod: 86400000, // 24 hours to clean expired sessions
+      stale: false, // Do not delete stale sessions
+      ttl: 7 * 24 * 60 * 60 // 7 days TTL (matches cookie maxAge)
     });
     
     // Create a default admin user for testing

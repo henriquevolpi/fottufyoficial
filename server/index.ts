@@ -73,14 +73,17 @@ export const upload = multer({
   }
 });
 
+// Initialize Express and configure middleware
 const app = express();
+
+// Configure essential middleware first
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(uploadsDir));
 
-// Add CORS headers to allow cookies in cross-origin requests
+// Set up CORS to allow credentials
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  // For development, allow all origins with credentials
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5000');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -88,10 +91,30 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
-  
   next();
 });
 
+// Set up authentication BEFORE any route handlers
+import { setupAuth } from './auth';
+setupAuth(app);
+
+// Configure session logging middleware
+app.use((req, res, next) => {
+  // Log session details for debugging
+  if (req.path.startsWith('/api/')) {
+    console.log(`Request: ${req.method} ${req.path}`);
+    console.log(`Session ID: ${req.sessionID}`);
+    console.log(`Authenticated: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'}`);
+    console.log(`User: ${req.user ? `ID=${req.user.id}` : 'none'}`);
+    console.log(`Cookies: ${req.headers.cookie || 'none'}`);
+  }
+  next();
+});
+
+// Set up static file serving
+app.use('/uploads', express.static(uploadsDir));
+
+// Request/response logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -123,6 +146,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register API routes after authentication is set up
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
