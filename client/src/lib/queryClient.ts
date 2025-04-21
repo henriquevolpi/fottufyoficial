@@ -15,14 +15,33 @@ export async function apiRequest(
   console.log(`Fazendo requisição ${method} para ${url}`, data ? data : '');
   
   try {
-    const res = await fetch(url, {
+    // Set up request options with credentials included
+    const options: RequestInit = {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      credentials: "include", // Always include credentials
+      headers: {
+        ...(data ? { "Content-Type": "application/json" } : {}),
+      },
       body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
+    };
+    
+    // Log the full request configuration for debugging
+    console.log(`Request configuration:`, { 
+      url, 
+      method, 
+      credentials: options.credentials,
+      headers: options.headers
     });
     
-    console.log(`Resposta recebida de ${url}:`, res.status, res.statusText);
+    const res = await fetch(url, options);
+    
+    // Log the response including cookies
+    console.log(`Resposta recebida de ${url}:`, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: Object.fromEntries(res.headers.entries()),
+      hasCookies: res.headers.has('set-cookie')
+    });
     
     if (!res.ok) {
       const errorText = await res.text();
@@ -43,16 +62,50 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    
+    console.log(`Query request for ${url}`, {
+      queryKey,
+      on401: unauthorizedBehavior
+    });
+    
+    // Enhanced fetch with proper credentials
+    const res = await fetch(url, {
       credentials: "include",
+      headers: {
+        "Accept": "application/json"
+      }
+    });
+    
+    // Log the response including headers
+    console.log(`Query response from ${url}:`, {
+      status: res.status,
+      statusText: res.statusText, 
+      headers: Object.fromEntries(res.headers.entries()),
+      hasCookies: res.headers.has('set-cookie')
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      console.log(`Returning null for 401 on ${url} as configured`);
       return null;
     }
 
-    await throwIfResNotOk(res);
-    return await res.json();
+    // Detailed error handling
+    if (!res.ok) {
+      try {
+        const errorData = await res.json();
+        console.error(`Error from ${url}:`, errorData);
+        throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
+      } catch (e) {
+        const errorText = await res.text();
+        console.error(`Error text from ${url}:`, errorText);
+        throw new Error(`${res.status}: ${errorText || res.statusText}`);
+      }
+    }
+    
+    // Parse JSON response
+    const data = await res.json();
+    return data;
   };
 
 export const queryClient = new QueryClient({

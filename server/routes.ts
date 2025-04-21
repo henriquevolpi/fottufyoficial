@@ -79,6 +79,7 @@ async function downloadImage(url: string, filename: string): Promise<string> {
 const authenticate = async (req: Request, res: Response, next: Function) => {
   console.log(`[AUTH] Checking authentication for ${req.method} ${req.path}`);
   console.log(`[AUTH] Session ID: ${req.sessionID}, isAuthenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
+  console.log(`[AUTH] Raw cookies: ${req.headers.cookie || "none"}`);
   console.log(`[AUTH] User: ${req.user ? `ID=${req.user.id}, role=${req.user.role}` : "undefined"}`);
   
   // First check for session-based authentication (Passport adds isAuthenticated method)
@@ -90,6 +91,24 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   // Check if we have a cookie but session is not recognized
   if (req.headers.cookie && req.headers.cookie.includes('studio.sid') && !req.user) {
     console.log(`[AUTH] Cookie found but session not recognized: ${req.headers.cookie}`);
+    
+    // Try to recover the session by checking if it's valid
+    if (req.session && req.sessionID) {
+      console.log(`[AUTH] Attempting to recover session ${req.sessionID}`);
+      
+      // If we have cookies but no session data, try to force a session refresh
+      req.session.reload((err) => {
+        if (err) {
+          console.error(`[AUTH] Failed to reload session:`, err);
+        } else {
+          console.log(`[AUTH] Session reloaded, checking authentication again`);
+          if (req.isAuthenticated && req.isAuthenticated()) {
+            console.log(`[AUTH] User authenticated after session reload: ID=${req.user?.id}`);
+            return next();
+          }
+        }
+      });
+    }
   }
   
   // For development purposes only, allow alternate auth methods
@@ -121,7 +140,17 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   
   // If we reach here, user is not authenticated
   console.log("[AUTH] No authentication found, returning 401");
-  return res.status(401).json({ message: "Não autorizado" });
+  
+  // Return more helpful error for debugging
+  return res.status(401).json({ 
+    message: "Não autorizado", 
+    debug: {
+      sessionId: req.sessionID,
+      hasCookies: Boolean(req.headers.cookie),
+      sessionExists: Boolean(req.session),
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false
+    }
+  });
 };
 
 // Admin role check middleware
