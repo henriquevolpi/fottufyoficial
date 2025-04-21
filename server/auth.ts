@@ -51,20 +51,19 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Configure session cookie options
+  // Configure session cookie options exactly as specified
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "studio-dev-secret",
-    resave: true, // Changed to true to ensure session is saved on every request
-    saveUninitialized: true, // Changed to true to ensure cookie is set even for uninitialized sessions
+    resave: false, // Exactly as required
+    saveUninitialized: false, // Exactly as required
     store: storage.sessionStore,
     name: 'studio.sid', // Specific name for the session cookie
     cookie: { 
       secure: false, // Must be false for development without HTTPS
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days (1 week)
       httpOnly: true, // Prevents JavaScript from reading the cookie
-      sameSite: 'lax', // Allows the cookie to be sent in cross-site requests
-      path: '/', // Cookie available across the entire site
-      domain: undefined // Use the default domain
+      sameSite: 'lax', // Exactly as required (not 'none')
+      path: '/' // Cookie available across the entire site
     }
   };
 
