@@ -19,21 +19,15 @@ export default function Login() {
       setIsLoading(true);
       console.log("Login.tsx: Tentando fazer login com:", values.email);
       
-      // Forçar redirecionamento diretamente após qualquer login
-      if (values.email && values.password) {
-        // Criar um usuário fictício - para fins de demonstração
-        localStorage.setItem("user", JSON.stringify({
-          id: 1,
-          name: "Usuário Fotógrafo",
-          email: values.email,
-          role: "photographer",
-          status: "active"
-        }));
-        
-        console.log("Login.tsx: Login simulado bem-sucedido, redirecionando para dashboard");
-        window.location.href = "/dashboard";
-        return;
-      }
+      // Use the actual loginMutation from useAuth
+      await loginMutation.mutateAsync({
+        email: values.email,
+        password: values.password
+      });
+      
+      // If we reach here, login was successful
+      console.log("Login.tsx: Login bem-sucedido, redirecionando para dashboard");
+      setLocation("/dashboard");
       
     } catch (error) {
       console.error("Erro de login:", error);
@@ -62,67 +56,59 @@ export default function Login() {
       <div className="mt-6">
         <div className="flex space-x-2">
           <Button
-            onClick={() => {
-              // Criar um usuário fotógrafo - para fins de demonstração
-              localStorage.setItem("user", JSON.stringify({
-                id: 1,
-                name: "Usuário Fotógrafo",
-                email: "teste@fotografia.com",
-                role: "photographer",
-                status: "active"
-              }));
-              
-              console.log("Redirecionando para dashboard");
-              window.location.href = "/dashboard";
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                // Use actual login mechanism for photographer
+                await loginMutation.mutateAsync({
+                  email: "teste@fotografia.com",
+                  password: "password123"
+                });
+                console.log("Redirecionando para dashboard");
+                setLocation("/dashboard");
+              } catch (error) {
+                console.error("Erro ao fazer login como fotógrafo:", error);
+                toast({
+                  title: "Erro ao acessar como fotógrafo",
+                  description: "Não foi possível fazer login com credenciais de teste",
+                  variant: "destructive"
+                });
+              } finally {
+                setIsLoading(false);
+              }
             }}
             variant="outline"
             className="text-sm"
+            disabled={isLoading}
           >
             Acessar como Fotógrafo
           </Button>
           
           <Button
-            onClick={() => {
-              // Use our new admin account with login API
-              const adminLogin = {
-                email: "admin@studio.com",
-                password: "admin123"
-              };
-              
-              fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(adminLogin)
-              })
-              .then(response => response.json())
-              .then(data => {
-                console.log("Admin login response:", data);
-                if (data.user) {
-                  localStorage.setItem("user", JSON.stringify(data.user));
-                  console.log("Redirecionando para admin");
-                  window.location.href = "/admin";
-                } else {
-                  console.error("Falha no login admin:", data);
-                  toast({
-                    title: "Falha no login admin",
-                    description: data.message || "Erro desconhecido",
-                    variant: "destructive"
-                  });
-                }
-              })
-              .catch(error => {
-                console.error("Erro ao fazer login admin:", error);
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                // Use our new admin account with proper login mutation
+                await loginMutation.mutateAsync({
+                  email: "admin@studio.com",
+                  password: "admin123"
+                });
+                console.log("Redirecionando para admin");
+                setLocation("/admin");
+              } catch (error) {
+                console.error("Erro ao fazer login como admin:", error);
                 toast({
-                  title: "Erro de conexão",
-                  description: "Não foi possível conectar ao servidor",
+                  title: "Erro de login admin",
+                  description: "Não foi possível fazer login com credenciais de administrador",
                   variant: "destructive"
                 });
-              });
+              } finally {
+                setIsLoading(false);
+              }
             }}
             variant="outline"
             className="text-sm bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+            disabled={isLoading}
           >
             Acessar como Admin
           </Button>

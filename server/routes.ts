@@ -191,93 +191,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)
   
-  // Login route - We'll use Passport's authentication to establish a session
-  app.post("/api/login", (req: Request, res: Response, next: Function) => {
-    try {
-      console.log("Recebida requisição de login:", req.body);
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        console.warn("Tentativa de login sem email ou senha");
-        return res.status(400).json({ message: "Email e senha são obrigatórios" });
-      }
-      
-      // Use Passport's authenticate method to handle login
-      passport.authenticate("local", (err: any, user: any, info: any) => {
-        if (err) {
-          console.error("Erro durante a autenticação:", err);
-          return res.status(500).json({ message: "Falha no login, tente novamente mais tarde" });
-        }
-        
-        if (!user) {
-          console.warn(`Falha na autenticação para o email: ${email}`);
-          return res.status(401).json({ message: "Email ou senha inválidos" });
-        }
-        
-        // Log the user in (establish a session)
-        req.login(user, (loginErr) => {
-          if (loginErr) {
-            console.error("Erro ao estabelecer sessão:", loginErr);
-            return res.status(500).json({ message: "Falha ao estabelecer sessão" });
-          }
-          
-          console.log(`Login bem-sucedido para: ${email}, ID: ${user.id}, Função: ${user.role}, Sessão estabelecida`);
-          
-          // Return the user without the password
-          const userData = {
-            ...user,
-            password: undefined, // Don't send password back to client
-          };
-          
-          return res.json(userData);
-        });
-      })(req, res, next);
-    } catch (error) {
-      console.error("Erro durante o login:", error);
-      res.status(500).json({ message: "Falha no login, tente novamente mais tarde" });
-    }
-  });
-  
-  // Register route
-  app.post("/api/register", async (req: Request, res: Response, next: Function) => {
-    try {
-      const userData = insertUserSchema.parse({
-        ...req.body,
-        role: "photographer", // Force role to be photographer
-        status: "active",     // Default to active status
-      });
-      
-      // Check if email already exists
-      const existingUser = await storage.getUserByEmail(userData.email);
-      
-      if (existingUser) {
-        return res.status(400).json({ message: "Email já está em uso" });
-      }
-      
-      const user = await storage.createUser(userData);
-      
-      // Establish a session by logging the user in
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Erro ao estabelecer sessão após registro:", err);
-          return next(err);
-        }
-        
-        console.log(`Registro bem-sucedido para: ${user.email}, ID: ${user.id}, Sessão estabelecida`);
-        
-        return res.status(201).json({ 
-          ...user,
-          password: undefined, // Don't send password back to client
-        });
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid registration data", errors: error.errors });
-      }
-      console.error("Erro durante o registro:", error);
-      res.status(500).json({ message: "Registration failed" });
-    }
-  });
+  // Using login route defined in auth.ts instead
+
+  // Using register route defined in auth.ts instead
   
   // ==================== User Routes ====================
   

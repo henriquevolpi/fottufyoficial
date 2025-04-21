@@ -101,23 +101,50 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const existingUser = await storage.getUserByEmail(req.body.email);
+      console.log("Processing registration request:", req.body);
+      
+      // Validate required fields
+      const { name, email, password } = req.body;
+      if (!name || !email || !password) {
+        return res.status(400).json({ message: "Nome, email e senha são obrigatórios" });
+      }
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email já está em uso" });
       }
-
-      const user = await storage.createUser({
+      
+      // Create user with basic info and photographer role
+      const userData = {
         ...req.body,
-        password: await hashPassword(req.body.password),
-      });
-
+        role: "photographer", // Default to photographer role
+        status: "active",     // Default to active status
+        planType: "free",     // Default to free plan
+        subscriptionStatus: "inactive",
+        uploadLimit: 50,      // Default limit for free plan
+        usedUploads: 0,
+        password: await hashPassword(password), // Hash the password
+      };
+      
+      console.log("Creating new user with data:", { ...userData, password: "[REDACTED]" });
+      const user = await storage.createUser(userData);
+      
+      // Establish session by logging in the user
       req.login(user, (err) => {
-        if (err) return next(err);
-        // Return user without password
-        const safeUser = { ...user, password: undefined };
+        if (err) {
+          console.error("Error establishing session after registration:", err);
+          return next(err);
+        }
+        
+        console.log(`Registration successful for: ${email}, ID: ${user.id}`);
+        
+        // Return user data without password
+        const { password, ...safeUser } = user;
         res.status(201).json(safeUser);
       });
     } catch (error) {
+      console.error("Error during registration:", error);
       next(error);
     }
   });
@@ -129,7 +156,14 @@ export function setupAuth(app: Express) {
       
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json(user);
+        
+        // Return user without password
+        if (user) {
+          const { password, ...userData } = user;
+          res.status(200).json(userData);
+        } else {
+          res.status(500).json({ message: "Erro ao carregar dados do usuário" });
+        }
       });
     })(req, res, next);
   });
@@ -155,8 +189,11 @@ export function setupAuth(app: Express) {
     console.log("User authenticated, returning user data:", req.user ? `ID=${req.user.id}` : "undefined");
     
     // If authenticated, return the user (omit password)
-    const userData = { ...req.user };
-    delete userData.password;
-    res.json(userData);
+    if (req.user) {
+      const { password, ...userData } = req.user;
+      res.json(userData);
+    } else {
+      res.status(500).json({ message: "Erro ao carregar dados do usuário" });
+    }
   });
 }
