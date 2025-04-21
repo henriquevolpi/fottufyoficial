@@ -238,8 +238,8 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
 
   return (
     <Dialog open={open} onOpenChange={isSubmitting ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="sticky top-0 z-10 bg-white pb-4">
           <DialogTitle>New Project</DialogTitle>
           <DialogDescription>
             Fill in the project details and upload your photos. All fields are required.
@@ -372,10 +372,12 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
                   <p className="text-sm font-medium mb-2">
                     {previews.length} photo{previews.length !== 1 ? "s" : ""} selected
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {previews.map((preview, index) => (
+                  
+                  {/* Show max 12 thumbnails (4 rows of 3) */}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-[260px] overflow-y-auto">
+                    {previews.slice(0, 24).map((preview, index) => (
                       <div key={index} className="relative group">
-                        <div className="relative aspect-square rounded-md overflow-hidden border">
+                        <div className="relative aspect-square rounded-md overflow-hidden border h-[60px]">
                           <img
                             src={preview}
                             alt={`Preview ${index + 1}`}
@@ -386,24 +388,33 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="text-white hover:text-red-400"
+                              className="text-white hover:text-red-400 h-8 w-8 p-0"
                               onClick={() => removeFile(index)}
                             >
-                              <X className="h-6 w-6" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                        <p className="text-xs truncate mt-1">
-                          {files[index]?.name}
+                        <p className="text-xs truncate mt-0.5 text-[10px] leading-tight">
+                          {files[index]?.name?.length > 10 
+                            ? files[index]?.name?.substring(0, 10) + '...' 
+                            : files[index]?.name}
                         </p>
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Show count of remaining photos if more than 24 */}
+                  {previews.length > 24 && (
+                    <div className="mt-2 text-center text-xs text-gray-500">
+                      +{previews.length - 24} more photo{previews.length - 24 !== 1 ? "s" : ""} selected
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="sticky bottom-0 z-10 bg-white pt-4 mt-6 border-t">
               <Button 
                 type="button" 
                 variant="outline" 
