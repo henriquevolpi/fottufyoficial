@@ -207,85 +207,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)
   
-  // Login route
-  app.post("/api/login", async (req: Request, res: Response) => {
-    try {
-      console.log("Recebida requisição de login:", req.body);
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        console.warn("Tentativa de login sem email ou senha");
-        return res.status(400).json({ message: "Email e senha são obrigatórios" });
-      }
-      
-      console.log("Buscando usuário pelo email:", email);
-      const user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        console.warn(`Usuário não encontrado para o email: ${email}`);
-        return res.status(401).json({ message: "Email ou senha inválidos" });
-      }
-      
-      // Special handling for admin@studio.com (hardcoded admin user)
-      if (email === "admin@studio.com") {
-        if (password !== "admin123") {
-          console.warn(`Senha incorreta para o administrador`);
-          return res.status(401).json({ message: "Email ou senha inválidos" });
-        }
-      } else if (user.password !== password) {
-        console.warn(`Senha incorreta para o usuário: ${email}`);
-        return res.status(401).json({ message: "Email ou senha inválidos" });
-      }
-      
-      console.log(`Login bem-sucedido para: ${email}, ID: ${user.id}, Função: ${user.role}`);
-      
-      // In a real app, we would create and return a JWT token here
-      // For now, we'll return the user
-      const userData = {
-        ...user,
-        password: undefined, // Don't send password back to client
-      };
-      
-      res.json({ 
-        user: userData
-      });
-    } catch (error) {
-      console.error("Erro durante o login:", error);
-      res.status(500).json({ message: "Falha no login, tente novamente mais tarde" });
-    }
-  });
+  // Login route is now managed by auth.ts
+  // app.post("/api/login", async (req: Request, res: Response) => {
+  //   try {
+  //     ...
+  //   } catch (error) {
+  //     ...
+  //   }
+  // });
   
   // Register route
-  app.post("/api/register", async (req: Request, res: Response) => {
-    try {
-      const userData = insertUserSchema.parse({
-        ...req.body,
-        role: "photographer", // Force role to be photographer
-        status: "active",     // Default to active status
-      });
-      
-      // Check if email already exists
-      const existingUser = await storage.getUserByEmail(userData.email);
-      
-      if (existingUser) {
-        return res.status(400).json({ message: "Email is already in use" });
-      }
-      
-      const user = await storage.createUser(userData);
-      
-      res.status(201).json({ 
-        user: {
-          ...user,
-          password: undefined, // Don't send password back to client
-        }
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid registration data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Registration failed" });
-    }
-  });
+  // This route is now managed by auth.ts
+  // app.post("/api/register", async (req: Request, res: Response) => {
+  //   ...
+  // });
   
   // ==================== User Routes ====================
   
