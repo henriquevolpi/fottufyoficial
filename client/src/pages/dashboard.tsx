@@ -920,11 +920,8 @@ export default function Dashboard() {
         setIsLoading(true);
         
         // Always fetch from API to ensure we only see current user's projects
-        const response = await fetch('/api/projects');
-        
-        if (!response.ok) {
-          throw new Error("Error loading projects");
-        }
+        // Use apiRequest instead of fetch to include auth credentials
+        const response = await apiRequest('GET', '/api/projects');
         
         const data = await response.json();
         console.log("Projects loaded from API:", data.length);
