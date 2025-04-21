@@ -75,104 +75,61 @@ async function downloadImage(url: string, filename: string): Promise<string> {
   });
 }
 
-// Basic authentication middleware - MODIFICADO PARA BYPASS DE AUTENTICAÇÃO EM DESENVOLVIMENTO
+// Basic authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
   console.log("Status de autenticação:", 
     req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
     "User:", req.user);
   
-  // DESENVOLVIMENTO: Verificar autenticação
+  // Verify session-based authentication
   if (req.isAuthenticated && req.isAuthenticated()) {
-    // Usuário já está autenticado pela sessão
+    // User is authenticated via session
     console.log(`Usuário autenticado pela sessão: ID=${req.user?.id}`);
     return next();
   }
   
-  // Para usuários não autenticados via sessão, usar cookie auth-bypass ou o cabeçalho
-  if (!req.user) {
-    // Verificar se há um token ou usuário de teste na sessão
-    if (req.headers['x-user-id']) {
-      // Autenticação via header para testes
-      const userId = parseInt(req.headers['x-user-id'] as string);
-      if (!isNaN(userId)) {
-        const user = await storage.getUser(userId);
-        if (user) {
-          console.log(`Usuário carregado do header x-user-id: ${userId}`);
-          req.user = user;
-          return next();
-        }
+  // For non-session authenticated users, check alternative auth methods
+  // Check for x-user-id header (for testing)
+  if (req.headers['x-user-id']) {
+    const userId = parseInt(req.headers['x-user-id'] as string);
+    if (!isNaN(userId)) {
+      const user = await storage.getUser(userId);
+      if (user) {
+        console.log(`Usuário carregado do header x-user-id: ${userId}`);
+        req.user = user;
+        return next();
       }
-    }
-    
-    // Check URL param for admin override (admin=true)
-    if (req.query.admin === 'true') {
-      console.log("Admin override detected via query param, using admin test user");
-      req.user = {
-        id: 999,
-        name: "Admin",
-        email: "admin@studio.com",
-        role: "admin",
-        status: "active",
-        planType: "professional",
-        uploadLimit: -1, // unlimited uploads
-        usedUploads: 0,
-        subscriptionStatus: "active",
-        subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(),
-        password: "$2b$10$qH9/uDRpvQMUZVHaNB5FsOqqxF4WXK1yZIsS13f93RtbBjqYCYnZq", // admin123
-        subscriptionStartDate: new Date(),
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        subscription_id: null,
-        lastEvent: null
-      };
-    } else {
-      // No authenticated user and no override, do not bypass authentication
-      console.log("No authenticated user and no override, returning 401");
-      return res.status(401).json({ message: "Não autorizado" });
     }
   }
   
-  return next();
-  
-  // CÓDIGO ORIGINAL COMENTADO:
-  /*
-  // Verificar se o usuário já está autenticado pela sessão
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    // O usuário já está autenticado pela sessão
+  // Check for admin override parameter
+  if (req.query.admin === 'true') {
+    console.log("Admin override detected via query param, using admin test user");
+    req.user = {
+      id: 999,
+      name: "Admin",
+      email: "admin@studio.com",
+      role: "admin",
+      status: "active",
+      planType: "professional",
+      uploadLimit: -1, // unlimited uploads
+      usedUploads: 0,
+      subscriptionStatus: "active",
+      subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      password: "$2b$10$qH9/uDRpvQMUZVHaNB5FsOqqxF4WXK1yZIsS13f93RtbBjqYCYnZq", // admin123
+      subscriptionStartDate: new Date(),
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscription_id: null,
+      lastEvent: null
+    };
     return next();
   }
   
-  // Se não estiver autenticado pela sessão, tenta pelo header Authorization
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader) {
-    return res.status(401).json({ message: "Authentication required" });
-  }
-  
-  const [type, token] = authHeader.split(" ");
-  
-  if (type !== "Bearer" || !token) {
-    return res.status(401).json({ message: "Invalid authentication" });
-  }
-  
-  // In a real app, this would validate JWT tokens
-  // For now, we're simulating auth with a basic check
-  const userId = token;
-  
-  try {
-    const user = await storage.getUser(parseInt(userId));
-    
-    if (!user) {
-      return res.status(401).json({ message: "Invalid authentication token" });
-    }
-    
-    req.user = user;
-    next();
-  } catch (error) {
-    return res.status(500).json({ message: "Authentication error" });
-  }
-  */
+  // No authentication, return 401
+  console.log("No authenticated user and no override, returning 401");
+  return res.status(401).json({ message: "Não autorizado" });
 };
 
 // Admin role check middleware

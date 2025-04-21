@@ -47,15 +47,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (data: User) => {
-      queryClient.setQueryData(["/api/user"], data);
+    onSuccess: (data: any) => {
+      // If data is wrapped in a user object, extract it
+      const userData = data.user || data;
+      queryClient.setQueryData(["/api/user"], userData);
       // Invalidate subscription and stats queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       
       toast({
         title: "Login realizado com sucesso",
-        description: `Bem-vindo(a), ${data.name}!`,
+        description: `Bem-vindo(a), ${userData.name}!`,
       });
     },
     onError: (error: Error) => {
@@ -72,11 +75,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: (data: User) => {
-      queryClient.setQueryData(["/api/user"], data);
+    onSuccess: (data: any) => {
+      // If data is wrapped in a user object, extract it
+      const userData = data.user || data;
+      queryClient.setQueryData(["/api/user"], userData);
+      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      
       toast({
         title: "Registro realizado com sucesso",
-        description: `Bem-vindo(a), ${data.name}!`,
+        description: `Bem-vindo(a), ${userData.name}!`,
       });
     },
     onError: (error: Error) => {
