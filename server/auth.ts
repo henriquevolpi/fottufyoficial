@@ -53,16 +53,26 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "studio-dev-secret",
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     store: storage.sessionStore,
     cookie: { 
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
+      secure: false, // Set to false to ensure cookies work on http in development
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       httpOnly: true,
       sameSite: 'lax'
     }
   };
+  
+  console.log("Setting up session with the following settings:", {
+    secret: process.env.SESSION_SECRET ? "***" : "studio-dev-secret",
+    resave: true,
+    saveUninitialized: true,
+    cookieSecure: false,
+    cookieMaxAge: "7 days",
+    cookieHttpOnly: true,
+    cookieSameSite: "lax",
+  });
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
@@ -99,46 +109,107 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      console.log("POST /api/register - Registration attempt:", { email: req.body.email, name: req.body.name });
+      
+      // Check if user already exists
       const existingUser = await storage.getUserByEmail(req.body.email);
       if (existingUser) {
+        console.log("Registration failed: Email already in use:", req.body.email);
         return res.status(400).json({ message: "Email já está em uso" });
       }
 
+      // Create the user with hashed password
+      const hashedPassword = await hashPassword(req.body.password);
+      console.log("Password hashed successfully for new user");
+      
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
+        password: hashedPassword,
       });
+      
+      console.log("User created successfully:", { id: user.id, email: user.email, role: user.role });
 
+      // Log the user in (create a session)
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error("Error during login after registration:", err);
+          return next(err);
+        }
+        
+        console.log("User logged in successfully after registration, authenticated:", req.isAuthenticated());
         res.status(201).json(user);
       });
     } catch (error) {
+      console.error("Error during registration:", error);
       next(error);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log("POST /api/login - Attempting login with:", { email: req.body.email });
+    
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
-      if (err) return next(err);
-      if (!user) return res.status(401).json({ message: "Credenciais inválidas" });
+      if (err) {
+        console.error("Login authentication error:", err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.log("Login failed: Invalid credentials for", req.body.email);
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+      
+      console.log("Login successful for user:", { id: user.id, email: user.email, role: user.role });
       
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error("Error during req.login:", err);
+          return next(err);
+        }
+        
+        console.log("Session established, user authenticated:", req.isAuthenticated());
         res.status(200).json(user);
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
+    console.log("POST /api/logout - Logging out user:", req.user ? { id: req.user.id, email: req.user.email } : "No user");
+    
+    // First call req.logout()
     req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
+      if (err) {
+        console.error("Error during logout:", err);
+        return next(err);
+      }
+      
+      // Then destroy the session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+          return next(err);
+        }
+        
+        // Clear the session cookie
+        res.clearCookie('connect.sid');
+        console.log("User logged out successfully, session destroyed");
+        res.sendStatus(200);
+      });
     });
   });
 
   app.get("/api/user", (req, res) => {
-    console.log("GET /api/user - Status de autenticação:", req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função");
+    console.log("GET /api/user - Request received");
+    console.log("Session ID:", req.sessionID);
+    console.log("Cookie:", req.headers.cookie);
+    console.log("Authentication status:", req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated not a function");
+    
+    // Check if user data exists
+    if (req.user) {
+      console.log("User data exists in session:", { id: req.user.id, email: req.user.email, role: req.user.role });
+    } else {
+      console.log("No user data in session");
+    }
     
     // If not authenticated, return 401 unauthorized
     if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -147,6 +218,7 @@ export function setupAuth(app: Express) {
     }
     
     // If authenticated, return the user
+    console.log("User authenticated, returning user data");
     res.json(req.user);
   });
 }
