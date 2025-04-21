@@ -201,6 +201,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
   
+  // Add raw body parser for Stripe webhooks
+  // This is necessary because Stripe needs the raw body to verify webhook signatures
+  const stripeWebhookPath = '/api/webhook/stripe';
+  app.use(stripeWebhookPath, bodyParser.raw({ type: 'application/json' }));
+  
   // Configure auth with Passport.js and sessions
   setupAuth(app);
   
@@ -1397,49 +1402,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Stripe webhook
   app.post("/api/webhook/stripe", async (req: Request, res: Response) => {
+    // The body-parser middleware added earlier exposes the raw request body as buffer
+    const payload = req.body;
+    const sig = req.headers['stripe-signature'] as string;
+    
+    let event;
+    
     try {
-      // Verificar assinatura (em um cenário real, faríamos verificação com o Stripe)
-      // Para implementar verificação de assinatura, precisaríamos do webhookSecret do Stripe
+      // Get webhook secret from env
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
       
-      // Em ambiente de produção, usaríamos:
-      // const sig = req.headers['stripe-signature'];
-      // const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      
-      // Processar eventos de assinatura Stripe
-      const event = req.body;
-      
-      if (!event || !event.type || !event.data) {
-        return res.status(400).json({ error: "Evento inválido" });
+      if (webhookSecret && sig) {
+        // Verify signature with Stripe webhook secret
+        try {
+          event = stripe.webhooks.constructEvent(
+            payload.toString(), 
+            sig, 
+            webhookSecret
+          );
+          console.log('✓ Webhook signature verified');
+        } catch (err) {
+          console.error(`⚠️ Webhook signature verification failed:`, err);
+          return res.status(400).send(`Webhook signature verification failed: ${err.message}`);
+        }
+      } else {
+        // For testing environments without webhook signature
+        console.warn('⚠️ Webhook secret not configured, skipping signature verification');
+        event = JSON.parse(payload.toString());
       }
       
-      if (event.type.startsWith('subscription.')) {
-        // Processar eventos relacionados a assinaturas
-        const updatedUser = await storage.handleStripeWebhook(event);
-        
-        if (!updatedUser) {
-          return res.status(404).json({ 
-            message: "User not found",
-            event: "processed",
-            status: "warning"
-          });
+      // Make sure the event has the expected structure
+      if (!event || !event.type || !event.data) {
+        console.error('⚠️ Invalid webhook event structure');
+        return res.status(400).json({ error: "Invalid event" });
+      }
+      
+      console.log(`📥 Processing webhook event: ${event.type}`);
+      
+      // Handle different event types
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object;
+          // Handle successful checkout
+          console.log(`✓ Checkout completed for session ${session.id}`);
+          
+          // Associate customer with user
+          if (session.customer && session.client_reference_id) {
+            const userId = parseInt(session.client_reference_id);
+            const customerId = session.customer;
+            const subscriptionId = session.subscription;
+            
+            if (userId && customerId) {
+              await storage.updateStripeInfo(userId, customerId, subscriptionId);
+              console.log(`✓ Updated user ${userId} with Stripe customer ${customerId}`);
+            }
+          }
+          break;
         }
         
-        return res.json({
-          message: "Stripe webhook processado com sucesso",
-          event: event.type,
-          status: "success"
-        });
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted': {
+          // Process subscription events
+          const updatedUser = await storage.handleStripeWebhook(event);
+          
+          if (!updatedUser) {
+            console.warn(`⚠️ User not found for subscription event: ${event.type}`);
+            return res.status(404).json({ 
+              message: "User not found",
+              event: "processed",
+              status: "warning"
+            });
+          }
+          
+          console.log(`✓ Processed subscription event ${event.type} for user ${updatedUser.email}`);
+          break;
+        }
+        
+        case 'invoice.payment_succeeded': {
+          const invoice = event.data.object;
+          console.log(`✓ Invoice payment succeeded: ${invoice.id}`);
+          // You can update user subscription status here if needed
+          break;
+        }
+        
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object;
+          console.log(`⚠️ Invoice payment failed: ${invoice.id}`);
+          
+          if (invoice.customer) {
+            const user = await storage.getUserByStripeCustomerId(invoice.customer);
+            if (user) {
+              // Update user's subscription status to reflect payment issue
+              await storage.updateUser(user.id, {
+                subscriptionStatus: 'payment_failed',
+              });
+              
+              console.log(`✓ Updated user ${user.email} subscription status to payment_failed`);
+            }
+          }
+          break;
+        }
+        
+        default:
+          console.log(`ℹ️ Unhandled event type: ${event.type}`);
       }
       
-      // Outros eventos Stripe não processados
-      return res.json({ 
-        message: "Evento não processado",
-        event: event.type,
-        status: "ignored"
+      // Return success response
+      res.json({ 
+        received: true,
+        type: event.type
       });
     } catch (error) {
-      console.error("Erro ao processar webhook do Stripe:", error);
-      res.status(500).json({ message: "Falha ao processar webhook do Stripe" });
+      console.error("❌ Error processing Stripe webhook:", error);
+      res.status(400).json({ message: "Webhook error", error: error.message });
     }
   });
 
