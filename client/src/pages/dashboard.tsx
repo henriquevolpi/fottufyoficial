@@ -590,7 +590,7 @@ function UploadModal({
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
@@ -686,7 +686,8 @@ function UploadModal({
                 <h4 className="text-sm font-medium mb-2">
                   {thumbnails.length} photo(s) selected
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {/* Added max-height and overflow-y-auto for scrolling when many photos are selected */}
+                <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 ${thumbnails.length > 8 ? 'max-h-[250px] overflow-y-auto pr-2' : ''}`}>
                   {thumbnails.map((thumbnail, i) => (
                     <div key={i} className="group relative rounded-md overflow-hidden h-24">
                       <div
@@ -713,7 +714,7 @@ function UploadModal({
               </div>
             )}
             
-            <DialogFooter>
+            <DialogFooter className="sticky bottom-0 pt-4 mt-4 bg-white border-t z-10">
               <Button type="button" variant="outline" onClick={onClose} disabled={isUploading}>
                 Cancel
               </Button>
