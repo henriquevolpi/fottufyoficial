@@ -11,7 +11,9 @@ import {
   CheckCircle2, 
   Clock, 
   ArrowLeftCircle,
-  ShieldAlert
+  ShieldAlert,
+  FileText,
+  List
 } from "lucide-react";
 import {
   Dialog,
@@ -20,6 +22,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 
 // Interface para fotos
@@ -61,6 +64,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [finalizationSuccess, setFinalizationSuccess] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [showSelectedFilenamesDialog, setShowSelectedFilenamesDialog] = useState(false);
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
@@ -535,10 +539,54 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             
             <div className="mt-4 md:mt-0 flex items-center">
               {isFinalized ? (
-                <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1 flex items-center">
-                  <CheckCircle2 className="w-4 h-4 mr-1" />
-                  Seleção finalizada
-                </Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1 flex items-center">
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Seleção finalizada
+                  </Badge>
+                  
+                  {selectedPhotos.size > 0 && (
+                    <Dialog open={showSelectedFilenamesDialog} onOpenChange={setShowSelectedFilenamesDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex items-center"
+                        >
+                          <FileText className="w-4 h-4 mr-1" />
+                          Ver Fotos Selecionadas
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Fotos Selecionadas</DialogTitle>
+                          <DialogDescription>
+                            Lista de arquivos selecionados pelo cliente neste projeto.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="max-h-[60vh] overflow-y-auto">
+                          <div className="space-y-2">
+                            {project.photos
+                              .filter(photo => selectedPhotos.has(photo.id))
+                              .map(photo => (
+                                <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
+                                  <FileText className="w-4 h-4 mr-2 text-gray-500" />
+                                  <span className="text-sm font-mono">{photo.filename}</span>
+                                </div>
+                            ))}
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button 
+                            onClick={() => setShowSelectedFilenamesDialog(false)}
+                          >
+                            Fechar
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
               ) : (
                 <div className="space-x-2 flex items-center">
                   <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1 flex items-center">
@@ -559,6 +607,48 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     >
                       Finalizar Seleção
                     </Button>
+                    
+                    {selectedPhotos.size > 0 && (
+                      <Dialog open={showSelectedFilenamesDialog} onOpenChange={setShowSelectedFilenamesDialog}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="flex items-center"
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            Ver Selecionadas
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Fotos Selecionadas</DialogTitle>
+                            <DialogDescription>
+                              Lista de arquivos selecionados neste projeto.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="max-h-[60vh] overflow-y-auto">
+                            <div className="space-y-2">
+                              {project.photos
+                                .filter(photo => selectedPhotos.has(photo.id))
+                                .map(photo => (
+                                  <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
+                                    <FileText className="w-4 h-4 mr-2 text-gray-500" />
+                                    <span className="text-sm font-mono">{photo.filename}</span>
+                                  </div>
+                              ))}
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button 
+                              onClick={() => setShowSelectedFilenamesDialog(false)}
+                            >
+                              Fechar
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
                 </div>
               )}
