@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PhotoCard from "@/components/photo-card";
 import { Project } from "@shared/schema";
-import { Check, Edit, ArrowLeftCircle } from "lucide-react";
+import { Check, Edit, ArrowLeftCircle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -24,6 +24,7 @@ export default function ProjectView() {
   const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
   const [isFinalized, setIsFinalized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSelectedFilenamesDialog, setShowSelectedFilenamesDialog] = useState(false);
 
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: [`/api/projects/${id}`],
@@ -127,11 +128,25 @@ export default function ProjectView() {
               ? "Obrigado por fazer sua seleção."
               : "Selecione as fotos que você gostaria de manter clicando nelas."}
           </p>
-          <div className="mt-4 inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700">
-            <span className="font-medium">{selectedPhotos.length}</span>
-            <span className="mx-1">de</span>
-            <span className="font-medium">{project.photos?.length || 0}</span>
-            <span className="ml-1">selecionadas</span>
+          <div className="mt-4 flex items-center justify-center space-x-4">
+            <div className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700">
+              <span className="font-medium">{selectedPhotos.length}</span>
+              <span className="mx-1">de</span>
+              <span className="font-medium">{project.photos?.length || 0}</span>
+              <span className="ml-1">selecionadas</span>
+            </div>
+            
+            {selectedPhotos.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center"
+                onClick={() => setShowSelectedFilenamesDialog(true)}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Ver fotos selecionadas
+              </Button>
+            )}
           </div>
         </div>
         
@@ -176,6 +191,37 @@ export default function ProjectView() {
           <DialogFooter>
             <Button onClick={() => setFinalizeDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Selected Photos Filenames Dialog */}
+      <Dialog open={showSelectedFilenamesDialog} onOpenChange={setShowSelectedFilenamesDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Fotos Selecionadas</DialogTitle>
+            <DialogDescription>
+              Lista de arquivos selecionados neste projeto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <div className="space-y-2">
+              {project.photos
+                .filter(photo => selectedPhotos.includes(photo.id))
+                .map(photo => (
+                  <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
+                    <FileText className="w-4 h-4 mr-2 text-gray-500" />
+                    <span className="text-sm font-mono">{photo.filename}</span>
+                  </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowSelectedFilenamesDialog(false)}
+            >
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
