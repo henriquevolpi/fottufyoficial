@@ -12,6 +12,7 @@ import { upload } from "./index";
 import http from "http";
 import https from "https";
 import bodyParser from "body-parser";
+import passport from "passport";
 
 // Helper function to download an image from a URL to the uploads directory
 async function downloadImage(url: string, filename: string): Promise<string> {
@@ -207,8 +208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)
   
-  // Login route
-  app.post("/api/login", async (req: Request, res: Response) => {
+  // Login route - We'll use Passport's authentication to establish a session
+  app.post("/api/login", (req: Request, res: Response, next: Function) => {
     try {
       console.log("Recebida requisição de login:", req.body);
       const { email, password } = req.body;
@@ -218,37 +219,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email e senha são obrigatórios" });
       }
       
-      console.log("Buscando usuário pelo email:", email);
-      const user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        console.warn(`Usuário não encontrado para o email: ${email}`);
-        return res.status(401).json({ message: "Email ou senha inválidos" });
-      }
-      
-      // Special handling for admin@studio.com (hardcoded admin user)
-      if (email === "admin@studio.com") {
-        if (password !== "admin123") {
-          console.warn(`Senha incorreta para o administrador`);
+      // Use Passport's authenticate method to handle login
+      passport.authenticate("local", (err: any, user: any, info: any) => {
+        if (err) {
+          console.error("Erro durante a autenticação:", err);
+          return res.status(500).json({ message: "Falha no login, tente novamente mais tarde" });
+        }
+        
+        if (!user) {
+          console.warn(`Falha na autenticação para o email: ${email}`);
           return res.status(401).json({ message: "Email ou senha inválidos" });
         }
-      } else if (user.password !== password) {
-        console.warn(`Senha incorreta para o usuário: ${email}`);
-        return res.status(401).json({ message: "Email ou senha inválidos" });
-      }
-      
-      console.log(`Login bem-sucedido para: ${email}, ID: ${user.id}, Função: ${user.role}`);
-      
-      // In a real app, we would create and return a JWT token here
-      // For now, we'll return the user
-      const userData = {
-        ...user,
-        password: undefined, // Don't send password back to client
-      };
-      
-      res.json({ 
-        user: userData
-      });
+        
+        // Log the user in (establish a session)
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            console.error("Erro ao estabelecer sessão:", loginErr);
+            return res.status(500).json({ message: "Falha ao estabelecer sessão" });
+          }
+          
+          console.log(`Login bem-sucedido para: ${email}, ID: ${user.id}, Função: ${user.role}, Sessão estabelecida`);
+          
+          // Return the user without the password
+          const userData = {
+            ...user,
+            password: undefined, // Don't send password back to client
+          };
+          
+          return res.json(userData);
+        });
+      })(req, res, next);
     } catch (error) {
       console.error("Erro durante o login:", error);
       res.status(500).json({ message: "Falha no login, tente novamente mais tarde" });
@@ -256,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Register route
-  app.post("/api/register", async (req: Request, res: Response) => {
+  app.post("/api/register", async (req: Request, res: Response, next: Function) => {
     try {
       const userData = insertUserSchema.parse({
         ...req.body,
@@ -268,21 +268,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingUser = await storage.getUserByEmail(userData.email);
       
       if (existingUser) {
-        return res.status(400).json({ message: "Email is already in use" });
+        return res.status(400).json({ message: "Email já está em uso" });
       }
       
       const user = await storage.createUser(userData);
       
-      res.status(201).json({ 
-        user: {
+      // Establish a session by logging the user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Erro ao estabelecer sessão após registro:", err);
+          return next(err);
+        }
+        
+        console.log(`Registro bem-sucedido para: ${user.email}, ID: ${user.id}, Sessão estabelecida`);
+        
+        return res.status(201).json({ 
           ...user,
           password: undefined, // Don't send password back to client
-        }
+        });
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid registration data", errors: error.errors });
       }
+      console.error("Erro durante o registro:", error);
       res.status(500).json({ message: "Registration failed" });
     }
   });
