@@ -80,18 +80,19 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
     "User:", req.user);
   
-  // DESENVOLVIMENTO: Verificar autenticação
+  // First check if user is authenticated via session
   if (req.isAuthenticated && req.isAuthenticated()) {
-    // Usuário já está autenticado pela sessão
+    // User is authenticated via session
     console.log(`Usuário autenticado pela sessão: ID=${req.user?.id}`);
     return next();
   }
   
-  // Para usuários não autenticados via sessão, usar cookie auth-bypass ou o cabeçalho
+  // Check for alternative authentication methods
+  // For users not authenticated via session, check for header or test credentials
   if (!req.user) {
-    // Verificar se há um token ou usuário de teste na sessão
+    // Check for x-user-id header for test environments
     if (req.headers['x-user-id']) {
-      // Autenticação via header para testes
+      // Authentication via header for tests
       const userId = parseInt(req.headers['x-user-id'] as string);
       if (!isNaN(userId)) {
         const user = await storage.getUser(userId);
@@ -103,7 +104,7 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
       }
     }
     
-    // Check URL param for admin override (admin=true)
+    // Check URL param for admin override (admin=true) - for development only
     if (req.query.admin === 'true') {
       console.log("Admin override detected via query param, using admin test user");
       req.user = {
