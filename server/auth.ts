@@ -139,7 +139,7 @@ export function setupAuth(app: Express) {
           return next(err);
         }
         
-        console.log(`Registration successful for: ${email}, ID: ${user.id}`);
+        console.log(`Registration successful for: ${email}, ID: ${user.id}, Session ID: ${req.sessionID}`);
         
         // Return user data without password
         const { password, ...safeUser } = user;
@@ -153,9 +153,8 @@ export function setupAuth(app: Express) {
 
   app.post("/api/login", (req, res, next) => {
     console.log("[LOGIN] Processing login request for email:", req.body?.email);
-    console.log("[LOGIN] Session before login:", req.sessionID);
-    console.log("[LOGIN] Headers:", JSON.stringify(req.headers, null, 2));
     
+    // Use standard passport authentication
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
       if (err) {
         console.error("[LOGIN] Authentication error:", err);
@@ -169,76 +168,18 @@ export function setupAuth(app: Express) {
       
       console.log(`[LOGIN] User authenticated successfully: ID=${user.id}, email=${user.email}`);
       
+      // Login the user and establish a session
       req.login(user, (err) => {
         if (err) {
           console.error("[LOGIN] Session creation error:", err);
           return next(err);
         }
         
-        console.log(`[LOGIN] Session established, session ID: ${req.sessionID}`);
-        console.log(`[LOGIN] User in session:`, req.user ? `ID=${req.user.id}, email=${req.user.email}` : "undefined");
+        console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
         
-        // Double-check session configuration
-        console.log("[LOGIN] Current session configuration:", {
-          name: req.session.name,
-          cookie: {
-            expires: req.session.cookie?.expires,
-            maxAge: req.session.cookie?.maxAge,
-            httpOnly: req.session.cookie?.httpOnly,
-            path: req.session.cookie?.path, 
-            domain: req.session.cookie?.domain,
-            secure: req.session.cookie?.secure,
-            sameSite: req.session.cookie?.sameSite
-          }
-        });
-        
-        // Ensure passport has saved the user to the session
-        if (req.session.passport) {
-          console.log("[LOGIN] Passport session data:", req.session.passport);
-        } else {
-          console.log("[LOGIN] Warning: No passport data in session!");
-          // Force set passport data in session
-          if (!req.session.passport) {
-            req.session.passport = { user: user.id };
-            console.log("[LOGIN] Manually added passport data to session");
-          }
-        }
-        
-        // Save session explicitly to ensure cookie is set
-        req.session.save((err) => {
-          if (err) {
-            console.error("[LOGIN] Error saving session:", err);
-            return next(err);
-          }
-          
-          console.log("[LOGIN] Session saved successfully");
-          
-          // Return user data without password
-          if (user) {
-            const { password, ...userData } = user;
-            
-            // Set additional cookies as backup authentication mechanism
-            res.cookie('studio_auth', 'true', { 
-              maxAge: 7 * 24 * 60 * 60 * 1000, 
-              httpOnly: false,
-              path: '/',
-              sameSite: 'lax'
-            });
-            
-            res.cookie('studio_user_id', String(user.id), { 
-              maxAge: 7 * 24 * 60 * 60 * 1000,
-              httpOnly: false, 
-              path: '/',
-              sameSite: 'lax'
-            });
-            
-            console.log("[LOGIN] Response cookies set:", res.getHeaders()['set-cookie']);
-            
-            res.status(200).json(userData);
-          } else {
-            res.status(500).json({ message: "Erro ao carregar dados do usuário" });
-          }
-        });
+        // Return user data without password
+        const { password, ...userData } = user;
+        res.status(200).json(userData);
       });
     })(req, res, next);
   });

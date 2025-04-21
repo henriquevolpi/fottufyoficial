@@ -80,10 +80,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Set up CORS to allow credentials
+// Set up CORS to allow credentials from the same origin
 app.use((req, res, next) => {
-  // For development, allow all origins with credentials
-  res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5000');
+  // Set origin to the specific origin of the request
+  // In development environment, this will typically be 'http://localhost:5000'
+  const origin = req.headers.origin || '';
+  
+  // Only allow the origin that matches our domain
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
