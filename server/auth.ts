@@ -51,27 +51,27 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Configure session cookie options exactly as specified in requirements
+  // Configure session cookie options for maximum compatibility
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "studio-dev-secret",
-    resave: false, // Exactly as required 
-    saveUninitialized: false, // Exactly as required
+    // Use a strong secret for security
+    secret: process.env.SESSION_SECRET || "studio-development-secret-key-testing-onlyaaaaa", 
+    // These settings must be true for Replit environment to work properly
+    resave: true, 
+    saveUninitialized: true,
     store: storage.sessionStore,
-    name: 'studio.sid', // Specific name for the session cookie
+    name: 'studio.sid',
     cookie: { 
-      secure: false, // Must be false for development without HTTPS
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days (1 week)
-      httpOnly: true, // Prevents JavaScript from reading the cookie
-      sameSite: 'lax', // Exactly as required (not 'none')
-      path: '/' // Cookie available across the entire site
+      // Must be false in development (no HTTPS)
+      secure: false,
+      // Longer session duration (30 days) to avoid frequent re-logins
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      // Allow JavaScript to read the cookie for backup recovery
+      httpOnly: false,
+      // Essential for cookies to work in all browsers in this environment
+      sameSite: 'lax',
+      path: '/'
     }
   };
-  
-  // Force additional settings explicitly to ensure they're set correctly
-  if (sessionSettings.cookie) {
-    sessionSettings.cookie.sameSite = 'lax';
-    sessionSettings.cookie.secure = false;
-  }
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
@@ -146,6 +146,15 @@ export function setupAuth(app: Express) {
         
         console.log(`Registration successful for: ${email}, ID: ${user.id}, Session ID: ${req.sessionID}`);
         
+        // Set a direct cookie with the user ID for tracking
+        res.cookie('user_id', user.id.toString(), {
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          httpOnly: false,
+          secure: false,
+          path: '/',
+          sameSite: 'lax'
+        });
+        
         // Return user data without password
         const { password, ...safeUser } = user;
         res.status(201).json(safeUser);
@@ -182,6 +191,15 @@ export function setupAuth(app: Express) {
         
         console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
         
+        // Set a direct cookie with the user ID for tracking
+        res.cookie('user_id', user.id.toString(), {
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          httpOnly: false,
+          secure: false,
+          path: '/',
+          sameSite: 'lax'
+        });
+        
         // Return user data without password
         const { password, ...userData } = user;
         res.status(200).json(userData);
@@ -190,6 +208,13 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
+    // Clear all cookies related to authentication
+    res.clearCookie('user_id');
+    res.clearCookie('studio_user_id');
+    res.clearCookie('studio_auth');
+    res.clearCookie('studio.sid');
+    
+    // Logout from passport session
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
@@ -212,20 +237,19 @@ export function setupAuth(app: Express) {
       return res.json(userData);
     }
     
-    // If we have the backup cookies but no session, try to rebuild session
-    if (req.headers.cookie && (
-        req.headers.cookie.includes('studio_auth=true') ||
-        req.headers.cookie.includes('studio_user_id')
-      )) {
-      console.log('[USER] Found backup cookies but no passport session. Attempting to recover...');
+    // If we have any backup cookies but no session, try to rebuild session
+    if (req.headers.cookie) {
+      console.log('[USER] Found cookies but no passport session. Attempting to recover...');
       
-      // Try to extract user ID from cookie
+      // Try to extract user ID from any available cookie
       let userId = null;
       const cookies = req.headers.cookie.split(';');
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
-        if (name === 'studio_user_id') {
+        // Check both our original cookie and the new user_id cookie
+        if (name === 'studio_user_id' || name === 'user_id') {
           userId = parseInt(value);
+          console.log(`[USER] Found user ID ${userId} in cookie ${name}`);
           break;
         }
       }

@@ -88,15 +88,15 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     return next();
   }
   
-  // Check if we have a cookie but session is not recognized
-  if (req.headers.cookie && req.headers.cookie.includes('studio.sid') && !req.user) {
-    console.log(`[AUTH] Cookie found but session not recognized: ${req.headers.cookie}`);
+  // Check if we have any cookie that can be used to authenticate
+  if (req.headers.cookie) {
+    console.log(`[AUTH] Cookies found but no passport session: ${req.headers.cookie}`);
     
-    // Try to recover the session by checking if it's valid
-    if (req.session && req.sessionID) {
+    // First, try to recover from the session cookie
+    if (req.headers.cookie.includes('studio.sid') && req.session && req.sessionID) {
       console.log(`[AUTH] Attempting to recover session ${req.sessionID}`);
       
-      // If we have cookies but no session data, try to force a session refresh
+      // If we have session cookie but no session data, try to force a session refresh
       req.session.reload((err) => {
         if (err) {
           console.error(`[AUTH] Failed to reload session:`, err);
@@ -108,6 +108,49 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
           }
         }
       });
+    }
+    
+    // Check for our direct authentication cookie
+    if (req.headers.cookie.includes('user_id=')) {
+      console.log(`[AUTH] Found direct user_id cookie, extracting ID`);
+      
+      // Try to extract user ID from cookie
+      let userId = null;
+      const cookies = req.headers.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'user_id') {
+          userId = parseInt(value);
+          console.log(`[AUTH] Found user ID ${userId} in direct cookie`);
+          break;
+        }
+      }
+      
+      if (userId && !isNaN(userId)) {
+        // Get user from storage and establish session
+        storage.getUser(userId)
+          .then(user => {
+            if (user) {
+              console.log(`[AUTH] Successfully loaded user from direct cookie ID: ${userId}`);
+              
+              // Login the user to establish a session
+              req.login(user, (err) => {
+                if (err) {
+                  console.error('[AUTH] Error establishing session from direct cookie:', err);
+                } else {
+                  console.log(`[AUTH] Session established from direct cookie, continuing request`);
+                  next();
+                }
+              });
+            }
+          })
+          .catch(err => {
+            console.error('[AUTH] Error loading user from direct cookie ID:', err);
+          });
+          
+        // Important: return to prevent execution of code below
+        return;
+      }
     }
   }
   
