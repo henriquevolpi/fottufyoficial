@@ -77,84 +77,50 @@ async function downloadImage(url: string, filename: string): Promise<string> {
 
 // Basic authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
-  console.log("Status de autenticação:", 
-    req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
-    "Session ID:", req.sessionID,
-    "User:", req.user ? `ID=${req.user.id}` : "undefined");
+  console.log(`[AUTH] Checking authentication for ${req.method} ${req.path}`);
+  console.log(`[AUTH] Session ID: ${req.sessionID}, isAuthenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
+  console.log(`[AUTH] User: ${req.user ? `ID=${req.user.id}, role=${req.user.role}` : "undefined"}`);
   
-  // Verify session-based authentication (passport adds isAuthenticated method)
+  // First check for session-based authentication (Passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
-    // User is authenticated via session
-    console.log(`Usuário autenticado pela sessão: ID=${req.user?.id}`);
+    console.log(`[AUTH] User authenticated via session: ID=${req.user?.id}`);
     return next();
   }
   
-  // For development purposes, allow alternate auth methods
+  // Check if we have a cookie but session is not recognized
+  if (req.headers.cookie && req.headers.cookie.includes('studio.sid') && !req.user) {
+    console.log(`[AUTH] Cookie found but session not recognized: ${req.headers.cookie}`);
+  }
   
-  // Check for x-user-id header (for testing)
-  if (req.headers['x-user-id']) {
-    const userId = parseInt(req.headers['x-user-id'] as string);
-    if (!isNaN(userId)) {
-      try {
-        const user = await storage.getUser(userId);
-        if (user) {
-          console.log(`Usuário carregado do header x-user-id: ${userId}`);
-          req.user = user;
-          // Also login the user to establish a session
-          req.login(user, (err) => {
-            if (err) {
-              console.error("Error logging in user from x-user-id header:", err);
-            } else {
-              console.log(`Session established for user from header: ${userId}`);
-            }
-            return next();
-          });
-          return; // Return here to avoid calling next() twice
-        }
-      } catch (error) {
-        console.error("Error fetching user by ID:", error);
+  // For development purposes only, allow alternate auth methods
+  
+  // Check for admin override parameter (for development testing only)
+  if (req.query.admin === 'true') {
+    console.log("[AUTH] Admin override via query param");
+    try {
+      // Try to find admin in the database first
+      const adminUser = await storage.getUserByEmail("admin@studio.com");
+      
+      if (adminUser) {
+        req.login(adminUser, (err) => {
+          if (err) {
+            console.error("[AUTH] Error logging in admin user:", err);
+            return next(err);
+          }
+          console.log("[AUTH] Admin session established via query param");
+          return next();
+        });
+        return; // Return to avoid calling next() twice
+      } else {
+        console.log("[AUTH] Admin user not found in database");
       }
+    } catch (error) {
+      console.error("[AUTH] Error fetching admin user:", error);
     }
   }
   
-  // Check for admin override parameter
-  if (req.query.admin === 'true') {
-    console.log("Admin override detected via query param, using admin test user");
-    const adminUser = {
-      id: 999,
-      name: "Admin",
-      email: "admin@studio.com",
-      role: "admin",
-      status: "active",
-      planType: "professional",
-      uploadLimit: -1, // unlimited uploads
-      usedUploads: 0,
-      subscriptionStatus: "active",
-      subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      createdAt: new Date(),
-      password: "$2b$10$qH9/uDRpvQMUZVHaNB5FsOqqxF4WXK1yZIsS13f93RtbBjqYCYnZq", // admin123
-      subscriptionStartDate: new Date(),
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      subscription_id: null,
-      lastEvent: null
-    };
-    
-    req.user = adminUser;
-    // Also login the admin user to establish a session
-    req.login(adminUser, (err) => {
-      if (err) {
-        console.error("Error logging in admin user from query param:", err);
-      } else {
-        console.log("Session established for admin user from query param");
-      }
-      return next();
-    });
-    return; // Return here to avoid calling next() twice
-  }
-  
-  // No authentication, return 401
-  console.log("No authenticated user and no override, returning 401");
+  // If we reach here, user is not authenticated
+  console.log("[AUTH] No authentication found, returning 401");
   return res.status(401).json({ message: "Não autorizado" });
 };
 
