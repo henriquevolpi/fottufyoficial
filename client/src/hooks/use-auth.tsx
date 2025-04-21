@@ -15,7 +15,6 @@ type AuthContextType = {
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
-  refetchUser: () => Promise<any>;
 };
 
 type LoginData = {
@@ -38,12 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-    refetch: refetchUser,
   } = useQuery<User, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
-    retry: 1,
-    staleTime: 30 * 1000, // 30 seconds
   });
 
   const loginMutation = useMutation({
@@ -52,16 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (data: User) => {
-      console.log("Login successful, updating user data:", data);
       queryClient.setQueryData(["/api/user"], data);
-      
-      // Refetch user data to ensure we have the latest state
-      refetchUser();
-      
-      // Invalidate other related queries to ensure fresh data
+      // Invalidate subscription and stats queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       
       toast({
         title: "Login realizado com sucesso",
@@ -83,16 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (data: User) => {
-      console.log("Registration successful, updating user data:", data);
       queryClient.setQueryData(["/api/user"], data);
-      
-      // Refetch user data to ensure we have the latest state
-      refetchUser();
-      
-      // Invalidate other related queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
-      
       toast({
         title: "Registro realizado com sucesso",
         description: `Bem-vindo(a), ${data.name}!`,
@@ -136,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
-        refetchUser,
       }}
     >
       {children}
