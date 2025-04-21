@@ -51,18 +51,20 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Configure session cookie options
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "studio-dev-secret",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed to true to ensure session is saved on every request
+    saveUninitialized: true, // Changed to true to ensure cookie is set even for uninitialized sessions
     store: storage.sessionStore,
     name: 'studio.sid', // Specific name for the session cookie
     cookie: { 
-      secure: false, // Set to false for development to work without HTTPS
+      secure: false, // Must be false for development without HTTPS
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days (1 week)
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/'
+      httpOnly: true, // Prevents JavaScript from reading the cookie
+      sameSite: 'lax', // Allows the cookie to be sent in cross-site requests
+      path: '/', // Cookie available across the entire site
+      domain: undefined // Use the default domain
     }
   };
 
@@ -150,20 +152,57 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log("[LOGIN] Processing login request for email:", req.body?.email);
+    console.log("[LOGIN] Session before login:", req.sessionID);
+    
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
-      if (err) return next(err);
-      if (!user) return res.status(401).json({ message: "Credenciais inválidas" });
+      if (err) {
+        console.error("[LOGIN] Authentication error:", err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.log("[LOGIN] Invalid credentials for email:", req.body?.email);
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+      
+      console.log(`[LOGIN] User authenticated successfully: ID=${user.id}, email=${user.email}`);
       
       req.login(user, (err) => {
-        if (err) return next(err);
-        
-        // Return user without password
-        if (user) {
-          const { password, ...userData } = user;
-          res.status(200).json(userData);
-        } else {
-          res.status(500).json({ message: "Erro ao carregar dados do usuário" });
+        if (err) {
+          console.error("[LOGIN] Session creation error:", err);
+          return next(err);
         }
+        
+        console.log(`[LOGIN] Session established, session ID: ${req.sessionID}`);
+        console.log(`[LOGIN] User in session:`, req.user ? `ID=${req.user.id}, email=${req.user.email}` : "undefined");
+        
+        // Save session explicitly to ensure cookie is set
+        req.session.save((err) => {
+          if (err) {
+            console.error("[LOGIN] Error saving session:", err);
+            return next(err);
+          }
+          
+          console.log("[LOGIN] Session saved successfully");
+          
+          // Return user data without password
+          if (user) {
+            const { password, ...userData } = user;
+            
+            // Set a cookie header explicitly as a backup
+            res.cookie('logged_in', 'true', { 
+              maxAge: 7 * 24 * 60 * 60 * 1000, 
+              httpOnly: false,
+              path: '/',
+              sameSite: 'lax'
+            });
+            
+            res.status(200).json(userData);
+          } else {
+            res.status(500).json({ message: "Erro ao carregar dados do usuário" });
+          }
+        });
       });
     })(req, res, next);
   });
@@ -176,24 +215,45 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    console.log("GET /api/user - Status de autenticação:", 
-      req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
-      "Session ID:", req.sessionID);
+    console.log("[USER] Checking user authentication");
+    console.log(`[USER] Session ID: ${req.sessionID}`);
+    console.log(`[USER] Cookies: ${JSON.stringify(req.headers.cookie)}`);
+    console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
+    console.log(`[USER] User in request: ${req.user ? `ID=${req.user.id}, role=${req.user.role}` : "not set"}`);
     
-    // If not authenticated, return 401 unauthorized
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
-      console.log("User not authenticated, returning 401");
-      return res.status(401).json({ message: "Não autorizado" });
-    }
-    
-    console.log("User authenticated, returning user data:", req.user ? `ID=${req.user.id}` : "undefined");
-    
-    // If authenticated, return the user (omit password)
-    if (req.user) {
+    // First, handle normal passport session authentication
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      console.log(`[USER] User authenticated via session, ID=${req.user.id}`);
+      
+      // Return user data without password
       const { password, ...userData } = req.user;
-      res.json(userData);
-    } else {
-      res.status(500).json({ message: "Erro ao carregar dados do usuário" });
+      return res.json(userData);
     }
+    
+    // If we have the manual logged_in cookie but no session, try to rebuild session
+    if (req.headers.cookie && req.headers.cookie.includes('logged_in=true')) {
+      console.log('[USER] Found logged_in cookie but no session. This indicates a session issue.');
+    }
+    
+    // Log additional debug information about session and cookies
+    if (req.session) {
+      console.log('[USER] Session object:', {
+        id: req.sessionID,
+        cookie: req.session.cookie ? {
+          expires: req.session.cookie.expires,
+          maxAge: req.session.cookie.maxAge,
+          httpOnly: req.session.cookie.httpOnly,
+          path: req.session.cookie.path,
+          domain: req.session.cookie.domain,
+          secure: req.session.cookie.secure
+        } : 'No cookie in session',
+        passport: req.session.passport
+      });
+    } else {
+      console.log('[USER] No session object found');
+    }
+    
+    console.log("[USER] Authentication failed, returning 401");
+    return res.status(401).json({ message: "Não autorizado" });
   });
 }

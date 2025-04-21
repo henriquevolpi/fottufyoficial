@@ -12,6 +12,7 @@ import Admin from "@/pages/admin";
 import AuthPage from "@/pages/auth-page";
 import SubscriptionPage from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
+import DebugPage from "@/pages/debug";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -64,6 +65,7 @@ function Router() {
       <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />
       <Route path="/planos" component={PricingPage} />
       <Route path="/pricing" component={PricingPage} />
+      <Route path="/debug" component={DebugPage} />
       <Route path="/">
         {() => <RootRedirect />}
       </Route>
