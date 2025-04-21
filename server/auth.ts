@@ -154,6 +154,7 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     console.log("[LOGIN] Processing login request for email:", req.body?.email);
     console.log("[LOGIN] Session before login:", req.sessionID);
+    console.log("[LOGIN] Headers:", JSON.stringify(req.headers, null, 2));
     
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
       if (err) {
@@ -177,6 +178,32 @@ export function setupAuth(app: Express) {
         console.log(`[LOGIN] Session established, session ID: ${req.sessionID}`);
         console.log(`[LOGIN] User in session:`, req.user ? `ID=${req.user.id}, email=${req.user.email}` : "undefined");
         
+        // Double-check session configuration
+        console.log("[LOGIN] Current session configuration:", {
+          name: req.session.name,
+          cookie: {
+            expires: req.session.cookie?.expires,
+            maxAge: req.session.cookie?.maxAge,
+            httpOnly: req.session.cookie?.httpOnly,
+            path: req.session.cookie?.path, 
+            domain: req.session.cookie?.domain,
+            secure: req.session.cookie?.secure,
+            sameSite: req.session.cookie?.sameSite
+          }
+        });
+        
+        // Ensure passport has saved the user to the session
+        if (req.session.passport) {
+          console.log("[LOGIN] Passport session data:", req.session.passport);
+        } else {
+          console.log("[LOGIN] Warning: No passport data in session!");
+          // Force set passport data in session
+          if (!req.session.passport) {
+            req.session.passport = { user: user.id };
+            console.log("[LOGIN] Manually added passport data to session");
+          }
+        }
+        
         // Save session explicitly to ensure cookie is set
         req.session.save((err) => {
           if (err) {
@@ -190,13 +217,22 @@ export function setupAuth(app: Express) {
           if (user) {
             const { password, ...userData } = user;
             
-            // Set a cookie header explicitly as a backup
-            res.cookie('logged_in', 'true', { 
+            // Set additional cookies as backup authentication mechanism
+            res.cookie('studio_auth', 'true', { 
               maxAge: 7 * 24 * 60 * 60 * 1000, 
               httpOnly: false,
               path: '/',
               sameSite: 'lax'
             });
+            
+            res.cookie('studio_user_id', String(user.id), { 
+              maxAge: 7 * 24 * 60 * 60 * 1000,
+              httpOnly: false, 
+              path: '/',
+              sameSite: 'lax'
+            });
+            
+            console.log("[LOGIN] Response cookies set:", res.getHeaders()['set-cookie']);
             
             res.status(200).json(userData);
           } else {
@@ -230,9 +266,57 @@ export function setupAuth(app: Express) {
       return res.json(userData);
     }
     
-    // If we have the manual logged_in cookie but no session, try to rebuild session
-    if (req.headers.cookie && req.headers.cookie.includes('logged_in=true')) {
-      console.log('[USER] Found logged_in cookie but no session. This indicates a session issue.');
+    // If we have the backup cookies but no session, try to rebuild session
+    if (req.headers.cookie && (
+        req.headers.cookie.includes('studio_auth=true') ||
+        req.headers.cookie.includes('studio_user_id')
+      )) {
+      console.log('[USER] Found backup cookies but no passport session. Attempting to recover...');
+      
+      // Try to extract user ID from cookie
+      let userId = null;
+      const cookies = req.headers.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'studio_user_id') {
+          userId = parseInt(value);
+          break;
+        }
+      }
+      
+      if (userId && !isNaN(userId)) {
+        console.log(`[USER] Found user ID ${userId} in cookie, loading user...`);
+        
+        // Try to get the user data
+        storage.getUser(userId)
+          .then(user => {
+            if (user) {
+              console.log(`[USER] Successfully loaded user from cookie ID: ${userId}`);
+              
+              // Login the user to establish a session
+              req.login(user, (err) => {
+                if (err) {
+                  console.error('[USER] Error establishing session from cookie:', err);
+                  return res.status(401).json({ message: "Não autorizado" });
+                }
+                
+                // Return the user data
+                console.log('[USER] Successfully established session from cookie');
+                const { password, ...userData } = user;
+                return res.json(userData);
+              });
+              return; // Important to prevent executing the code below
+            } else {
+              console.log(`[USER] Could not find user with ID ${userId} from cookie`);
+            }
+          })
+          .catch(err => {
+            console.error('[USER] Error loading user from cookie ID:', err);
+          });
+        
+        // Return early since we're handling response in promise
+        return;
+      }
     }
     
     // Log additional debug information about session and cookies

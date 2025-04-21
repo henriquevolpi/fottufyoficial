@@ -100,13 +100,31 @@ setupAuth(app);
 
 // Configure session logging middleware
 app.use((req, res, next) => {
-  // Log session details for debugging
+  // Log detailed session and cookie data for debugging
   if (req.path.startsWith('/api/')) {
-    console.log(`Request: ${req.method} ${req.path}`);
-    console.log(`Session ID: ${req.sessionID}`);
-    console.log(`Authenticated: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'}`);
-    console.log(`User: ${req.user ? `ID=${req.user.id}` : 'none'}`);
-    console.log(`Cookies: ${req.headers.cookie || 'none'}`);
+    console.log(`[DEBUG-REQ] ${req.method} ${req.path}`);
+    console.log(`[DEBUG-REQ] Session ID: ${req.sessionID}`);
+    console.log(`[DEBUG-REQ] Authenticated: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'}`);
+    console.log(`[DEBUG-REQ] User: ${req.user ? `ID=${req.user.id}` : 'none'}`);
+    
+    // Parse and log cookies in detail
+    if (req.headers.cookie) {
+      console.log(`[DEBUG-REQ] Raw cookies: ${req.headers.cookie}`);
+      const cookies = req.headers.cookie.split(';').map(cookie => {
+        const [name, value] = cookie.trim().split('=');
+        return { name, value };
+      });
+      console.log(`[DEBUG-REQ] Parsed cookies:`, JSON.stringify(cookies, null, 2));
+    } else {
+      console.log(`[DEBUG-REQ] No cookies in request`);
+    }
+
+    // Log passport session data
+    if (req.session && req.session.passport) {
+      console.log(`[DEBUG-REQ] Passport session:`, req.session.passport);
+    } else {
+      console.log(`[DEBUG-REQ] No passport data in session`);
+    }
   }
   next();
 });
