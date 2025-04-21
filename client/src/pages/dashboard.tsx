@@ -1042,19 +1042,66 @@ export default function Dashboard() {
   };
   
   // Handler for project creation
-  const handleProjectCreated = (newProject: any) => {
-    const updatedProjects = [newProject, ...projects];
-    setProjects(updatedProjects);
+  const handleProjectCreated = async (newProject: any) => {
+    console.log("Project created, ensuring complete data...");
     
-    // Update filtered projects based on current tab
-    if (currentTab === "all" || newProject.status === getStatusFilter(currentTab)) {
-      setFilteredProjects([newProject, ...filteredProjects]);
-    }
-    
-    // Update user-specific localStorage
-    if (user && user.id) {
-      const storageKey = `projects_user_${user.id}`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+    try {
+      // Instead of using the returned project data directly,
+      // we'll fetch the specific project to ensure we have the latest data
+      const projectId = newProject.id;
+      
+      // Wait a short delay to ensure the server has processed everything
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Fetch the specific project for the most accurate data
+      const response = await fetch(`/api/projects/${projectId}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch complete project data");
+      }
+      
+      // Get the complete project data
+      const completeProject = await response.json();
+      console.log("Complete project data fetched:", completeProject);
+      
+      // Format for dashboard display
+      const formattedProject = {
+        ...completeProject,
+        nome: completeProject.name,
+        cliente: completeProject.clientName,
+        emailCliente: completeProject.clientEmail,
+        fotos: completeProject.photos ? completeProject.photos.length : 0,
+        selecionadas: completeProject.selectedPhotos ? completeProject.selectedPhotos.length : 0
+      };
+      
+      // Update the projects state with the complete data
+      const updatedProjects = [formattedProject, ...projects.filter(p => p.id !== formattedProject.id)];
+      setProjects(updatedProjects);
+      
+      // Update filtered projects based on current tab
+      if (currentTab === "all" || formattedProject.status === getStatusFilter(currentTab)) {
+        setFilteredProjects([formattedProject, ...filteredProjects.filter(p => p.id !== formattedProject.id)]);
+      }
+      
+      // Update user-specific localStorage
+      if (user && user.id) {
+        const storageKey = `projects_user_${user.id}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+      }
+    } catch (error) {
+      console.error("Error fetching complete project data:", error);
+      // Fall back to using the original data if there's an error
+      const updatedProjects = [newProject, ...projects];
+      setProjects(updatedProjects);
+      
+      if (currentTab === "all" || newProject.status === getStatusFilter(currentTab)) {
+        setFilteredProjects([newProject, ...filteredProjects]);
+      }
+      
+      if (user && user.id) {
+        const storageKey = `projects_user_${user.id}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+      }
     }
   };
   
