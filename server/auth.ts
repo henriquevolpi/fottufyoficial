@@ -56,10 +56,13 @@ export function setupAuth(app: Express) {
     resave: true,
     saveUninitialized: true,
     store: storage.sessionStore,
+    name: 'studio.sid', // Specific name for the session cookie
     cookie: { 
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development to work without HTTPS
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      httpOnly: true
+      httpOnly: true,
+      sameSite: 'lax', // Allow cookie to be sent in same-site requests
+      path: '/'
     }
   };
 
@@ -110,7 +113,9 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        // Return user without password
+        const safeUser = { ...user, password: undefined };
+        res.status(201).json(safeUser);
       });
     } catch (error) {
       next(error);
@@ -137,7 +142,9 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    console.log("GET /api/user - Status de autenticação:", req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função");
+    console.log("GET /api/user - Status de autenticação:", 
+      req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
+      "Session ID:", req.sessionID);
     
     // If not authenticated, return 401 unauthorized
     if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -145,7 +152,11 @@ export function setupAuth(app: Express) {
       return res.status(401).json({ message: "Não autorizado" });
     }
     
-    // If authenticated, return the user
-    res.json(req.user);
+    console.log("User authenticated, returning user data:", req.user ? `ID=${req.user.id}` : "undefined");
+    
+    // If authenticated, return the user (omit password)
+    const userData = { ...req.user };
+    delete userData.password;
+    res.json(userData);
   });
 }

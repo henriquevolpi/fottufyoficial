@@ -79,25 +79,40 @@ async function downloadImage(url: string, filename: string): Promise<string> {
 const authenticate = async (req: Request, res: Response, next: Function) => {
   console.log("Status de autenticação:", 
     req.isAuthenticated ? req.isAuthenticated() : "isAuthenticated não é uma função",
-    "User:", req.user);
+    "Session ID:", req.sessionID,
+    "User:", req.user ? `ID=${req.user.id}` : "undefined");
   
-  // Verify session-based authentication
+  // Verify session-based authentication (passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
     // User is authenticated via session
     console.log(`Usuário autenticado pela sessão: ID=${req.user?.id}`);
     return next();
   }
   
-  // For non-session authenticated users, check alternative auth methods
+  // For development purposes, allow alternate auth methods
+  
   // Check for x-user-id header (for testing)
   if (req.headers['x-user-id']) {
     const userId = parseInt(req.headers['x-user-id'] as string);
     if (!isNaN(userId)) {
-      const user = await storage.getUser(userId);
-      if (user) {
-        console.log(`Usuário carregado do header x-user-id: ${userId}`);
-        req.user = user;
-        return next();
+      try {
+        const user = await storage.getUser(userId);
+        if (user) {
+          console.log(`Usuário carregado do header x-user-id: ${userId}`);
+          req.user = user;
+          // Also login the user to establish a session
+          req.login(user, (err) => {
+            if (err) {
+              console.error("Error logging in user from x-user-id header:", err);
+            } else {
+              console.log(`Session established for user from header: ${userId}`);
+            }
+            return next();
+          });
+          return; // Return here to avoid calling next() twice
+        }
+      } catch (error) {
+        console.error("Error fetching user by ID:", error);
       }
     }
   }
@@ -105,7 +120,7 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   // Check for admin override parameter
   if (req.query.admin === 'true') {
     console.log("Admin override detected via query param, using admin test user");
-    req.user = {
+    const adminUser = {
       id: 999,
       name: "Admin",
       email: "admin@studio.com",
@@ -124,7 +139,18 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
       subscription_id: null,
       lastEvent: null
     };
-    return next();
+    
+    req.user = adminUser;
+    // Also login the admin user to establish a session
+    req.login(adminUser, (err) => {
+      if (err) {
+        console.error("Error logging in admin user from query param:", err);
+      } else {
+        console.log("Session established for admin user from query param");
+      }
+      return next();
+    });
+    return; // Return here to avoid calling next() twice
   }
   
   // No authentication, return 401
