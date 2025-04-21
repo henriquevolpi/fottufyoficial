@@ -38,9 +38,10 @@ type UploadFormValues = z.infer<typeof uploadFormSchema>;
 interface UploadModalProps {
   open: boolean;
   onClose: () => void;
+  onUpload?: (project: any) => void;
 }
 
-export default function UploadModal({ open, onClose }: UploadModalProps) {
+export default function UploadModal({ open, onClose, onUpload }: UploadModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -133,6 +134,21 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
         description: `Project "${values.nome}" was created with ${files.length} photos.`,
       });
 
+      // Format project data for dashboard display compatibility
+      const formattedProject = {
+        ...newProject,
+        nome: newProject.name,
+        cliente: newProject.clientName,
+        emailCliente: newProject.clientEmail,
+        fotos: newProject.photos ? newProject.photos.length : 0,
+        selecionadas: newProject.selectedPhotos ? newProject.selectedPhotos.length : 0
+      };
+
+      // Call the onUpload callback with the complete formatted project data
+      if (onUpload) {
+        onUpload(formattedProject);
+      }
+      
       // Reset form and close modal only after project creation is confirmed
       form.reset();
       setFiles([]);
