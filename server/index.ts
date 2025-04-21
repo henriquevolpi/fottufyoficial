@@ -80,26 +80,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Set up CORS to allow credentials from the same origin
-app.use((req, res, next) => {
-  // Set origin to the specific origin of the request
-  // In development environment, this will typically be 'http://localhost:5000'
-  const origin = req.headers.origin || '';
-  
-  // Only allow the origin that matches our domain
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// CRITICAL FIX: Setup proper CORS to fully support cookies
+// We must use the cors package rather than custom headers to ensure consistent behavior
+import cors from 'cors';
+
+// Configure CORS with credentials support
+app.use(cors({
+  origin: true, // Allow the requesting origin (dynamically)
+  credentials: true, // This is essential for cookies to work
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}));
 
 // Set up authentication BEFORE any route handlers
 import { setupAuth } from './auth';

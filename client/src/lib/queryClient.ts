@@ -15,11 +15,16 @@ export async function apiRequest(
   console.log(`Fazendo requisição ${method} para ${url}`, data ? data : '');
   
   try {
-    // Set up request options with credentials included
+    // CRITICAL FIX: Enhanced request options with stronger credentials and headers
     const options: RequestInit = {
       method,
       credentials: "include", // Always include credentials
       headers: {
+        // Always include these headers for better CORS support
+        "X-Requested-With": "XMLHttpRequest",
+        "Cache-Control": "no-cache",
+        "Accept": "application/json",
+        // Only add Content-Type when sending data
         ...(data ? { "Content-Type": "application/json" } : {}),
       },
       body: data ? JSON.stringify(data) : undefined,
@@ -69,11 +74,13 @@ export const getQueryFn: <T>(options: {
       on401: unauthorizedBehavior
     });
     
-    // Enhanced fetch with proper credentials
+    // CRITICAL FIX: Enhanced fetch with proper credentials and headers
     const res = await fetch(url, {
       credentials: "include",
       headers: {
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+        "Cache-Control": "no-cache" // Prevent caching issues with auth state
       }
     });
     
