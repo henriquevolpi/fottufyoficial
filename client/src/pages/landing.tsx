@@ -5,7 +5,7 @@ export default function LandingPage() {
   const [, navigate] = useLocation();
   
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex flex-col items-center p-4">
       <div className="max-w-4xl w-full text-center">
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -50,6 +50,151 @@ export default function LandingPage() {
             <h3 className="text-xl font-semibold mb-3">Organização Total</h3>
             <p className="text-gray-600">Mantenha todos os seus projetos organizados em um único lugar, com acesso fácil a qualquer momento.</p>
           </div>
+        </div>
+        
+        {/* Gallery Mockup Section */}
+        <div className="mt-32 max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+            Design simples e moderno para fotógrafos
+          </h2>
+          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+            Nossa plataforma foi feita para ser leve, intuitiva e sem complicações. Você envia, o cliente escolhe. Tudo no tempo dele, sem precisar explicar nada.
+          </p>
+          <div className="flex justify-center mb-16">
+            <img 
+              src="/fottufy-ex1.png" 
+              alt="Interface da Fottufy" 
+              className="w-full max-w-4xl rounded-lg shadow-xl"
+            />
+          </div>
+        </div>
+        
+        {/* Testimonials Section */}
+        <div className="mt-32 py-16 bg-gray-50 rounded-xl max-w-6xl mx-auto">
+          <div className="px-4 sm:px-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              Clientes que estão vendendo mais usando a Fottufy
+            </h2>
+            <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+              Veja como fotógrafos de todo o Brasil estão aumentando as vendas e melhorando a experiência do cliente com a Fottufy.
+            </p>
+            <div className="flex justify-center mb-10">
+              <img 
+                src="/fottufy-ex2.png" 
+                alt="Depoimentos de clientes" 
+                className="w-full max-w-4xl rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Pricing Section */}
+        <div className="mt-32 max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+            Planos
+          </h2>
+          <p className="text-xl text-gray-600 mb-16 max-w-3xl mx-auto">
+            Escolha o plano ideal para o seu volume de fotos
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Basic Plan */}
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="text-2xl font-bold mb-2 text-blue-600">📷 R$14,90</div>
+              <div className="text-lg text-gray-500 mb-6">por 10.000 imagens</div>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Galerias ilimitadas</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Suporte incluso</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Links personalizados</span>
+                </li>
+              </ul>
+              
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => navigate('/auth')}
+              >
+                Escolher plano
+              </Button>
+            </div>
+            
+            {/* Standard Plan */}
+            <div className="bg-white p-8 rounded-xl shadow-lg border-2 border-blue-400 hover:shadow-xl transition-shadow duration-300 transform scale-105">
+              <div className="text-2xl font-bold mb-2 text-blue-600">📸 R$37,90</div>
+              <div className="text-lg text-gray-500 mb-6">por 50.000 imagens</div>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Galerias ilimitadas</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Suporte incluso</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Links personalizados</span>
+                </li>
+              </ul>
+              
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => navigate('/auth')}
+              >
+                Escolher plano
+              </Button>
+            </div>
+            
+            {/* Premium Plan */}
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="text-2xl font-bold mb-2 text-blue-600">🏆 R$70,00</div>
+              <div className="text-lg text-gray-500 mb-6">por 100.000 imagens</div>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Galerias ilimitadas</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Suporte incluso</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Links personalizados</span>
+                </li>
+              </ul>
+              
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => navigate('/auth')}
+              >
+                Escolher plano
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Footer CTA */}
+        <div className="mt-32 mb-16">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
+            Pronto para transformar a sua forma de trabalhar?
+          </h2>
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-6 text-xl font-semibold rounded-md shadow-lg"
+            onClick={() => navigate('/auth')}
+          >
+            Começar agora
+          </Button>
         </div>
       </div>
     </div>
