@@ -207,14 +207,20 @@ export default function ProjectView() {
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
-              {project.photos
-                .filter(photo => selectedPhotos.includes(photo.id))
-                .map(photo => (
-                  <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
-                    <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm font-mono">{photo.filename}</span>
-                  </div>
-              ))}
+              {(Array.isArray(project.photos) && project.photos.length > 0) ? (
+                project.photos
+                  .filter(photo => selectedPhotos.includes(photo.id))
+                  .map(photo => (
+                    <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
+                      <FileText className="w-4 h-4 mr-2 text-gray-500" />
+                      <span className="text-sm font-mono">{photo.filename}</span>
+                    </div>
+                  ))
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  Nenhuma foto selecionada.
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
