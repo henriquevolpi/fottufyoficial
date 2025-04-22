@@ -13,6 +13,7 @@ import AuthPage from "@/pages/auth-page";
 import SubscriptionPage from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
 import DebugPage from "@/pages/debug";
+import LandingPage from "@/pages/landing";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -66,8 +67,19 @@ function Router() {
       <Route path="/planos" component={PricingPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/debug" component={DebugPage} />
+      <Route path="/home" component={LandingPage} />
       <Route path="/">
-        {() => <RootRedirect />}
+        {() => {
+          // Check for query parameters indicating login flow
+          const url = new URL(window.location.href);
+          const hasLoginParams = url.searchParams.has('admin');
+          
+          if (hasLoginParams) {
+            return <RootRedirect />;
+          } else {
+            return <LandingPage />;
+          }
+        }}
       </Route>
       <Route component={NotFound} />
     </Switch>
