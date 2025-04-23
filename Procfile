@@ -1,1 +1,1 @@
-web: ./railway-bootstrap.sh
+web: chmod +x railway-bootstrap.sh && ./railway-bootstrap.sh
