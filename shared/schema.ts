@@ -59,23 +59,23 @@ export const SUBSCRIPTION_PLANS = {
   BASIC: {
     name: "Básico",
     type: "basic",
-    price: 15,
-    uploadLimit: 1500,
-    description: "1.500 uploads por conta",
+    price: 14.9,
+    uploadLimit: 10000,
+    description: "10.000 uploads por conta",
   },
   STANDARD: {
     name: "Padrão",
     type: "standard",
-    price: 35,
-    uploadLimit: 5000,
-    description: "5.000 uploads por conta",
+    price: 37.9,
+    uploadLimit: 50000,
+    description: "50.000 uploads por conta",
   },
   PROFESSIONAL: {
     name: "Profissional",
     type: "professional",
-    price: 120,
-    uploadLimit: 999999, // Praticamente ilimitado
-    description: "Uploads ilimitados",
+    price: 70,
+    uploadLimit: 100000,
+    description: "100.000 uploads por conta",
   },
 };
 

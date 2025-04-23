@@ -129,11 +129,11 @@ export default function Checkout() {
   const getPlanInfo = (type: string) => {
     switch (type) {
       case 'basic':
-        return { name: 'Básico', price: 15 };
+        return { name: 'Básico', price: 14.90 };
       case 'standard':
-        return { name: 'Padrão', price: 35 };
+        return { name: 'Padrão', price: 37.90 };
       case 'professional':
-        return { name: 'Profissional', price: 120 };
+        return { name: 'Profissional', price: 70.00 };
       default:
         return { name: 'Desconhecido', price: 0 };
     }
@@ -237,7 +237,7 @@ export default function Checkout() {
               <p className="font-medium">Plano {planInfo.name}</p>
               <p className="text-sm text-muted-foreground">Assinatura mensal</p>
             </div>
-            <p className="font-bold">R${planInfo.price},00</p>
+            <p className="font-bold">R${planInfo.price.toFixed(2).replace('.', ',')}</p>
           </div>
         </div>
         
