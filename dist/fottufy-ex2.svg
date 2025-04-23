@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#f8fafc" />
+  <rect x="50" y="50" width="700" height="400" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+  <!-- Testimonial 1 -->
+  <rect x="80" y="80" width="300" height="160" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="120" cy="120" r="30" fill="#dbeafe" />
+  <text x="240" y="110" font-family="Arial" font-size="16" fill="#1e40af" text-anchor="middle" font-weight="bold">Ana Rodrigues</text>
+  <text x="240" y="130" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">Fotógrafa de Casamentos</text>
+  <text x="230" y="170" font-family="Arial" font-size="12" fill="#334155" text-anchor="middle">Aumentei minha conversão em 40% com a Fottufy.</text>
+  
+  <!-- Testimonial 2 -->
+  <rect x="420" y="80" width="300" height="160" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="460" cy="120" r="30" fill="#dbeafe" />
+  <text x="580" y="110" font-family="Arial" font-size="16" fill="#1e40af" text-anchor="middle" font-weight="bold">Carlos Mendes</text>
+  <text x="580" y="130" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">Fotógrafo de Eventos</text>
+  <text x="570" y="170" font-family="Arial" font-size="12" fill="#334155" text-anchor="middle">Meus clientes adoram a experiência simplificada.</text>
+  
+  <!-- Testimonial 3 -->
+  <rect x="80" y="260" width="300" height="160" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="120" cy="300" r="30" fill="#dbeafe" />
+  <text x="240" y="290" font-family="Arial" font-size="16" fill="#1e40af" text-anchor="middle" font-weight="bold">Patrícia Lima</text>
+  <text x="240" y="310" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">Fotógrafa de Retrato</text>
+  <text x="230" y="350" font-family="Arial" font-size="12" fill="#334155" text-anchor="middle">O processo de seleção ficou muito mais rápido.</text>
+  
+  <!-- Testimonial 4 -->
+  <rect x="420" y="260" width="300" height="160" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="460" cy="300" r="30" fill="#dbeafe" />
+  <text x="580" y="290" font-family="Arial" font-size="16" fill="#1e40af" text-anchor="middle" font-weight="bold">Ricardo Alves</text>
+  <text x="580" y="310" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">Fotografia Comercial</text>
+  <text x="570" y="350" font-family="Arial" font-size="12" fill="#334155" text-anchor="middle">Economizo horas de trabalho a cada projeto.</text>
+  
+  <text x="400" y="440" font-family="Arial" font-size="16" text-anchor="middle" fill="#475569">Depoimentos de clientes Fottufy</text>
+</svg>
