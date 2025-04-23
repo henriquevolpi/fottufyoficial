@@ -7,4 +7,9 @@ if [ -f "package.json" ]; then
   echo "package.json atualizado para o Railway"
 fi
 
+# Dar permissão e executar o script de correção de caminhos
+chmod +x railway-fix-paths.js
+node railway-fix-paths.js
+echo "Aplicado fix para resolução de caminhos em ESM para o Railway"
+
 node dist/index.js
