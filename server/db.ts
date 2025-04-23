@@ -9,8 +9,10 @@ const replicateLocalConfig: PoolConfig = {
   host: process.env.PGHOST,
   port: parseInt(process.env.PGPORT || '5432'),
   database: process.env.PGDATABASE,
-  // Default configuration for Replit
-  ssl: false
+  // Configuration para Replit - SSL é necessário mesmo localmente
+  ssl: {
+    rejectUnauthorized: false
+  }
 };
 
 // For Supabase or other external PostgreSQL providers (Render deployment)
