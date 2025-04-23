@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
+import { testConnection } from "./db";
 
 // Definir variável de ambiente para a sessão se não estiver definida
 if (!process.env.SESSION_SECRET) {
@@ -129,6 +130,20 @@ app.use((req, res, next) => {
 
 // Set up static file serving
 app.use('/uploads', express.static(uploadsDir));
+
+// Add database test endpoint
+app.get('/api/test-db', async (req: Request, res: Response) => {
+  try {
+    const result = await testConnection();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      error: "Database connection error",
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
 
 // Request/response logging middleware
 app.use((req, res, next) => {

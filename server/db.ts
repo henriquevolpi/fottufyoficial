@@ -26,8 +26,9 @@ const externalDbConfig: PoolConfig = {
   }
 };
 
-// Choose configuration based on environment
-const useLocalConfig = !process.env.DB_HOST;
+// Force using Replit's local PostgreSQL for now
+// We'll change this to check for DB_HOST when ready to use Supabase
+const useLocalConfig = true; // !process.env.DB_HOST;
 const poolConfig = useLocalConfig ? replicateLocalConfig : externalDbConfig;
 
 // Create the database connection pool
