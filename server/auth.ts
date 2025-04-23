@@ -2,8 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -13,36 +12,25 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
+const SALT_ROUNDS = 10;
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+async function hashPassword(password: string): Promise<string> {
+  try {
+    return await bcrypt.hash(password, SALT_ROUNDS);
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    throw error;
+  }
 }
 
-async function comparePasswords(supplied: string, stored: string) {
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
   // Special handling for admin@studio.com in case password isn't hashed
   if (stored === "admin123") {
     return supplied === "admin123";
   }
   
-  // Handle case where password isn't properly formatted
-  if (!stored || !stored.includes('.')) {
-    console.warn("Password not properly formatted for scrypt comparison");
-    return supplied === stored; // Fallback to direct comparison
-  }
-  
   try {
-    const [hashed, salt] = stored.split(".");
-    if (!salt) {
-      console.warn("No salt found in stored password");
-      return supplied === stored; // Fallback to direct comparison
-    }
-    
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
+    return await bcrypt.compare(supplied, stored);
   } catch (error) {
     console.error("Error comparing passwords:", error);
     // Fallback to direct comparison in case of error
@@ -108,33 +96,33 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log("Processing registration request:", req.body);
+      console.log("Processing registration request");
       
       // Validate required fields
-      const { name, email, password } = req.body;
-      if (!name || !email || !password) {
-        return res.status(400).json({ message: "Nome, email e senha são obrigatórios" });
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
       }
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ message: "Email já está em uso" });
+        return res.status(400).json({ message: "Email already in use" });
       }
       
-      // Create user with basic info and photographer role
+      // Hash the password with bcrypt
+      const hashedPassword = await hashPassword(password);
+      
+      // Create basic user data
       const userData = {
-        ...req.body,
+        name: req.body.name || email.split('@')[0], // Use part of email as name if not provided
+        email,
+        password: hashedPassword,
         role: "photographer", // Default to photographer role
-        status: "active",     // Default to active status
-        planType: "free",     // Default to free plan
-        subscriptionStatus: "inactive",
-        uploadLimit: 50,      // Default limit for free plan
-        usedUploads: 0,
-        password: await hashPassword(password), // Hash the password
+        status: "active"      // Default to active status
       };
       
-      console.log("Creating new user with data:", { ...userData, password: "[REDACTED]" });
+      console.log("Creating new user");
       const user = await storage.createUser(userData);
       
       // Establish session by logging in the user
@@ -144,20 +132,13 @@ export function setupAuth(app: Express) {
           return next(err);
         }
         
-        console.log(`Registration successful for: ${email}, ID: ${user.id}, Session ID: ${req.sessionID}`);
+        console.log(`Registration successful for: ${email}, ID: ${user.id}`);
         
-        // Set a direct cookie with the user ID for tracking
-        res.cookie('user_id', user.id.toString(), {
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-          httpOnly: false,
-          secure: false,
-          path: '/',
-          sameSite: 'lax'
+        // Return only id and email as requested
+        res.status(201).json({
+          id: user.id,
+          email: user.email
         });
-        
-        // Return user data without password
-        const { password, ...safeUser } = user;
-        res.status(201).json(safeUser);
       });
     } catch (error) {
       console.error("Error during registration:", error);
