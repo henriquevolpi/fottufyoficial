@@ -1,0 +1,8 @@
+node_modules
+.git
+.next
+.vercel
+.cache
+.upm
+PhotoProManager.zip
+attached_assets
