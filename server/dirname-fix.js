@@ -1,29 +1,23 @@
-// Polyfill para import.meta.dirname em ambientes ESM
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import fs from 'fs';
 
-// Detectar se estamos em desenvolvimento ou produção
+// Detectar ambiente (desenvolvimento ou produção)
 const isDev = process.env.NODE_ENV !== 'production';
 
-// Em ambiente de produção (Railway), usamos o diretório atual
+// Obter o dirname equivalente ao __dirname do CommonJS
 export const appDirname = isDev 
-  ? dirname(fileURLToPath(import.meta.url)) 
+  ? dirname(fileURLToPath(import.meta.url))
   : process.cwd();
 
-// Helper para resolver caminhos relativos ao diretório raiz do aplicativo
+// Resolver caminhos de arquivo relativos ao diretório da aplicação
 export const resolveAppPath = (...paths) => resolve(appDirname, '..', ...paths);
 
-// Helper para resolver caminhos de arquivos estáticos
+// Resolver caminhos para arquivos públicos
 export const resolvePublicPath = (...paths) => {
-  // Em produção, procuramos em dist/public
-  const prodPath = resolve(process.cwd(), 'dist', 'public', ...paths);
-  
-  // Verificar se o caminho existe em produção
-  if (fs.existsSync(prodPath)) {
-    return prodPath;
+  if (isDev) {
+    return resolve(appDirname, '..', 'client', ...paths);
+  } else {
+    return resolve(process.cwd(), 'dist', 'public', ...paths);
   }
-  
-  // Fallback para o caminho de desenvolvimento
-  return resolve(appDirname, '..', 'dist', 'public', ...paths);
 };
