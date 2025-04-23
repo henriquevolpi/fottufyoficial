@@ -51,80 +51,41 @@ function ProjectViewPublicRoute({ params }: { params: { id: string }}) {
 import PricingPage from "@/pages/pricing";
 
 function Router() {
-  const [location] = useLocation();
-  
-  // Esta função verifica a URL atual e mapeia-a para o componente apropriado
-  const renderRouteForLocation = () => {
-    const url = new URL(window.location.href);
-    const path = url.pathname;
-    const params = url.searchParams;
-    
-    console.log("Renderizando rota para:", path, "com parâmetros:", Object.fromEntries(params.entries()));
-    
-    // Rotas públicas
-    if (path === "/") {
-      return <LandingPage />;
-    }
-    
-    if (path === "/home") {
-      return <LandingPage />;
-    }
-    
-    if (path === "/auth") {
-      return <AuthPage />;
-    }
-    
-    if (path === "/pricing" || path === "/planos") {
-      return <PricingPage />;
-    }
-    
-    if (path === "/debug") {
-      return <DebugPage />;
-    }
-    
-    // Rota de visualização pública de projeto
-    if (path.startsWith("/project-view/")) {
-      const id = path.split("/").pop();
-      if (id) {
-        return <ProjectViewPublicRoute params={{ id }} />;
-      }
-    }
-    
-    // Rotas protegidas - usamos ProtectedRoute para lidar com a autenticação
-    if (path === "/dashboard") {
-      return <ProtectedRoute path="/dashboard" component={Dashboard} />;
-    }
-    
-    if (path === "/upload") {
-      return <ProtectedRoute path="/upload" component={Upload} />;
-    }
-    
-    if (path === "/subscription") {
-      return <ProtectedRoute path="/subscription" component={SubscriptionPage} />;
-    }
-    
-    if (path === "/checkout") {
-      return <ProtectedRoute path="/checkout" component={Checkout} />;
-    }
-    
-    if (path === "/admin") {
-      return <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />;
-    }
-    
-    // Rotas de projeto protegidas
-    if (path.match(/^\/project\/\d+$/)) {
-      return <ProtectedRoute path={path} component={Project} />;
-    }
-    
-    if (path.match(/^\/project\/\d+\/edit$/)) {
-      return <ProtectedRoute path={path} component={ProjectEdit} />;
-    }
-    
-    // Se nenhuma rota corresponder, exibir página 404
-    return <NotFound />;
-  };
-  
-  return renderRouteForLocation();
+  return (
+    <Switch>
+      <Route path="/auth">
+        {() => <AuthPage />}
+      </Route>
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/upload" component={Upload} />
+      <ProtectedRoute path="/project/:id" component={Project} />
+      <ProtectedRoute path="/project/:id/edit" component={ProjectEdit} />
+      <Route path="/project-view/:id">
+        {(params) => <ProjectViewPublicRoute params={params} />}
+      </Route>
+      <ProtectedRoute path="/subscription" component={SubscriptionPage} />
+      <ProtectedRoute path="/checkout" component={Checkout} />
+      <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />
+      <Route path="/planos">
+        {() => <PricingPage />}
+      </Route>
+      <Route path="/pricing">
+        {() => <PricingPage />}
+      </Route>
+      <Route path="/debug">
+        {() => <DebugPage />}
+      </Route>
+      <Route path="/home">
+        {() => <LandingPage />}
+      </Route>
+      <Route path="/">
+        {() => <LandingPage />}
+      </Route>
+      <Route>
+        {() => <NotFound />}
+      </Route>
+    </Switch>
+  );
 }
 
 function App() {
