@@ -134,9 +134,26 @@ app.use('/uploads', express.static(uploadsDir));
 // Add database test endpoint
 app.get('/api/test-db', async (req: Request, res: Response) => {
   try {
-    const result = await testConnection();
-    res.json(result);
+    // Executa uma consulta simples diretamente no pool
+    const result = await pool.query('SELECT NOW() as time, current_database() as db_name');
+    
+    // Conta quantos usuários e projetos existem
+    const userCount = await pool.query('SELECT COUNT(*) as count FROM users');
+    const projectCount = await pool.query('SELECT COUNT(*) as count FROM projects');
+    
+    res.json({
+      status: 'connected',
+      timestamp: result.rows[0].time,
+      database: result.rows[0].db_name,
+      tables: {
+        users: parseInt(userCount.rows[0].count),
+        projects: parseInt(projectCount.rows[0].count)
+      },
+      environment: process.env.NODE_ENV,
+      host: process.env.PGHOST || process.env.DB_HOST || 'localhost'
+    });
   } catch (error: any) {
+    console.error("Erro na rota de teste:", error);
     res.status(500).json({
       error: "Database connection error",
       message: error.message,

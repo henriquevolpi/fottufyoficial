@@ -5,12 +5,18 @@ import {
   type Photo, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
 import { nanoid } from "nanoid";
+import { db } from "./db";
+import { eq, and, desc, asc } from "drizzle-orm";
 
 // Memory storage implementation
 import session from "express-session";
 import createMemoryStore from "memorystore";
+// Import connect-pg-simple for PostgreSQL session store
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User methods
@@ -560,4 +566,565 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Implementação do armazenamento em PostgreSQL
+export class DatabaseStorage implements IStorage {
+  public sessionStore: any;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+      tableName: 'session',
+      schemaName: 'public'
+    });
+    
+    // Criar usuário admin inicial se não existir
+    this.initializeAdminUser();
+  }
+
+  private async initializeAdminUser() {
+    try {
+      // Verificar se já existe um usuário admin
+      const adminUser = await this.getUserByEmail("admin@studio.com");
+      
+      if (!adminUser) {
+        console.log("Criando usuário admin padrão...");
+        
+        // Criar usuário admin padrão
+        await this.createUser({
+          name: "Admin",
+          email: "admin@studio.com",
+          password: "admin123",
+          role: "admin",
+          status: "active",
+          planType: "professional",
+        });
+        
+        console.log("Usuário admin criado com sucesso!");
+      } else {
+        console.log("Usuário admin já existe.");
+      }
+    } catch (error) {
+      console.error("Erro ao inicializar usuário admin:", error);
+    }
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por ID:", error);
+      return undefined;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      console.log(`Buscando usuário com email: ${email}`);
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      console.log(`Usuário encontrado:`, user ? { id: user.id, email: user.email, role: user.role } : 'nenhum');
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por email:", error);
+      return undefined;
+    }
+  }
+
+  async getUserBySubscriptionId(subscriptionId: string): Promise<User | undefined> {
+    try {
+      // Busca por subscription_id ou stripeSubscriptionId
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(
+          eq(users.stripeSubscriptionId, subscriptionId)
+        );
+      
+      if (!user) {
+        // Tenta com o campo antigo subscription_id se não encontrou pelo novo
+        const [legacyUser] = await db
+          .select()
+          .from(users)
+          .where(
+            eq(users.subscription_id, subscriptionId)
+          );
+        return legacyUser;
+      }
+      
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por subscription ID:", error);
+      return undefined;
+    }
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.stripeCustomerId, customerId));
+      
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por customer ID:", error);
+      return undefined;
+    }
+  }
+
+  async getUsers(): Promise<User[]> {
+    try {
+      return await db.select().from(users).orderBy(desc(users.createdAt));
+    } catch (error) {
+      console.error("Erro ao buscar todos os usuários:", error);
+      return [];
+    }
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    try {
+      // Garantir que role e status estejam definidos
+      const userToCreate: any = {
+        ...userData,
+        role: userData.role || "photographer",
+        status: userData.status || "active",
+        planType: userData.planType || "free",
+        usedUploads: 0,
+        lastEvent: null
+      };
+      
+      // Configurar o limite de uploads com base no plano gratuito
+      if (userToCreate.planType === "free") {
+        userToCreate.uploadLimit = SUBSCRIPTION_PLANS.FREE.uploadLimit;
+      }
+      
+      // Inserir o usuário no banco de dados
+      const [createdUser] = await db.insert(users).values(userToCreate).returning();
+      
+      return createdUser;
+    } catch (error) {
+      console.error("Erro ao criar usuário:", error);
+      throw error;
+    }
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, id))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      return undefined;
+    }
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(users).where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+      return false;
+    }
+  }
+  
+  // Métodos de gerenciamento de assinatura
+  async updateUserSubscription(userId: number, planType: string): Promise<User | undefined> {
+    try {
+      // Obter informações do plano
+      let plan;
+      switch(planType) {
+        case "basic":
+          plan = SUBSCRIPTION_PLANS.BASIC;
+          break;
+        case "standard":
+          plan = SUBSCRIPTION_PLANS.STANDARD;
+          break;
+        case "professional":
+          plan = SUBSCRIPTION_PLANS.PROFESSIONAL;
+          break;
+        default:
+          plan = SUBSCRIPTION_PLANS.FREE;
+      }
+      
+      // Definir datas de início e fim da assinatura
+      const now = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1); // Assinatura válida por 1 mês
+      
+      // Atualizar usuário com os dados do plano
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          planType,
+          uploadLimit: plan.uploadLimit,
+          subscriptionStartDate: now,
+          subscriptionEndDate: endDate,
+          subscriptionStatus: "active",
+          status: "active", // Garantir que o usuário esteja ativo
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao atualizar assinatura do usuário:", error);
+      return undefined;
+    }
+  }
+  
+  async updateStripeInfo(userId: number, customerId: string, subscriptionId: string): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscriptionId,
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao atualizar informações do Stripe:", error);
+      return undefined;
+    }
+  }
+  
+  async handleStripeWebhook(payload: SubscriptionWebhookPayload): Promise<User | undefined> {
+    try {
+      // Encontrar usuário pelo customerId ou pelo email
+      let user = await this.getUserByStripeCustomerId(payload.data.customer.id);
+      
+      if (!user) {
+        // Tentar buscar por email se disponível
+        const email = payload.data.customer.email;
+        if (email) {
+          user = await this.getUserByEmail(email);
+        }
+      }
+      
+      if (!user) return undefined;
+      
+      // Atualizar status da assinatura com base no evento
+      let subscriptionStatus = user.subscriptionStatus;
+      let userStatus = user.status;
+      
+      switch(payload.type) {
+        case "subscription.created":
+        case "subscription.updated":
+          if (payload.data.subscription.status === "active") {
+            subscriptionStatus = "active";
+            userStatus = "active";
+          } else if (payload.data.subscription.status === "canceled") {
+            subscriptionStatus = "inactive";
+            // Não alteramos o status do usuário quando a assinatura é cancelada
+          }
+          break;
+        case "subscription.cancelled":
+          subscriptionStatus = "inactive";
+          break;
+      }
+      
+      // Calcular data de expiração se disponível
+      let subscriptionEndDate = user.subscriptionEndDate;
+      if (payload.data.subscription.current_period_end) {
+        subscriptionEndDate = new Date(payload.data.subscription.current_period_end * 1000);
+      }
+      
+      // Atualizar o usuário
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          subscriptionStatus,
+          status: userStatus,
+          subscriptionEndDate,
+          stripeSubscriptionId: payload.data.subscription.id,
+          lastEvent: {
+            type: payload.type,
+            timestamp: new Date().toISOString(),
+          },
+        })
+        .where(eq(users.id, user.id))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao processar webhook do Stripe:", error);
+      return undefined;
+    }
+  }
+  
+  // Métodos de gerenciamento de uploads
+  async checkUploadLimit(userId: number, count: number): Promise<boolean> {
+    try {
+      // Buscar usuário
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) return false;
+      
+      // Check if subscription is active
+      if (user.subscriptionStatus !== "active" && user.planType !== "free") {
+        return false;
+      }
+      
+      // If user has unlimited plan (uploadLimit < 0), always return true
+      if (user.uploadLimit !== null && user.uploadLimit < 0) {
+        return true;
+      }
+      
+      // Check if user has available upload quota
+      const uploadLimit = user.uploadLimit || 0;
+      const usedUploads = user.usedUploads || 0;
+      const availableUploads = uploadLimit - usedUploads;
+      return availableUploads >= count;
+    } catch (error) {
+      console.error("Erro ao verificar limite de uploads:", error);
+      return false;
+    }
+  }
+  
+  async updateUploadUsage(userId: number, addCount: number): Promise<User | undefined> {
+    try {
+      // Buscar usuário atual para calcular o novo valor
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) return undefined;
+      
+      // Calculate new value for used uploads
+      const currentUsed = user.usedUploads || 0;
+      let newUsedUploads = currentUsed + addCount;
+      
+      // Ensure it never goes below zero
+      if (newUsedUploads < 0) {
+        newUsedUploads = 0;
+      }
+      
+      console.log(`Upload usage updated for user ${userId}: ${currentUsed} → ${newUsedUploads} (added ${addCount})`);
+      
+      // Update user
+      const [updatedUser] = await db
+        .update(users)
+        .set({ usedUploads: newUsedUploads })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao atualizar uso de uploads:", error);
+      return undefined;
+    }
+  }
+
+  async handleWebhookEvent(payload: WebhookPayload): Promise<User | undefined> {
+    try {
+      // Try to find user by email or subscription_id
+      let user = await this.getUserByEmail(payload.email);
+      
+      if (!user && payload.subscription_id) {
+        user = await this.getUserBySubscriptionId(payload.subscription_id);
+      }
+      
+      if (!user) return undefined;
+      
+      // Update user status based on event type
+      let status = user.status;
+      
+      switch (payload.type) {
+        case "payment.approved":
+          status = "active";
+          break;
+        case "payment.failed":
+          status = "suspended";
+          break;
+        case "subscription.canceled":
+          status = "canceled";
+          break;
+      }
+      
+      // Update the user with new status and event
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          status,
+          subscription_id: payload.subscription_id || user.subscription_id,
+          lastEvent: {
+            type: payload.type,
+            timestamp: payload.timestamp,
+          },
+        })
+        .where(eq(users.id, user.id))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao processar evento de webhook:", error);
+      return undefined;
+    }
+  }
+
+  // Project methods
+  async getProject(id: number): Promise<Project | undefined> {
+    try {
+      console.log(`DatabaseStorage: Buscando projeto ID=${id}`);
+      
+      // Se id for number, busca direto pelo ID
+      if (typeof id === 'number') {
+        const [project] = await db.select().from(projects).where(eq(projects.id, id));
+        return project;
+      }
+      
+      // Se id for string e for numérico, converte para number e busca
+      const numericId = parseInt(id.toString());
+      if (!isNaN(numericId)) {
+        const [project] = await db.select().from(projects).where(eq(projects.id, numericId));
+        if (project) return project;
+      }
+      
+      // Se não encontrou por ID numérico, tenta por publicId
+      const [project] = await db.select().from(projects).where(eq(projects.publicId, id.toString()));
+      
+      if (project) {
+        console.log(`DatabaseStorage: Projeto encontrado: ${project.name}`);
+      } else {
+        console.log(`DatabaseStorage: Projeto ID=${id} não encontrado`);
+      }
+      
+      return project;
+    } catch (error) {
+      console.error("Erro ao buscar projeto:", error);
+      return undefined;
+    }
+  }
+
+  async getProjects(photographerId?: number): Promise<Project[]> {
+    try {
+      if (photographerId) {
+        return await db
+          .select()
+          .from(projects)
+          .where(eq(projects.photographerId, photographerId))
+          .orderBy(desc(projects.createdAt));
+      }
+      
+      return await db
+        .select()
+        .from(projects)
+        .orderBy(desc(projects.createdAt));
+    } catch (error) {
+      console.error("Erro ao buscar projetos:", error);
+      return [];
+    }
+  }
+
+  async createProject(projectData: InsertProject, photos: Photo[]): Promise<Project> {
+    try {
+      // Process photos if any
+      const processedPhotos = photos.map(photo => ({
+        ...photo,
+        id: nanoid(),
+      }));
+      
+      // Inserir o projeto no banco
+      const [createdProject] = await db
+        .insert(projects)
+        .values({
+          ...projectData,
+          photos: processedPhotos,
+          selectedPhotos: [],
+        })
+        .returning();
+      
+      return createdProject;
+    } catch (error) {
+      console.error("Erro ao criar projeto:", error);
+      throw error;
+    }
+  }
+
+  async updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined> {
+    try {
+      const [updatedProject] = await db
+        .update(projects)
+        .set(projectData)
+        .where(eq(projects.id, id))
+        .returning();
+      
+      return updatedProject;
+    } catch (error) {
+      console.error("Erro ao atualizar projeto:", error);
+      return undefined;
+    }
+  }
+
+  async finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined> {
+    try {
+      console.log(`DatabaseStorage: Finalizando seleção para projeto ID=${id}, fotos selecionadas: ${selectedPhotos.length}`);
+      
+      const [updatedProject] = await db
+        .update(projects)
+        .set({
+          selectedPhotos,
+          status: "reviewed", // Atualiza o status para revisado
+        })
+        .where(eq(projects.id, id))
+        .returning();
+      
+      return updatedProject;
+    } catch (error) {
+      console.error("Erro ao finalizar seleção de fotos:", error);
+      return undefined;
+    }
+  }
+
+  async archiveProject(id: number): Promise<Project | undefined> {
+    try {
+      const [archivedProject] = await db
+        .update(projects)
+        .set({ status: "archived" })
+        .where(eq(projects.id, id))
+        .returning();
+      
+      return archivedProject;
+    } catch (error) {
+      console.error("Erro ao arquivar projeto:", error);
+      return undefined;
+    }
+  }
+
+  async reopenProject(id: number): Promise<Project | undefined> {
+    try {
+      const [reopenedProject] = await db
+        .update(projects)
+        .set({ status: "reopened" })
+        .where(eq(projects.id, id))
+        .returning();
+      
+      return reopenedProject;
+    } catch (error) {
+      console.error("Erro ao reabrir projeto:", error);
+      return undefined;
+    }
+  }
+
+  async deleteProject(id: number): Promise<boolean> {
+    try {
+      await db.delete(projects).where(eq(projects.id, id));
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir projeto:", error);
+      return false;
+    }
+  }
+}
+
+// Usar o armazenamento PostgreSQL em vez do armazenamento em memória
+export const storage = new DatabaseStorage();
+
+// Comentado para referência:
+// export const storage = new MemStorage();
