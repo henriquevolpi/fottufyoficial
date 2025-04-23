@@ -1,8 +1,9 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, primaryKey, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
-// User model
+// Existing User model
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -28,6 +29,11 @@ export const users = pgTable("users", {
     timestamp: string;
   } | null>(),
 });
+
+// Relations for users
+export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(newProjects),
+}));
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -73,7 +79,7 @@ export const SUBSCRIPTION_PLANS = {
   },
 };
 
-// Project model
+// Existing projects schema (maintained for backward compatibility)
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   publicId: text("public_id").notNull().unique(), // Used for public URLs
@@ -98,6 +104,53 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   createdAt: true,
 });
 
+// New tables with UUID and proper relations as requested
+
+// New projects table with UUIDs
+export const newProjects = pgTable("new_projects", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Relations for the new projects table
+export const newProjectsRelations = relations(newProjects, ({ one, many }) => ({
+  user: one(users, {
+    fields: [newProjects.userId],
+    references: [users.id],
+  }),
+  photos: many(photos),
+}));
+
+export const insertNewProjectSchema = createInsertSchema(newProjects).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Photos table with UUIDs
+export const photos = pgTable("photos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  projectId: uuid("project_id").notNull().references(() => newProjects.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  selected: boolean("selected").default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Relations for the photos table
+export const photosRelations = relations(photos, ({ one }) => ({
+  project: one(newProjects, {
+    fields: [photos.projectId],
+    references: [newProjects.id],
+  }),
+}));
+
+export const insertPhotoSchema = createInsertSchema(photos).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -105,7 +158,13 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 
-export type Photo = {
+export type NewProject = typeof newProjects.$inferSelect;
+export type InsertNewProject = z.infer<typeof insertNewProjectSchema>;
+
+export type Photo = typeof photos.$inferSelect;
+export type InsertPhoto = z.infer<typeof insertPhotoSchema>;
+
+export type OldPhoto = {
   id: string;
   url: string;
   filename: string;
