@@ -3,6 +3,7 @@
 /**
  * Este script corrige problemas de caminho no arquivo dist/index.js para o Railway
  * Funciona corrigindo referências a import.meta.dirname que causam erro em produção
+ * Versão CJS para evitar erros de 'require is not defined in ES module scope'
  */
 
 const fs = require('fs');

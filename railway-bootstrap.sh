@@ -21,8 +21,8 @@ fi
 
 # Aplicar correção de paths
 echo "Aplicando correções de caminhos para ESM..."
-chmod +x railway-fix-paths.js
-node railway-fix-paths.js
+chmod +x railway-fix-paths.cjs
+node railway-fix-paths.cjs
 echo "✓ Fix aplicado para resolução de caminhos em ESM"
 
 # Iniciar a aplicação
