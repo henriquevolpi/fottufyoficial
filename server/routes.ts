@@ -2,7 +2,17 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertProjectSchema, WebhookPayload, SUBSCRIPTION_PLANS, Project } from "@shared/schema";
+import { 
+  insertUserSchema, 
+  insertProjectSchema, 
+  WebhookPayload, 
+  SUBSCRIPTION_PLANS, 
+  Project,
+  newProjects,
+  photos,
+  insertNewProjectSchema,
+  insertPhotoSchema
+} from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
@@ -13,6 +23,8 @@ import http from "http";
 import https from "https";
 import bodyParser from "body-parser";
 import passport from "passport";
+import { db } from "./db";
+import { eq, and, or, not, desc } from "drizzle-orm";
 
 // Helper function to download an image from a URL to the uploads directory
 async function downloadImage(url: string, filename: string): Promise<string> {
@@ -222,6 +234,198 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.warn('Chave secreta do Stripe não encontrada. As funcionalidades de pagamento não funcionarão corretamente.');
   }
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  
+  // ==================== New Project Management Routes ====================
+  
+  // Get all projects for the authenticated user
+  app.get("/api/v2/projects", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const projects = await db.query.newProjects.findMany({
+        where: eq(newProjects.userId, req.user.id),
+        with: {
+          photos: true
+        }
+      });
+      
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      res.status(500).json({ message: "Failed to fetch projects", error: (error as Error).message });
+    }
+  });
+  
+  // Create a new project
+  app.post("/api/v2/projects", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { title, description } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ message: "Project title is required" });
+      }
+      
+      const newProject = await db.insert(newProjects).values({
+        userId: req.user.id,
+        title,
+        description: description || null
+      }).returning();
+      
+      res.status(201).json(newProject[0]);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      res.status(500).json({ message: "Failed to create project", error: (error as Error).message });
+    }
+  });
+  
+  // Get a specific project by ID
+  app.get("/api/v2/projects/:id", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const projectId = req.params.id;
+      
+      const project = await db.query.newProjects.findFirst({
+        where: and(
+          eq(newProjects.id, projectId),
+          eq(newProjects.userId, req.user.id)
+        ),
+        with: {
+          photos: true
+        }
+      });
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      res.status(500).json({ message: "Failed to fetch project", error: (error as Error).message });
+    }
+  });
+  
+  // Add a photo to a project
+  app.post("/api/v2/photos", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { projectId, url } = req.body;
+      
+      if (!projectId || !url) {
+        return res.status(400).json({ message: "Project ID and photo URL are required" });
+      }
+      
+      // Verify the project belongs to the user
+      const project = await db.query.newProjects.findFirst({
+        where: and(
+          eq(newProjects.id, projectId),
+          eq(newProjects.userId, req.user.id)
+        )
+      });
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found or unauthorized" });
+      }
+      
+      // Add the photo
+      const newPhoto = await db.insert(photos).values({
+        projectId,
+        url,
+        selected: false
+      }).returning();
+      
+      res.status(201).json(newPhoto[0]);
+    } catch (error) {
+      console.error("Error adding photo:", error);
+      res.status(500).json({ message: "Failed to add photo", error: (error as Error).message });
+    }
+  });
+  
+  // Toggle photo selection
+  app.patch("/api/v2/photos/:id/select", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const photoId = req.params.id;
+      const { selected } = req.body;
+      
+      // Verify the photo exists and belongs to the user's project
+      const photo = await db.query.photos.findFirst({
+        where: eq(photos.id, photoId),
+        with: {
+          project: true
+        }
+      });
+      
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+      
+      if (photo.project.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized access to this photo" });
+      }
+      
+      // Update the photo's selection status
+      const updatedPhoto = await db.update(photos)
+        .set({ selected: selected === undefined ? !photo.selected : !!selected })
+        .where(eq(photos.id, photoId))
+        .returning();
+      
+      res.json(updatedPhoto[0]);
+    } catch (error) {
+      console.error("Error updating photo selection:", error);
+      res.status(500).json({ message: "Failed to update photo selection", error: (error as Error).message });
+    }
+  });
+  
+  // Delete a photo
+  app.delete("/api/v2/photos/:id", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const photoId = req.params.id;
+      
+      // Verify the photo exists and belongs to the user's project
+      const photo = await db.query.photos.findFirst({
+        where: eq(photos.id, photoId),
+        with: {
+          project: true
+        }
+      });
+      
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+      
+      if (photo.project.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized access to this photo" });
+      }
+      
+      // Delete the photo
+      await db.delete(photos).where(eq(photos.id, photoId));
+      
+      res.json({ message: "Photo deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      res.status(500).json({ message: "Failed to delete photo", error: (error as Error).message });
+    }
+  });
   
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)
