@@ -1,4 +1,35 @@
 // server/index.ts
+
+// Path fix for Railway deployment
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM compatibility functions
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Helper function to get the correct public path in different environments
+const getPublicPath = () => {
+  // Check dist/public first (common in production)
+  const publicPath = path.resolve(process.cwd(), 'dist', 'public');
+  if (fs.existsSync(publicPath)) {
+    console.log('Usando caminho: ' + publicPath);
+    return publicPath;
+  }
+  
+  // Then try dist (fallback)
+  const distPath = path.resolve(process.cwd(), 'dist');
+  console.log('Usando caminho fallback: ' + distPath);
+  return distPath;
+};
+
+// Helper function to get client path
+const getClientPath = (...segments) => {
+  return path.resolve(process.cwd(), 'client', ...segments);
+};
+
+console.log('Railway path fixes carregados com sucesso');
+
 import express2 from "express";
 
 // server/routes.ts
@@ -1475,14 +1506,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path2.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path2.resolve(import.meta.dirname, "shared"),
-      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
+      "@": path2.resolve(__dirname, "client", "src"),
+      "@shared": path2.resolve(__dirname, "shared"),
+      "@assets": path2.resolve(__dirname, "attached_assets")
     }
   },
-  root: path2.resolve(import.meta.dirname, "client"),
+  root: path2.resolve(__dirname, "client"),
   build: {
-    outDir: path2.resolve(import.meta.dirname, "dist/public"),
+    outDir: path2.resolve(__dirname, "dist/public"),
     emptyOutDir: true
   }
 });
@@ -1523,7 +1554,7 @@ async function setupVite(app2, server) {
     const url = req.originalUrl;
     try {
       const clientTemplate = path3.resolve(
-        import.meta.dirname,
+        __dirname,
         "..",
         "client",
         "index.html"
@@ -1542,7 +1573,7 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path3.resolve(import.meta.dirname, "public");
+  const distPath = path3.resolve(__dirname, "public");
   if (!fs2.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
