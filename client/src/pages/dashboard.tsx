@@ -277,8 +277,8 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <CardHeader className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">{project?.nome || "Untitled Project"}</CardTitle>
-            <CardDescription className="text-sm mt-1">{project?.cliente || "Unknown Client"}</CardDescription>
+            <CardTitle className="text-lg font-bold">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
+            <CardDescription className="text-sm mt-1">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
           </div>
           <Badge className={getStatusColor(status)}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -293,11 +293,11 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
         <div className="flex justify-between mt-3">
           <div className="flex items-center text-sm">
             <Camera className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project?.fotos || 0} photos</span>
+            <span>{project?.photos?.length || project?.fotos || 0} photos</span>
           </div>
           <div className="flex items-center text-sm">
             <FileText className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project?.selecionadas || 0} selected</span>
+            <span>{project?.selectedPhotos?.length || project?.selecionadas || 0} selected</span>
           </div>
         </div>
       </CardContent>
