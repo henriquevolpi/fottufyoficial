@@ -66,6 +66,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [accessDenied, setAccessDenied] = useState(false);
   const [showSelectedFilenamesDialog, setShowSelectedFilenamesDialog] = useState(false);
   
+  // Estados para o modal de visualização de imagem
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string>("");
+  
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
     // Mapeie o formato do servidor (name, clientName) para o formato do frontend (nome, cliente)
@@ -305,6 +309,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       }
       return newSelected;
     });
+  };
+  
+  // Abrir modal com a imagem em tamanho completo
+  const openImageModal = (url: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Impedir que o clique propague para o Card (que faria a seleção da foto)
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    setCurrentImageUrl(fullUrl);
+    setImageModalOpen(true);
   };
   
   // Salvar seleções atuais sem finalizar
@@ -694,25 +706,30 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   </div>
                 )}
                 
-                <img
-                  src={photo.url.startsWith('http') ? photo.url : `${window.location.origin}${photo.url}`}
-                  alt={photo.filename}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) => {
-                    console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
-                    // Try again with just the ID as a fallback method
-                    if (!photo.url.includes('/uploads/')) {
-                      const fallbackUrl = `/uploads/${photo.id}`;
-                      console.log(`Trying fallback URL: ${fallbackUrl}`);
-                      e.currentTarget.src = fallbackUrl;
-                    } else {
-                      // Last resort - use a placeholder
-                      e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
-                      console.log(`Falling back to placeholder for image ${photo.id}`);
-                    }
-                  }}
-                  title={`ID: ${photo.id}\nURL: ${photo.url}`}
-                />
+                <div 
+                  className="absolute inset-0 w-full h-full cursor-zoom-in"
+                  onClick={(e) => openImageModal(photo.url, e)}
+                >
+                  <img
+                    src={photo.url.startsWith('http') ? photo.url : `${window.location.origin}${photo.url}`}
+                    alt={photo.filename}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
+                      // Try again with just the ID as a fallback method
+                      if (!photo.url.includes('/uploads/')) {
+                        const fallbackUrl = `/uploads/${photo.id}`;
+                        console.log(`Trying fallback URL: ${fallbackUrl}`);
+                        e.currentTarget.src = fallbackUrl;
+                      } else {
+                        // Last resort - use a placeholder
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
+                        console.log(`Falling back to placeholder for image ${photo.id}`);
+                      }
+                    }}
+                    title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
+                  />
+                </div>
                 
                 {/* Selection indicator */}
                 {selectedPhotos.has(photo.id) && (
