@@ -3,7 +3,12 @@
 import { useState } from 'react'
 import imageCompression from 'browser-image-compression'
 
-export function ImageUploader() {
+interface ImageUploaderProps {
+  projectId: string | number;
+  onUploadSuccess?: () => void;
+}
+
+export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -26,33 +31,72 @@ export function ImageUploader() {
       setPreview(previewUrl)
 
       const formData = new FormData()
-      formData.append('file', compressedFile)
+      formData.append('photos', compressedFile) // Alterado para 'photos' para corresponder à API
 
-      const response = await fetch('/api/projects/SEU_PROJECT_ID/photos/upload', {
+      const response = await fetch(`/api/projects/${projectId}/photos/upload`, {
         method: 'POST',
         body: formData,
         credentials: 'include', // envia cookies (login)
       })
 
       if (response.ok) {
-        alert('Imagem enviada com sucesso!')
+        // Limpar preview após upload bem-sucedido
+        setPreview(null)
+        
+        // Chamar callback de sucesso se fornecido
+        if (onUploadSuccess) {
+          onUploadSuccess()
+        }
       } else {
-        alert('Erro ao enviar imagem')
+        console.error('Erro ao enviar imagem:', await response.text())
       }
     } catch (err) {
-      console.error(err)
-      alert('Erro ao redimensionar/enviar imagem')
+      console.error('Erro ao processar ou enviar imagem:', err)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div>
-      <input type="file" accept="image/*" onChange={handleImageChange} />
-      {loading && <p>Redimensionando e enviando...</p>}
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2">
+        <label 
+          htmlFor="image-upload" 
+          className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+        >
+          <span>Selecionar arquivo de imagem</span>
+          <input 
+            id="image-upload" 
+            type="file" 
+            accept="image/*" 
+            onChange={handleImageChange}
+            className="sr-only"
+          />
+        </label>
+        <p className="text-xs text-gray-500">Formatos aceitos: JPG, PNG, GIF</p>
+      </div>
+      
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Processando e enviando...</span>
+        </div>
+      )}
+      
       {preview && (
-        <img src={preview} alt="Pré-visualização" style={{ maxWidth: '200px', marginTop: 10 }} />
+        <div className="mt-2">
+          <p className="text-sm font-medium text-gray-700 mb-1">Pré-visualização:</p>
+          <div className="relative w-48 h-48 overflow-hidden rounded-md border border-gray-200">
+            <img 
+              src={preview} 
+              alt="Pré-visualização" 
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
       )}
     </div>
   )

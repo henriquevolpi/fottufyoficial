@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeftCircle, Loader2, Save, Upload, X, ImagePlus } from "lucide-react";
+import { ImageUploader } from "@/components/ImageUploader";
 import { Project } from "@shared/schema";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
