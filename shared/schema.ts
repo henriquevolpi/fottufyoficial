@@ -134,6 +134,7 @@ export const photos = pgTable("photos", {
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id").notNull().references(() => newProjects.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
+  filename: text("filename"),
   selected: boolean("selected").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

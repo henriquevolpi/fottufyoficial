@@ -25,6 +25,8 @@ import bodyParser from "body-parser";
 import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc } from "drizzle-orm";
+import { supabase, BUCKET_NAME, isValidFileType, isValidFileSize, generateUniqueFileName } from "./supabase";
+import multer from "multer";
 
 // Helper function to download an image from a URL to the uploads directory
 async function downloadImage(url: string, filename: string): Promise<string> {
@@ -226,6 +228,22 @@ const requireActiveUser = (req: Request, res: Response, next: Function) => {
   next();
 };
 
+// Configuração para upload de arquivos diretamente no Supabase
+const supabaseUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req: Express.Request, file: Express.Multer.File, cb: Function) => {
+    if (isValidFileType(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}. Apenas imagens JPEG, PNG, GIF e WebP são aceitas.`));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
@@ -234,6 +252,200 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.warn('Chave secreta do Stripe não encontrada. As funcionalidades de pagamento não funcionarão corretamente.');
   }
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  
+  // ==================== Supabase Upload Routes ====================
+  
+  // Upload uma ou mais imagens diretamente para o Supabase Storage (endpoint genérico)
+  app.post("/api/photos/upload", authenticate, supabaseUpload.array('photos', 100), async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Verificar se existem arquivos na requisição
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ message: "No files were uploaded" });
+      }
+      
+      // Verificar se o usuário possui limite disponível
+      const uploadCount = req.files.length;
+      const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
+      
+      if (!canUpload) {
+        return res.status(403).json({ 
+          message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
+          uploadLimit: req.user.uploadLimit,
+          uploadCount: req.user.uploadCount
+        });
+      }
+      
+      // Upload cada arquivo para o Supabase Storage
+      const uploadedFiles = [];
+      
+      for (const file of req.files as Express.Multer.File[]) {
+        const filename = generateUniqueFileName(file.originalname);
+        
+        // Upload para o Supabase
+        const { data, error } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(filename, file.buffer, {
+            contentType: file.mimetype,
+            cacheControl: '3600'
+          });
+          
+        if (error) {
+          console.error(`Error uploading file ${filename}:`, error);
+          continue; // Continuar com próximo arquivo mesmo se este falhar
+        }
+        
+        // Obter URL pública
+        const { data: publicUrlData } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(filename);
+          
+        uploadedFiles.push({
+          originalName: file.originalname,
+          filename: filename,
+          size: file.size,
+          mimetype: file.mimetype,
+          url: publicUrlData.publicUrl
+        });
+      }
+      
+      // Atualizar a contagem de uploads do usuário
+      if (uploadedFiles.length > 0) {
+        await storage.updateUploadUsage(req.user.id, uploadedFiles.length);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        files: uploadedFiles,
+        totalUploaded: uploadedFiles.length,
+        newUploadCount: req.user.uploadCount + uploadedFiles.length,
+        uploadLimit: req.user.uploadLimit
+      });
+    } catch (error) {
+      console.error("Error uploading photos to Supabase:", error);
+      return res.status(500).json({
+        message: "Failed to upload files",
+        error: (error as Error).message
+      });
+    }
+  });
+  
+  // Upload uma ou mais imagens diretamente para o Supabase Storage e associa a um projeto específico
+  app.post("/api/projects/:id/photos/upload", authenticate, supabaseUpload.array('photos', 100), async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const projectId = req.params.id;
+      
+      // Verificar se o projeto existe e pertence ao usuário
+      const project = await db.query.newProjects.findFirst({
+        where: and(
+          eq(newProjects.id, projectId),
+          eq(newProjects.userId, req.user.id)
+        )
+      });
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found or unauthorized" });
+      }
+      
+      // Verificar se existem arquivos na requisição
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ message: "No files were uploaded" });
+      }
+      
+      // Verificar se o usuário possui limite disponível
+      const uploadCount = req.files.length;
+      const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
+      
+      if (!canUpload) {
+        return res.status(403).json({ 
+          message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
+          uploadLimit: req.user.uploadLimit,
+          uploadCount: req.user.uploadCount
+        });
+      }
+      
+      // Upload cada arquivo para o Supabase Storage
+      const uploadedFiles = [];
+      const newPhotos = [];
+      
+      for (const file of req.files as Express.Multer.File[]) {
+        const filename = generateUniqueFileName(file.originalname);
+        
+        // Upload para o Supabase
+        const { data, error } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(filename, file.buffer, {
+            contentType: file.mimetype,
+            cacheControl: '3600'
+          });
+          
+        if (error) {
+          console.error(`Error uploading file ${filename}:`, error);
+          continue; // Continuar com próximo arquivo mesmo se este falhar
+        }
+        
+        // Obter URL pública
+        const { data: publicUrlData } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(filename);
+        
+        const fileUrl = publicUrlData.publicUrl;
+        
+        // Adicionar a foto ao banco de dados associada ao projeto
+        try {
+          const newPhoto = await db.insert(photos).values({
+            projectId,
+            url: fileUrl,
+            filename,
+            selected: false
+          }).returning();
+          
+          if (newPhoto && newPhoto[0]) {
+            newPhotos.push(newPhoto[0]);
+          }
+        } catch (dbError) {
+          console.error(`Error adding photo to database: ${dbError}`);
+          // Mesmo com erro no banco, ainda listamos o arquivo no resultado
+        }
+          
+        uploadedFiles.push({
+          originalName: file.originalname,
+          filename: filename,
+          size: file.size,
+          mimetype: file.mimetype,
+          url: fileUrl
+        });
+      }
+      
+      // Atualizar a contagem de uploads do usuário
+      if (uploadedFiles.length > 0) {
+        await storage.updateUploadUsage(req.user.id, uploadedFiles.length);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        files: uploadedFiles,
+        photos: newPhotos,
+        totalUploaded: uploadedFiles.length,
+        projectId: projectId,
+        newUploadCount: req.user.uploadCount + uploadedFiles.length,
+        uploadLimit: req.user.uploadLimit
+      });
+    } catch (error) {
+      console.error("Error uploading photos to project:", error);
+      return res.status(500).json({
+        message: "Failed to upload files to project",
+        error: (error as Error).message
+      });
+    }
+  });
   
   // ==================== New Project Management Routes ====================
   

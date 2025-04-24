@@ -196,6 +196,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  try {
+    // Inicializar bucket do Supabase
+    console.log("Inicializando bucket do Supabase Storage...");
+    await ensureBucketExists();
+    console.log("Bucket do Supabase inicializado com sucesso.");
+  } catch (error) {
+    console.error("Erro ao inicializar bucket do Supabase:", error);
+  }
+
   // Register API routes after authentication is set up
   const server = await registerRoutes(app);
 
