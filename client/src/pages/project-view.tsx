@@ -13,7 +13,9 @@ import {
   ArrowLeftCircle,
   ShieldAlert,
   FileText,
-  List
+  List,
+  X,
+  Maximize
 } from "lucide-react";
 import {
   Dialog,
@@ -707,9 +709,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 )}
                 
                 <div 
-                  className="absolute inset-0 w-full h-full cursor-zoom-in"
+                  className="absolute inset-0 w-full h-full cursor-zoom-in group"
                   onClick={(e) => openImageModal(photo.url, e)}
                 >
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200">
+                    <Maximize className="h-6 w-6 text-white" />
+                  </div>
                   <img
                     src={photo.url.startsWith('http') ? photo.url : `${window.location.origin}${photo.url}`}
                     alt={photo.filename}
@@ -803,6 +808,29 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para visualização da imagem em tamanho completo */}
+      <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
+        <DialogContent className="max-w-screen-lg w-full p-1 bg-black/90 border-gray-800">
+          <div className="absolute right-2 top-2 z-10">
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="rounded-full bg-black/70 text-white p-2 hover:bg-black"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex items-center justify-center h-full max-h-[80vh] overflow-hidden">
+            {currentImageUrl && (
+              <img
+                src={currentImageUrl}
+                alt="Foto em tamanho completo"
+                className="max-h-full max-w-full object-contain"
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
