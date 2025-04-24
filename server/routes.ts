@@ -275,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ 
           message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
           uploadLimit: req.user.uploadLimit,
-          uploadCount: req.user.uploadCount
+          usedUploads: req.user.usedUploads
         });
       }
       
@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         files: uploadedFiles,
         totalUploaded: uploadedFiles.length,
-        newUploadCount: req.user.uploadCount + uploadedFiles.length,
+        newUsedUploads: req.user.usedUploads + uploadedFiles.length,
         uploadLimit: req.user.uploadLimit
       });
     } catch (error) {
@@ -367,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ 
           message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
           uploadLimit: req.user.uploadLimit,
-          uploadCount: req.user.uploadCount
+          usedUploads: req.user.usedUploads
         });
       }
       
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         photos: newPhotos,
         totalUploaded: uploadedFiles.length,
         projectId: projectId,
-        newUploadCount: req.user.uploadCount + uploadedFiles.length,
+        newUsedUploads: req.user.usedUploads + uploadedFiles.length,
         uploadLimit: req.user.uploadLimit
       });
     } catch (error) {
