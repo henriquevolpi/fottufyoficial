@@ -315,7 +315,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           </Button>
           
           {/* View selections button - available for projects with selections */}
-          {project.selecionadas > 0 && (
+          {(project.selectedPhotos?.length > 0 || project.selecionadas > 0) && (
             <Button 
               variant="ghost" 
               size="sm"
@@ -390,7 +390,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           <DialogHeader>
             <DialogTitle>Delete Project</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the project "{project?.nome || 'Untitled'}"? This action cannot be undone.
+              Are you sure you want to delete the project "{project?.name || project?.nome || 'Untitled'}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
@@ -422,14 +422,15 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Selected Photos - {project?.nome || 'Untitled Project'}</DialogTitle>
+            <DialogTitle>Selected Photos - {project?.name || project?.nome || 'Untitled Project'}</DialogTitle>
             <DialogDescription>
-              The client selected {project?.selecionadas || 0} of {project?.fotos || 0} photos.
+              The client selected {project?.selectedPhotos?.length || project?.selecionadas || 0} of {project?.photos?.length || project?.fotos || 0} photos.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
-            {project.photos.filter((photo: any) => photo.selected).map((photo: any) => (
+            {/* Handle both old and new API response formats */}
+            {project.photos && project.photos.filter((photo: any) => photo.selected).map((photo: any) => (
               <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
                 <img 
                   src={photo.url} 
