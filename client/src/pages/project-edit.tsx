@@ -629,6 +629,30 @@ export default function ProjectEdit() {
             </div>
           </div>
           
+          {/* Novo método de upload com o componente ImageUploader */}
+          <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+            <h3 className="font-medium text-sm mb-2">Upload Individual</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Esta opção permite enviar uma foto por vez, com compressão automática.
+            </p>
+            {project && (
+              <ImageUploader 
+                projectId={project.id} 
+                onUploadSuccess={() => {
+                  toast({
+                    title: "Imagem enviada com sucesso",
+                    description: "A imagem foi adicionada ao projeto.",
+                  });
+                  
+                  // Opcional: recarregar a página após upload bem-sucedido
+                  setTimeout(() => {
+                    setLocation(`/project/${project.id}`);
+                  }, 1500);
+                }} 
+              />
+            )}
+          </div>
+          
           {/* Previews das fotos selecionadas */}
           {photoPreviewUrls.length > 0 && (
             <div className="mt-6">
