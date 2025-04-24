@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         files: uploadedFiles,
         totalUploaded: uploadedFiles.length,
-        newUsedUploads: req.user.usedUploads + uploadedFiles.length,
+        newUsedUploads: (req.user.usedUploads || 0) + uploadedFiles.length,
         uploadLimit: req.user.uploadLimit
       });
     } catch (error) {
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         photos: newPhotos,
         totalUploaded: uploadedFiles.length,
         projectId: projectId,
-        newUsedUploads: req.user.usedUploads + uploadedFiles.length,
+        newUsedUploads: (req.user.usedUploads || 0) + uploadedFiles.length,
         uploadLimit: req.user.uploadLimit
       });
     } catch (error) {
@@ -728,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate plan type
-      const validPlans = Object.keys(SUBSCRIPTION_PLANS).map(key => SUBSCRIPTION_PLANS[key].type);
+      const validPlans = Object.values(SUBSCRIPTION_PLANS).map(plan => plan.type);
       if (!validPlans.includes(planType)) {
         return res.status(400).json({ message: "Invalid plan type" });
       }
@@ -837,7 +837,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Default to free plan if invalid plan type
         userPlanType = "free";
-        uploadLimit = SUBSCRIPTION_PLANS.FREE.uploadLimit;
+        const freePlan = Object.values(SUBSCRIPTION_PLANS).find(plan => plan.type === "free");
+        uploadLimit = freePlan ? freePlan.uploadLimit : 10;
       }
       
       // Create the new user
@@ -899,6 +900,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user stats for dashboard
   app.get("/api/user/stats", authenticate, async (req: Request, res: Response) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       const userId = req.user.id;
       
       // Get all projects for this user
