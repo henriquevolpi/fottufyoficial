@@ -62,7 +62,7 @@ export default function LandingPage() {
           </p>
           <div className="flex justify-center mb-16">
             <img 
-              src="/fottufy-ex1.svg" 
+              src="/fottufy ex1.jpg" 
               alt="Interface da Fottufy" 
               className="w-full max-w-4xl rounded-lg shadow-xl"
             />

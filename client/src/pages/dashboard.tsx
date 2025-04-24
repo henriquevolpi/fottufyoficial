@@ -1202,7 +1202,7 @@ export default function Dashboard() {
       <header className="bg-white border-b">
         <div className="container mx-auto py-4 px-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">PhotoFlow</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Fottufy</h1>
             
             <div className="flex items-center space-x-4">
               <Button 

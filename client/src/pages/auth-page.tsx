@@ -110,7 +110,7 @@ export default function AuthPage() {
       <div className="flex flex-col justify-center items-center p-6 bg-background">
         <div className="max-w-md w-full">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-primary">StudioFlow</h1>
+            <h1 className="text-3xl font-bold text-primary">Fottufy</h1>
             <p className="text-muted-foreground mt-2">
               Plataforma de gerenciamento para fotógrafos profissionais
             </p>
