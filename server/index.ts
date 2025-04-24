@@ -6,6 +6,8 @@ import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
 import { testConnection, pool } from "./db";
+import { ensureBucketExists } from "./supabase";
+import dotenv from "dotenv";
 
 // Definir variável de ambiente para a sessão se não estiver definida
 if (!process.env.SESSION_SECRET) {
