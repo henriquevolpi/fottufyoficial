@@ -847,6 +847,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
         <DialogContent className="max-w-screen-lg w-full p-1 bg-black/90 border-gray-800">
           <DialogTitle className="sr-only">Visualização de Imagem</DialogTitle>
+          <DialogDescription className="sr-only">
+            Visualize a foto em tamanho completo e navegue pela galeria do projeto
+          </DialogDescription>
           {/* Botão de fechar */}
           <div className="absolute right-2 top-2 z-10">
             <button
@@ -879,32 +882,39 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             </button>
           )}
           
-          {/* Imagem */}
-          <div className="flex flex-col items-center justify-center h-full max-h-[70vh] overflow-hidden">
-            {currentImageUrl && (
-              <img
-                src={currentImageUrl}
-                alt="Foto em tamanho completo"
-                className="max-h-full max-w-full object-contain"
-              />
-            )}
+          {/* Conteúdo do Modal - Estrutura Flexível */}
+          <div className="flex flex-col items-center h-full pt-4">
+            {/* Container da Imagem */}
+            <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
+              {currentImageUrl && (
+                <img
+                  src={currentImageUrl}
+                  alt="Foto em tamanho completo"
+                  className="max-h-full max-w-full object-contain"
+                />
+              )}
+            </div>
             
-            {/* Botão de seleção dentro do modal */}
+            {/* Botão de seleção dentro do modal - Posicionado mais abaixo e longe da imagem */}
             {project.photos[currentPhotoIndex] && (
-              <div className="mt-4">
+              <div className="w-full flex justify-center py-6">
                 <Button 
                   variant={selectedPhotos.has(project.photos[currentPhotoIndex].id) ? "default" : "outline"}
-                  size="sm"
+                  size="lg"
                   onClick={(e) => {
                     e.stopPropagation();
                     togglePhotoSelection(project.photos[currentPhotoIndex].id);
                   }}
                   disabled={isFinalized}
-                  className="bg-white/10 hover:bg-white/20"
+                  className={`px-8 py-6 text-lg font-medium rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                    selectedPhotos.has(project.photos[currentPhotoIndex].id) 
+                      ? "bg-primary hover:bg-primary/90 text-white ring-4 ring-primary/20" 
+                      : "bg-white text-gray-800 hover:bg-gray-100 border-2 border-primary/80"
+                  }`}
                 >
                   {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
                     <>
-                      <Check className="mr-1 h-4 w-4" /> Selected
+                      <Check className="mr-2 h-5 w-5" /> Selected
                     </>
                   ) : (
                     "Select Photo"
@@ -914,8 +924,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             )}
           </div>
           
-          {/* Contador de fotos */}
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white/70 text-sm">
+          {/* Contador de fotos - Aprimorado com fundo para melhor visibilidade */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
             {currentPhotoIndex + 1} / {project.photos.length}
           </div>
         </DialogContent>
