@@ -15,7 +15,9 @@ import {
   FileText,
   List,
   X,
-  Maximize
+  Maximize,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import {
   Dialog,
@@ -71,6 +73,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Estados para o modal de visualização de imagem
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>("");
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
@@ -314,11 +317,40 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   };
   
   // Abrir modal com a imagem em tamanho completo
-  const openImageModal = (url: string, event: React.MouseEvent) => {
+  const openImageModal = (url: string, photoIndex: number, event: React.MouseEvent) => {
     event.stopPropagation(); // Impedir que o clique propague para o Card (que faria a seleção da foto)
     const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
     setCurrentImageUrl(fullUrl);
+    setCurrentPhotoIndex(photoIndex);
     setImageModalOpen(true);
+  };
+  
+  // Navegar para a próxima foto no modal
+  const goToNextPhoto = () => {
+    if (!project || project.photos.length === 0) return;
+    
+    const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
+    const nextPhoto = project.photos[nextIndex];
+    const fullUrl = nextPhoto.url.startsWith('http') 
+      ? nextPhoto.url 
+      : `${window.location.origin}${nextPhoto.url}`;
+    
+    setCurrentImageUrl(fullUrl);
+    setCurrentPhotoIndex(nextIndex);
+  };
+  
+  // Navegar para a foto anterior no modal
+  const goToPrevPhoto = () => {
+    if (!project || project.photos.length === 0) return;
+    
+    const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
+    const prevPhoto = project.photos[prevIndex];
+    const fullUrl = prevPhoto.url.startsWith('http') 
+      ? prevPhoto.url 
+      : `${window.location.origin}${prevPhoto.url}`;
+    
+    setCurrentImageUrl(fullUrl);
+    setCurrentPhotoIndex(prevIndex);
   };
   
   // Salvar seleções atuais sem finalizar
@@ -692,7 +724,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         ) : null}
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {project.photos.map((photo) => (
+          {project.photos.map((photo, index) => (
             <Card
               key={photo.id}
               className={`overflow-hidden group cursor-pointer transition ${
@@ -710,7 +742,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 
                 <div 
                   className="absolute inset-0 w-full h-full cursor-zoom-in group"
-                  onClick={(e) => openImageModal(photo.url, e)}
+                  onClick={(e) => openImageModal(photo.url, index, e)}
                 >
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200">
                     <Maximize className="h-6 w-6 text-white" />
@@ -814,6 +846,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       {/* Modal para visualização da imagem em tamanho completo */}
       <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
         <DialogContent className="max-w-screen-lg w-full p-1 bg-black/90 border-gray-800">
+          <DialogTitle className="sr-only">Visualização de Imagem</DialogTitle>
+          {/* Botão de fechar */}
           <div className="absolute right-2 top-2 z-10">
             <button
               onClick={() => setImageModalOpen(false)}
@@ -822,7 +856,31 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="flex items-center justify-center h-full max-h-[80vh] overflow-hidden">
+          
+          {/* Botão de navegação anterior */}
+          {project.photos.length > 1 && (
+            <button
+              onClick={goToPrevPhoto}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black"
+              aria-label="Foto anterior"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          )}
+          
+          {/* Botão de navegação próxima */}
+          {project.photos.length > 1 && (
+            <button
+              onClick={goToNextPhoto}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black"
+              aria-label="Próxima foto"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          )}
+          
+          {/* Imagem */}
+          <div className="flex flex-col items-center justify-center h-full max-h-[70vh] overflow-hidden">
             {currentImageUrl && (
               <img
                 src={currentImageUrl}
@@ -830,6 +888,35 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 className="max-h-full max-w-full object-contain"
               />
             )}
+            
+            {/* Botão de seleção dentro do modal */}
+            {project.photos[currentPhotoIndex] && (
+              <div className="mt-4">
+                <Button 
+                  variant={selectedPhotos.has(project.photos[currentPhotoIndex].id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePhotoSelection(project.photos[currentPhotoIndex].id);
+                  }}
+                  disabled={isFinalized}
+                  className="bg-white/10 hover:bg-white/20"
+                >
+                  {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
+                    <>
+                      <Check className="mr-1 h-4 w-4" /> Selected
+                    </>
+                  ) : (
+                    "Select Photo"
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {/* Contador de fotos */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white/70 text-sm">
+            {currentPhotoIndex + 1} / {project.photos.length}
           </div>
         </DialogContent>
       </Dialog>
