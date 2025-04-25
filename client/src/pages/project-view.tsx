@@ -901,22 +901,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
-                    // Extract photo ID from the current image URL
                     const currentPhoto = project.photos[currentPhotoIndex];
                     if (currentPhoto && e?.currentTarget) {
                       console.error(`Error loading full-size image: ${currentPhoto.id}`);
-                      // Try fallback URL
-                      const fallbackUrl = getFallbackPhotoUrl(currentPhoto.id);
-                      console.log(`Trying fallback URL for full-size: ${fallbackUrl}`);
-                      e.currentTarget.src = fallbackUrl;
-                      
-                      // Second error handler
-                      e.currentTarget.onerror = function(this: HTMLImageElement) {
-                        console.log(`Fallback failed, using placeholder for full-size image`);
-                        // 'this' refers to the image element within the function
-                        this.src = getPlaceholderImageUrl();
-                        this.onerror = null;
-                      };
+                      // Simply use a local placeholder if image fails to load
+                      e.currentTarget.src = "/placeholder.jpg";
+                      e.currentTarget.onerror = null;
                     }
                   }}
                 />

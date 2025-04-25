@@ -43,12 +43,24 @@ export const getPhotoUrl = (url: string): string => {
  * @returns A properly formatted URL that can be used in img src
  */
 export const getImageUrl = (photo: Photo): string => {
+  // Only use placeholder as absolute last resort if no URL exists
   if (!photo || !photo.url) {
     console.error('Invalid photo object or missing URL');
-    return getPlaceholderImageUrl();
+    return '/placeholder.jpg';
   }
   
-  return getPhotoUrl(photo.url);
+  // If URL already starts with http/https, it's a complete URL
+  if (photo.url.startsWith('http')) {
+    return photo.url;
+  }
+  
+  // For R2 storage - URL is just the filename, construct the full URL
+  if (import.meta.env.VITE_R2_BUCKET_NAME && import.meta.env.VITE_R2_ACCOUNT_ID) {
+    return `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photo.url}`;
+  }
+  
+  // Fallback to the origin-based URL as a last resort
+  return `${window.location.origin}/uploads/${photo.url}`;
 };
 
 /**
@@ -57,20 +69,15 @@ export const getImageUrl = (photo: Photo): string => {
  * @returns A fallback URL to try
  */
 export const getFallbackPhotoUrl = (photoId: string): string => {
-  // First try: Check if we can construct a Cloudflare R2 URL
-  if (import.meta.env.VITE_R2_BUCKET_NAME && import.meta.env.VITE_R2_ACCOUNT_ID) {
-    return `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoId}`;
-  }
-  
-  // Second try: Attempt to construct a fallback URL for local uploads
-  return `${window.location.origin}/uploads/${photoId}`;
+  // Just return the local placeholder - no external fallbacks
+  return "/placeholder.jpg";
 };
 
 /**
  * Get a placeholder image URL as a last resort
- * @returns A generic placeholder image URL
+ * @returns A local placeholder image URL
  */
 export const getPlaceholderImageUrl = (): string => {
-  // Using a static placeholder image that's unlikely to be unavailable
-  return "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
+  // Using a local placeholder image instead of external URLs
+  return "/placeholder.jpg";
 };
