@@ -23,9 +23,32 @@ const R2_REGION = process.env.R2_REGION || 'auto';
 export const BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
 // Create S3 client that points to Cloudflare R2
+// Extract the correct endpoint URL from the provided R2_ACCOUNT_ID
+// Normalize the endpoint URL to ensure it's properly formatted
+let endpoint = process.env.R2_ACCOUNT_ID;
+// Remove any bucket path or trailing slashes if they exist
+if (endpoint.includes('/')) {
+  // If the account ID is already a full URL, just use it directly
+  if (endpoint.startsWith('http')) {
+    // Remove any trailing bucket paths
+    const url = new URL(endpoint);
+    endpoint = `${url.protocol}//${url.host}`;
+  } else {
+    // Otherwise extract just the first part before any slashes
+    endpoint = endpoint.split('/')[0];
+  }
+}
+
+// Ensure the endpoint has a protocol
+if (!endpoint.startsWith('http')) {
+  endpoint = `https://${endpoint}`;
+}
+
+console.log(`Using R2 endpoint: ${endpoint}`);
+
 export const r2Client = new S3Client({
   region: R2_REGION,
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: endpoint,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
@@ -82,9 +105,23 @@ export async function uploadFileToR2(
     // Upload the file
     await r2Client.send(uploadCommand);
 
-    // Generate the public URL - format is specific to your R2 setup
-    // Usually it's in the format: https://<custom-domain>/<filename> or https://<bucket>.<account-id>.r2.dev/<filename>
-    const publicUrl = `https://${BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.dev/${fileName}`;
+    // Generate the public URL
+    // For Cloudflare R2, public URLs need to be generated in one of two ways:
+    // 1. Using Custom Domains configured in Cloudflare
+    // 2. Using the bucket's default public URL in the format: https://<bucket>.<accountid>.r2.dev/<filename>
+    
+    // Extract account ID from the endpoint - get just the hostname portion
+    let accountId;
+    try {
+      const endpointUrl = new URL(endpoint);
+      accountId = endpointUrl.hostname.split('.')[0];
+    } catch (e) {
+      // Fallback to using the account ID directly without the URL parts
+      accountId = process.env.R2_ACCOUNT_ID.replace(/https?:\/\//, '').split('.')[0];
+    }
+    
+    const publicUrl = `https://${BUCKET_NAME}.${accountId}.r2.dev/${fileName}`;
+    console.log(`Generated public URL: ${publicUrl}`);
     
     return {
       url: publicUrl,
