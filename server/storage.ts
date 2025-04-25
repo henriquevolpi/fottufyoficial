@@ -945,6 +945,52 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
+  
+  async syncUsedUploads(userId: number): Promise<User | undefined> {
+    try {
+      // Get the current user
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) return undefined;
+      
+      // Get all projects for this user
+      const userProjects = await this.getProjects(userId);
+      
+      // Prepare project IDs for query
+      const projectIds = userProjects.map(p => p.id.toString());
+      
+      // If no projects, set counts to 0
+      if (projectIds.length === 0) {
+        const [updatedUser] = await db
+          .update(users)
+          .set({ usedUploads: 0 })
+          .where(eq(users.id, userId))
+          .returning();
+        return updatedUser;
+      }
+      
+      // Count all photos for this user's projects
+      const photoCountQuery = await db
+        .select({ count: count() })
+        .from(photos)
+        .where(inArray(photos.projectId, projectIds));
+      
+      const totalPhotoCount = photoCountQuery[0]?.count || 0;
+      
+      console.log(`Syncing usedUploads for user ${userId}: calculated ${totalPhotoCount} total photos`);
+      
+      // Update the user with accurate count
+      const [updatedUser] = await db
+        .update(users)
+        .set({ usedUploads: totalPhotoCount })
+        .where(eq(users.id, userId))
+        .returning();
+        
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao sincronizar contagem de uploads:", error);
+      return undefined;
+    }
+  }
 
   async handleWebhookEvent(payload: WebhookPayload): Promise<User | undefined> {
     try {
@@ -1139,7 +1185,30 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProject(id: number): Promise<boolean> {
     try {
+      // First, get the project to know its photographerId and photo count
+      const project = await this.getProject(id);
+      
+      if (!project) {
+        console.log(`DatabaseStorage: Projeto ID=${id} não encontrado para deleção`);
+        return false;
+      }
+      
+      // Get the photographer ID and count the photos before deleting
+      const photographerId = project.photographerId;
+      const photoCount = project.photos ? project.photos.length : 0;
+      
+      console.log(`DatabaseStorage: Deletando projeto ID=${id} com ${photoCount} fotos do fotógrafo ID=${photographerId}`);
+      
+      // Delete the project
       await db.delete(projects).where(eq(projects.id, id));
+      
+      // If the project had photos, update the photographer's upload usage
+      if (photoCount > 0) {
+        console.log(`DatabaseStorage: Atualizando contador de uploads para o fotógrafo ID=${photographerId}, reduzindo ${photoCount} fotos`);
+        // Use negative photoCount to reduce the usage
+        await this.updateUploadUsage(photographerId, -photoCount);
+      }
+      
       return true;
     } catch (error) {
       console.error("Erro ao excluir projeto:", error);
