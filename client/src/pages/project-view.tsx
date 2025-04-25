@@ -324,11 +324,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     // Get the photo from the current project
     const photo = project?.photos[photoIndex];
     if (photo) {
-      // Format URL using our helper function
-      setCurrentImageUrl(getPhotoUrl(photo));
+      // Use the photo's url directly
+      setCurrentImageUrl(photo.url);
     } else {
-      // Fallback if photo is not found, using our helper function
-      setCurrentImageUrl(getPhotoUrl({ url }));
+      // Fallback if photo is not found
+      setCurrentImageUrl(url);
     }
     
     setCurrentPhotoIndex(photoIndex);
@@ -342,8 +342,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
     
-    // Format URL using our helper function
-    setCurrentImageUrl(getPhotoUrl(nextPhoto));
+    // Just store the URL directly - getPhotoUrl will be applied when rendered
+    setCurrentImageUrl(nextPhoto.url);
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -354,8 +354,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
     
-    // Format URL using our helper function
-    setCurrentImageUrl(getPhotoUrl(prevPhoto));
+    // Just store the URL directly - getPhotoUrl will be applied when rendered
+    setCurrentImageUrl(prevPhoto.url);
     setCurrentPhotoIndex(prevIndex);
   };
   
