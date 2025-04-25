@@ -25,7 +25,8 @@ import bodyParser from "body-parser";
 import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc } from "drizzle-orm";
-import { supabase, BUCKET_NAME, isValidFileType, isValidFileSize, generateUniqueFileName } from "./supabase";
+import { isValidFileType, isValidFileSize, generateUniqueFileName } from "./supabase";
+import { BUCKET_NAME as R2_BUCKET_NAME, uploadFileToR2 } from "./r2";
 import multer from "multer";
 
 // Helper function to download an image from a URL to the uploads directory
@@ -228,8 +229,8 @@ const requireActiveUser = (req: Request, res: Response, next: Function) => {
   next();
 };
 
-// Configuração para upload de arquivos diretamente no Supabase
-const supabaseUpload = multer({
+// Configuração para upload de arquivos diretamente no Cloudflare R2
+const r2Upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
@@ -253,10 +254,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
   
-  // ==================== Supabase Upload Routes ====================
+  // ==================== Cloudflare R2 Upload Routes ====================
   
-  // Upload uma ou mais imagens diretamente para o Supabase Storage (endpoint genérico)
-  app.post("/api/photos/upload", authenticate, supabaseUpload.array('photos', 100), async (req: Request, res: Response) => {
+  // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage (endpoint genérico)
+  app.post("/api/photos/upload", authenticate, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -279,37 +280,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Upload cada arquivo para o Supabase Storage
+      // Upload cada arquivo para o Cloudflare R2 Storage
       const uploadedFiles = [];
       
       for (const file of req.files as Express.Multer.File[]) {
         const filename = generateUniqueFileName(file.originalname);
         
-        // Upload para o Supabase
-        const { data, error } = await supabase.storage
-          .from(BUCKET_NAME)
-          .upload(filename, file.buffer, {
-            contentType: file.mimetype,
-            cacheControl: '3600'
-          });
+        try {
+          // Upload para o R2
+          const result = await uploadFileToR2(
+            file.buffer, 
+            filename, 
+            file.mimetype
+          );
           
-        if (error) {
-          console.error(`Error uploading file ${filename}:`, error);
+          uploadedFiles.push({
+            originalName: file.originalname,
+            filename: filename,
+            size: file.size,
+            mimetype: file.mimetype,
+            url: result.url,
+            key: result.key
+          });
+        } catch (error) {
+          console.error(`Error uploading file ${filename} to R2:`, error);
           continue; // Continuar com próximo arquivo mesmo se este falhar
         }
-        
-        // Obter URL pública
-        const { data: publicUrlData } = supabase.storage
-          .from(BUCKET_NAME)
-          .getPublicUrl(filename);
-          
-        uploadedFiles.push({
-          originalName: file.originalname,
-          filename: filename,
-          size: file.size,
-          mimetype: file.mimetype,
-          url: publicUrlData.publicUrl
-        });
       }
       
       // Atualizar a contagem de uploads do usuário
@@ -325,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uploadLimit: req.user.uploadLimit
       });
     } catch (error) {
-      console.error("Error uploading photos to Supabase:", error);
+      console.error("Error uploading photos to R2:", error);
       return res.status(500).json({
         message: "Failed to upload files",
         error: (error as Error).message
@@ -333,8 +329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Upload uma ou mais imagens diretamente para o Supabase Storage e associa a um projeto específico
-  app.post("/api/projects/:id/photos/upload", authenticate, supabaseUpload.array('photos', 100), async (req: Request, res: Response) => {
+  // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage e associa a um projeto específico
+  app.post("/api/projects/:id/photos/upload", authenticate, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -371,57 +367,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Upload cada arquivo para o Supabase Storage
+      // Upload cada arquivo para o Cloudflare R2 Storage
       const uploadedFiles = [];
       const newPhotos = [];
       
       for (const file of req.files as Express.Multer.File[]) {
         const filename = generateUniqueFileName(file.originalname);
         
-        // Upload para o Supabase
-        const { data, error } = await supabase.storage
-          .from(BUCKET_NAME)
-          .upload(filename, file.buffer, {
-            contentType: file.mimetype,
-            cacheControl: '3600'
-          });
+        try {
+          // Upload para o R2
+          const result = await uploadFileToR2(
+            file.buffer, 
+            filename, 
+            file.mimetype
+          );
           
-        if (error) {
-          console.error(`Error uploading file ${filename}:`, error);
+          const fileUrl = result.url;
+          
+          // Adicionar a foto ao banco de dados associada ao projeto
+          try {
+            const newPhoto = await db.insert(photos).values({
+              projectId,
+              url: fileUrl,
+              filename,
+              selected: false
+            }).returning();
+            
+            if (newPhoto && newPhoto[0]) {
+              newPhotos.push(newPhoto[0]);
+            }
+          } catch (dbError) {
+            console.error(`Error adding photo to database: ${dbError}`);
+            // Mesmo com erro no banco, ainda listamos o arquivo no resultado
+          }
+            
+          uploadedFiles.push({
+            originalName: file.originalname,
+            filename: filename,
+            size: file.size,
+            mimetype: file.mimetype,
+            url: fileUrl,
+            key: result.key
+          });
+        } catch (uploadError) {
+          console.error(`Error uploading file ${filename} to R2:`, uploadError);
           continue; // Continuar com próximo arquivo mesmo se este falhar
         }
-        
-        // Obter URL pública
-        const { data: publicUrlData } = supabase.storage
-          .from(BUCKET_NAME)
-          .getPublicUrl(filename);
-        
-        const fileUrl = publicUrlData.publicUrl;
-        
-        // Adicionar a foto ao banco de dados associada ao projeto
-        try {
-          const newPhoto = await db.insert(photos).values({
-            projectId,
-            url: fileUrl,
-            filename,
-            selected: false
-          }).returning();
-          
-          if (newPhoto && newPhoto[0]) {
-            newPhotos.push(newPhoto[0]);
-          }
-        } catch (dbError) {
-          console.error(`Error adding photo to database: ${dbError}`);
-          // Mesmo com erro no banco, ainda listamos o arquivo no resultado
-        }
-          
-        uploadedFiles.push({
-          originalName: file.originalname,
-          filename: filename,
-          size: file.size,
-          mimetype: file.mimetype,
-          url: fileUrl
-        });
       }
       
       // Atualizar a contagem de uploads do usuário

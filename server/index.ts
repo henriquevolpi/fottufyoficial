@@ -197,12 +197,12 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Inicializar bucket do Supabase
-    console.log("Inicializando bucket do Supabase Storage...");
-    await ensureBucketExists();
-    console.log("Bucket do Supabase inicializado com sucesso.");
+    // Inicializar bucket do Cloudflare R2
+    console.log("Inicializando bucket do Cloudflare R2 Storage...");
+    await import('./r2').then(r2 => r2.ensureBucketExists());
+    console.log("Bucket do Cloudflare R2 inicializado com sucesso.");
   } catch (error) {
-    console.error("Erro ao inicializar bucket do Supabase:", error);
+    console.error("Erro ao inicializar bucket do Cloudflare R2:", error);
   }
 
   // Register API routes after authentication is set up
