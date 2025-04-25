@@ -56,18 +56,23 @@ export default function PhotoCard({
           className="w-full h-full object-cover"
           onError={(e) => {
             console.error(`Error loading image: ${id} from URL: ${url}`);
-            // Try the fallback URL first
-            const fallbackUrl = getFallbackPhotoUrl(id);
-            console.log(`Trying fallback URL: ${fallbackUrl}`);
-            e.currentTarget.src = fallbackUrl;
             
-            // Add a second error handler in case the fallback also fails
-            e.currentTarget.onerror = () => {
-              console.log(`Fallback failed, using placeholder for image ${id}`);
-              e.currentTarget.src = getPlaceholderImageUrl();
-              // Remove the error handler to prevent infinite loops
-              e.currentTarget.onerror = null;
-            };
+            // Only proceed if the current target exists
+            if (e?.currentTarget) {
+              // Try the fallback URL first
+              const fallbackUrl = getFallbackPhotoUrl(id);
+              console.log(`Trying fallback URL: ${fallbackUrl}`);
+              e.currentTarget.src = fallbackUrl;
+              
+              // Add a second error handler in case the fallback also fails
+              e.currentTarget.onerror = function(this: HTMLImageElement) {
+                console.log(`Fallback failed, using placeholder for image ${id}`);
+                // 'this' refers to the image element within the function
+                this.src = getPlaceholderImageUrl();
+                // Remove the error handler to prevent infinite loops
+                this.onerror = null;
+              };
+            }
           }}
         />
         <div className={cn(

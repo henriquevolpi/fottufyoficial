@@ -891,7 +891,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   onError={(e) => {
                     // Extract photo ID from the current image URL
                     const currentPhoto = project.photos[currentPhotoIndex];
-                    if (currentPhoto) {
+                    if (currentPhoto && e?.currentTarget) {
                       console.error(`Error loading full-size image: ${currentPhoto.id}`);
                       // Try fallback URL
                       const fallbackUrl = getFallbackPhotoUrl(currentPhoto.id);
@@ -899,10 +899,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       e.currentTarget.src = fallbackUrl;
                       
                       // Second error handler
-                      e.currentTarget.onerror = () => {
+                      e.currentTarget.onerror = function(this: HTMLImageElement) {
                         console.log(`Fallback failed, using placeholder for full-size image`);
-                        e.currentTarget.src = getPlaceholderImageUrl();
-                        e.currentTarget.onerror = null;
+                        // 'this' refers to the image element within the function
+                        this.src = getPlaceholderImageUrl();
+                        this.onerror = null;
                       };
                     }
                   }}
