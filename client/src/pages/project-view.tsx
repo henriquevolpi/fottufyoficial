@@ -13,12 +13,7 @@ function getPhotoUrl(url: string): string {
     return url;
   }
   
-  // Check if the URL already has the old format (bucket.accountid.r2.dev)
-  if (url.includes('.r2.dev/')) {
-    return url;
-  }
-  
-  // Use the new recommended format
+  // Build the full Cloudflare R2 URL
   return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`;
 }
 import { 
@@ -773,54 +768,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
-                      if (!e.currentTarget) {
-                        console.error('Error handler called but currentTarget is null');
-                        return;
-                      }
-                      
                       console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
-                      console.log(`Attempted URL: ${getPhotoUrl(photo.url)}`);
-                      
-                      // Extract the base filename, regardless of the URL format
-                      let filename = photo.url;
-                      if (photo.url.includes('/')) {
-                        filename = photo.url.split('/').pop() || '';
-                      }
-                      
-                      try {
-                        // Try with the standard R2 CloudFlare storage URL first
-                        const cloudflareUrl = `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${filename}`;
-                        console.log(`Trying CloudFlare URL: ${cloudflareUrl}`);
-                        e.currentTarget.src = cloudflareUrl;
-                        
-                        // If the first fallback fails, try the R2.dev format
-                        e.currentTarget.onerror = (e2) => {
-                          if (!e.currentTarget) return;
-                          
-                          const r2DevUrl = `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${filename}`;
-                          console.log(`Trying R2.dev URL: ${r2DevUrl}`);
-                          e.currentTarget.src = r2DevUrl;
-                          
-                          // Finally, use the placeholder if all else fails
-                          e.currentTarget.onerror = (e3) => {
-                            if (!e.currentTarget) return;
-                            
-                            console.log('All fallbacks failed, using placeholder');
-                            e.currentTarget.src = "/placeholder.jpg";
-                            e.currentTarget.onerror = null; // Prevent infinite loops
-                          };
-                        };
-                      } catch (err) {
-                        console.error('Error during fallback image loading:', err);
-                        try {
-                          if (e.currentTarget) {
-                            e.currentTarget.src = "/placeholder.jpg";
-                            e.currentTarget.onerror = null;
-                          }
-                        } catch (finalErr) {
-                          console.error('Critical error setting placeholder:', finalErr);
-                        }
-                      }
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/placeholder.jpg";
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
                   />
@@ -950,53 +900,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
-                    if (!e.currentTarget) {
-                      console.error('Error handler called but currentTarget is null');
-                      return;
-                    }
-                    
                     console.error(`Error loading modal image from URL: ${currentImageUrl}`);
-                    
-                    // Extract the base filename, regardless of the URL format
-                    let filename = currentImageUrl;
-                    if (currentImageUrl.includes('/')) {
-                      filename = currentImageUrl.split('/').pop() || '';
-                    }
-                    
-                    try {
-                      // Try with the standard R2 CloudFlare storage URL first
-                      const cloudflareUrl = `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${filename}`;
-                      console.log(`Trying CloudFlare URL: ${cloudflareUrl}`);
-                      e.currentTarget.src = cloudflareUrl;
-                      
-                      // If the first fallback fails, try the R2.dev format
-                      e.currentTarget.onerror = (e2) => {
-                        if (!e.currentTarget) return;
-                        
-                        const r2DevUrl = `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${filename}`;
-                        console.log(`Trying R2.dev URL: ${r2DevUrl}`);
-                        e.currentTarget.src = r2DevUrl;
-                        
-                        // Finally, use the placeholder if all else fails
-                        e.currentTarget.onerror = (e3) => {
-                          if (!e.currentTarget) return;
-                          
-                          console.log('All fallbacks failed, using placeholder');
-                          e.currentTarget.src = "/placeholder.jpg";
-                          e.currentTarget.onerror = null; // Prevent infinite loops
-                        };
-                      };
-                    } catch (err) {
-                      console.error('Error during fallback image loading:', err);
-                      try {
-                        if (e.currentTarget) {
-                          e.currentTarget.src = "/placeholder.jpg";
-                          e.currentTarget.onerror = null;
-                        }
-                      } catch (finalErr) {
-                        console.error('Critical error setting placeholder:', finalErr);
-                      }
-                    }
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/placeholder.jpg";
                   }}
                 />
               )}
