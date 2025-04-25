@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
 import { testConnection, pool } from "./db";
-import { ensureBucketExists } from "./supabase";
+// Cloudflare R2 buckets must be created manually
 import dotenv from "dotenv";
 
 // Definir variável de ambiente para a sessão se não estiver definida
@@ -196,14 +196,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  try {
-    // Inicializar bucket do Cloudflare R2
-    console.log("Inicializando bucket do Cloudflare R2 Storage...");
-    await import('./r2').then(r2 => r2.ensureBucketExists());
-    console.log("Bucket do Cloudflare R2 inicializado com sucesso.");
-  } catch (error) {
-    console.error("Erro ao inicializar bucket do Cloudflare R2:", error);
-  }
+  // No need to initialize R2 bucket - must be created manually in Cloudflare dashboard
+  console.log("Using Cloudflare R2 for storage - bucket must be created manually");
 
   // Register API routes after authentication is set up
   const server = await registerRoutes(app);
