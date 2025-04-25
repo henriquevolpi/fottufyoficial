@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getPhotoUrl } from "@/lib/imageUtils";
 
 interface PhotoCardProps {
   id: string;
@@ -45,11 +46,12 @@ export default function PhotoCard({
           </div>
         )}
         
-        {/* Conditionally format URL based on whether it starts with http */}
+        {/* Use centralized getPhotoUrl function for consistent URL handling */}
         <img 
-          src={url.startsWith('http') ? url : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`}
+          src={getPhotoUrl(url)}
           alt={filename}
           className="w-full h-full object-cover"
+          loading="lazy"
           onError={(e) => {
             console.error(`Error loading image: ${id} from URL: ${url}`);
             e.currentTarget.onerror = null;

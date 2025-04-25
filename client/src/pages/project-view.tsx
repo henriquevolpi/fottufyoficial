@@ -5,16 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-
-// Helper function to handle different URL formats for R2 storage
-function getPhotoUrl(photo: { url: string }) {
-  if (!photo?.url) return "/placeholder.jpg";
-  if (photo.url.startsWith("http")) {
-    return photo.url;
-  } else {
-    return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url}`;
-  }
-}
+import { getImageUrl as getPhotoUrl } from "@/lib/imageUtils";
 import { 
   Check, 
   Loader2, 
