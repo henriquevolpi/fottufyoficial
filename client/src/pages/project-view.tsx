@@ -328,14 +328,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       setCurrentImageUrl(
         photoUrl.startsWith('http') 
           ? photoUrl 
-          : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoUrl}`
+          : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photoUrl}`
       );
     } else {
       // Fallback if photo is not found
       setCurrentImageUrl(
         url.startsWith('http') 
           ? url 
-          : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${url}`
+          : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`
       );
     }
     
@@ -355,7 +355,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     setCurrentImageUrl(
       photoUrl.startsWith('http') 
         ? photoUrl 
-        : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoUrl}`
+        : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photoUrl}`
     );
     setCurrentPhotoIndex(nextIndex);
   };
@@ -372,7 +372,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     setCurrentImageUrl(
       photoUrl.startsWith('http') 
         ? photoUrl 
-        : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoUrl}`
+        : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photoUrl}`
     );
     setCurrentPhotoIndex(prevIndex);
   };
@@ -772,11 +772,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={photo.url.startsWith('http') ? photo.url : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photo.url}`}
+                    src={photo.url.startsWith('http') ? photo.url : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url}`}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
                       console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
+                      console.log(`Attempted URL: ${photo.url.startsWith('http') ? photo.url : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url}`}`);
                       // Use the placeholder directly
                       e.currentTarget.src = "/placeholder.jpg";
                       // Remove the error handler to prevent infinite loops
