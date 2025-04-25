@@ -335,12 +335,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file.mimetype
           );
           
+          // Store just the filename, not the full URL with /uploads/ prefix
+          // This is needed for proper R2 URL generation on the frontend
+          
           uploadedFiles.push({
             originalName: file.originalname,
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: result.url,
+            url: filename, // Store only the filename, not the full URL
             key: result.key
           });
         } catch (error) {
@@ -423,13 +426,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file.mimetype
           );
           
-          const fileUrl = result.url;
+          // Store just the filename, not the full URL with /uploads/ prefix
+          // This is needed for proper R2 URL generation on the frontend
+          // Note: We're ignoring the full URL from result.url and just using the filename
           
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
             const newPhoto = await db.insert(photos).values({
               projectId,
-              url: fileUrl,
+              url: filename, // Store only the filename, not the full URL
               filename,
               selected: false
             }).returning();
@@ -447,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: fileUrl,
+            url: filename, // Store only the filename, not the full URL
             key: result.key
           });
         } catch (uploadError) {
