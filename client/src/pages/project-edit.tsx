@@ -639,6 +639,17 @@ export default function ProjectEdit() {
               <ImageUploader 
                 projectId={project.id} 
                 onUploadSuccess={async () => {
+                  // Clear any cached project data in localStorage
+                  try {
+                    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+                    const filteredProjects = storedProjects.filter((p: any) => 
+                      p.id.toString() !== project.id.toString());
+                    localStorage.setItem('projects', JSON.stringify(filteredProjects));
+                    console.log('Cleared localStorage cache for project', project.id);
+                  } catch (err) {
+                    console.error('Failed to clear localStorage:', err);
+                  }
+                  
                   toast({
                     title: "Imagem enviada com sucesso",
                     description: "A imagem foi adicionada ao projeto.",
@@ -646,31 +657,51 @@ export default function ProjectEdit() {
                   
                   try {
                     // Forçar refetch imediato dos dados do projeto diretamente da API
-                    console.log('Forcing project data refresh after upload...');
+                    // com flags para garantir que não seja usado cache
+                    console.log('Forcing fresh project data reload after upload...');
                     const response = await fetch(`/api/projects/${project.id}`, {
-                      credentials: 'include', // envia cookies para autenticação
+                      credentials: 'include',
                       headers: {
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                      }
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                      },
+                      // Add a random query param to bypass any caching
+                      cache: 'no-store'
                     });
                     
                     if (response.ok) {
                       const freshData = await response.json();
-                      console.log('Fresh project data loaded:', freshData);
-                      // Recarregar a página após upload bem-sucedido para garantir
-                      // que todas as mudanças sejam refletidas na UI
+                      // Log the photo URLs to help with debugging
+                      console.log('Fresh project data loaded with photos:', 
+                        freshData.photos ? freshData.photos.length : 0);
+                      
+                      // Update the project state directly
+                      setProject(freshData);
+                      
+                      // Navigate to project view after a short delay to ensure the change is visible
+                      setTimeout(() => {
+                        setLocation(`/project/${project.id}`);
+                      }, 1000);
                     } else {
                       console.error('Failed to reload project data:', response.status);
+                      toast({
+                        title: "Erro ao atualizar",
+                        description: "Não foi possível atualizar os dados do projeto.",
+                        variant: "destructive",
+                      });
+                      
+                      // Navigate anyway as fallback
+                      setTimeout(() => {
+                        setLocation(`/project/${project.id}`);
+                      }, 1000);
                     }
                   } catch (err) {
                     console.error('Error reloading project data:', err);
+                    setTimeout(() => {
+                      setLocation(`/project/${project.id}`);
+                    }, 1000);
                   }
-                  
-                  // Navigate to project view to display fresh data
-                  setTimeout(() => {
-                    setLocation(`/project/${project.id}`);
-                  }, 1000);
                 }} 
               />
             )}

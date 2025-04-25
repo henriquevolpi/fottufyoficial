@@ -29,6 +29,11 @@ export const getPhotoUrl = (url: string): string => {
     return url;
   }
   
+  // Check if it might be a full R2 URL without the protocol
+  if (url.includes('.r2.cloudflarestorage.com')) {
+    return `https://${url}`;
+  }
+  
   const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
   const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
   
@@ -38,7 +43,7 @@ export const getPhotoUrl = (url: string): string => {
     return url; // Return original as fallback
   }
   
-  // Build the full Cloudflare R2 URL
+  // Build the full Cloudflare R2 URL (assuming url is just a filename)
   return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${url}`;
 };
 

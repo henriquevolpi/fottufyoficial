@@ -68,21 +68,50 @@ export default function PhotoCard({
             img.onerror = null;
             
             try {
-              // Try alternative URL format if it's an R2 URL
-              let altUrl = url;
-              if (url.includes('.r2.cloudflarestorage.com')) {
-                altUrl = url.replace('.r2.cloudflarestorage.com', '.r2.dev');
-                console.log(`Trying alternative URL format: ${altUrl}`);
+              // Get the current URL that failed
+              const currentUrl = img.src;
+              console.log(`Failed URL was: ${currentUrl}`);
+              
+              // Try a series of alternative formats
+              if (currentUrl.includes('.r2.cloudflarestorage.com')) {
+                // Try R2.dev format
+                const devUrl = currentUrl.replace('.r2.cloudflarestorage.com', '.r2.dev');
+                console.log(`Attempt 1: Trying .r2.dev URL: ${devUrl}`);
                 
-                // Set up final fallback with DOM function (not React handler)
+                // Set up next fallback with DOM function
                 img.onerror = function() {
-                  console.error(`All attempts to load image failed: ${id}`);
-                  img.onerror = null;
-                  img.src = "/placeholder.jpg";
+                  console.log(`R2.dev format failed, trying direct URL`);
+                  
+                  // Try with just the filename portion
+                  const parts = url.split('/');
+                  const filename = parts[parts.length - 1];
+                  
+                  if (filename && filename.length > 0) {
+                    img.onerror = function() {
+                      // Final fallback to placeholder
+                      console.error(`All attempts to load image failed: ${id}`);
+                      img.onerror = null;
+                      img.src = "/placeholder.jpg";
+                    };
+                    
+                    // Try using just the filename with the environment variables
+                    const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
+                    const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
+                    
+                    if (accountId && bucketName) {
+                      const directUrl = `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${filename}`;
+                      console.log(`Attempt 2: Trying direct filename URL: ${directUrl}`);
+                      img.src = directUrl;
+                    } else {
+                      img.src = "/placeholder.jpg";
+                    }
+                  } else {
+                    img.src = "/placeholder.jpg";
+                  }
                 };
                 
-                // Try alternative URL
-                img.src = altUrl;
+                // Try dev URL format
+                img.src = devUrl;
               } else {
                 // Go straight to placeholder if not an R2 URL
                 img.src = "/placeholder.jpg";

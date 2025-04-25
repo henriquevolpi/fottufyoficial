@@ -78,8 +78,37 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
+    // Log para depuração
+    console.log('Adaptando projeto:', project.id, 'com', project.photos?.length || 0, 'fotos');
+    
+    // Helpers para garantir URLs corretas
+    const ensureValidImageUrl = (url: string): string => {
+      // Log de cada URL para depuração
+      console.log('Verificando URL:', url);
+      
+      if (!url) return '/placeholder.jpg';
+      
+      // Se já for uma URL completa, retorne-a
+      if (url.startsWith('http')) return url;
+      
+      // Se for um URL do R2 sem o protocolo
+      if (url.includes('.r2.cloudflarestorage.com')) {
+        return `https://${url}`;
+      }
+      
+      // Se for apenas um nome de arquivo, construa a URL completa
+      const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
+      const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
+      
+      if (accountId && bucketName) {
+        return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${url}`;
+      }
+      
+      // Fallback para o que foi fornecido
+      return url;
+    };
+    
     // Mapeie o formato do servidor (name, clientName) para o formato do frontend (nome, cliente)
-    // ou vice-versa
     return {
       id: project.id,
       nome: project.name || project.nome,
@@ -90,12 +119,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       fotos: project.photos ? project.photos.length : project.fotos,
       selecionadas: project.selectedPhotos ? project.selectedPhotos.length : project.selecionadas,
       fotografoId: project.photographerId || project.fotografoId,
-      photos: project.photos ? project.photos.map((p: any) => ({
-        id: p.id,
-        url: p.url,
-        filename: p.filename,
-        selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
-      })) : [],
+      photos: project.photos ? project.photos.map((p: any) => {
+        // Log de dados da foto para depuração
+        console.log(`Foto ID: ${p.id.substring(0, 8)}... URL: ${p.url ? p.url.substring(0, 30) + '...' : 'undefined'}`);
+        
+        return {
+          id: p.id,
+          url: ensureValidImageUrl(p.url),
+          filename: p.filename || 'photo.jpg',
+          selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
+        };
+      }) : [],
       finalizado: project.status === "reviewed" || project.finalizado
     };
   };
