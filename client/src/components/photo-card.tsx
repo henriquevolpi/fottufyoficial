@@ -53,9 +53,30 @@ export default function PhotoCard({
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(e) => {
-            console.error(`Error loading image: ${id} from URL: ${url}`);
+            console.warn(`First attempt loading image failed: ${id} from URL: ${url}`);
+            
+            // Clear previous error handler to prevent loops
             e.currentTarget.onerror = null;
-            e.currentTarget.src = "/placeholder.jpg";
+            
+            // Import the alternative URL formatter
+            import('@/lib/imageUtils').then(({ getAlternativePhotoUrl }) => {
+              // Try alternative URL format if it's an R2 URL
+              const altUrl = getAlternativePhotoUrl(url.startsWith('http') ? url : getPhotoUrl(url));
+              console.log(`Trying alternative URL format: ${altUrl}`);
+              
+              // Set up final fallback
+              e.currentTarget.onerror = () => {
+                console.error(`All attempts to load image failed: ${id}`);
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/placeholder.jpg";
+              };
+              
+              // Try alternative URL
+              e.currentTarget.src = altUrl;
+            }).catch(() => {
+              // If module import fails, go straight to placeholder
+              e.currentTarget.src = "/placeholder.jpg";
+            });
           }}
         />
         <div className={cn(

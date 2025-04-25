@@ -638,16 +638,39 @@ export default function ProjectEdit() {
             {project && (
               <ImageUploader 
                 projectId={project.id} 
-                onUploadSuccess={() => {
+                onUploadSuccess={async () => {
                   toast({
                     title: "Imagem enviada com sucesso",
                     description: "A imagem foi adicionada ao projeto.",
                   });
                   
-                  // Opcional: recarregar a página após upload bem-sucedido
+                  try {
+                    // Forçar refetch imediato dos dados do projeto diretamente da API
+                    console.log('Forcing project data refresh after upload...');
+                    const response = await fetch(`/api/projects/${project.id}`, {
+                      credentials: 'include', // envia cookies para autenticação
+                      headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                      }
+                    });
+                    
+                    if (response.ok) {
+                      const freshData = await response.json();
+                      console.log('Fresh project data loaded:', freshData);
+                      // Recarregar a página após upload bem-sucedido para garantir
+                      // que todas as mudanças sejam refletidas na UI
+                    } else {
+                      console.error('Failed to reload project data:', response.status);
+                    }
+                  } catch (err) {
+                    console.error('Error reloading project data:', err);
+                  }
+                  
+                  // Navigate to project view to display fresh data
                   setTimeout(() => {
                     setLocation(`/project/${project.id}`);
-                  }, 1500);
+                  }, 1000);
                 }} 
               />
             )}

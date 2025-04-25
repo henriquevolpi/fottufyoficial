@@ -59,6 +59,17 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         // Limpar preview após upload bem-sucedido
         setPreview(null)
         
+        // Clear localStorage for this project to avoid cache issues
+        try {
+          const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+          const filteredProjects = storedProjects.filter((p: any) => 
+            p.id.toString() !== projectId.toString());
+          localStorage.setItem('projects', JSON.stringify(filteredProjects));
+          console.log('Cleared localStorage cache for project', projectId);
+        } catch (err) {
+          console.error('Failed to clear localStorage:', err);
+        }
+        
         // Chamar callback de sucesso se fornecido
         if (onUploadSuccess) {
           onUploadSuccess()

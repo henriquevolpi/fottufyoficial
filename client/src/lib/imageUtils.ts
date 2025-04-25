@@ -12,17 +12,49 @@ export interface Photo {
 
 /**
  * Ensures a photo URL is properly formatted regardless of its source (local or R2)
+ * with improved fallback mechanisms
+ * 
  * @param url The original photo URL to format
  * @returns A properly formatted URL that can be used in img src
  */
 export const getPhotoUrl = (url: string): string => {
+  // Guard against undefined or null URLs
+  if (!url) {
+    console.warn('getPhotoUrl called with empty URL');
+    return '/placeholder.jpg';
+  }
+  
   // If the URL already starts with http/https, it's a complete URL
   if (url.startsWith('http')) {
     return url;
   }
   
+  const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
+  const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
+  
+  // Verify we have the required environment variables
+  if (!accountId || !bucketName) {
+    console.error('Missing R2 environment variables');
+    return url; // Return original as fallback
+  }
+  
   // Build the full Cloudflare R2 URL
-  return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`;
+  return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${url}`;
+};
+
+/**
+ * Alternative R2 URL format to try if the primary one fails
+ * @param url The original URL that failed
+ * @returns An alternative URL format to try
+ */
+export const getAlternativePhotoUrl = (url: string): string => {
+  // If not an R2 URL, we can't create an alternative
+  if (!url || !url.includes('.r2.cloudflarestorage.com')) {
+    return url;
+  }
+  
+  // Try the .r2.dev format instead of .r2.cloudflarestorage.com
+  return url.replace('.r2.cloudflarestorage.com', '.r2.dev');
 };
 
 /**

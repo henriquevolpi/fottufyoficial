@@ -100,198 +100,89 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
   };
 
-  // Carregar dados do projeto
+  // Carregar dados do projeto - Melhorado para sempre usar dados atuais da API
   useEffect(() => {
     const loadProject = async () => {
       try {
         setLoading(true);
         
-        // Verificar se o ID é um número válido
+        // Verificar se o ID é válido
         if (!projectId) {
           console.error('ID do projeto não fornecido');
           throw new Error('ID do projeto não fornecido');
         }
         
-        // Não validamos o formato do ID, apenas verificamos se existe
-        console.log('Buscando projeto com ID (sem validação de formato):', projectId);
+        console.log('Buscando projeto com ID:', projectId);
         
-        // Tenta buscar do backend primeiro com mais detalhes de debug
-        try {
-          // Melhorado para usar o ID original da URL, não apenas números
-          console.log('Buscando projeto com ID original:', projectId);
-          const response = await fetch(`/api/projects/${projectId}`);
-          
-          console.log('Status da resposta API:', response.status);
-          
-          if (response.ok) {
-            const projectData = await response.json();
-            console.log('Projeto carregado da API:', projectData);
-            
-            // Adicionar log detalhado para debug do projeto retornado
-            console.log('Propriedades do projeto retornado:',
-              Object.keys(projectData).map(key => `${key}: ${typeof projectData[key]} - ${
-                Array.isArray(projectData[key]) 
-                  ? `Array com ${projectData[key].length} itens` 
-                  : typeof projectData[key] === 'object' && projectData[key] !== null
-                    ? JSON.stringify(projectData[key]).substring(0, 100) + '...' 
-                    : projectData[key]
-              }`)
-            );
-            
-            // Verificar se tem array de fotos
-            if (projectData.photos) {
-              console.log(`Projeto tem ${projectData.photos.length} fotos`);
-              if (projectData.photos.length > 0) {
-                console.log('Exemplo da primeira foto:', JSON.stringify(projectData.photos[0]));
-              }
-            } else {
-              console.warn('Projeto não tem fotos ou array de fotos é null/undefined');
-            }
-            
-            const adaptedProject = adaptProject(projectData);
-            console.log('Projeto após adaptação:', adaptedProject);
-            
-            // Project view is always public for clients
-            // Only log the access attempt but don't block it
-            if (user && user.id !== adaptedProject.fotografoId && user.role !== 'admin') {
-              console.log(`Usuário logado ${user.id} acessando projeto do fotógrafo ${adaptedProject.fotografoId} - permitido para visualização pública`);
-            }
-            
-            setProject(adaptedProject);
-            
-            // Inicializar seleções se houver
-            const preSelectedPhotos = new Set<string>();
-            if (adaptedProject.photos) {
-              adaptedProject.photos.forEach(photo => {
-                if (photo.selected) {
-                  preSelectedPhotos.add(photo.id);
-                }
-              });
-            }
-            
-            setSelectedPhotos(preSelectedPhotos);
-            setIsFinalized(!!adaptedProject.finalizado);
-            
-            // Atualizar o localStorage para manter consistência
-            const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-            
-            // Verificar se o projeto já existe no localStorage
-            const existingIndex = storedProjects.findIndex((p: any) => p.id.toString() === projectId);
-            
-            if (existingIndex >= 0) {
-              // Atualizar o projeto existente
-              storedProjects[existingIndex] = adaptedProject;
-              console.log('Projeto existente atualizado no localStorage');
-            } else {
-              // Adicionar o novo projeto
-              storedProjects.push(adaptedProject);
-              console.log('Novo projeto adicionado ao localStorage');
-            }
-            
-            localStorage.setItem('projects', JSON.stringify(storedProjects));
-            
-            return;
-          } else {
-            const error = await response.json();
-            console.error('Erro da API:', error);
-          }
-        } catch (apiError) {
-          console.error('Erro ao buscar da API:', apiError);
-          // Continuar para tentar buscar do localStorage
-        }
-        
-        // Fallback para localStorage se a API falhar
-        const storedProjects = localStorage.getItem('projects');
-        if (!storedProjects) {
-          console.log('Nenhum projeto encontrado no localStorage');
-          throw new Error('Projeto não encontrado');
-        }
-        
-        // Log para debug
-        console.log('Projetos armazenados:', JSON.parse(storedProjects));
-        
-        let projects: Project[] = [];
-        try {
-          projects = JSON.parse(storedProjects);
-        } catch (e) {
-          console.error('Erro ao parsear projetos:', e);
-          throw new Error('Erro ao ler dados dos projetos');
-        }
-        
-        // Estratégias múltiplas para encontrar o projeto pelo ID
-        console.log('Tentando diferentes estratégias para encontrar o projeto com ID:', projectId);
-        console.log('Total de projetos no localStorage:', projects.length);
-        
-        // Log de todos os IDs para debug
-        console.log('IDs disponíveis:', projects.map(p => `${p.id} (${typeof p.id})`));
-        
-        // Tentar várias estratégias para encontrar o projeto
-        let foundProject = null;
-        
-        // Estratégia 1: Busca direta pelo ID como string
-        foundProject = projects.find(p => p.id.toString() === projectId);
-        if (foundProject) {
-          console.log('Projeto encontrado pela estratégia 1 (ID como string)');
-        }
-        
-        // Estratégia 2: Tentar converter o ID para número
-        if (!foundProject && !isNaN(parseInt(projectId))) {
-          const numericId = parseInt(projectId);
-          foundProject = projects.find(p => p.id === numericId);
-          if (foundProject) {
-            console.log('Projeto encontrado pela estratégia 2 (ID como número)');
-          }
-        }
-        
-        // Estratégia 3: Busca por correspondência parcial
-        if (!foundProject) {
-          foundProject = projects.find(p => {
-            const pid = p.id.toString();
-            const searchId = projectId.toString();
-            return pid.includes(searchId) || searchId.includes(pid);
-          });
-          if (foundProject) {
-            console.log('Projeto encontrado pela estratégia 3 (correspondência parcial)');
-          }
-        }
-        
-        if (!foundProject) {
-          console.error('Projeto não encontrado com ID:', projectId);
-          throw new Error('Projeto não encontrado');
-        }
-        
-        console.log('Projeto encontrado:', foundProject);
-        
-        // Verificar se o projeto tem a propriedade photos
-        if (!foundProject.photos || !Array.isArray(foundProject.photos)) {
-          console.error('Projeto sem fotos ou formato inválido');
-          foundProject.photos = []; // Garantir que existe um array vazio se não houver fotos
-        }
-        
-        // Project view is always public for clients, allow access regardless of user
-        // Only log the access attempt but don't block it
-        if (user && user.id !== foundProject.fotografoId && user.role !== 'admin') {
-          console.log(`Usuário logado ${user.id} acessando projeto do fotógrafo ${foundProject.fotografoId} (localStorage) - permitido para visualização pública`);
-        }
-        
-        setProject(foundProject);
-        
-        // Se o projeto já tiver seleções salvas, carregá-las
-        const preSelectedPhotos = new Set<string>();
-        foundProject.photos.forEach(photo => {
-          if (photo.selected) {
-            preSelectedPhotos.add(photo.id);
+        // Fazer fetch diretamente da API com cache busting para garantir dados atualizados
+        const response = await fetch(`/api/projects/${projectId}`, {
+          credentials: 'include', // envia cookies para autenticação
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         });
         
+        console.log('Status da resposta API:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Erro ao carregar projeto: ${response.status} ${response.statusText}`);
+        }
+        
+        const projectData = await response.json();
+        console.log('Projeto carregado da API:', projectData);
+        
+        // Log detalhado para debug
+        if (projectData.photos) {
+          console.log(`Projeto tem ${projectData.photos.length} fotos`);
+          if (projectData.photos.length > 0) {
+            console.log('Primeira foto:', JSON.stringify(projectData.photos[0]));
+          }
+        } else {
+          console.warn('Projeto sem fotos ou array de fotos é null/undefined');
+        }
+        
+        // Adapter para manter compatibilidade com o resto do código
+        const adaptedProject = adaptProject(projectData);
+        console.log('Projeto adaptado:', adaptedProject);
+        
+        // Verificar acesso - apenas log, view é pública
+        if (user && user.id !== adaptedProject.fotografoId && user.role !== 'admin') {
+          console.log(`Usuário ${user.id} acessando projeto do fotógrafo ${adaptedProject.fotografoId} - permitido para visualização pública`);
+        }
+        
+        // Atualizar state com dados do projeto
+        setProject(adaptedProject);
+        
+        // Inicializar seleções
+        const preSelectedPhotos = new Set<string>();
+        if (adaptedProject.photos) {
+          adaptedProject.photos.forEach(photo => {
+            if (photo.selected) {
+              preSelectedPhotos.add(photo.id);
+            }
+          });
+        }
+        
         setSelectedPhotos(preSelectedPhotos);
-        setIsFinalized(!!foundProject.finalizado);
+        setIsFinalized(!!adaptedProject.finalizado);
+        
+        // Remover este projeto do localStorage para evitar usar dados desatualizados
+        try {
+          const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+          const filteredProjects = storedProjects.filter((p: any) => p.id.toString() !== projectId.toString());
+          localStorage.setItem('projects', JSON.stringify(filteredProjects));
+          console.log('Removido projeto do localStorage para garantir dados atualizados');
+        } catch (storageError) {
+          console.error('Erro ao limpar localStorage:', storageError);
+        }
         
       } catch (error) {
         console.error('Erro ao carregar projeto:', error);
         toast({
           title: "Erro ao carregar projeto",
-          description: "Não foi possível encontrar o projeto solicitado.",
+          description: "Não foi possível encontrar o projeto solicitado. Verifique se o link está correto.",
           variant: "destructive",
         });
       } finally {
@@ -759,9 +650,31 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     className="absolute inset-0 w-full h-full object-cover"
                     loading="lazy"
                     onError={(e) => {
-                      console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
+                      console.warn(`First attempt loading image failed: ${photo.id} from URL: ${photo.url}`);
+                      
+                      // Clear previous error handler to prevent loops
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = "/placeholder.jpg";
+                      
+                      // Import the alternative URL formatter
+                      import('@/lib/imageUtils').then(({ getAlternativePhotoUrl }) => {
+                        // Try alternative URL format if it's an R2 URL
+                        const altUrl = getAlternativePhotoUrl(photo.url.startsWith('http') ? 
+                          photo.url : getPhotoUrl(photo.url));
+                        console.log(`Trying alternative URL format: ${altUrl}`);
+                        
+                        // Set up final fallback
+                        e.currentTarget.onerror = () => {
+                          console.error(`All attempts to load image failed: ${photo.id}`);
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/placeholder.jpg";
+                        };
+                        
+                        // Try alternative URL
+                        e.currentTarget.src = altUrl;
+                      }).catch(() => {
+                        // If module import fails, go straight to placeholder
+                        e.currentTarget.src = "/placeholder.jpg";
+                      });
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
                   />
@@ -891,9 +804,33 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
-                    console.error(`Error loading modal image from URL: ${currentImageUrl}`);
+                    console.warn(`First attempt loading modal image failed from URL: ${currentImageUrl}`);
+                    
+                    // Clear previous error handler to prevent loops
                     e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/placeholder.jpg";
+                    
+                    // Import the alternative URL formatter
+                    import('@/lib/imageUtils').then(({ getAlternativePhotoUrl }) => {
+                      // Try alternative URL format if it's an R2 URL
+                      const altUrl = getAlternativePhotoUrl(
+                        currentImageUrl.startsWith('http') ? 
+                        currentImageUrl : getPhotoUrl(currentImageUrl)
+                      );
+                      console.log(`Trying alternative modal image URL format: ${altUrl}`);
+                      
+                      // Set up final fallback
+                      e.currentTarget.onerror = () => {
+                        console.error(`All attempts to load modal image failed`);
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/placeholder.jpg";
+                      };
+                      
+                      // Try alternative URL
+                      e.currentTarget.src = altUrl;
+                    }).catch(() => {
+                      // If module import fails, go straight to placeholder
+                      e.currentTarget.src = "/placeholder.jpg";
+                    });
                   }}
                 />
               )}
