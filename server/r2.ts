@@ -94,12 +94,13 @@ export async function uploadFileToR2(
 ): Promise<{ url: string, key: string }> {
   try {
     // Create command to upload file
+    // Note: Cloudflare R2 does not support ACLs like AWS S3
+    // Public access is controlled via bucket-level settings in the Cloudflare dashboard
     const uploadCommand = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: fileName,
       Body: buffer,
-      ContentType: contentType,
-      ACL: 'public-read'
+      ContentType: contentType
     });
 
     // Upload the file
@@ -117,7 +118,8 @@ export async function uploadFileToR2(
       accountId = endpointUrl.hostname.split('.')[0];
     } catch (e) {
       // Fallback to using the account ID directly without the URL parts
-      accountId = process.env.R2_ACCOUNT_ID.replace(/https?:\/\//, '').split('.')[0];
+      const accountIdStr = process.env.R2_ACCOUNT_ID || '';
+      accountId = accountIdStr.replace(/https?:\/\//, '').split('.')[0];
     }
     
     const publicUrl = `https://${BUCKET_NAME}.${accountId}.r2.dev/${fileName}`;
