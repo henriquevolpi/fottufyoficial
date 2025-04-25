@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
 import { testConnection, pool } from "./db";
-// Cloudflare R2 buckets must be created manually
+// Import necessary environment variables
 import dotenv from "dotenv";
 
 // Definir variável de ambiente para a sessão se não estiver definida
@@ -196,8 +196,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // No need to initialize R2 bucket - must be created manually in Cloudflare dashboard
-  console.log("Using Cloudflare R2 for storage - bucket must be created manually");
+  // We're using Cloudflare R2 for photo storage instead of local files
+  console.log("Using Cloudflare R2 for storage - bucket must be created manually in Cloudflare dashboard");
 
   // Register API routes after authentication is set up
   const server = await registerRoutes(app);
