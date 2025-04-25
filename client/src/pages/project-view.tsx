@@ -321,14 +321,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const openImageModal = (url: string, photoIndex: number, event: React.MouseEvent) => {
     event.stopPropagation(); // Impedir que o clique propague para o Card (que faria a seleção da foto)
     
-    // Use our improved utility function to process the photo object
+    // Get the photo from the current project
     const photo = project?.photos[photoIndex];
     if (photo) {
-      // Set the fully formatted URL
-      setCurrentImageUrl(getImageUrl(photo));
+      // Set the fully formatted URL using our improved utility function
+      setCurrentImageUrl(getImageUrl({ url: photo.url }));
     } else {
-      // Fallback to the traditional method
-      setCurrentImageUrl(getPhotoUrl(url));
+      // Fallback if photo is not found
+      setCurrentImageUrl(getImageUrl({ url }));
     }
     
     setCurrentPhotoIndex(photoIndex);
@@ -343,7 +343,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const nextPhoto = project.photos[nextIndex];
     
     // Use the improved imageUrl utility function
-    setCurrentImageUrl(getImageUrl(nextPhoto));
+    setCurrentImageUrl(getImageUrl({ url: nextPhoto.url }));
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -355,7 +355,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const prevPhoto = project.photos[prevIndex];
     
     // Use the improved imageUrl utility function
-    setCurrentImageUrl(getImageUrl(prevPhoto));
+    setCurrentImageUrl(getImageUrl({ url: prevPhoto.url }));
     setCurrentPhotoIndex(prevIndex);
   };
   
@@ -901,13 +901,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
-                    const currentPhoto = project.photos[currentPhotoIndex];
-                    if (currentPhoto && e?.currentTarget) {
-                      console.error(`Error loading full-size image: ${currentPhoto.id}`);
-                      // Simply use a local placeholder if image fails to load
-                      e.currentTarget.src = "/placeholder.jpg";
-                      e.currentTarget.onerror = null;
-                    }
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/placeholder.jpg";
                   }}
                 />
               )}

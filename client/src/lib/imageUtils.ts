@@ -42,26 +42,18 @@ export const getPhotoUrl = (url: string): string => {
  * @param photo The photo object containing an id and url
  * @returns A properly formatted URL that can be used in img src
  */
-export const getImageUrl = (photo: Photo): string => {
-  // Only use placeholder as absolute last resort if no URL exists
-  if (!photo || !photo.url) {
-    console.error('Invalid photo object or missing URL');
-    return '/placeholder.jpg';
-  }
-  
-  // If URL already starts with http/https, it's a complete URL
-  if (photo.url.startsWith('http')) {
-    return photo.url;
-  }
-  
-  // For R2 storage - URL is just the filename, construct the full URL
-  if (import.meta.env.VITE_R2_BUCKET_NAME && import.meta.env.VITE_R2_ACCOUNT_ID) {
-    return `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photo.url}`;
-  }
-  
-  // Fallback to the origin-based URL as a last resort
-  return `${window.location.origin}/uploads/${photo.url}`;
-};
+export function getImageUrl(photo: { url: string }): string {
+  if (!photo || !photo.url) return "/placeholder.jpg";
+  if (photo.url.startsWith("http")) return photo.url;
+
+  // Remove /uploads/ prefix if present (it breaks R2 URLs)
+  const filename = photo.url.replace(/^\/?uploads\//, "");
+
+  const bucket = import.meta.env.VITE_R2_BUCKET_NAME;
+  const account = import.meta.env.VITE_R2_ACCOUNT_ID;
+
+  return `https://${bucket}.${account}.r2.dev/${filename}`;
+}
 
 /**
  * Get a fallback image URL if the original fails to load

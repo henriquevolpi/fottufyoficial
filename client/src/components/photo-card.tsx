@@ -28,7 +28,7 @@ export default function PhotoCard({
   };
 
   // Format image URL for display using our improved utility function
-  const displayUrl = getImageUrl({id, url, filename});
+  const displayUrl = getImageUrl({ url });
 
   return (
     <div 
@@ -55,14 +55,8 @@ export default function PhotoCard({
           alt={filename}
           className="w-full h-full object-cover"
           onError={(e) => {
-            console.error(`Error loading image: ${id} from URL: ${url}`);
-            
-            // Use a simple local placeholder if the image fails to load
-            if (e?.currentTarget) {
-              e.currentTarget.src = "/placeholder.jpg";
-              // Remove the error handler to prevent infinite loops
-              e.currentTarget.onerror = null;
-            }
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/placeholder.jpg";
           }}
         />
         <div className={cn(
