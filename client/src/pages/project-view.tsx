@@ -671,15 +671,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                           altUrl = photo.url.replace('.r2.cloudflarestorage.com', '.r2.dev');
                           console.log(`Trying alternative URL format: ${altUrl}`);
                           
-                          // Set up final fallback
-                          img.onerror = ((ev: Event) => {
-                            const imgEl = ev?.currentTarget as HTMLImageElement;
-                            if (imgEl) {
-                              console.error(`All attempts to load image failed: ${photo.id}`);
-                              imgEl.onerror = null;
-                              imgEl.src = "/placeholder.jpg";
-                            }
-                          }) as React.ReactEventHandler<HTMLImageElement>;
+                          // Set up final fallback with DOM function (not React handler)
+                          img.onerror = function() {
+                            console.error(`All attempts to load image failed: ${photo.id}`);
+                            img.onerror = null;
+                            img.src = "/placeholder.jpg";
+                          };
                           
                           // Try alternative URL
                           img.src = altUrl;
