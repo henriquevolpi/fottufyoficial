@@ -612,6 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const photoId = req.params.id;
+      const userId = req.user.id;
       
       // Verify the photo exists and belongs to the user's project
       const photo = await db.query.photos.findFirst({
@@ -625,12 +626,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Photo not found" });
       }
       
-      if (photo.project.userId !== req.user.id) {
+      if (photo.project.userId !== userId) {
         return res.status(403).json({ message: "Unauthorized access to this photo" });
       }
       
       // Delete the photo
       await db.delete(photos).where(eq(photos.id, photoId));
+      
+      // Update the user's upload usage (reduce by 1)
+      await storage.updateUploadUsage(userId, -1);
+      console.log(`Updated upload usage for user ${userId} after deleting photo ${photoId}`);
       
       res.json({ message: "Photo deleted successfully" });
     } catch (error) {
