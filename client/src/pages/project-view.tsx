@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl } from "@/lib/imageUtils";
 import { 
   Check, 
   Loader2, 
@@ -748,21 +749,23 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={photo.url.startsWith('http') ? photo.url : `${window.location.origin}${photo.url}`}
+                    src={getPhotoUrl(photo.url)}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
                       console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
-                      // Try again with just the ID as a fallback method
-                      if (!photo.url.includes('/uploads/')) {
-                        const fallbackUrl = `/uploads/${photo.id}`;
-                        console.log(`Trying fallback URL: ${fallbackUrl}`);
-                        e.currentTarget.src = fallbackUrl;
-                      } else {
-                        // Last resort - use a placeholder
-                        e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
-                        console.log(`Falling back to placeholder for image ${photo.id}`);
-                      }
+                      // Try the fallback URL first
+                      const fallbackUrl = getFallbackPhotoUrl(photo.id);
+                      console.log(`Trying fallback URL: ${fallbackUrl}`);
+                      e.currentTarget.src = fallbackUrl;
+                      
+                      // Add a second error handler in case the fallback also fails
+                      e.currentTarget.onerror = () => {
+                        console.log(`Fallback failed, using placeholder for image ${photo.id}`);
+                        e.currentTarget.src = getPlaceholderImageUrl();
+                        // Remove the error handler to prevent infinite loops
+                        e.currentTarget.onerror = null;
+                      };
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
                   />
@@ -888,9 +891,27 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {currentImageUrl && (
                 <img
-                  src={currentImageUrl}
+                  src={getPhotoUrl(currentImageUrl)}
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
+                  onError={(e) => {
+                    // Extract photo ID from the current image URL
+                    const currentPhoto = project.photos[currentPhotoIndex];
+                    if (currentPhoto) {
+                      console.error(`Error loading full-size image: ${currentPhoto.id}`);
+                      // Try fallback URL
+                      const fallbackUrl = getFallbackPhotoUrl(currentPhoto.id);
+                      console.log(`Trying fallback URL for full-size: ${fallbackUrl}`);
+                      e.currentTarget.src = fallbackUrl;
+                      
+                      // Second error handler
+                      e.currentTarget.onerror = () => {
+                        console.log(`Fallback failed, using placeholder for full-size image`);
+                        e.currentTarget.src = getPlaceholderImageUrl();
+                        e.currentTarget.onerror = null;
+                      };
+                    }
+                  }}
                 />
               )}
             </div>
