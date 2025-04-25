@@ -20,6 +20,7 @@ import { Upload, Image } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { nanoid } from "nanoid";
+import { uploadMultipleFiles } from "@/lib/fileUpload";
 
 const uploadFormSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters" }),
@@ -37,6 +38,7 @@ export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<UploadFormValues>({
@@ -54,7 +56,7 @@ export default function UploadPage() {
       const fileArray = Array.from(files);
       setSelectedFiles(fileArray);
       
-      // Create thumbnails
+      // Create thumbnails for preview only
       const newThumbnails = fileArray.map(file => URL.createObjectURL(file));
       setThumbnails(prev => [...prev, ...newThumbnails]);
     }
@@ -82,7 +84,7 @@ export default function UploadPage() {
       const fileArray = Array.from(files);
       setSelectedFiles(prev => [...prev, ...fileArray]);
       
-      // Create thumbnails
+      // Create thumbnails for preview only
       const newThumbnails = fileArray.map(file => URL.createObjectURL(file));
       setThumbnails(prev => [...prev, ...newThumbnails]);
     }
@@ -100,32 +102,30 @@ export default function UploadPage() {
 
     try {
       setIsUploading(true);
-
-      // Processa as fotos para obter URLs e nomes de arquivo
-      const processedPhotos = selectedFiles.map((file) => {
-        // Criar URL para a imagem carregada
-        const url = URL.createObjectURL(file);
-        return {
-          id: nanoid(), // Gerar um ID temporário que será substituído no backend
-          url: url,
-          filename: file.name, // Manter o nome original como solicitado
-        };
+      
+      // Upload files to Supabase Storage and get permanent URLs
+      toast({
+        title: "Uploading photos",
+        description: `Uploading ${selectedFiles.length} photos to storage...`,
       });
       
-      console.log(`Preparando ${processedPhotos.length} fotos para upload`);
+      // Upload each file and get permanent URLs
+      const uploadedPhotos = await uploadMultipleFiles(selectedFiles);
       
-      // Enviar dados do projeto e das fotos para o backend
+      console.log(`Successfully uploaded ${uploadedPhotos.length} photos to storage`);
+      
+      // Create project with the permanent URLs
       const projectData = {
         name: values.name,
         clientName: values.clientName,
         clientEmail: values.clientEmail,
         photographerId: user?.id?.toString() || "",
-        photos: processedPhotos // Adicionar fotos processadas
+        photos: uploadedPhotos // Use the permanent URLs from storage
       };
       
-      console.log("Enviando dados do projeto:", projectData);
+      console.log("Creating project with permanent URLs:", projectData);
 
-      // Chamar a API para criar o projeto
+      // Call API to create the project
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
@@ -144,13 +144,14 @@ export default function UploadPage() {
         description: `Successfully created project "${values.name}"`,
       });
 
-      // Clean up thumbnails
+      // Clean up thumbnails (browser memory)
       thumbnails.forEach(url => URL.revokeObjectURL(url));
       
       // Invalidate projects query and redirect to dashboard
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       setLocation("/dashboard");
     } catch (error) {
+      console.error("Error creating project:", error);
       toast({
         title: "Error",
         description: "Failed to create project. Please try again.",
