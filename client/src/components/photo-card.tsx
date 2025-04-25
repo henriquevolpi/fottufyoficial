@@ -47,10 +47,11 @@ export default function PhotoCard({
         
         {/* Conditionally format URL based on whether it starts with http */}
         <img 
-          src={url.startsWith('http') ? url : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${url}`} 
+          src={url.startsWith('http') ? url : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`}
           alt={filename}
           className="w-full h-full object-cover"
           onError={(e) => {
+            console.error(`Error loading image: ${id} from URL: ${url}`);
             e.currentTarget.onerror = null;
             e.currentTarget.src = "/placeholder.jpg";
           }}

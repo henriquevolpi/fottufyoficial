@@ -896,7 +896,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {currentImageUrl && (
                 <img
-                  src={currentImageUrl}
+                  src={getPhotoUrl(currentImageUrl)}
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {

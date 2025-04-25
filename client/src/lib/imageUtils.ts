@@ -16,25 +16,13 @@ export interface Photo {
  * @returns A properly formatted URL that can be used in img src
  */
 export const getPhotoUrl = (url: string): string => {
-  // If the URL already starts with http/https, it's a complete URL (likely from R2)
+  // If the URL already starts with http/https, it's a complete URL
   if (url.startsWith('http')) {
     return url;
   }
   
-  // If it looks like a Cloudflare R2 key without domain, construct the R2 URL
-  if (import.meta.env.VITE_R2_BUCKET_NAME && 
-      import.meta.env.VITE_R2_ACCOUNT_ID && 
-      !url.includes('://')) {
-    return `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${url}`;
-  }
-  
-  // If there's a VITE_BASE_URL environment variable, use it
-  if (import.meta.env.VITE_BASE_URL) {
-    return `${import.meta.env.VITE_BASE_URL}${url}`;
-  }
-  
-  // Otherwise, use the current origin (domain) as the base
-  return `${window.location.origin}${url}`;
+  // Build the full Cloudflare R2 URL
+  return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`;
 };
 
 /**
@@ -44,15 +32,9 @@ export const getPhotoUrl = (url: string): string => {
  */
 export function getImageUrl(photo: { url: string }): string {
   if (!photo || !photo.url) return "/placeholder.jpg";
-  if (photo.url.startsWith("http")) return photo.url;
-
-  // Remove /uploads/ prefix if present (it breaks R2 URLs)
-  const filename = photo.url.replace(/^\/?uploads\//, "");
-
-  const bucket = import.meta.env.VITE_R2_BUCKET_NAME;
-  const account = import.meta.env.VITE_R2_ACCOUNT_ID;
-
-  return `https://${bucket}.${account}.r2.dev/${filename}`;
+  
+  // Use the same logic as getPhotoUrl
+  return getPhotoUrl(photo.url);
 }
 
 /**
