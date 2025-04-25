@@ -82,8 +82,9 @@ export async function uploadFileToR2(
     // Upload the file
     await r2Client.send(uploadCommand);
 
-    // Generate the public URL
-    const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET_NAME}/${fileName}`;
+    // Generate the public URL - format is specific to your R2 setup
+    // Usually it's in the format: https://<custom-domain>/<filename> or https://<bucket>.<account-id>.r2.dev/<filename>
+    const publicUrl = `https://${BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.dev/${fileName}`;
     
     return {
       url: publicUrl,
