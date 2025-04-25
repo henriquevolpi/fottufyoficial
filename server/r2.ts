@@ -43,6 +43,22 @@ export const r2Client = new S3Client({
 export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+// Configure multer for R2 uploads using memory storage
+export const r2Upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_FILE_SIZE
+  },
+  fileFilter: (req, file, cb) => {
+    if (isValidFileType(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}. Apenas imagens JPEG, PNG, GIF e WebP são aceitas.`));
+    }
+  }
+});
+
 /**
  * Generate a unique filename to prevent collisions
  */

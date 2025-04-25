@@ -25,8 +25,8 @@ import bodyParser from "body-parser";
 import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc } from "drizzle-orm";
-import { isValidFileType, isValidFileSize, generateUniqueFileName } from "./supabase";
-import { BUCKET_NAME as R2_BUCKET_NAME, uploadFileToR2 } from "./r2";
+// Use Cloudflare R2 for storage
+import { BUCKET_NAME as R2_BUCKET_NAME, uploadFileToR2, r2Upload, generateUniqueFileName, isValidFileType, isValidFileSize } from "./r2";
 import multer from "multer";
 
 // Helper function to download an image from a URL to the uploads directory
@@ -229,21 +229,7 @@ const requireActiveUser = (req: Request, res: Response, next: Function) => {
   next();
 };
 
-// Configuração para upload de arquivos diretamente no Cloudflare R2
-const r2Upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
-  },
-  fileFilter: (req: Express.Request, file: Express.Multer.File, cb: Function) => {
-    if (isValidFileType(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(null, false);
-      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}. Apenas imagens JPEG, PNG, GIF e WebP são aceitas.`));
-    }
-  }
-});
+// Use r2Upload from r2.ts instead of redefining it here
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -1129,7 +1115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Create project (authenticated photographer)
   // Removida verificação de autenticação para facilitar testes
-  app.post("/api/projects", upload.array('photos', 100), async (req: Request, res: Response) => {
+  app.post("/api/projects", r2Upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
       console.log("Receiving request to create project", req.body);
       
@@ -1259,23 +1245,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       else if (req.files && Array.isArray(req.files)) {
         console.log(`Processing ${req.files.length} photos from multipart form-data`);
         const uploadedFiles = req.files as Express.Multer.File[];
-        processedPhotos = uploadedFiles.map(file => {
-          // Generate a unique ID for the photo
-          const id = nanoid();
+        
+        // Process each file using R2 storage
+        processedPhotos = [];
+        
+        for (const file of uploadedFiles) {
+          // Generate a unique filename
+          const filename = generateUniqueFileName(file.originalname);
           
-          // Get the filename saved on disk
-          const filename = path.basename(file.path);
-          
-          // Create a web-accessible URL path to the uploaded file
-          const fileUrl = `/uploads/${filename}`;
-          console.log(`File uploaded: ${file.originalname}, Saved as: ${filename}, URL: ${fileUrl}`);
-          
-          return {
-            id: id,
-            url: fileUrl,
-            filename: file.originalname || 'photo.jpg',
-          };
-        });
+          try {
+            // Upload file to R2
+            const result = await uploadFileToR2(
+              file.buffer,
+              filename,
+              file.mimetype
+            );
+            
+            // Add processed photo to array
+            processedPhotos.push({
+              id: nanoid(),
+              url: result.url,
+              filename: file.originalname || 'photo.jpg',
+            });
+            
+            console.log(`File uploaded to R2: ${file.originalname}, R2 URL: ${result.url}`);
+          } catch (error) {
+            console.error(`Error uploading file to R2: ${error}`);
+            // Continue with other files even if one fails
+          }
+        }
       }
       // If no photos were provided through any method, use a single placeholder
       if (processedPhotos.length === 0) {
@@ -1431,7 +1429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Adicionar novas fotos a um projeto existente
-  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, upload.array('photos', 100), async (req: Request, res: Response) => {
+  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
     try {
       const idParam = req.params.id;
       
@@ -1460,24 +1458,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`Processing ${photoCount} uploaded photos for project ${projectId}`);
         
-        // Convert uploaded files to photo objects
-        processedPhotos = uploadedFiles.map(file => {
-          // Generate a unique ID for the photo
-          const id = nanoid();
+        // Process each file using R2 storage
+        processedPhotos = [];
+        
+        for (const file of uploadedFiles) {
+          // Generate a unique filename
+          const filename = generateUniqueFileName(file.originalname);
           
-          // Get the filename saved on disk
-          const filename = path.basename(file.path);
-          
-          // Create a web-accessible URL path to the uploaded file
-          const fileUrl = `/uploads/${filename}`;
-          console.log(`File uploaded to project ${projectId}: ${file.originalname}, Saved as: ${filename}, URL: ${fileUrl}`);
-          
-          return {
-            id: id,
-            url: fileUrl,
-            filename: file.originalname || 'photo.jpg',
-          };
-        });
+          try {
+            // Upload file to R2
+            const result = await uploadFileToR2(
+              file.buffer,
+              filename,
+              file.mimetype
+            );
+            
+            // Add processed photo to array
+            processedPhotos.push({
+              id: nanoid(),
+              url: result.url,
+              filename: file.originalname || 'photo.jpg',
+            });
+            
+            console.log(`File uploaded to R2 for project ${projectId}: ${file.originalname}, R2 URL: ${result.url}`);
+          } catch (error) {
+            console.error(`Error uploading file to R2: ${error}`);
+            // Continue with other files even if one fails
+          }
+        }
       } 
       // Check for photos in JSON format
       else if (req.body.photos && Array.isArray(req.body.photos)) {
