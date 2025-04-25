@@ -26,7 +26,15 @@ import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc } from "drizzle-orm";
 // Use Cloudflare R2 for storage
-import { BUCKET_NAME as R2_BUCKET_NAME, uploadFileToR2, r2Upload, generateUniqueFileName, isValidFileType, isValidFileSize } from "./r2";
+import { 
+  BUCKET_NAME as R2_BUCKET_NAME, 
+  uploadFileToR2, 
+  r2Upload, 
+  generateUniqueFileName, 
+  isValidFileType, 
+  isValidFileSize,
+  downloadAndUploadToR2
+} from "./r2";
 import multer from "multer";
 
 // Helper function to download an image from a URL to the uploads directory
@@ -241,6 +249,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
   
   // ==================== Cloudflare R2 Upload Routes ====================
+  
+  // Test R2 connection
+  app.get("/api/r2/test", async (req: Request, res: Response) => {
+    try {
+      // Check if we have all required env variables
+      if (!process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY || 
+          !process.env.R2_BUCKET_NAME || !process.env.R2_ACCOUNT_ID) {
+        return res.status(500).json({
+          status: "error",
+          message: "Missing required R2 configuration variables",
+          config: {
+            hasAccessKey: Boolean(process.env.R2_ACCESS_KEY_ID),
+            hasSecretKey: Boolean(process.env.R2_SECRET_ACCESS_KEY),
+            hasBucketName: Boolean(process.env.R2_BUCKET_NAME),
+            hasAccountId: Boolean(process.env.R2_ACCOUNT_ID)
+          }
+        });
+      }
+      
+      // Try a simple R2 operation to test connection
+      const testFileContent = Buffer.from("R2 connection test file - " + new Date().toISOString());
+      const testFileName = `test-${Date.now()}.txt`;
+      
+      const result = await uploadFileToR2(
+        testFileContent,
+        testFileName,
+        "text/plain"
+      );
+      
+      return res.status(200).json({
+        status: "success",
+        message: "R2 connection successful",
+        endpoint: `https://${process.env.R2_BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.dev/`,
+        testFile: {
+          url: result.url,
+          key: result.key
+        }
+      });
+    } catch (error) {
+      console.error("R2 test connection failed:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "R2 connection failed",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage (endpoint genérico)
   app.post("/api/photos/upload", authenticate, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
@@ -1164,22 +1219,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let id = nanoid();
           
           try {
-            // Handle external URLs like Unsplash: download the image to local storage
+            // Handle external URLs like Unsplash: download and upload to R2
             if (url.startsWith('http')) {
               console.log(`External photo URL: ${url} with ID: ${id}`);
               
               try {
-                // Attempt to download the image
-                const localUrl = await downloadImage(url, photo.filename);
-                url = localUrl; // Use the local URL after successful download
-                console.log(`Successfully downloaded external image to: ${url}`);
-              } catch (err) {
-                console.error(`Failed to download external image from ${url}: ${err.message}`);
+                // Generate a unique filename for the external image
+                const uniqueFilename = generateUniqueFileName(photo.filename || 'photo.jpg');
+                
+                // Download and upload the image to R2
+                const result = await downloadAndUploadToR2(url, uniqueFilename);
+                url = result.url; // Use the R2 URL
+                console.log(`Successfully downloaded external image and uploaded to R2: ${url}`);
+              } catch (err: any) {
+                console.error(`Failed to download and upload external image from ${url}: ${err.message}`);
                 // Keep the external URL if download fails
               }
-            } else {
-              // Local uploads: fix paths
-              url = `/uploads/${path.basename(url)}`;
             }
             
             console.log(`JSON photo: ${photo.filename}, URL: ${url}, ID: ${id}`);
@@ -1208,22 +1263,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let id = nanoid();
             
             try {
-              // Handle external URLs like Unsplash: download the image to local storage
+              // Handle external URLs like Unsplash: download and upload to R2
               if (url.startsWith('http')) {
                 console.log(`External photo URL: ${url} with ID: ${id}`);
                 
                 try {
-                  // Attempt to download the image
-                  const localUrl = await downloadImage(url, photo.filename);
-                  url = localUrl; // Use the local URL after successful download
-                  console.log(`Successfully downloaded external image to: ${url}`);
-                } catch (err) {
-                  console.error(`Failed to download external image from ${url}: ${err.message}`);
+                  // Generate a unique filename for the external image
+                  const uniqueFilename = generateUniqueFileName(photo.filename || 'photo.jpg');
+                  
+                  // Download and upload the image to R2
+                  const result = await downloadAndUploadToR2(url, uniqueFilename);
+                  url = result.url; // Use the R2 URL
+                  console.log(`Successfully downloaded external image and uploaded to R2: ${url}`);
+                } catch (err: any) {
+                  console.error(`Failed to download and upload external image from ${url}: ${err.message}`);
                   // Keep the external URL if download fails
                 }
-              } else {
-                // Local uploads: fix paths
-                url = `/uploads/${path.basename(url)}`;
               }
               
               console.log(`JSON photosData: ${photo.filename}, URL: ${url}, ID: ${id}`);
@@ -1503,22 +1558,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let id = photo.id || nanoid();
           
           try {
-            // Handle external URLs like Unsplash: download the image to local storage
+            // Handle external URLs like Unsplash: download and upload to R2
             if (url.startsWith('http')) {
               console.log(`External photo URL: ${url} with ID: ${id}`);
               
               try {
-                // Attempt to download the image
-                const localUrl = await downloadImage(url, photo.filename);
-                url = localUrl; // Use the local URL after successful download
-                console.log(`Successfully downloaded external image to: ${url}`);
+                // Generate a unique filename for the external image
+                const uniqueFilename = generateUniqueFileName(photo.filename || 'photo.jpg');
+                
+                // Download and upload the image to R2
+                const result = await downloadAndUploadToR2(url, uniqueFilename);
+                url = result.url; // Use the R2 URL
+                console.log(`Successfully downloaded external image and uploaded to R2: ${url}`);
               } catch (err: any) {
-                console.error(`Failed to download external image from ${url}: ${err.message}`);
+                console.error(`Failed to download and upload external image from ${url}: ${err.message}`);
                 // Keep the external URL if download fails
               }
-            } else {
-              // Local uploads: fix paths
-              url = `/uploads/${path.basename(url)}`;
             }
             
             console.log(`JSON photo for existing project: ${photo.filename}, URL: ${url}, ID: ${id}`);

@@ -1,3 +1,20 @@
+/**
+ * Cloudflare R2 Storage Integration
+ * 
+ * This module provides utilities to interact with Cloudflare R2 storage service.
+ * 
+ * Required environment variables:
+ * - R2_ACCESS_KEY_ID: Your Cloudflare R2 access key
+ * - R2_SECRET_ACCESS_KEY: Your Cloudflare R2 secret key
+ * - R2_ACCOUNT_ID: Your Cloudflare account ID 
+ * - R2_BUCKET_NAME: The name of your R2 bucket
+ * - R2_REGION: The region of your R2 bucket (optional, defaults to 'auto')
+ * 
+ * Important notes:
+ * - Make sure your bucket is created manually in the Cloudflare dashboard before using this module
+ * - Public access must be enabled on the bucket for URLs to work properly
+ */
+
 import { S3Client, PutObjectCommand, HeadBucketCommand, ListBucketsCommand, CreateBucketCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import multer from "multer";
@@ -130,6 +147,42 @@ export async function uploadFileToR2(
 }
 
 /**
+ * Download image from URL and upload to R2
+ */
+export async function downloadAndUploadToR2(
+  sourceUrl: string,
+  filename: string
+): Promise<{ url: string, key: string }> {
+  try {
+    // Fetch the image from the URL
+    const response = await fetch(sourceUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+    }
+    
+    // Get the image content type
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    
+    // Convert the response to a buffer
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    // Upload the image to R2
+    const result = await uploadFileToR2(
+      buffer,
+      filename,
+      contentType
+    );
+    
+    return result;
+  } catch (error) {
+    console.error(`Error downloading and uploading image from ${sourceUrl}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Ensure bucket exists, create if it doesn't
  */
 export async function ensureBucketExists(): Promise<void> {
@@ -144,18 +197,13 @@ export async function ensureBucketExists(): Promise<void> {
       console.log(`Bucket '${BUCKET_NAME}' already exists.`);
       return;
     } catch (error: any) {
-      // If the bucket doesn't exist, we'll create it
+      // If the bucket doesn't exist, we'll inform the user they need to create it manually
       if (error.$metadata?.httpStatusCode === 404) {
-        console.log(`Bucket '${BUCKET_NAME}' not found, creating...`);
+        console.error(`Bucket '${BUCKET_NAME}' not found in Cloudflare R2.`);
+        console.error(`IMPORTANT: Buckets must be created manually in the Cloudflare dashboard before use.`);
+        console.error(`Please go to https://dash.cloudflare.com and create the bucket '${BUCKET_NAME}' with public access enabled.`);
         
-        // Create the bucket
-        await r2Client.send(
-          new CreateBucketCommand({
-            Bucket: BUCKET_NAME
-          })
-        );
-        
-        console.log(`Bucket '${BUCKET_NAME}' created successfully!`);
+        throw new Error(`Bucket '${BUCKET_NAME}' does not exist in Cloudflare R2. It must be created manually in the Cloudflare dashboard.`);
       } else {
         // If it's another error, rethrow it
         throw error;
