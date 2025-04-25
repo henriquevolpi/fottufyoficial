@@ -1,12 +1,13 @@
 import { 
   users, type User, type InsertUser, 
-  projects, type Project, type InsertProject, 
+  projects, type Project, type InsertProject,
+  photos, 
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, count, inArray, sql } from "drizzle-orm";
 
 // Memory storage implementation
 import session from "express-session";
@@ -38,6 +39,7 @@ export interface IStorage {
   // Upload management methods
   checkUploadLimit(userId: number, count: number): Promise<boolean>;
   updateUploadUsage(userId: number, addCount: number): Promise<User | undefined>;
+  syncUsedUploads(userId: number): Promise<User | undefined>;
   
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -326,6 +328,29 @@ export class MemStorage implements IStorage {
     // Update user
     const updatedUser = await this.updateUser(userId, {
       usedUploads: newUsedUploads,
+    });
+    
+    return updatedUser;
+  }
+  
+  async syncUsedUploads(userId: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    // Get all projects for this user
+    const userProjects = await this.getProjects(userId);
+    
+    // Count the total number of photos across all projects
+    let totalPhotoCount = 0;
+    for (const project of userProjects) {
+      totalPhotoCount += project.photos ? project.photos.length : 0;
+    }
+    
+    console.log(`Syncing usedUploads for user ${userId}: calculated ${totalPhotoCount} total photos`);
+    
+    // Update user with the accurate count
+    const updatedUser = await this.updateUser(userId, {
+      usedUploads: totalPhotoCount,
     });
     
     return updatedUser;
