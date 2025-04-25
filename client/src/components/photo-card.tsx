@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl } from "@/lib/imageUtils";
 
 interface PhotoCardProps {
   id: string;
@@ -27,7 +28,7 @@ export default function PhotoCard({
   };
 
   // Format image URL for display
-  const displayUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+  const displayUrl = getPhotoUrl(url);
 
   return (
     <div 
@@ -55,16 +56,18 @@ export default function PhotoCard({
           className="w-full h-full object-cover"
           onError={(e) => {
             console.error(`Error loading image: ${id} from URL: ${url}`);
-            // Try again with just the ID as a fallback method
-            if (!url.includes('/uploads/')) {
-              const fallbackUrl = `/uploads/${id}`;
-              console.log(`Trying fallback URL: ${fallbackUrl}`);
-              e.currentTarget.src = fallbackUrl;
-            } else {
-              // Last resort - use a placeholder
-              e.currentTarget.src = "https://images.unsplash.com/photo-1526045612212-70caf35c14df";
-              console.log(`Falling back to placeholder for image ${id}`);
-            }
+            // Try the fallback URL first
+            const fallbackUrl = getFallbackPhotoUrl(id);
+            console.log(`Trying fallback URL: ${fallbackUrl}`);
+            e.currentTarget.src = fallbackUrl;
+            
+            // Add a second error handler in case the fallback also fails
+            e.currentTarget.onerror = () => {
+              console.log(`Fallback failed, using placeholder for image ${id}`);
+              e.currentTarget.src = getPlaceholderImageUrl();
+              // Remove the error handler to prevent infinite loops
+              e.currentTarget.onerror = null;
+            };
           }}
         />
         <div className={cn(
