@@ -7,14 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 // Helper function to handle different URL formats for R2 storage
-function getPhotoUrl(url: string): string {
-  // If the URL already includes http/https, use it directly
-  if (url.startsWith('http')) {
-    return url;
+function getPhotoUrl(photo: { url: string }) {
+  if (!photo?.url) return "/placeholder.jpg";
+  if (photo.url.startsWith("http")) {
+    return photo.url;
+  } else {
+    return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url}`;
   }
-  
-  // Build the full Cloudflare R2 URL
-  return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`;
 }
 import { 
   Check, 
@@ -335,10 +334,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const photo = project?.photos[photoIndex];
     if (photo) {
       // Format URL using our helper function
-      setCurrentImageUrl(getPhotoUrl(photo.url));
+      setCurrentImageUrl(getPhotoUrl(photo));
     } else {
       // Fallback if photo is not found, using our helper function
-      setCurrentImageUrl(getPhotoUrl(url));
+      setCurrentImageUrl(getPhotoUrl({ url }));
     }
     
     setCurrentPhotoIndex(photoIndex);
@@ -353,7 +352,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const nextPhoto = project.photos[nextIndex];
     
     // Format URL using our helper function
-    setCurrentImageUrl(getPhotoUrl(nextPhoto.url));
+    setCurrentImageUrl(getPhotoUrl(nextPhoto));
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -764,7 +763,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={getPhotoUrl(photo.url)}
+                    src={getPhotoUrl(photo)}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
@@ -896,7 +895,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {currentImageUrl && (
                 <img
-                  src={getPhotoUrl(currentImageUrl)}
+                  src={getPhotoUrl({ url: currentImageUrl })}
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
