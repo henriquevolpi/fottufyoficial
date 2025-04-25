@@ -45,9 +45,9 @@ export default function PhotoCard({
           </div>
         )}
         
-        {/* Use the URL directly from props */}
+        {/* Conditionally format URL based on whether it starts with http */}
         <img 
-          src={url} 
+          src={url.startsWith('http') ? url : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${url}`} 
           alt={filename}
           className="w-full h-full object-cover"
           onError={(e) => {

@@ -323,11 +323,20 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     // Get the photo from the current project
     const photo = project?.photos[photoIndex];
     if (photo) {
-      // Use photo.url directly without any helper function
-      setCurrentImageUrl(photo.url);
+      // Format URL based on whether it starts with http
+      const photoUrl = photo.url;
+      setCurrentImageUrl(
+        photoUrl.startsWith('http') 
+          ? photoUrl 
+          : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoUrl}`
+      );
     } else {
       // Fallback if photo is not found
-      setCurrentImageUrl(url);
+      setCurrentImageUrl(
+        url.startsWith('http') 
+          ? url 
+          : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${url}`
+      );
     }
     
     setCurrentPhotoIndex(photoIndex);
@@ -341,8 +350,13 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
     
-    // Use photo.url directly
-    setCurrentImageUrl(nextPhoto.url);
+    // Format URL based on whether it starts with http
+    const photoUrl = nextPhoto.url;
+    setCurrentImageUrl(
+      photoUrl.startsWith('http') 
+        ? photoUrl 
+        : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoUrl}`
+    );
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -353,8 +367,13 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
     
-    // Use photo.url directly
-    setCurrentImageUrl(prevPhoto.url);
+    // Format URL based on whether it starts with http
+    const photoUrl = prevPhoto.url;
+    setCurrentImageUrl(
+      photoUrl.startsWith('http') 
+        ? photoUrl 
+        : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photoUrl}`
+    );
     setCurrentPhotoIndex(prevIndex);
   };
   
@@ -753,7 +772,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={photo.url}
+                    src={photo.url.startsWith('http') ? photo.url : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photo.url}`}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
