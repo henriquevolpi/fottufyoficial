@@ -432,9 +432,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
+            const fullR2Url = `https://${process.env.R2_BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.dev/${filename}`;
             const newPhoto = await db.insert(photos).values({
               projectId,
-              url: result.url, // Store the full public R2 URL for proper display
+              url: fullR2Url, // Store the full public R2 URL for proper display
               filename,
               selected: false
             }).returning();
