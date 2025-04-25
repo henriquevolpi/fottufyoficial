@@ -453,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: filename, // Store only the filename, not the full URL
+            url: publicUrl, // Store the full public URL for consistency
             key: result.key
           });
         } catch (uploadError) {
