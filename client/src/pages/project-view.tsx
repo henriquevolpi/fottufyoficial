@@ -320,8 +320,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Abrir modal com a imagem em tamanho completo
   const openImageModal = (url: string, photoIndex: number, event: React.MouseEvent) => {
     event.stopPropagation(); // Impedir que o clique propague para o Card (que faria a seleção da foto)
-    // Use the utility function to ensure proper URL formatting
-    setCurrentImageUrl(url); // We'll apply getPhotoUrl when rendering
+    
+    // Use our improved utility function to process the photo object
+    const photo = project?.photos[photoIndex];
+    if (photo) {
+      // Set the fully formatted URL
+      setCurrentImageUrl(getImageUrl(photo));
+    } else {
+      // Fallback to the traditional method
+      setCurrentImageUrl(getPhotoUrl(url));
+    }
+    
     setCurrentPhotoIndex(photoIndex);
     setImageModalOpen(true);
   };
@@ -332,8 +341,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
-    // Use the raw URL - we'll apply formatting when rendering
-    setCurrentImageUrl(nextPhoto.url);
+    
+    // Use the improved imageUrl utility function
+    setCurrentImageUrl(getImageUrl(nextPhoto));
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -343,8 +353,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
-    // Use the raw URL - we'll apply formatting when rendering
-    setCurrentImageUrl(prevPhoto.url);
+    
+    // Use the improved imageUrl utility function
+    setCurrentImageUrl(getImageUrl(prevPhoto));
     setCurrentPhotoIndex(prevIndex);
   };
   
@@ -743,7 +754,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={getPhotoUrl(photo.url)}
+                    src={getImageUrl(photo)}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
@@ -754,11 +765,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       e.currentTarget.src = fallbackUrl;
                       
                       // Add a second error handler in case the fallback also fails
-                      e.currentTarget.onerror = () => {
+                      e.currentTarget.onerror = function(this: HTMLImageElement) {
                         console.log(`Fallback failed, using placeholder for image ${photo.id}`);
-                        e.currentTarget.src = getPlaceholderImageUrl();
+                        // 'this' refers to the image element within the function
+                        this.src = getPlaceholderImageUrl();
                         // Remove the error handler to prevent infinite loops
-                        e.currentTarget.onerror = null;
+                        this.onerror = null;
                       };
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
@@ -885,7 +897,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {currentImageUrl && (
                 <img
-                  src={getPhotoUrl(currentImageUrl)}
+                  src={currentImageUrl}
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
