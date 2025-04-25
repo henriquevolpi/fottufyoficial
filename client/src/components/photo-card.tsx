@@ -26,9 +26,6 @@ export default function PhotoCard({
     }
   };
 
-  // Format image URL for display using our improved utility function
-  const displayUrl = getImageUrl({ url });
-
   return (
     <div 
       className={cn(
@@ -48,9 +45,9 @@ export default function PhotoCard({
           </div>
         )}
         
-        {/* Improved image loading with better URL handling */}
+        {/* Use the URL directly from props */}
         <img 
-          src={displayUrl} 
+          src={url} 
           alt={filename}
           className="w-full h-full object-cover"
           onError={(e) => {

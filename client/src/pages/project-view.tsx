@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl, getImageUrl, Photo as PhotoType } from "@/lib/imageUtils";
 import { 
   Check, 
   Loader2, 
@@ -324,11 +323,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     // Get the photo from the current project
     const photo = project?.photos[photoIndex];
     if (photo) {
-      // Set the fully formatted URL using our improved utility function
-      setCurrentImageUrl(getImageUrl({ url: photo.url }));
+      // Use photo.url directly without any helper function
+      setCurrentImageUrl(photo.url);
     } else {
       // Fallback if photo is not found
-      setCurrentImageUrl(getImageUrl({ url }));
+      setCurrentImageUrl(url);
     }
     
     setCurrentPhotoIndex(photoIndex);
@@ -342,8 +341,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
     
-    // Use the improved imageUrl utility function
-    setCurrentImageUrl(getImageUrl({ url: nextPhoto.url }));
+    // Use photo.url directly
+    setCurrentImageUrl(nextPhoto.url);
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -354,8 +353,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
     
-    // Use the improved imageUrl utility function
-    setCurrentImageUrl(getImageUrl({ url: prevPhoto.url }));
+    // Use photo.url directly
+    setCurrentImageUrl(prevPhoto.url);
     setCurrentPhotoIndex(prevIndex);
   };
   
@@ -754,24 +753,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={getImageUrl(photo)}
+                    src={photo.url}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
                       console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
-                      // Try the fallback URL first
-                      const fallbackUrl = getFallbackPhotoUrl(photo.id);
-                      console.log(`Trying fallback URL: ${fallbackUrl}`);
-                      e.currentTarget.src = fallbackUrl;
-                      
-                      // Add a second error handler in case the fallback also fails
-                      e.currentTarget.onerror = function(this: HTMLImageElement) {
-                        console.log(`Fallback failed, using placeholder for image ${photo.id}`);
-                        // 'this' refers to the image element within the function
-                        this.src = getPlaceholderImageUrl();
-                        // Remove the error handler to prevent infinite loops
-                        this.onerror = null;
-                      };
+                      // Use the placeholder directly
+                      e.currentTarget.src = "/placeholder.jpg";
+                      // Remove the error handler to prevent infinite loops
+                      e.currentTarget.onerror = null;
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
                   />
