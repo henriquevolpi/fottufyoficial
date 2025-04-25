@@ -51,11 +51,24 @@ export async function uploadFileToStorage(file: File): Promise<{ url: string; fi
     const result = await response.json();
     
     // Return the URL and filename
-    return {
-      url: result.photos[0].url, // The permanent URL from the server
-      filename: result.photos[0].filename || file.name,
-      id: result.photos[0].id || nanoid()
-    };
+    // Handle both v1 and v2 API response formats
+    if (result.files && result.files.length > 0) {
+      // New R2 response format
+      return {
+        url: result.files[0].url, // The R2 permanent URL
+        filename: result.files[0].filename || file.name,
+        id: nanoid()
+      };
+    } else if (result.photos && result.photos.length > 0) {
+      // Legacy response format
+      return {
+        url: result.photos[0].url,
+        filename: result.photos[0].filename || file.name,
+        id: result.photos[0].id || nanoid()
+      };
+    } else {
+      throw new Error('Unexpected response format from server');
+    }
   } catch (error) {
     console.error('File upload failed:', error);
     throw error;

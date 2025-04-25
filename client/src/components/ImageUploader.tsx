@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import imageCompression from 'browser-image-compression'
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploaderProps {
   projectId: string | number;
@@ -11,6 +12,7 @@ interface ImageUploaderProps {
 export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
 
   async function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -40,6 +42,20 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       })
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Upload successful:', result);
+        
+        // Log upload details - helps with debugging
+        const fileCount = result.files?.length || result.totalUploaded || 0;
+        console.log(`Uploaded ${fileCount} file(s) to project ${projectId}`);
+        
+        // Show success notification
+        toast({
+          title: "Upload concluído",
+          description: `${fileCount} foto(s) enviada(s) com sucesso.`,
+          variant: "default",
+        });
+        
         // Limpar preview após upload bem-sucedido
         setPreview(null)
         
@@ -48,10 +64,43 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
           onUploadSuccess()
         }
       } else {
-        console.error('Erro ao enviar imagem:', await response.text())
+        // Parse the error response
+        try {
+          const errorData = await response.json();
+          console.error('Erro ao enviar imagem:', errorData);
+          
+          // Check for specific error types and display appropriate message
+          if (response.status === 403 && errorData.message?.includes('Upload limit')) {
+            toast({
+              title: "Limite de upload atingido",
+              description: "Por favor, atualize seu plano para enviar mais fotos.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Erro ao enviar imagem",
+              description: errorData.message || 'Erro desconhecido',
+              variant: "destructive",
+            });
+          }
+        } catch (e) {
+          // Fallback to text response if not JSON
+          const errorText = await response.text();
+          console.error('Erro ao enviar imagem (texto):', errorText);
+          toast({
+            title: "Erro ao enviar imagem",
+            description: errorText || response.statusText,
+            variant: "destructive",
+          });
+        }
       }
     } catch (err) {
       console.error('Erro ao processar ou enviar imagem:', err)
+      toast({
+        title: "Erro ao processar imagem",
+        description: err instanceof Error ? err.message : "Erro ao comprimir ou enviar a imagem",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false)
     }
