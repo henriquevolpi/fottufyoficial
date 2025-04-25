@@ -342,12 +342,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       // Format URL using our helper function
       setCurrentImageUrl(getPhotoUrl(photo.url));
     } else {
-      // Fallback if photo is not found
-      setCurrentImageUrl(
-        url.startsWith('http') 
-          ? url 
-          : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`
-      );
+      // Fallback if photo is not found, using our helper function
+      setCurrentImageUrl(getPhotoUrl(url));
     }
     
     setCurrentPhotoIndex(photoIndex);
@@ -361,13 +357,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
     
-    // Format URL based on whether it starts with http
-    const photoUrl = nextPhoto.url;
-    setCurrentImageUrl(
-      photoUrl.startsWith('http') 
-        ? photoUrl 
-        : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photoUrl}`
-    );
+    // Format URL using our helper function
+    setCurrentImageUrl(getPhotoUrl(nextPhoto.url));
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -378,13 +369,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
     
-    // Format URL based on whether it starts with http
-    const photoUrl = prevPhoto.url;
-    setCurrentImageUrl(
-      photoUrl.startsWith('http') 
-        ? photoUrl 
-        : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photoUrl}`
-    );
+    // Format URL using our helper function
+    setCurrentImageUrl(getPhotoUrl(prevPhoto.url));
     setCurrentPhotoIndex(prevIndex);
   };
   
@@ -936,8 +922,26 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
                     console.error(`Error loading modal image from URL: ${currentImageUrl}`);
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/placeholder.jpg";
+                    // Try the alternative URL format as a fallback
+                    const isUsingCloudflareStorage = currentImageUrl.includes('r2.cloudflarestorage.com');
+                    
+                    if (isUsingCloudflareStorage && currentImageUrl.includes('/')) {
+                      // Extract just the filename from the path
+                      const filename = currentImageUrl.split('/').pop();
+                      // Try with old format
+                      e.currentTarget.src = `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${filename}`;
+                      console.log(`Trying fallback URL format: ${e.currentTarget.src}`);
+                      
+                      // Setup final fallback if that also fails
+                      e.currentTarget.onerror = () => {
+                        console.error(`All fallbacks failed, using placeholder`);
+                        e.currentTarget.src = "/placeholder.jpg";
+                        e.currentTarget.onerror = null; // Prevent infinite loops
+                      };
+                    } else {
+                      e.currentTarget.src = "/placeholder.jpg";
+                      e.currentTarget.onerror = null;
+                    }
                   }}
                 />
               )}
