@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl, getImageUrl, Photo as PhotoType } from "@/lib/imageUtils";
 
 interface PhotoCardProps {
   id: string;
