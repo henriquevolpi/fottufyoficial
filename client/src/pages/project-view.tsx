@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { getImageUrl as getPhotoUrl } from "@/lib/imageUtils";
+import { getPhotoUrl, getImageUrl } from "@/lib/imageUtils";
 import { 
   Check, 
   Loader2, 
@@ -754,9 +754,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={getPhotoUrl(photo)}
+                    src={getPhotoUrl(photo.url)}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
                     onError={(e) => {
                       console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
                       e.currentTarget.onerror = null;
@@ -886,7 +887,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {currentImageUrl && (
                 <img
-                  src={getPhotoUrl({ url: currentImageUrl })}
+                  src={getPhotoUrl(currentImageUrl)}
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
