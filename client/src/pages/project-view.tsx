@@ -320,8 +320,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Abrir modal com a imagem em tamanho completo
   const openImageModal = (url: string, photoIndex: number, event: React.MouseEvent) => {
     event.stopPropagation(); // Impedir que o clique propague para o Card (que faria a seleção da foto)
-    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-    setCurrentImageUrl(fullUrl);
+    // Use the utility function to ensure proper URL formatting
+    setCurrentImageUrl(url); // We'll apply getPhotoUrl when rendering
     setCurrentPhotoIndex(photoIndex);
     setImageModalOpen(true);
   };
@@ -332,11 +332,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
-    const fullUrl = nextPhoto.url.startsWith('http') 
-      ? nextPhoto.url 
-      : `${window.location.origin}${nextPhoto.url}`;
-    
-    setCurrentImageUrl(fullUrl);
+    // Use the raw URL - we'll apply formatting when rendering
+    setCurrentImageUrl(nextPhoto.url);
     setCurrentPhotoIndex(nextIndex);
   };
   
@@ -346,11 +343,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
-    const fullUrl = prevPhoto.url.startsWith('http') 
-      ? prevPhoto.url 
-      : `${window.location.origin}${prevPhoto.url}`;
-    
-    setCurrentImageUrl(fullUrl);
+    // Use the raw URL - we'll apply formatting when rendering
+    setCurrentImageUrl(prevPhoto.url);
     setCurrentPhotoIndex(prevIndex);
   };
   
