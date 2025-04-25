@@ -124,16 +124,18 @@ export async function uploadFileToR2(
     await r2Client.send(uploadCommand);
 
     // Generate the public URL
-    // For Cloudflare R2, public URLs need to be generated in one of two ways:
+    // For Cloudflare R2, public URLs can be generated in three ways:
     // 1. Using Custom Domains configured in Cloudflare
-    // 2. Using the bucket's default public URL in the format: https://<bucket>.<accountid>.r2.dev/<filename>
+    // 2. Using the bucket's default R2 URL: https://<bucket>.<accountid>.r2.dev/<filename>
+    // 3. Using the standard S3 URL format: https://<accountid>.r2.cloudflarestorage.com/<bucket>/<filename>
     
     // For Cloudflare R2, we need to extract just the account ID for the public URL
     // The account ID is the first part of the hostname in the endpoint
     const accountId = process.env.R2_ACCOUNT_ID || '';
     
-    // Public URLs use the format: https://<bucket-name>.<account-id>.r2.dev/<filename>
-    const publicUrl = `https://${BUCKET_NAME}.${accountId}.r2.dev/${fileName}`;
+    // Public URLs use the format: https://<account-id>.r2.cloudflarestorage.com/<bucket-name>/<filename>
+    // This is the preferred format for accessing public files in Cloudflare R2
+    const publicUrl = `https://${accountId}.r2.cloudflarestorage.com/${BUCKET_NAME}/${fileName}`;
     console.log(`Generated public URL: ${publicUrl}`);
     
     return {
