@@ -910,6 +910,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
+                    console.error(`Error loading modal image from URL: ${currentImageUrl}`);
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = "/placeholder.jpg";
                   }}
