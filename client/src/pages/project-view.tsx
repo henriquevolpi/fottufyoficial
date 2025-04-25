@@ -5,6 +5,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+
+// Helper function to handle different URL formats for R2 storage
+function getPhotoUrl(url: string): string {
+  // If the URL already includes http/https, use it directly
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // Check if the URL already has the old format (bucket.accountid.r2.dev)
+  if (url.includes('.r2.dev/')) {
+    return url;
+  }
+  
+  // Use the new recommended format
+  return `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${url}`;
+}
 import { 
   Check, 
   Loader2, 
@@ -323,13 +339,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     // Get the photo from the current project
     const photo = project?.photos[photoIndex];
     if (photo) {
-      // Format URL based on whether it starts with http
-      const photoUrl = photo.url;
-      setCurrentImageUrl(
-        photoUrl.startsWith('http') 
-          ? photoUrl 
-          : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photoUrl}`
-      );
+      // Format URL using our helper function
+      setCurrentImageUrl(getPhotoUrl(photo.url));
     } else {
       // Fallback if photo is not found
       setCurrentImageUrl(
@@ -772,16 +783,29 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={photo.url.startsWith('http') ? photo.url : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url}`}
+                    src={getPhotoUrl(photo.url)}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
                       console.error(`Error loading image: ${photo.id} from URL: ${photo.url}`);
-                      console.log(`Attempted URL: ${photo.url.startsWith('http') ? photo.url : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url}`}`);
-                      // Use the placeholder directly
-                      e.currentTarget.src = "/placeholder.jpg";
-                      // Remove the error handler to prevent infinite loops
-                      e.currentTarget.onerror = null;
+                      console.log(`Attempted URL: ${getPhotoUrl(photo.url)}`);
+                      // Attempt fallback to the alternative URL format
+                      const isUsingCloudflareStorage = getPhotoUrl(photo.url).includes('r2.cloudflarestorage.com');
+                      const fallbackUrl = isUsingCloudflareStorage 
+                        ? photo.url.includes('.r2.dev/') 
+                          ? photo.url // Already in r2.dev format
+                          : `https://${import.meta.env.VITE_R2_BUCKET_NAME}.${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.dev/${photo.url}` 
+                        : `https://${import.meta.env.VITE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${import.meta.env.VITE_R2_BUCKET_NAME}/${photo.url.split('/').pop()}`;
+                      
+                      console.log(`Trying fallback URL: ${fallbackUrl}`);
+                      e.currentTarget.src = fallbackUrl;
+                      
+                      // Setup a second error handler for the fallback
+                      e.currentTarget.onerror = () => {
+                        console.error(`Fallback also failed, using placeholder`);
+                        e.currentTarget.src = "/placeholder.jpg";
+                        e.currentTarget.onerror = null; // Prevent infinite loops
+                      };
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
                   />
