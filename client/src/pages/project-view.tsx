@@ -364,7 +364,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     const prevPhoto = project.photos[prevIndex];
     
     // Format URL using our helper function
-    setCurrentImageUrl(getPhotoUrl(prevPhoto.url));
+    setCurrentImageUrl(getPhotoUrl(prevPhoto));
     setCurrentPhotoIndex(prevIndex);
   };
   

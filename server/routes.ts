@@ -335,15 +335,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file.mimetype
           );
           
-          // Store just the filename, not the full URL with /uploads/ prefix
-          // This is needed for proper R2 URL generation on the frontend
+          // Use the full public URL from Cloudflare R2
+          // Format: https://<account_id>.r2.cloudflarestorage.com/<bucket_name>/<filename>
+          const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${filename}`;
           
           uploadedFiles.push({
             originalName: file.originalname,
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: filename, // Store only the filename, not the full URL
+            url: publicUrl, // Store the full public URL
             key: result.key
           });
         } catch (error) {
@@ -426,16 +427,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file.mimetype
           );
           
-          // Store just the filename, not the full URL with /uploads/ prefix
-          // This is needed for proper R2 URL generation on the frontend
-          // Note: We're ignoring the full URL from result.url and just using the filename
+          // Use the full public URL from Cloudflare R2
+          // Format: https://<account_id>.r2.cloudflarestorage.com/<bucket_name>/<filename>
           
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
-            const fullR2Url = `https://${process.env.R2_BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.dev/${filename}`;
+            const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${filename}`;
             const newPhoto = await db.insert(photos).values({
               projectId,
-              url: fullR2Url, // Store the full public R2 URL for proper display
+              url: publicUrl, // Store the full public R2 URL for proper display
               filename,
               selected: false
             }).returning();
