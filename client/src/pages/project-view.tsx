@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl } from "@/lib/imageUtils";
+import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl, getImageUrl, Photo as PhotoType } from "@/lib/imageUtils";
 import { 
   Check, 
   Loader2, 

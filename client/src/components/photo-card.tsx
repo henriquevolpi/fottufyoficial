@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl } from "@/lib/imageUtils";
+import { getPhotoUrl, getFallbackPhotoUrl, getPlaceholderImageUrl, getImageUrl, Photo as PhotoType } from "@/lib/imageUtils";
 
 interface PhotoCardProps {
   id: string;
@@ -27,8 +27,8 @@ export default function PhotoCard({
     }
   };
 
-  // Format image URL for display
-  const displayUrl = getPhotoUrl(url);
+  // Format image URL for display using our improved utility function
+  const displayUrl = getImageUrl({id, url, filename});
 
   return (
     <div 
