@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const newPhoto = await db.insert(photos).values({
               projectId,
-              url: filename, // Store only the filename, not the full URL
+              url: result.url, // Store the full public R2 URL for proper display
               filename,
               selected: false
             }).returning();
