@@ -31,7 +31,7 @@ export const getPhotoUrl = (url: string): string => {
       // Extract the filename from the old URL
       const parts = url.split('/');
       const filename = parts[parts.length - 1];
-      return `https://cdn.fottufy.com/project-photos/${filename}`;
+      return `https://cdn.fottufy.com/${filename}`;
     }
     // Return other full URLs as-is (including cdn.fottufy.com URLs)
     return url;
@@ -42,11 +42,11 @@ export const getPhotoUrl = (url: string): string => {
     // Extract the filename from the R2 URL
     const parts = url.split('/');
     const filename = parts[parts.length - 1];
-    return `https://cdn.fottufy.com/project-photos/${filename}`;
+    return `https://cdn.fottufy.com/${filename}`;
   }
   
   // For URLs that are just filenames, use the new CDN domain
-  return `https://cdn.fottufy.com/project-photos/${url}`;
+  return `https://cdn.fottufy.com/${url}`;
 };
 
 /**
@@ -78,7 +78,7 @@ export const getAlternativePhotoUrl = (url: string): string => {
   if (url.includes('.r2.cloudflarestorage.com')) {
     const parts = url.split('/');
     const filename = parts[parts.length - 1];
-    return `https://cdn.fottufy.com/project-photos/${filename}`;
+    return `https://cdn.fottufy.com/${filename}`;
   }
   
   // No alternative available

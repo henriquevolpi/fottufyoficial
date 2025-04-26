@@ -120,7 +120,7 @@ export default function PhotoCard({
                   };
                   
                   // Try CDN URL
-                  const cdnUrl = `https://cdn.fottufy.com/project-photos/${filename}`;
+                  const cdnUrl = `https://cdn.fottufy.com/${filename}`;
                   console.log(`Attempt: Trying CDN URL: ${cdnUrl}`);
                   img.src = cdnUrl;
                 }
