@@ -46,9 +46,9 @@ export default function PhotoCard({
           </div>
         )}
         
-        {/* Use photo URL directly with getPhotoUrl as fallback */}
+        {/* Use getPhotoUrl with the complete photo object for better fallback handling */}
         <img 
-          src={url || getPhotoUrl(url) || "/placeholder.jpg"}
+          src={getPhotoUrl({ url, filename })}
           alt={filename}
           className="w-full h-full object-cover"
           loading="lazy"

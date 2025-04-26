@@ -12,12 +12,24 @@ export interface Photo {
 
 /**
  * Ensures a photo URL is properly formatted regardless of its source (local or R2)
- * with improved fallback mechanisms
+ * Can accept either a string URL or a photo object with url and filename properties
  * 
- * @param url The original photo URL to format
+ * @param input The photo object or URL string
  * @returns A properly formatted URL that can be used in img src
  */
-export const getPhotoUrl = (url: string): string => {
+export function getPhotoUrl(input: string | { url?: string; filename: string }): string {
+  // Handle photo object input
+  if (typeof input !== 'string') {
+    // If photo has a URL, use it directly
+    if (input.url) return input.url;
+    
+    // Otherwise use the CDN with filename
+    return `https://cdn.fottufy.com/${input.filename}`;
+  }
+  
+  // From here on, input is a string URL
+  const url = input;
+  
   // Guard against undefined or null URLs
   if (!url) {
     console.warn('getPhotoUrl called with empty URL');
@@ -87,14 +99,22 @@ export const getAlternativePhotoUrl = (url: string): string => {
 
 /**
  * Creates a properly formatted URL from a photo object
- * @param photo The photo object containing an id and url
+ * @param photo The photo object containing an id, url, and filename
  * @returns A properly formatted URL that can be used in img src
  */
-export function getImageUrl(photo: { url: string }): string {
-  if (!photo || !photo.url) return "/placeholder.jpg";
+export function getImageUrl(photo: { url?: string; filename?: string }): string {
+  if (!photo) return "/placeholder.jpg";
   
-  // Use the same logic as getPhotoUrl
-  return getPhotoUrl(photo.url);
+  if (photo.url) {
+    // If we have a URL, use it directly
+    return photo.url;
+  } else if (photo.filename) {
+    // If we have a filename but no URL, use CDN + filename
+    return `https://cdn.fottufy.com/${photo.filename}`;
+  }
+  
+  // Last fallback
+  return "/placeholder.jpg";
 }
 
 /**

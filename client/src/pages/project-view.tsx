@@ -679,7 +679,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={photo.url || getPhotoUrl(photo.url) || "/placeholder.jpg"}
+                    src={getPhotoUrl({ url: photo.url, filename: photo.filename })}
                     alt={photo.filename}
                     className="absolute inset-0 w-full h-full object-cover"
                     loading="lazy"
@@ -849,9 +849,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           <div className="flex flex-col items-center h-full pt-4">
             {/* Container da Imagem */}
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
-              {currentImageUrl && (
+              {project.photos[currentPhotoIndex] && (
                 <img
-                  src={currentImageUrl || getPhotoUrl(currentImageUrl) || "/placeholder.jpg"}
+                  src={getPhotoUrl({ 
+                    url: project.photos[currentPhotoIndex].url, 
+                    filename: project.photos[currentPhotoIndex].filename 
+                  })}
                   alt="Foto em tamanho completo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
@@ -861,7 +864,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       return;
                     }
                     
-                    console.warn(`First attempt loading modal image failed from URL: ${currentImageUrl}`);
+                    const currentPhoto = project.photos[currentPhotoIndex];
+                    console.warn(`First attempt loading modal image failed from URL: ${currentPhoto.url}`);
                     
                     // Cast to HTMLImageElement for type safety
                     const img = e.currentTarget as HTMLImageElement;
@@ -871,9 +875,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     
                     try {
                       // Try alternative URL format if it's an R2 URL
-                      let altUrl = currentImageUrl;
-                      if (typeof currentImageUrl === 'string' && currentImageUrl.includes('.r2.cloudflarestorage.com')) {
-                        altUrl = currentImageUrl.replace('.r2.cloudflarestorage.com', '.r2.dev');
+                      let altUrl = currentPhoto.url;
+                      if (currentPhoto.url && currentPhoto.url.includes('.r2.cloudflarestorage.com')) {
+                        altUrl = currentPhoto.url.replace('.r2.cloudflarestorage.com', '.r2.dev');
                         console.log(`Trying alternative modal URL format: ${altUrl}`);
                         
                         // Set up final fallback handler
