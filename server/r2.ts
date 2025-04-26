@@ -133,8 +133,8 @@ export async function uploadFileToR2(
     // The account ID is the first part of the hostname in the endpoint
     const accountId = process.env.R2_ACCOUNT_ID || '';
     
-    // Using custom CDN domain for image URLs
-    const publicUrl = `https://cdn.fottufy.com/project-photos/${fileName}`;
+    // Using custom CDN domain for image URLs (without folder prefix)
+    const publicUrl = `https://cdn.fottufy.com/${fileName}`;
     console.log(`Generated CDN URL: ${publicUrl}`);
     
     return {
