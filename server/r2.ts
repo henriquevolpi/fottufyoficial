@@ -133,10 +133,9 @@ export async function uploadFileToR2(
     // The account ID is the first part of the hostname in the endpoint
     const accountId = process.env.R2_ACCOUNT_ID || '';
     
-    // Public URLs use the format: https://<account-id>.r2.cloudflarestorage.com/<bucket-name>/<filename>
-    // This is the preferred format for accessing public files in Cloudflare R2
-    const publicUrl = `https://${accountId}.r2.cloudflarestorage.com/${BUCKET_NAME}/${fileName}`;
-    console.log(`Generated public URL: ${publicUrl}`);
+    // Using custom CDN domain for image URLs
+    const publicUrl = `https://cdn.fottufy.com/project-photos/${fileName}`;
+    console.log(`Generated CDN URL: ${publicUrl}`);
     
     return {
       url: publicUrl,

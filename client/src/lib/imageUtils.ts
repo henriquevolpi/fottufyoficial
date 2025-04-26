@@ -26,40 +26,63 @@ export const getPhotoUrl = (url: string): string => {
   
   // If the URL already starts with http/https, it's a complete URL
   if (url.startsWith('http')) {
+    // Check if it's an old R2 URL that needs to be replaced with the CDN URL
+    if (url.includes('.r2.cloudflarestorage.com')) {
+      // Extract the filename from the old URL
+      const parts = url.split('/');
+      const filename = parts[parts.length - 1];
+      return `https://cdn.fottufy.com/project-photos/${filename}`;
+    }
+    // Return other full URLs as-is (including cdn.fottufy.com URLs)
     return url;
   }
   
   // Check if it might be a full R2 URL without the protocol
   if (url.includes('.r2.cloudflarestorage.com')) {
-    return `https://${url}`;
+    // Extract the filename from the R2 URL
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    return `https://cdn.fottufy.com/project-photos/${filename}`;
   }
   
-  const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
-  const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
-  
-  // Verify we have the required environment variables
-  if (!accountId || !bucketName) {
-    console.error('Missing R2 environment variables');
-    return url; // Return original as fallback
-  }
-  
-  // Build the full Cloudflare R2 URL (assuming url is just a filename)
-  return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${url}`;
+  // For URLs that are just filenames, use the new CDN domain
+  return `https://cdn.fottufy.com/project-photos/${url}`;
 };
 
 /**
- * Alternative R2 URL format to try if the primary one fails
+ * Alternative URL format to try if the primary fails
  * @param url The original URL that failed
  * @returns An alternative URL format to try
  */
 export const getAlternativePhotoUrl = (url: string): string => {
-  // If not an R2 URL, we can't create an alternative
-  if (!url || !url.includes('.r2.cloudflarestorage.com')) {
-    return url;
+  if (!url) return '/placeholder.jpg';
+  
+  // If using cdn.fottufy.com and it failed, extract the filename and try direct R2 URL
+  if (url.includes('cdn.fottufy.com')) {
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    
+    // Try to use the environment variables if available
+    const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
+    const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
+    
+    if (accountId && bucketName) {
+      return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${filename}`;
+    }
+    
+    // Fallback to static values if env vars are not available
+    return `/placeholder.jpg`;
   }
   
-  // Try the .r2.dev format instead of .r2.cloudflarestorage.com
-  return url.replace('.r2.cloudflarestorage.com', '.r2.dev');
+  // If it's still using the old R2 URL format, convert to CDN URL
+  if (url.includes('.r2.cloudflarestorage.com')) {
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    return `https://cdn.fottufy.com/project-photos/${filename}`;
+  }
+  
+  // No alternative available
+  return '/placeholder.jpg';
 };
 
 /**

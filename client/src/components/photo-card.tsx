@@ -72,48 +72,64 @@ export default function PhotoCard({
               const currentUrl = img.src;
               console.log(`Failed URL was: ${currentUrl}`);
               
-              // Try a series of alternative formats
-              if (currentUrl.includes('.r2.cloudflarestorage.com')) {
-                // Try R2.dev format
-                const devUrl = currentUrl.replace('.r2.cloudflarestorage.com', '.r2.dev');
-                console.log(`Attempt 1: Trying .r2.dev URL: ${devUrl}`);
-                
-                // Set up next fallback with DOM function
-                img.onerror = function() {
-                  console.log(`R2.dev format failed, trying direct URL`);
+              // Extract the filename from the URL that failed
+              let filename = '';
+              
+              // Extract the filename regardless of URL format
+              const parts = currentUrl.split('/');
+              filename = parts[parts.length - 1];
+              
+              if (filename && filename.length > 0) {
+                // First fallback: If we're using cdn.fottufy.com, try direct R2 URL
+                if (currentUrl.includes('cdn.fottufy.com')) {
+                  const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
+                  const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
                   
-                  // Try with just the filename portion
-                  const parts = url.split('/');
-                  const filename = parts[parts.length - 1];
-                  
-                  if (filename && filename.length > 0) {
+                  if (accountId && bucketName) {
+                    // Set up fallback chain
                     img.onerror = function() {
-                      // Final fallback to placeholder
-                      console.error(`All attempts to load image failed: ${id}`);
-                      img.onerror = null;
-                      img.src = "/placeholder.jpg";
+                      console.log(`Direct R2 URL failed, trying R2.dev format`);
+                      
+                      img.onerror = function() {
+                        console.error(`All attempts to load image failed: ${id}`);
+                        img.onerror = null;
+                        img.src = "/placeholder.jpg";
+                      };
+                      
+                      // Try the R2.dev format as last attempt
+                      const devUrl = `https://${bucketName}.${accountId}.r2.dev/${filename}`;
+                      console.log(`Final attempt: Trying .r2.dev URL: ${devUrl}`);
+                      img.src = devUrl;
                     };
                     
-                    // Try using just the filename with the environment variables
-                    const accountId = import.meta.env.VITE_R2_ACCOUNT_ID;
-                    const bucketName = import.meta.env.VITE_R2_BUCKET_NAME;
-                    
-                    if (accountId && bucketName) {
-                      const directUrl = `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${filename}`;
-                      console.log(`Attempt 2: Trying direct filename URL: ${directUrl}`);
-                      img.src = directUrl;
-                    } else {
-                      img.src = "/placeholder.jpg";
-                    }
+                    // Try direct R2 URL first
+                    const directUrl = `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${filename}`;
+                    console.log(`Attempt 1: Trying direct R2 URL: ${directUrl}`);
+                    img.src = directUrl;
                   } else {
+                    // No environment variables, go straight to placeholder
                     img.src = "/placeholder.jpg";
                   }
-                };
-                
-                // Try dev URL format
-                img.src = devUrl;
+                } 
+                // If using old R2 URL format, try the CDN URL
+                else if (currentUrl.includes('.r2.cloudflarestorage.com')) {
+                  img.onerror = function() {
+                    console.error(`CDN URL failed, using placeholder`);
+                    img.onerror = null;
+                    img.src = "/placeholder.jpg";
+                  };
+                  
+                  // Try CDN URL
+                  const cdnUrl = `https://cdn.fottufy.com/project-photos/${filename}`;
+                  console.log(`Attempt: Trying CDN URL: ${cdnUrl}`);
+                  img.src = cdnUrl;
+                }
+                else {
+                  // Non-recognized URL format, go to placeholder
+                  img.src = "/placeholder.jpg";
+                }
               } else {
-                // Go straight to placeholder if not an R2 URL
+                // Couldn't extract filename, use placeholder
                 img.src = "/placeholder.jpg";
               }
             } catch (error) {
