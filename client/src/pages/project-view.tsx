@@ -679,53 +679,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Maximize className="h-6 w-6 text-white" />
                   </div>
                   <img
-                    src={getPhotoUrl({ url: photo.url, filename: photo.filename })}
-                    alt={photo.filename}
+                    src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
+                    alt="Photo"
                     className="absolute inset-0 w-full h-full object-cover"
                     loading="lazy"
                     onError={(e) => {
-                      // Safety check to ensure currentTarget exists and is an image
-                      if (!e || !e.currentTarget || !(e.currentTarget instanceof HTMLImageElement)) {
-                        console.error('Error handler received invalid event');
-                        return;
-                      }
-                      
-                      console.warn(`First attempt loading image failed: ${photo.id} from URL: ${photo.url}`);
-                      
-                      // Cast to HTMLImageElement for type safety
-                      const img = e.currentTarget as HTMLImageElement;
-                      
-                      // Clear previous error handler to prevent loops
-                      img.onerror = null;
-                      
-                      try {
-                        // Try alternative URL format if it's an R2 URL
-                        let altUrl = photo.url;
-                        if (photo.url.includes('.r2.cloudflarestorage.com')) {
-                          altUrl = photo.url.replace('.r2.cloudflarestorage.com', '.r2.dev');
-                          console.log(`Trying alternative URL format: ${altUrl}`);
-                          
-                          // Set up final fallback with DOM function (not React handler)
-                          img.onerror = function() {
-                            console.error(`All attempts to load image failed: ${photo.id}`);
-                            img.onerror = null;
-                            img.src = "/placeholder.jpg";
-                          };
-                          
-                          // Try alternative URL
-                          img.src = altUrl;
-                        } else {
-                          // Go straight to placeholder if not an R2 URL
-                          img.src = "/placeholder.jpg";
-                        }
-                      } catch (error) {
-                        console.error('Error in fallback handling:', error);
-                        
-                        // Last resort - try placeholder
-                        if (img) {
-                          img.src = "/placeholder.jpg";
-                        }
-                      }
+                      e.currentTarget.src = '/placeholder.jpg';
                     }}
                     title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
                   />
@@ -851,58 +810,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {project.photos[currentPhotoIndex] && (
                 <img
-                  src={getPhotoUrl({ 
-                    url: project.photos[currentPhotoIndex].url, 
-                    filename: project.photos[currentPhotoIndex].filename 
-                  })}
-                  alt="Foto em tamanho completo"
+                  src={
+                    project.photos[currentPhotoIndex].url && 
+                    !project.photos[currentPhotoIndex].url.includes('project-photos') 
+                      ? project.photos[currentPhotoIndex].url 
+                      : `https://cdn.fottufy.com/${project.photos[currentPhotoIndex].filename}`
+                  }
+                  alt="Photo"
                   className="max-h-full max-w-full object-contain"
                   onError={(e) => {
-                    // Safety check to ensure currentTarget exists and is an image
-                    if (!e || !e.currentTarget || !(e.currentTarget instanceof HTMLImageElement)) {
-                      console.error('Error handler received invalid event');
-                      return;
-                    }
-                    
-                    const currentPhoto = project.photos[currentPhotoIndex];
-                    console.warn(`First attempt loading modal image failed from URL: ${currentPhoto.url}`);
-                    
-                    // Cast to HTMLImageElement for type safety
-                    const img = e.currentTarget as HTMLImageElement;
-                    
-                    // Clear previous error handler to prevent loops
-                    img.onerror = null;
-                    
-                    try {
-                      // Try alternative URL format if it's an R2 URL
-                      let altUrl = currentPhoto.url;
-                      if (currentPhoto.url && currentPhoto.url.includes('.r2.cloudflarestorage.com')) {
-                        altUrl = currentPhoto.url.replace('.r2.cloudflarestorage.com', '.r2.dev');
-                        console.log(`Trying alternative modal URL format: ${altUrl}`);
-                        
-                        // Set up final fallback handler
-                        img.onerror = function() {
-                          console.error(`All attempts to load modal image failed`);
-                          if (img) {
-                            img.onerror = null;
-                            img.src = "/placeholder.jpg";
-                          }
-                        };
-                        
-                        // Try alternative URL
-                        img.src = altUrl;
-                      } else {
-                        // Go straight to placeholder if not an R2 URL
-                        img.src = "/placeholder.jpg";
-                      }
-                    } catch (error) {
-                      console.error('Error in modal fallback handling:', error);
-                      
-                      // Last resort - try placeholder
-                      if (img) {
-                        img.src = "/placeholder.jpg";
-                      }
-                    }
+                    e.currentTarget.src = '/placeholder.jpg';
                   }}
                 />
               )}
