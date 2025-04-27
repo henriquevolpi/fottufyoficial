@@ -388,9 +388,9 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
+            <DialogTitle>Excluir Projeto</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the project "{project?.name || project?.nome || 'Untitled'}"? This action cannot be undone.
+              Tem certeza que deseja excluir o projeto "{project?.name || project?.nome || 'Sem título'}"? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
@@ -398,7 +398,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               variant="destructive"
@@ -408,10 +408,10 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               {isDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  Excluindo...
                 </>
               ) : (
-                "Delete Project"
+                "Excluir Projeto"
               )}
             </Button>
           </DialogFooter>
@@ -422,9 +422,9 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Selected Photos - {project?.name || project?.nome || 'Untitled Project'}</DialogTitle>
+            <DialogTitle>Fotos Selecionadas - {project?.name || project?.nome || 'Sem título'}</DialogTitle>
             <DialogDescription>
-              The client selected {project?.selectedPhotos?.length || project?.selecionadas || 0} of {project?.photos?.length || project?.fotos || 0} photos.
+              O cliente selecionou {project?.selectedPhotos?.length || project?.selecionadas || 0} de {project?.photos?.length || project?.fotos || 0} fotos.
             </DialogDescription>
           </DialogHeader>
           
@@ -446,7 +446,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           
           <DialogFooter>
             <Button onClick={() => setShowSelectionsModal(false)}>
-              Close
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -593,9 +593,9 @@ function UploadModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>Criar Novo Projeto</DialogTitle>
           <DialogDescription>
-            Fill in the project details and upload the photos.
+            Preencha os detalhes do projeto e faça upload das fotos.
           </DialogDescription>
         </DialogHeader>
         
@@ -606,9 +606,9 @@ function UploadModal({
               name="projectName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                  <FormLabel>Nome do Projeto</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: John and Mary's Wedding" {...field} />
+                    <Input placeholder="Ex: Casamento de João e Maria" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -620,9 +620,9 @@ function UploadModal({
               name="clientName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Client Name</FormLabel>
+                  <FormLabel>Nome do Cliente</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: John Smith" {...field} />
+                    <Input placeholder="Ex: João da Silva" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -634,9 +634,9 @@ function UploadModal({
               name="clientEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Client Email</FormLabel>
+                  <FormLabel>Email do Cliente</FormLabel>
                   <FormControl>
-                    <Input placeholder="client@example.com" {...field} />
+                    <Input placeholder="cliente@exemplo.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -648,7 +648,7 @@ function UploadModal({
               name="data"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Event Date</FormLabel>
+                  <FormLabel>Data do Evento</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -659,7 +659,7 @@ function UploadModal({
             
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">
-                Project Photos
+                Fotos do Projeto
               </label>
               <div className="border border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition relative">
                 <input
@@ -673,10 +673,10 @@ function UploadModal({
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <Camera className="h-8 w-8 text-gray-400" />
                   <p className="text-sm text-gray-500">
-                    Click or drag photos to upload
+                    Clique ou arraste fotos para upload
                   </p>
                   <p className="text-xs text-gray-400">
-                    (Accepted formats: JPG, PNG, WEBP)
+                    (Formatos aceitos: JPG, PNG, WEBP)
                   </p>
                 </div>
               </div>
