@@ -94,6 +94,33 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
     const files = event.target.files
     if (!files || files.length === 0) return
 
+    // Validar o tamanho das imagens antes de iniciar o upload
+    const MAX_FILE_SIZE = 1048576; // 1MB em bytes
+    const oversizedFiles: string[] = [];
+    
+    // Verificar cada arquivo selecionado
+    Array.from(files).forEach(file => {
+      if (file.size > MAX_FILE_SIZE) {
+        oversizedFiles.push(file.name);
+      }
+    });
+    
+    // Se houver arquivos muito grandes, exibir alerta e abortar o processo
+    if (oversizedFiles.length > 0) {
+      const fileList = oversizedFiles.slice(0, 3).join(", ") + 
+                      (oversizedFiles.length > 3 ? ` e mais ${oversizedFiles.length - 3} arquivo(s)` : "");
+      
+      toast({
+        title: "Imagem muito grande",
+        description: `O tamanho máximo permitido é 1MB. Os seguintes arquivos excedem este limite: ${fileList}`,
+        variant: "destructive",
+      });
+      
+      // Limpar o input para permitir nova seleção
+      event.target.value = "";
+      return;
+    }
+
     setLoading(true)
     setUploadProgress({ current: 0, total: files.length })
     setUploadPercentage(0)
@@ -210,7 +237,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
             className="sr-only"
           />
         </label>
-        <p className="text-xs text-gray-500">Formatos aceitos: JPG, PNG, GIF • Você pode selecionar vários arquivos</p>
+        <p className="text-xs text-gray-500">Formatos aceitos: JPG, PNG, GIF • Tamanho máximo: 1MB por imagem • Você pode selecionar vários arquivos</p>
       </div>
       
       {loading && (
@@ -225,7 +252,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
             </span>
           </div>
           
-          {/* Barra de progresso para o uploads */}
+          {/* Barra de progresso para o upload */}
           {(uploadStatus === 'uploading' || uploadStatus === 'completed') && (
             <div className="w-full mt-2">
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
