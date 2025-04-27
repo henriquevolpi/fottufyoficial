@@ -16,6 +16,9 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ current: number, total: number }>({ current: 0, total: 0 })
+  // Novo estado para rastrear o progresso do upload em tempo real
+  const [uploadPercentage, setUploadPercentage] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'completed'>('idle')
   const { toast } = useToast()
 
   // Função para processar um arquivo e comprimí-lo
@@ -28,43 +31,63 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
     return await imageCompression(file, options)
   }
 
-  // Função para enviar um lote de arquivos para a API
-  async function uploadBatch(compressedFiles: File[]) {
-    const formData = new FormData()
-    // Adicionar todos os arquivos do lote ao FormData
-    compressedFiles.forEach(file => {
-      formData.append('photos', file)
-    })
-
-    const response = await fetch(`/api/projects/${projectId}/photos/upload`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include', // envia cookies (login)
-    })
-
-    if (!response.ok) {
-      // Parse the error response
-      try {
-        const errorData = await response.json();
-        console.error('Erro ao enviar lote de imagens:', errorData);
-        
-        // Check for specific error types and display appropriate message
-        if (response.status === 403 && errorData.message?.includes('Upload limit')) {
-          throw new Error("Limite de upload atingido. Por favor, atualize seu plano para enviar mais fotos.");
-        } else {
-          throw new Error(errorData.message || 'Erro desconhecido');
+  // Função para enviar um lote de arquivos para a API com XMLHttpRequest para acompanhar o progresso
+  async function uploadBatch(compressedFiles: File[]): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      
+      // Adicionar todos os arquivos do lote ao FormData
+      compressedFiles.forEach(file => {
+        formData.append('photos', file);
+      });
+      
+      // Definir callbacks para acompanhar o progresso
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentage = Math.round((event.loaded / event.total) * 100);
+          setUploadPercentage(percentage);
+          setUploadStatus('uploading');
         }
-      } catch (e) {
-        // Fallback to text response if not JSON
-        if (e instanceof Error) throw e;
-        
-        const errorText = await response.text();
-        console.error('Erro ao enviar imagens (texto):', errorText);
-        throw new Error(errorText || response.statusText);
-      }
-    }
-
-    return await response.json();
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setUploadStatus('completed');
+          try {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response);
+          } catch (e) {
+            resolve({ files: compressedFiles.length }); // Fallback se o JSON for inválido
+          }
+        } else {
+          setUploadStatus('idle');
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            console.error('Erro ao enviar lote de imagens:', errorData);
+            
+            if (xhr.status === 403 && errorData.message?.includes('Upload limit')) {
+              reject(new Error("Limite de upload atingido. Por favor, atualize seu plano para enviar mais fotos."));
+            } else {
+              reject(new Error(errorData.message || 'Erro desconhecido'));
+            }
+          } catch (e) {
+            console.error('Erro ao enviar imagens (texto):', xhr.responseText);
+            reject(new Error(xhr.responseText || xhr.statusText || 'Erro desconhecido'));
+          }
+        }
+      };
+      
+      xhr.onerror = () => {
+        setUploadStatus('idle');
+        reject(new Error('Erro de conexão durante o upload.'));
+      };
+      
+      xhr.open('POST', `/api/projects/${projectId}/photos/upload`, true);
+      // Incluir cookies para autenticação
+      xhr.withCredentials = true;
+      xhr.send(formData);
+    });
   }
 
   async function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -73,6 +96,8 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
 
     setLoading(true)
     setUploadProgress({ current: 0, total: files.length })
+    setUploadPercentage(0)
+    setUploadStatus('idle')
 
     try {
       // Se houver apenas um arquivo, mostrar preview
@@ -151,8 +176,20 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         variant: "destructive",
       });
     } finally {
-      setLoading(false)
-      setUploadProgress({ current: 0, total: 0 })
+      // Definir status como 'completed' por um momento antes de desativar o carregamento
+      // para que o usuário possa ver a mensagem "Upload completado!"
+      setUploadStatus('completed')
+      
+      // Aguardar um breve momento para mostrar a mensagem de conclusão
+      setTimeout(() => {
+        setLoading(false)
+        setUploadProgress({ current: 0, total: 0 })
+        setUploadPercentage(0)
+        // Redefine o status somente depois que o componente de carregamento desaparece
+        setTimeout(() => {
+          setUploadStatus('idle')
+        }, 100)
+      }, 1000)
     }
   }
 
@@ -177,18 +214,42 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       </div>
       
       {loading && (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Processando e enviando...</span>
+            <span>
+              {uploadStatus === 'completed' ? 'Upload completado!' : 'Processando e enviando...'}
+            </span>
           </div>
           
+          {/* Barra de progresso para o upload */}
+          {(uploadStatus === 'uploading' || uploadStatus === 'completed') && (
+            <div className="w-full">
+              <div className="h-2 bg-gray-200 rounded overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-300 ease-in-out ${
+                    uploadStatus === 'completed' 
+                      ? 'bg-green-500 animate-pulse' 
+                      : 'bg-primary'
+                  }`}
+                  style={{ width: uploadStatus === 'completed' ? '100%' : `${uploadPercentage}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {uploadStatus === 'completed' 
+                  ? 'Upload finalizado com sucesso!' 
+                  : `Enviando... ${uploadPercentage}%`}
+              </div>
+            </div>
+          )}
+          
+          {/* Progresso total de arquivos */}
           {uploadProgress.total > 0 && (
             <div className="text-xs text-gray-500 mt-1">
-              Progresso: {uploadProgress.current} de {uploadProgress.total} fotos ({Math.round((uploadProgress.current / uploadProgress.total) * 100)}%)
+              Progresso total: {uploadProgress.current} de {uploadProgress.total} fotos ({Math.round((uploadProgress.current / uploadProgress.total) * 100)}%)
             </div>
           )}
         </div>
