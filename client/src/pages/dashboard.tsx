@@ -565,8 +565,8 @@ function UploadModal({
       
       // Show success notification
       toast({
-        title: "Project created successfully",
-        description: `Project "${data.projectName}" was created with ${selectedFiles.length} photos.`,
+        title: "Projeto criado com sucesso",
+        description: `O projeto "${data.projectName}" foi criado com ${selectedFiles.length} fotos.`,
       });
       
       // Call onUpload callback with the properly formatted project
@@ -580,8 +580,8 @@ function UploadModal({
     } catch (error) {
       console.error("Error during upload:", error);
       toast({
-        title: "Error creating project",
-        description: "An error occurred during the upload. Please try again.",
+        title: "Erro ao criar projeto",
+        description: "Ocorreu um erro durante o upload. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -685,7 +685,7 @@ function UploadModal({
             {thumbnails.length > 0 && (
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">
-                  {thumbnails.length} photo(s) selected
+                  {thumbnails.length} foto(s) selecionada(s)
                 </h4>
                 {/* Added max-height and overflow-y-auto for scrolling when many photos are selected */}
                 <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 ${thumbnails.length > 8 ? 'max-h-[250px] overflow-y-auto pr-2' : ''}`}>
@@ -717,16 +717,16 @@ function UploadModal({
             
             <DialogFooter className="sticky bottom-0 pt-4 mt-4 bg-white border-t z-10">
               <Button type="button" variant="outline" onClick={onClose} disabled={isUploading}>
-                Cancel
+                Cancelar
               </Button>
               <Button type="submit" disabled={isUploading}>
                 {isUploading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    Enviando...
                   </>
                 ) : (
-                  "Create Project"
+                  "Criar Projeto"
                 )}
               </Button>
             </DialogFooter>
@@ -818,7 +818,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <BarChart className="h-5 w-5 mr-2 text-blue-500" />
-            Active Projects
+            Projetos Ativos
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -830,7 +830,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 {data?.activeProjects || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Projects in progress
+                Projetos em andamento
               </p>
             </>
           )}
