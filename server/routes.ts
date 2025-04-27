@@ -298,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage (endpoint genérico)
-  app.post("/api/photos/upload", authenticate, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
+  app.post("/api/photos/upload", authenticate, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
