@@ -468,6 +468,7 @@ function UploadModal({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -522,6 +523,7 @@ function UploadModal({
     
     try {
       setIsUploading(true);
+      setUploadProgress(0);
       
       // Create FormData for file upload
       const formData = new FormData();
@@ -540,17 +542,41 @@ function UploadModal({
         formData.append('photos', file);
       });
       
-      // Make API request with FormData
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        body: formData,
+      // Use XMLHttpRequest para monitorar o progresso do upload
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Configurar o callback de progresso
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        };
+        
+        // Configurar callbacks de conclusão
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response);
+            } catch (e) {
+              reject(new Error('Erro ao processar resposta do servidor'));
+            }
+          } else {
+            reject(new Error('Erro ao criar projeto'));
+          }
+        };
+        
+        xhr.onerror = () => {
+          reject(new Error('Erro de conexão ao enviar o projeto'));
+        };
+        
+        // Enviar a requisição
+        xhr.open('POST', '/api/projects');
+        xhr.send(formData);
       });
       
-      if (!response.ok) {
-        throw new Error("Error creating project");
-      }
-      
-      const result = await response.json();
       console.log("Project created:", result);
       
       // Format project data to match expected structure in the dashboard
@@ -711,6 +737,21 @@ function UploadModal({
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Barra de progresso de upload */}
+            {isUploading && (
+              <div className="w-full flex flex-col gap-2 mt-4">
+                <div className="h-2 bg-gray-200 rounded overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300 ease-in-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 mt-1 text-center">
+                  Enviando fotos... {uploadProgress}%
                 </div>
               </div>
             )}
