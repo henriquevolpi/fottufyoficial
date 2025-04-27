@@ -842,7 +842,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <Camera className="h-5 w-5 mr-2 text-green-500" />
-            Monthly Uploads
+            Uploads Mensais
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -854,7 +854,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 {data?.photosThisMonth || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Photos uploaded this month
+                Fotos enviadas este mês
               </p>
             </>
           )}
@@ -866,12 +866,12 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
             <CreditCard className="h-5 w-5 mr-2 text-purple-500" />
-            Plan: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
+            Plano: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-1">
-            <span className="text-sm text-gray-500">Upload Usage</span>
+            <span className="text-sm text-gray-500">Uso de Uploads</span>
             <span className="text-sm font-medium">
               {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
             </span>
@@ -879,8 +879,8 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
           <Progress value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} className="h-2" />
           <p className="text-xs text-gray-500 mt-2">
             {planInfo.planType === "unlimited" 
-              ? "Plan with unlimited uploads" 
-              : `${planInfo.percentageUsed}% of upload limit used`}
+              ? "Plano com uploads ilimitados" 
+              : `${planInfo.percentageUsed}% do limite de uploads utilizado`}
           </p>
         </CardContent>
         <CardFooter>
@@ -891,7 +891,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />
-            Manage Subscription
+            Gerenciar Assinatura
           </Button>
         </CardFooter>
       </Card>
