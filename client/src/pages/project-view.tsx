@@ -665,11 +665,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             >
               <div className="relative h-64">
                 {/* Debug info - will show in development only */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="absolute top-0 left-0 bg-black bg-opacity-70 text-white text-xs p-1 z-10 max-w-full overflow-hidden">
-                    ID: {photo.id?.substring(0, 8)}...
-                  </div>
-                )}
+                {/* Removed ID display */}
                 
                 <div 
                   className="absolute inset-0 w-full h-full cursor-zoom-in group"
@@ -686,7 +682,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder.jpg';
                     }}
-                    title={`ID: ${photo.id}\nURL: ${photo.url}\nClique para ampliar`}
+                    title="Clique para ampliar"
                   />
                 </div>
                 
