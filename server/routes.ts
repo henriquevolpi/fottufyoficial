@@ -375,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage e associa a um projeto específico
-  app.post("/api/projects/:id/photos/upload", authenticate, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
+  app.post("/api/projects/:id/photos/upload", authenticate, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -1179,7 +1179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Create project (authenticated photographer)
   // Removida verificação de autenticação para facilitar testes
-  app.post("/api/projects", r2Upload.array('photos', 100), async (req: Request, res: Response) => {
+  app.post("/api/projects", r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
     try {
       console.log("Receiving request to create project", req.body);
       
@@ -1493,7 +1493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Adicionar novas fotos a um projeto existente
-  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, r2Upload.array('photos', 100), async (req: Request, res: Response) => {
+  app.post("/api/projects/:id/photos", authenticate, requireActiveUser, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
     try {
       const idParam = req.params.id;
       
