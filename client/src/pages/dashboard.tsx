@@ -310,7 +310,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => setShowDeleteConfirm(true)}
           >
-            Delete
+            Excluir
             <X className="h-3 w-3 ml-1" />
           </Button>
           
@@ -322,7 +322,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
               onClick={handleViewSelections}
             >
-              View Selections
+              Ver Seleções
               <FileText className="h-3 w-3 ml-1" />
             </Button>
           )}
@@ -335,7 +335,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             className="text-xs"
             onClick={() => setLocation(`/project/${project.id}`)}
           >
-            View Details
+            Ver Detalhes
             <ArrowUpRight className="h-3 w-3 ml-1" />
           </Button>
           
@@ -350,12 +350,12 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               console.log("Copying client link:", clientUrl);
               navigator.clipboard.writeText(clientUrl);
               toast({
-                title: "Link copied",
-                description: "Client link copied to clipboard.",
+                title: "Link copiado",
+                description: "Link do cliente copiado para a área de transferência.",
               });
             }}
           >
-            Client Link
+            Link do Cliente
             <Link className="h-3 w-3 ml-1" />
           </Button>
           
@@ -366,7 +366,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800"
               onClick={handleReopenProject}
             >
-              Reopen Project
+              Reabrir Projeto
               <RotateCcw className="h-3 w-3 ml-1" />
             </Button>
           )}
@@ -378,7 +378,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800"
               onClick={handleEditGallery}
             >
-              Edit Gallery
+              Editar Galeria
             </Button>
           )}
         </div>
