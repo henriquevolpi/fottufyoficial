@@ -227,16 +227,21 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
           
           {/* Barra de progresso para o upload */}
           {(uploadStatus === 'uploading' || uploadStatus === 'completed') && (
-            <div className="w-full">
-              <div className="h-2 bg-gray-200 rounded overflow-hidden">
+            <div className="w-full mt-2">
+              <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                 <div 
-                  className={`h-full transition-all duration-300 ease-in-out ${
+                  className={`h-full transition-all duration-500 ease-in-out ${
                     uploadStatus === 'completed' 
                       ? 'bg-green-500 animate-pulse' 
-                      : 'bg-primary'
+                      : 'bg-blue-500'
                   }`}
-                  style={{ width: uploadStatus === 'completed' ? '100%' : `${uploadPercentage}%` }}
+                  style={{ width: `${uploadPercentage}%` }}
                 />
+              </div>
+              <div className="text-xs text-gray-700 mt-1 text-center font-medium">
+                {uploadStatus === 'completed' 
+                  ? 'Upload finalizado!' 
+                  : `Progresso: ${uploadPercentage}%`}
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {uploadStatus === 'completed' 

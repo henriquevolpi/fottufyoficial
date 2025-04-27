@@ -24,6 +24,24 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
+// Interface para o objeto de projeto retornado pela API
+interface ProjectResponse {
+  id: number;
+  publicId: string;
+  name: string;
+  clientName: string;
+  clientEmail: string;
+  photographerId: number;
+  status: string;
+  photos: Array<{
+    id: string;
+    url: string;
+    filename: string;
+  }>;
+  selectedPhotos: string[];
+  createdAt?: string;
+}
+
 // Form validation schema
 const uploadFormSchema = z.object({
   nome: z.string().min(3, { message: "Project name must be at least 3 characters" }),
@@ -47,6 +65,8 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadPercentage, setUploadPercentage] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'completed'>('idle');
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
@@ -102,26 +122,56 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
       );
       formData.append('photosData', photoDataJson);
 
-      // Send data to API endpoint using FormData
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        // Don't set Content-Type header - browser sets it with boundary
-        body: formData,
+      // Reset upload status
+      setUploadStatus('uploading');
+      setUploadPercentage(0);
+
+      // Send data to API endpoint using XMLHttpRequest for upload progress tracking
+      const newProject = await new Promise<ProjectResponse>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentage = Math.round((event.loaded / event.total) * 100);
+            setUploadPercentage(percentage);
+          }
+        };
+        
+        // Handle completion
+        xhr.onload = () => {
+          setUploadStatus('completed');
+          
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response);
+            } catch (e) {
+              reject(new Error('Invalid JSON response from server'));
+            }
+          } else {
+            let errorMessage = 'Failed to create project';
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              // If we can't parse JSON, use the status text
+              errorMessage = `Server error: ${xhr.statusText}`;
+            }
+            reject(new Error(errorMessage));
+          }
+        };
+        
+        // Handle network errors
+        xhr.onerror = () => {
+          setUploadStatus('idle');
+          reject(new Error('Network error occurred'));
+        };
+        
+        // Send the request
+        xhr.open('POST', '/api/projects', true);
+        xhr.send(formData);
       });
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to create project';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If we can't parse JSON, use the status text
-          errorMessage = `Server error: ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const newProject = await response.json();
       console.log("Projeto criado com sucesso na API:", newProject);
       
       // Create link for sharing (useful for console debugging)
@@ -413,6 +463,26 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
                 </div>
               )}
             </div>
+
+            {isSubmitting && (
+              <div className="w-full flex flex-col gap-2 mt-4">
+                <div className="h-2 bg-gray-200 rounded overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ease-in-out ${
+                      uploadStatus === 'completed'
+                        ? 'bg-green-500 animate-pulse'
+                        : 'bg-primary'
+                    }`}
+                    style={{ width: uploadStatus === 'completed' ? '100%' : `${uploadPercentage}%` }}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 mt-1 text-center">
+                  {uploadStatus === 'completed'
+                    ? 'Upload completed!'
+                    : `Uploading photos... ${uploadPercentage}%`}
+                </div>
+              </div>
+            )}
 
             <DialogFooter className="sticky bottom-0 z-10 bg-white pt-4 mt-6 border-t">
               <Button 
