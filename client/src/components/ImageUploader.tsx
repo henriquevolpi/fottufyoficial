@@ -225,7 +225,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
             </span>
           </div>
           
-          {/* Barra de progresso para o upload */}
+          {/* Barra de progresso para o uploads */}
           {(uploadStatus === 'uploading' || uploadStatus === 'completed') && (
             <div className="w-full mt-2">
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
