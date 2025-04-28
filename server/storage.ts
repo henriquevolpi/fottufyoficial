@@ -46,6 +46,7 @@ export interface IStorage {
   getProjects(photographerId?: number): Promise<Project[]>;
   createProject(project: InsertProject, photos: Photo[]): Promise<Project>;
   updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined>;
+  updateProjectSelections(id: number, selectedPhotos: string[]): Promise<Project | undefined>;
   finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined>;
   archiveProject(id: number): Promise<Project | undefined>;
   reopenProject(id: number): Promise<Project | undefined>;
@@ -485,6 +486,50 @@ export class MemStorage implements IStorage {
 
     const updatedProject = { ...project, ...projectData };
     this.projects.set(id, updatedProject);
+    
+    return updatedProject;
+  }
+  
+  async updateProjectSelections(id: number, selectedPhotos: string[]): Promise<Project | undefined> {
+    console.log(`MemStorage: Atualizando seleções temporárias para projeto ID=${id}, fotos selecionadas: ${selectedPhotos.length}`);
+    
+    // Step 1: Find the project
+    let projectToUpdate = this.projects.get(id);
+    let projectId = id;
+    
+    // If project not found directly, try to find by ID as string
+    if (!projectToUpdate) {
+      console.log(`MemStorage: Projeto ID=${id} não encontrado diretamente, buscando de outra forma`);
+      
+      const allProjects = Array.from(this.projects.values());
+      const foundProject = allProjects.find(p => p.id.toString() === id.toString());
+      
+      if (!foundProject) {
+        console.log(`MemStorage: Projeto ID=${id} não encontrado em nenhum formato`);
+        return undefined;
+      }
+      
+      projectToUpdate = foundProject;
+      projectId = foundProject.id;
+      console.log(`MemStorage: Projeto encontrado com ID=${projectId}`);
+    }
+    
+    // Step 2: Update the selected status of each photo
+    const updatedPhotos = projectToUpdate.photos.map(photo => ({
+      ...photo,
+      selected: selectedPhotos.includes(photo.id)
+    }));
+    
+    // Step 3: Create a new object with updated properties
+    const updatedProject = {
+      ...projectToUpdate,
+      photos: updatedPhotos,
+      // Don't update selectedPhotos array, which is only set when finalized
+      status: projectToUpdate.status === "pending" && selectedPhotos.length > 0 ? "reviewed" : projectToUpdate.status
+    };
+    
+    // Step 4: Save the updated project
+    this.projects.set(projectId, updatedProject);
     
     return updatedProject;
   }
@@ -1129,6 +1174,48 @@ export class DatabaseStorage implements IStorage {
       return updatedProject;
     } catch (error) {
       console.error("Erro ao atualizar projeto:", error);
+      return undefined;
+    }
+  }
+  
+  async updateProjectSelections(id: number, selectedPhotoIds: string[]): Promise<Project | undefined> {
+    try {
+      console.log(`DatabaseStorage: Atualizando seleções para projeto ID=${id}, total de ${selectedPhotoIds.length} fotos selecionadas`);
+      
+      // Buscar o projeto existente
+      const project = await this.getProject(id);
+      if (!project) {
+        console.log(`DatabaseStorage: Projeto ID=${id} não encontrado`);
+        return undefined;
+      }
+      
+      // Atualizar as seleções nas fotos do projeto
+      if (project.photos && Array.isArray(project.photos)) {
+        // Clonar o array de fotos
+        const updatedPhotos = project.photos.map(photo => ({
+          ...photo,
+          selected: selectedPhotoIds.includes(photo.id)
+        }));
+        
+        // Atualizar o projeto no banco de dados
+        const [updatedProject] = await db
+          .update(projects)
+          .set({ 
+            photos: updatedPhotos,
+            // Não atualizar selectedPhotos, que será definido apenas na finalização
+            status: project.status === "pending" && selectedPhotoIds.length > 0 ? "reviewed" : project.status
+          })
+          .where(eq(projects.id, id))
+          .returning();
+        
+        console.log(`DatabaseStorage: Seleções atualizadas para projeto ID=${id}`);
+        return updatedProject;
+      } else {
+        console.log(`DatabaseStorage: Projeto ID=${id} não tem fotos para atualizar`);
+        return project;
+      }
+    } catch (error) {
+      console.error(`Erro ao atualizar seleções do projeto ${id}:`, error);
       return undefined;
     }
   }
