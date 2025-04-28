@@ -204,8 +204,6 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       case "reviewed": return "bg-blue-100 text-blue-800";
       case "finalizado": return "bg-green-100 text-green-800";
       case "completed": return "bg-green-100 text-green-800";
-      case "reaberto": return "bg-purple-100 text-purple-800";
-      case "reopened": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -215,17 +213,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
     return date.toLocaleDateString('en-US');
   };
   
-  const handleReopenProject = () => {
-    // Simulate reopening the project
-    toast({
-      title: "Project reopened",
-      description: `Project "${project?.nome || 'Untitled'}" has been reopened successfully.`,
-    });
-    
-    // In a real app, we would make an API call to update the status
-    project.status = "reaberto";
-    setStatus("reaberto");
-  };
+
   
   const handleEditGallery = () => {
     // Simulation - in a real app, would redirect to an edit page
@@ -357,19 +345,9 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             <Link className="h-3 w-3 ml-1" />
           </Button>
           
-          {status === "arquivado" && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800"
-              onClick={handleReopenProject}
-            >
-              Reabrir Projeto
-              <RotateCcw className="h-3 w-3 ml-1" />
-            </Button>
-          )}
+
           
-          {(status === "pendente" || status === "revisado" || status === "reaberto") && (
+          {(status === "pendente" || status === "revisado") && (
             <Button 
               variant="outline" 
               size="sm"
