@@ -204,8 +204,6 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       case "reviewed": return "bg-blue-100 text-blue-800";
       case "finalizado": return "bg-green-100 text-green-800";
       case "completed": return "bg-green-100 text-green-800";
-      case "arquivado": return "bg-gray-100 text-gray-800";
-      case "archived": return "bg-gray-100 text-gray-800";
       case "reaberto": return "bg-purple-100 text-purple-800";
       case "reopened": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
@@ -1209,7 +1207,6 @@ export default function Dashboard() {
       case "pending": return "pending";
       case "reviewed": return "reviewed";
       case "completed": return "completed";
-      case "archived": return "archived";
       default: return "";
     }
   };
@@ -1303,7 +1300,6 @@ export default function Dashboard() {
               <TabsTrigger value="pending">Pending</TabsTrigger>
               <TabsTrigger value="reviewed">Reviewed</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="archived">Archived</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
@@ -1356,7 +1352,7 @@ export default function Dashboard() {
               )}
             </TabsContent>
             
-            {["pending", "reviewed", "completed", "archived"].map(tab => (
+            {["pending", "reviewed", "completed"].map(tab => (
               <TabsContent key={tab} value={tab} className="mt-0">
                 {isLoading ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
