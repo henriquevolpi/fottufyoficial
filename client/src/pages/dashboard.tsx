@@ -1249,6 +1249,15 @@ export default function Dashboard() {
       </header>
       
       <main className="container mx-auto py-8 px-4">
+        {/* Banner Image */}
+        <div className="flex justify-center mb-8">
+          <img 
+            src="/bannerdash.jpg" 
+            alt="Dashboard Banner" 
+            className="w-full max-w-[600px] rounded-lg shadow-md" 
+          />
+        </div>
+        
         <Statistics setLocation={setLocation} />
         
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
