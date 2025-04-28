@@ -1250,9 +1250,9 @@ export default function Dashboard() {
       
       <main className="container mx-auto py-8 px-4">
         {/* Banner Image */}
-        <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0">
           <img 
-            src="/bannerdash.png" 
+            src="/bannerdash.jpg" 
             alt="Dashboard Banner" 
             className="w-full h-auto object-cover" 
           />
