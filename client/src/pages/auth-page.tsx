@@ -112,7 +112,7 @@ export default function AuthPage() {
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-primary">Fottufy</h1>
             <p className="text-muted-foreground mt-2">
-              Plataforma de gerenciamento para fotógrafos profissionais
+              Plataforma de Gerenciamento para fotógrafos profissionais
             </p>
           </div>
 
