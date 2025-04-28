@@ -293,19 +293,18 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       // Array para guardar IDs das fotos selecionadas
       const selectedIds = Array.from(selectedPhotos);
       
-      // Salvar via API usando a mesma rota que a finalização, mas sem marcar como finalizado
-      console.log(`Salvando seleção para projeto ${projectId} com ${selectedIds.length} fotos`);
+      // Salvar via API
+      console.log(`Salvando seleção temporária para projeto ${projectId} com ${selectedIds.length} fotos`);
       
-      // Usar a API /api/projects/:id/finalize que já existe e funciona
-      const response = await fetch(`/api/projects/${projectId}/finalize`, {
+      const response = await fetch(`/api/v2/photos/select`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          selectedPhotos: selectedIds 
+          projectId: project.id,
+          photoIds: selectedIds 
         }),
-        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -314,15 +313,20 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         throw new Error(`Erro ao salvar seleção: ${response.status} ${response.statusText}`);
       }
       
-      // Obter o projeto atualizado da resposta da API
-      const updatedProjectData = await response.json();
-      console.log('Projeto atualizado recebido da API:', updatedProjectData);
+      // Atualizar o projeto local
+      const updatedProject = { ...project };
+      updatedProject.photos = updatedProject.photos.map(photo => ({
+        ...photo,
+        selected: selectedPhotos.has(photo.id)
+      }));
+      updatedProject.selecionadas = selectedPhotos.size;
       
-      // Adaptar o projeto atualizado para o formato usado no frontend
-      const adaptedProject = adaptProject(updatedProjectData);
+      // Atualizar status se necessário
+      if (updatedProject.status === "pendente" && selectedPhotos.size > 0) {
+        updatedProject.status = "revisado";
+      }
       
-      // Atualizar o estado do projeto
-      setProject(adaptedProject);
+      setProject(updatedProject);
       
       toast({
         title: "Seleção salva",
@@ -365,7 +369,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ selectedPhotos: selectedIds }),
-          credentials: 'include'
         });
         
         if (response.ok) {
