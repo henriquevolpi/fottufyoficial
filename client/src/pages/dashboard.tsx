@@ -1250,11 +1250,11 @@ export default function Dashboard() {
       
       <main className="container mx-auto py-8 px-4">
         {/* Banner Image */}
-        <div className="flex justify-center mb-8">
+        <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden">
           <img 
-            src="/bannerdash.jpg" 
+            src="/bannerdash.png" 
             alt="Dashboard Banner" 
-            className="w-full max-w-[600px] rounded-lg shadow-md" 
+            className="w-full h-auto object-cover" 
           />
         </div>
         
