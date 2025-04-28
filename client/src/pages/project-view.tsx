@@ -292,24 +292,28 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       // Array para guardar IDs das fotos selecionadas
       const selectedIds = Array.from(selectedPhotos);
       
-      // Tenta salvar via API primeiro - embora não tenhamos um endpoint específico para isso
-      // No futuro, se implementarmos, poderia ser usado aqui
+      // Salvar via API
+      console.log(`Salvando seleção temporária para projeto ${projectId} com ${selectedIds.length} fotos`);
       
-      // Usar localStorage como fallback para salvar seleções temporárias
-      const storedProjects = localStorage.getItem('projects');
-      if (!storedProjects) {
-        throw new Error('Erro ao salvar seleção: projetos não encontrados');
+      const response = await fetch(`/api/v2/photos/select`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          projectId: project.id,
+          photoIds: selectedIds 
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('Erro na resposta da API:', response.status, errorData);
+        throw new Error(`Erro ao salvar seleção: ${response.status} ${response.statusText}`);
       }
       
-      const projects: Project[] = JSON.parse(storedProjects);
-      const projectIndex = projects.findIndex(p => p.id === project.id);
-      
-      if (projectIndex === -1) {
-        throw new Error('Erro ao salvar seleção: projeto não encontrado');
-      }
-      
-      // Atualizar o projeto com as seleções atuais
-      const updatedProject = { ...projects[projectIndex] };
+      // Atualizar o projeto local
+      const updatedProject = { ...project };
       updatedProject.photos = updatedProject.photos.map(photo => ({
         ...photo,
         selected: selectedPhotos.has(photo.id)
@@ -321,17 +325,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         updatedProject.status = "revisado";
       }
       
-      // Salvar de volta no array de projetos
-      projects[projectIndex] = updatedProject;
-      localStorage.setItem('projects', JSON.stringify(projects));
-      
-      // Atualizar o projeto local
       setProject(updatedProject);
       
       toast({
         title: "Seleção salva",
         description: `${selectedPhotos.size} fotos selecionadas. Você ainda pode modificar sua seleção.`,
       });
+      
+      // Recarregar o projeto para garantir dados atualizados
+      setTimeout(() => {
+        loadProject();
+      }, 500);
       
     } catch (error) {
       console.error('Erro ao salvar seleções:', error);
