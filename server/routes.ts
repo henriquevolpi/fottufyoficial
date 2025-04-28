@@ -685,6 +685,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Save selections for multiple photos in a project
+  app.patch("/api/v2/photos/select", authenticate, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { projectId, photoIds } = req.body;
+      
+      if (!projectId || !Array.isArray(photoIds)) {
+        return res.status(400).json({ message: "Project ID and array of photo IDs are required" });
+      }
+      
+      console.log(`Salvando seleção para projeto ${projectId} com ${photoIds.length} fotos`);
+      
+      // Verificar se o projeto existe e se o usuário tem permissão
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Verificar se o usuário tem permissão para este projeto
+      if (project.photographerId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "You don't have permission to access this project" });
+      }
+      
+      // Atualizar seleções no projeto
+      try {
+        await storage.updateProjectSelections(projectId, photoIds);
+        console.log(`Seleções atualizadas com sucesso para o projeto ${projectId}`);
+        res.status(200).json({ 
+          message: "Selections saved successfully",
+          selectedCount: photoIds.length
+        });
+      } catch (error) {
+        console.error('Erro ao atualizar seleções:', error);
+        res.status(500).json({ 
+          message: "Failed to update selections", 
+          error: (error as Error).message 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving selections:", error);
+      res.status(500).json({ 
+        message: "Failed to save selections", 
+        error: (error as Error).message 
+      });
+    }
+  });
+  
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)
   

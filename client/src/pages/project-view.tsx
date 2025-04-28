@@ -134,96 +134,97 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
   };
 
-  // Carregar dados do projeto - Melhorado para sempre usar dados atuais da API
-  useEffect(() => {
-    const loadProject = async () => {
-      try {
-        setLoading(true);
-        
-        // Verificar se o ID é válido
-        if (!projectId) {
-          console.error('ID do projeto não fornecido');
-          throw new Error('ID do projeto não fornecido');
-        }
-        
-        console.log('Buscando projeto com ID:', projectId);
-        
-        // Fazer fetch diretamente da API com cache busting para garantir dados atualizados
-        const response = await fetch(`/api/projects/${projectId}`, {
-          credentials: 'include', // envia cookies para autenticação
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-        
-        console.log('Status da resposta API:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`Erro ao carregar projeto: ${response.status} ${response.statusText}`);
-        }
-        
-        const projectData = await response.json();
-        console.log('Projeto carregado da API:', projectData);
-        
-        // Log detalhado para debug
-        if (projectData.photos) {
-          console.log(`Projeto tem ${projectData.photos.length} fotos`);
-          if (projectData.photos.length > 0) {
-            console.log('Primeira foto:', JSON.stringify(projectData.photos[0]));
-          }
-        } else {
-          console.warn('Projeto sem fotos ou array de fotos é null/undefined');
-        }
-        
-        // Adapter para manter compatibilidade com o resto do código
-        const adaptedProject = adaptProject(projectData);
-        console.log('Projeto adaptado:', adaptedProject);
-        
-        // Verificar acesso - apenas log, view é pública
-        if (user && user.id !== adaptedProject.fotografoId && user.role !== 'admin') {
-          console.log(`Usuário ${user.id} acessando projeto do fotógrafo ${adaptedProject.fotografoId} - permitido para visualização pública`);
-        }
-        
-        // Atualizar state com dados do projeto
-        setProject(adaptedProject);
-        
-        // Inicializar seleções
-        const preSelectedPhotos = new Set<string>();
-        if (adaptedProject.photos) {
-          adaptedProject.photos.forEach(photo => {
-            if (photo.selected) {
-              preSelectedPhotos.add(photo.id);
-            }
-          });
-        }
-        
-        setSelectedPhotos(preSelectedPhotos);
-        setIsFinalized(!!adaptedProject.finalizado);
-        
-        // Remover este projeto do localStorage para evitar usar dados desatualizados
-        try {
-          const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-          const filteredProjects = storedProjects.filter((p: any) => p.id.toString() !== projectId.toString());
-          localStorage.setItem('projects', JSON.stringify(filteredProjects));
-          console.log('Removido projeto do localStorage para garantir dados atualizados');
-        } catch (storageError) {
-          console.error('Erro ao limpar localStorage:', storageError);
-        }
-        
-      } catch (error) {
-        console.error('Erro ao carregar projeto:', error);
-        toast({
-          title: "Erro ao carregar projeto",
-          description: "Não foi possível encontrar o projeto solicitado. Verifique se o link está correto.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  // Função para carregar dados do projeto - Definida fora do useEffect para poder ser reutilizada
+  const loadProject = async () => {
+    try {
+      setLoading(true);
+      
+      // Verificar se o ID é válido
+      if (!projectId) {
+        console.error('ID do projeto não fornecido');
+        throw new Error('ID do projeto não fornecido');
       }
-    };
-    
+      
+      console.log('Buscando projeto com ID:', projectId);
+      
+      // Fazer fetch diretamente da API com cache busting para garantir dados atualizados
+      const response = await fetch(`/api/projects/${projectId}`, {
+        credentials: 'include', // envia cookies para autenticação
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      console.log('Status da resposta API:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao carregar projeto: ${response.status} ${response.statusText}`);
+      }
+      
+      const projectData = await response.json();
+      console.log('Projeto carregado da API:', projectData);
+      
+      // Log detalhado para debug
+      if (projectData.photos) {
+        console.log(`Projeto tem ${projectData.photos.length} fotos`);
+        if (projectData.photos.length > 0) {
+          console.log('Primeira foto:', JSON.stringify(projectData.photos[0]));
+        }
+      } else {
+        console.warn('Projeto sem fotos ou array de fotos é null/undefined');
+      }
+      
+      // Adapter para manter compatibilidade com o resto do código
+      const adaptedProject = adaptProject(projectData);
+      console.log('Projeto adaptado:', adaptedProject);
+      
+      // Verificar acesso - apenas log, view é pública
+      if (user && user.id !== adaptedProject.fotografoId && user.role !== 'admin') {
+        console.log(`Usuário ${user.id} acessando projeto do fotógrafo ${adaptedProject.fotografoId} - permitido para visualização pública`);
+      }
+      
+      // Atualizar state com dados do projeto
+      setProject(adaptedProject);
+      
+      // Inicializar seleções
+      const preSelectedPhotos = new Set<string>();
+      if (adaptedProject.photos) {
+        adaptedProject.photos.forEach(photo => {
+          if (photo.selected) {
+            preSelectedPhotos.add(photo.id);
+          }
+        });
+      }
+      
+      setSelectedPhotos(preSelectedPhotos);
+      setIsFinalized(!!adaptedProject.finalizado);
+      
+      // Remover este projeto do localStorage para evitar usar dados desatualizados
+      try {
+        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+        const filteredProjects = storedProjects.filter((p: any) => p.id.toString() !== projectId.toString());
+        localStorage.setItem('projects', JSON.stringify(filteredProjects));
+        console.log('Removido projeto do localStorage para garantir dados atualizados');
+      } catch (storageError) {
+        console.error('Erro ao limpar localStorage:', storageError);
+      }
+      
+    } catch (error) {
+      console.error('Erro ao carregar projeto:', error);
+      toast({
+        title: "Erro ao carregar projeto",
+        description: "Não foi possível encontrar o projeto solicitado. Verifique se o link está correto.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Carregar dados do projeto ao montar o componente
+  useEffect(() => {
     loadProject();
   }, [projectId, toast, user]);
   
