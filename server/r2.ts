@@ -15,7 +15,7 @@
  * - Public access must be enabled on the bucket for URLs to work properly
  */
 
-import { S3Client, PutObjectCommand, HeadBucketCommand, ListBucketsCommand, CreateBucketCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, HeadBucketCommand, ListBucketsCommand, CreateBucketCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import multer from "multer";
 
@@ -212,6 +212,24 @@ export async function ensureBucketExists(): Promise<void> {
     }
   } catch (error) {
     console.error('Error ensuring bucket exists:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a file from Cloudflare R2
+ */
+export async function deleteFileFromR2(fileName: string): Promise<void> {
+  try {
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+    });
+
+    await r2Client.send(deleteCommand);
+    console.log(`Successfully deleted ${fileName} from Cloudflare R2.`);
+  } catch (error) {
+    console.error(`Failed to delete ${fileName} from Cloudflare R2:`, error);
     throw error;
   }
 }
