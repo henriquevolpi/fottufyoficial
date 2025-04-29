@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import { deleteFileFromR2 } from "./r2";
 import { 
   insertUserSchema, 
   insertProjectSchema, 
@@ -1705,6 +1706,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the photo count that will be removed from upload usage
       const photoCount = project.photos ? project.photos.length : 0;
       console.log(`Deletando projeto ID=${project.id} com ${photoCount} fotos - removendo do contador de uploads`);
+      
+      // Delete all related files from R2 before removing the project
+      if (project.photos && Array.isArray(project.photos)) {
+        for (const photo of project.photos) {
+          try {
+            await deleteFileFromR2(photo.filename);
+          } catch (error) {
+            console.error(`Error deleting ${photo.filename} from R2:`, error);
+          }
+        }
+      }
       
       // Modified deleteProject will handle the usage count reduction
       const deleted = await storage.deleteProject(project.id);
