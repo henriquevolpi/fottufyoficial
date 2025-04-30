@@ -20,7 +20,16 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido"),
-  phone: z.string().min(1, "Telefone é obrigatório"),
+  phone: z.string()
+    .min(10, "Telefone deve ter no mínimo 10 dígitos (com DDD)")
+    .max(11, "Telefone deve ter no máximo 11 dígitos")
+    .regex(/^[0-9]+$/, "Telefone deve conter apenas números")
+    .refine(val => {
+      const ddd = val.substring(0, 2);
+      return parseInt(ddd) >= 11 && parseInt(ddd) <= 99;
+    }, {
+      message: "DDD inválido (deve ser entre 11 e 99)"
+    }),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
