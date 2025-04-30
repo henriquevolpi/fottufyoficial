@@ -6,6 +6,7 @@ interface PhotoCardProps {
   id: string;
   url: string;
   filename: string;
+  originalName?: string; // Nome original do arquivo
   isSelected: boolean;
   onToggleSelect: (id: string) => void;
   disabled?: boolean;
@@ -15,6 +16,7 @@ export default function PhotoCard({
   id,
   url,
   filename,
+  originalName,
   isSelected,
   onToggleSelect,
   disabled = false,
@@ -173,7 +175,7 @@ export default function PhotoCard({
       </div>
       
       <div className="mt-2 flex justify-between">
-        <p className="text-sm text-gray-500">{filename}</p>
+        <p className="text-sm text-gray-500">{originalName || filename}</p>
       </div>
     </div>
   );

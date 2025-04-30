@@ -1304,6 +1304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: id,
               url: url,
               filename: photo.filename,
+              originalName: photo.originalName || photo.filename || 'external-image.jpg',
             });
           } catch (error) {
             console.error(`Error processing photo ${photo.filename}: ${error.message}`);
@@ -1348,6 +1349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 id: id,
                 url: url,
                 filename: photo.filename,
+                originalName: photo.originalName || photo.filename || 'external-image.jpg',
               });
             } catch (error) {
               console.error(`Error processing photosData ${photo.filename}: ${error.message}`);

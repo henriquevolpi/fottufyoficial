@@ -618,7 +618,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                                 .map(photo => (
                                   <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
                                     <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                                    <span className="text-sm font-mono">{photo.filename}</span>
+                                    <span className="text-sm font-mono">{photo.originalName || photo.filename}</span>
                                   </div>
                               ))}
                             </div>
