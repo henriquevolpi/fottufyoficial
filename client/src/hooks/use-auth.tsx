@@ -25,6 +25,7 @@ type LoginData = {
 type RegisterData = {
   name: string;
   email: string;
+  phone: string;
   password: string;
 };
 

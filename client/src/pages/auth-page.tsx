@@ -20,6 +20,7 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido"),
+  phone: z.string().min(1, "Telefone é obrigatório"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
@@ -57,6 +58,7 @@ export default function AuthPage() {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     },
@@ -230,6 +232,20 @@ export default function AuthPage() {
                             <FormLabel>Email</FormLabel>
                             <FormControl>
                               <Input placeholder="seu@email.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={registerForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefone com DDD (inclua o 9)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: 11987654321" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  phone: text("phone").notNull(), // Adicionando campo de telefone
   role: text("role").notNull().default("photographer"), // photographer | admin
   status: text("status").notNull().default("active"), // active | suspended | canceled
   createdAt: timestamp("created_at").notNull().defaultNow(),
