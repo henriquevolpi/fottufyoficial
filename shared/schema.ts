@@ -134,7 +134,8 @@ export const photos = pgTable("photos", {
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id").notNull().references(() => newProjects.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
-  filename: text("filename"),
+  filename: text("filename"), // Nome único usado pelo R2
+  originalName: text("original_name"), // Nome original do arquivo enviado pelo usuário
   selected: boolean("selected").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

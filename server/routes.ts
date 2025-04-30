@@ -1381,7 +1381,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processedPhotos.push({
               id: nanoid(),
               url: result.url,
-              filename: filename, // Usar o nome de arquivo do R2 em vez do nome original
+              filename: filename, // Nome único usado pelo R2
+              originalName: file.originalname // Nome original do arquivo
             });
             
             console.log(`File uploaded to R2: ${file.originalname}, R2 URL: ${result.url}`);
@@ -1398,7 +1399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { 
             id: nanoid(),
             url: 'https://via.placeholder.com/800x600?text=No+Photo+Uploaded', 
-            filename: 'placeholder.jpg' 
+            filename: 'placeholder.jpg',
+            originalName: 'No Photo Uploaded.jpg'
           }
         ];
       }
@@ -1593,7 +1595,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processedPhotos.push({
               id: nanoid(),
               url: result.url,
-              filename: filename, // Usar o nome de arquivo do R2 em vez do nome original
+              filename: filename, // Nome único usado pelo R2
+              originalName: file.originalname // Nome original do arquivo
             });
             
             console.log(`File uploaded to R2 for project ${projectId}: ${file.originalname}, R2 URL: ${result.url}`);
@@ -1646,7 +1649,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processedPhotos.push({
               id: id,
               url: url,
-              filename: savedFilename
+              filename: savedFilename,
+              originalName: photo.originalName || photo.filename || 'external-image.jpg'
             });
           } catch (error: any) {
             console.error(`Error processing photo for existing project ${photo.filename}: ${error.message}`);
