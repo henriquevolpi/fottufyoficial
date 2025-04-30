@@ -97,6 +97,7 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       console.log("Processing registration request");
+      console.log("Registration data:", JSON.stringify(req.body));
       
       // Validate required fields
       const { email, password } = req.body;
@@ -117,6 +118,7 @@ export function setupAuth(app: Express) {
       const userData = {
         name: req.body.name || email.split('@')[0], // Use part of email as name if not provided
         email,
+        phone: req.body.phone || '+000000000000', // Use provided phone or default if not provided
         password: hashedPassword,
         role: "photographer", // Default to photographer role
         status: "active"      // Default to active status
