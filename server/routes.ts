@@ -1620,12 +1620,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           try {
             // Handle external URLs like Unsplash: download and upload to R2
+            let savedFilename = photo.filename; // Nome de arquivo padrão
+            
             if (url.startsWith('http')) {
               console.log(`External photo URL: ${url} with ID: ${id}`);
               
               try {
                 // Generate a unique filename for the external image
                 const uniqueFilename = generateUniqueFileName(photo.filename || 'photo.jpg');
+                savedFilename = uniqueFilename; // Salvar o nome gerado para uso posterior
                 
                 // Download and upload the image to R2
                 const result = await downloadAndUploadToR2(url, uniqueFilename);
@@ -1634,24 +1637,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               } catch (err: any) {
                 console.error(`Failed to download and upload external image from ${url}: ${err.message}`);
                 // Keep the external URL if download fails
+                savedFilename = photo.filename; // Reverter para o nome original se falhar
               }
             }
             
-            console.log(`JSON photo for existing project: ${photo.filename}, URL: ${url}, ID: ${id}`);
-            
-            // Variável para armazenar o nome do arquivo correto
-            let finalFilename = photo.filename;
-            
-            // Se o URL foi alterado (ou seja, a imagem foi baixada e enviada para o R2),
-            // então precisamos usar o nome de arquivo do R2
-            if (url !== photo.url && !url.includes('placeholder')) {
-              finalFilename = uniqueFilename;
-            }
+            console.log(`JSON photo for existing project: ${photo.filename}, URL: ${url}, ID: ${id}, Saved filename: ${savedFilename}`);
             
             processedPhotos.push({
               id: id,
               url: url,
-              filename: finalFilename
+              filename: savedFilename
             });
           } catch (error: any) {
             console.error(`Error processing photo for existing project ${photo.filename}: ${error.message}`);
