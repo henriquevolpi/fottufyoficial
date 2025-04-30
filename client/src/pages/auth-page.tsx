@@ -23,7 +23,7 @@ const registerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido"),
   phone: z.string()
-    .regex(/^\+\d{6,15}$/, "Formato de telefone inválido. Use o formato internacional com código do país (ex: +14155552671)"),
+    .min(1, "Telefone é obrigatório"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
@@ -261,10 +261,15 @@ export default function AuthPage() {
                                 inputClass="!w-full"
                                 buttonClass="!bg-transparent"
                                 value={field.value}
-                                onChange={(phone, data: any) => {
+                                onChange={(phone) => {
+                                  // Simplificar para prevenir potenciais erros
                                   // Garantir que o formato tenha o prefixo +
-                                  const formattedPhone = phone.startsWith('+') ? phone : `+${data.dialCode}${phone.replace(data.dialCode, '')}`;
-                                  field.onChange(formattedPhone);
+                                  if (phone) {
+                                    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+                                    field.onChange(formattedPhone);
+                                  } else {
+                                    field.onChange('');
+                                  }
                                 }}
                               />
                             </FormControl>
