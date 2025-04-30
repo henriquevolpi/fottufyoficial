@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 
 // Esquemas de validação
 const loginSchema = z.object({
@@ -246,7 +248,25 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Telefone com código do país</FormLabel>
                             <FormControl>
-                              <Input placeholder="Phone number with country code (e.g. +14155552671)" {...field} />
+                              <PhoneInput
+                                country={'br'}
+                                enableSearch={true}
+                                inputProps={{
+                                  name: field.name,
+                                  required: true,
+                                }}
+                                placeholder=""
+                                countryCodeEditable={false}
+                                containerClass="w-full"
+                                inputClass="!w-full"
+                                buttonClass="!bg-transparent"
+                                value={field.value}
+                                onChange={(phone, data: any) => {
+                                  // Garantir que o formato tenha o prefixo +
+                                  const formattedPhone = phone.startsWith('+') ? phone : `+${data.dialCode}${phone.replace(data.dialCode, '')}`;
+                                  field.onChange(formattedPhone);
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

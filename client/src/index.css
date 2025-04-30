@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles for react-phone-input-2 */
+.react-tel-input .form-control {
+  @apply w-full h-10 py-2 text-base rounded-md border border-input bg-background text-foreground shadow-sm ring-offset-background !important;
+}
+
+.react-tel-input .form-control:focus {
+  @apply ring-2 ring-ring ring-offset-2 outline-none !important;
+}
+
+.react-tel-input .selected-flag {
+  @apply bg-transparent !important;
+}
+
+.react-tel-input .country-list {
+  @apply bg-background text-foreground border-border !important;
+}
+
+.react-tel-input .country-list .country {
+  @apply text-foreground hover:bg-accent !important;
+}
+
+.react-tel-input .country-list .country.highlight {
+  @apply bg-accent text-foreground !important;
+}
+
+.react-tel-input .flag-dropdown {
+  @apply bg-background border-input rounded-l-md !important;
+}
+
+.react-tel-input .flag-dropdown.open {
+  @apply bg-background !important;
+}
+
+.react-tel-input .flag-dropdown.open .selected-flag {
+  @apply bg-muted !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
