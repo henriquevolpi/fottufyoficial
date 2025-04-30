@@ -92,6 +92,7 @@ export const projects = pgTable("projects", {
     id: string;
     url: string;
     filename: string;
+    originalName?: string;
   }[]>(),
   selectedPhotos: jsonb("selected_photos").default([]).$type<string[]>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -170,6 +171,7 @@ export type OldPhoto = {
   id: string;
   url: string;
   filename: string;
+  originalName?: string;
 };
 
 export type WebhookPayload = {

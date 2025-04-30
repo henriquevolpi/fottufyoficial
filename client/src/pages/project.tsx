@@ -158,6 +158,7 @@ export default function ProjectView() {
               id={photo.id}
               url={photo.url}
               filename={photo.filename}
+              originalName={photo.originalName}
               isSelected={selectedPhotos.includes(photo.id)}
               onToggleSelect={togglePhotoSelection}
               disabled={isFinalized}
@@ -213,7 +214,7 @@ export default function ProjectView() {
                   .map(photo => (
                     <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
                       <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm font-mono">{photo.filename}</span>
+                      <span className="text-sm font-mono">{photo.originalName || photo.filename}</span>
                     </div>
                   ))
               ) : (
