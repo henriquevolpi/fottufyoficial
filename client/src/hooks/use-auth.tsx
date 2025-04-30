@@ -47,14 +47,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       // If data is wrapped in a user object, extract it
       const userData = data.user || data;
+      
+      // Primeiro salve os dados básicos do usuário
       queryClient.setQueryData(["/api/user"], userData);
-      // Invalidate subscription and stats queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      
+      // Agora faça uma nova requisição para obter dados atualizados
+      try {
+        const freshUserResponse = await apiRequest("GET", "/api/user");
+        if (freshUserResponse.ok) {
+          const freshUserData = await freshUserResponse.json();
+          // Atualize com os dados mais recentes
+          queryClient.setQueryData(["/api/user"], freshUserData);
+        }
+      } catch (error) {
+        console.log("Erro ao obter dados atualizados do usuário:", error);
+        // Já temos os dados básicos salvos, então continuamos
+      }
+      
+      // Invalidate e refetch imediatamente as consultas relacionadas
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
+      ]);
       
       toast({
         title: "Login realizado com sucesso",
@@ -75,13 +93,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       // If data is wrapped in a user object, extract it
       const userData = data.user || data;
+      
+      // Primeiro salve os dados básicos do usuário
       queryClient.setQueryData(["/api/user"], userData);
-      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      
+      // Agora faça uma nova requisição para obter dados atualizados
+      try {
+        const freshUserResponse = await apiRequest("GET", "/api/user");
+        if (freshUserResponse.ok) {
+          const freshUserData = await freshUserResponse.json();
+          // Atualize com os dados mais recentes
+          queryClient.setQueryData(["/api/user"], freshUserData);
+        }
+      } catch (error) {
+        console.log("Erro ao obter dados atualizados do usuário:", error);
+        // Já temos os dados básicos salvos, então continuamos
+      }
+      
+      // Invalidate e refetch imediatamente as consultas relacionadas
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
+      ]);
       
       toast({
         title: "Registro realizado com sucesso",

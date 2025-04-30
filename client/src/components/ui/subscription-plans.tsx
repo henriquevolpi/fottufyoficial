@@ -43,13 +43,13 @@ export default function SubscriptionPlans() {
   const [, setLocation] = useLocation();
   
   // Get subscription plans with correct typing
-  const { data: subscriptionData, isLoading, error } = useQuery<SubscriptionData>({
+  const { data: subscriptionData, isLoading, error, refetch } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription/plans"],
     enabled: !!user,
     // Use explicit fetcher that normalizes response data
     queryFn: async ({ queryKey }) => {
       const url = queryKey[0] as string;
-      const response = await fetch(url);
+      const response = await apiRequest("GET", url);
       if (!response.ok) {
         throw new Error('Failed to fetch subscription plans');
       }
@@ -142,11 +142,29 @@ export default function SubscriptionPlans() {
   
   return (
     <div className="space-y-6">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold tracking-tight">Planos e Assinaturas</h2>
-        <p className="text-muted-foreground">
-          Escolha o plano que melhor atende às suas necessidades.
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Planos e Assinaturas</h2>
+          <p className="text-muted-foreground">
+            Escolha o plano que melhor atende às suas necessidades.
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => {
+            refetch();
+            toast({
+              title: "Estatísticas atualizadas",
+              description: "Os dados de assinatura foram atualizados.",
+            });
+          }}
+        >
+          <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Atualizar
+        </Button>
       </div>
       
       {/* Estatísticas do usuário */}
