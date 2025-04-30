@@ -3,6 +3,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
+import axios from "axios";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -13,6 +14,32 @@ declare global {
 }
 
 const SALT_ROUNDS = 10;
+const BOT_CONVERSA_WEBHOOK_URL = "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/108243/V8tF64jdaanj/";
+
+/**
+ * Envia os dados de registro para o webhook do BotConversa
+ * Falha silenciosamente em caso de erro para não bloquear o processo de registro
+ */
+async function sendBotConversaWebhook(name: string, phone: string) {
+  try {
+    console.log(`[WEBHOOK] Enviando dados para BotConversa: ${name} / ${phone}`);
+    
+    await axios.post(BOT_CONVERSA_WEBHOOK_URL, {
+      name, 
+      phone
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 5000 // Timeout de 5 segundos para não atrasar o fluxo principal
+    });
+    
+    console.log('[WEBHOOK] Dados enviados com sucesso para BotConversa');
+  } catch (error: any) {
+    // Apenas loga o erro sem interromper o fluxo principal
+    console.error('[WEBHOOK] Erro ao enviar dados para BotConversa:', error.message || 'Erro desconhecido');
+  }
+}
 
 async function hashPassword(password: string): Promise<string> {
   try {
@@ -126,6 +153,10 @@ export function setupAuth(app: Express) {
       
       console.log("Creating new user");
       const user = await storage.createUser(userData);
+      
+      // Enviar webhook para BotConversa (não bloqueia o fluxo principal)
+      sendBotConversaWebhook(userData.name, userData.phone)
+        .catch((error: any) => console.error("[WEBHOOK] Erro ao enviar webhook:", error.message || 'Erro desconhecido'));
       
       // Establish session by logging in the user
       req.login(user, (err) => {
@@ -284,7 +315,7 @@ export function setupAuth(app: Express) {
           domain: req.session.cookie.domain,
           secure: req.session.cookie.secure
         } : 'No cookie in session',
-        passport: req.session.passport
+        passport: (req.session as any).passport
       });
     } else {
       console.log('[USER] No session object found');
