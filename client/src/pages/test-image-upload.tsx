@@ -50,9 +50,13 @@ export default function TestImageUpload() {
       const data = await response.json();
       console.log('Upload bem-sucedido:', data);
       
-      if (data && data[0] && data[0].url) {
+      if (data && data.files && data.files.length > 0 && data.files[0].url) {
+        setUploadedImageUrl(data.files[0].url);
+      } else if (data && data[0] && data[0].url) {
+        // Caso a estrutura seja diferente do esperado
         setUploadedImageUrl(data[0].url);
       } else {
+        console.error('Estrutura da resposta:', data);
         throw new Error('URL da imagem processada não encontrada na resposta');
       }
     } catch (err) {

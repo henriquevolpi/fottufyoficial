@@ -16,52 +16,63 @@ export async function processImage(
   mimetype: string
 ): Promise<Buffer> {
   try {
-    // Certifique-se de que o arquivo de marca d'água existe
+    // Primeiro, garanta que a imagem seja redimensionada corretamente
+    // Isso garante que mesmo se houver problemas com a marca d'água, pelo menos a imagem será redimensionada
+    let resizedBuffer = buffer;
+    try {
+      resizedBuffer = await resizeImage(buffer);
+    } catch (resizeError) {
+      console.error('Erro ao redimensionar imagem:', resizeError);
+      // Se falhar no redimensionamento, use o buffer original
+      resizedBuffer = buffer;
+    }
+    
+    // Verifique se o arquivo de marca d'água existe
     if (!fs.existsSync(WATERMARK_PATH)) {
       console.warn(`Arquivo de marca d'água não encontrado em ${WATERMARK_PATH}. A imagem será processada sem marca d'água.`);
-      return await resizeImage(buffer);
+      return resizedBuffer;
     }
 
-    // Carregar o buffer da imagem para o processamento
-    let processedImage = sharp(buffer);
-    
-    // Obter metadados da imagem para cálculos
-    const metadata = await processedImage.metadata();
-    
-    // Redimensionar mantendo proporção
-    if (metadata.width && metadata.width > TARGET_WIDTH) {
-      processedImage = processedImage.resize({
-        width: TARGET_WIDTH,
-        fit: 'inside',
-        withoutEnlargement: true
-      });
+    try {
+      // Carregar o buffer da imagem para o processamento
+      let processedImage = sharp(resizedBuffer);
+      
+      // Obter metadados da imagem para cálculos
+      const metadata = await processedImage.metadata();
+      
+      // Cálculo seguro da largura para o padrão de marca d'água
+      const width = metadata.width || TARGET_WIDTH;
+      
+      // Carregar o arquivo de marca d'água
+      const watermarkBuffer = fs.readFileSync(WATERMARK_PATH);
+      
+      // Criar um padrão de marca d'água repetida
+      const watermarkPattern = await createWatermarkPattern(watermarkBuffer, width);
+      
+      // Aplicar a marca d'água
+      processedImage = processedImage.composite([
+        { input: watermarkPattern, blend: 'over' }
+      ]);
+      
+      // Converter para o formato apropriado baseado no mimetype original
+      if (mimetype === 'image/png') {
+        processedImage = processedImage.png();
+      } else if (mimetype === 'image/webp') {
+        processedImage = processedImage.webp();
+      } else if (mimetype === 'image/gif') {
+        processedImage = processedImage.gif();
+      } else {
+        // Padrão para JPEG
+        processedImage = processedImage.jpeg({ quality: 85 });
+      }
+      
+      // Converter a imagem processada de volta para um buffer
+      return await processedImage.toBuffer();
+    } catch (watermarkError) {
+      console.error('Erro ao aplicar marca d\'água:', watermarkError);
+      // Se falhar na aplicação da marca d'água, retorne pelo menos a imagem redimensionada
+      return resizedBuffer;
     }
-    
-    // Carregar o arquivo de marca d'água
-    const watermarkBuffer = fs.readFileSync(WATERMARK_PATH);
-    
-    // Criar um padrão de marca d'água repetida
-    const watermarkPattern = await createWatermarkPattern(watermarkBuffer, metadata.width || TARGET_WIDTH);
-    
-    // Aplicar a marca d'água
-    processedImage = processedImage.composite([
-      { input: watermarkPattern, blend: 'over' }
-    ]);
-    
-    // Converter para o formato apropriado baseado no mimetype original
-    if (mimetype === 'image/png') {
-      processedImage = processedImage.png();
-    } else if (mimetype === 'image/webp') {
-      processedImage = processedImage.webp();
-    } else if (mimetype === 'image/gif') {
-      processedImage = processedImage.gif();
-    } else {
-      // Padrão para JPEG
-      processedImage = processedImage.jpeg({ quality: 85 });
-    }
-    
-    // Converter a imagem processada de volta para um buffer
-    return await processedImage.toBuffer();
   } catch (error) {
     console.error('Erro ao processar imagem:', error);
     // Retornar buffer original em caso de erro
@@ -105,7 +116,8 @@ async function createWatermarkPattern(
     const watermarkMeta = await watermark.metadata();
     
     // Definir o tamanho da marca d'água em relação à largura alvo
-    const watermarkSize = Math.max(targetWidth / 5, 100); // 20% da largura ou mínimo 100px
+    // Garantir que é um número inteiro para evitar erros do Sharp
+    const watermarkSize = Math.max(Math.floor(targetWidth / 5), 100); // 20% da largura ou mínimo 100px
     
     // Redimensionar a marca d'água
     const resizedWatermark = await watermark
@@ -133,8 +145,9 @@ async function createWatermarkPattern(
     // Calcular quantas marcas d'água cabem na horizontal e vertical
     const rows = 3;
     const cols = 3;
-    const patternWidth = targetWidth;
-    const patternHeight = targetWidth; // Quadrado para facilitar
+    // Garantir que largura e altura são números inteiros
+    const patternWidth = Math.floor(targetWidth);
+    const patternHeight = Math.floor(targetWidth); // Quadrado para facilitar
     
     // Criar uma imagem base transparente
     const basePattern = sharp({
@@ -187,10 +200,13 @@ async function createWatermarkPattern(
   } catch (error) {
     console.error('Erro ao criar padrão de marca d\'água:', error);
     // Criar uma imagem transparente de fallback
+    // Garantir que as dimensões são inteiros
+    const safeWidth = Math.floor(targetWidth);
+    const safeHeight = Math.floor(targetWidth);
     return await sharp({
       create: {
-        width: targetWidth,
-        height: targetWidth,
+        width: safeWidth,
+        height: safeHeight,
         channels: 4,
         background: { r: 0, g: 0, b: 0, alpha: 0 }
       }
