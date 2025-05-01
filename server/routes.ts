@@ -447,15 +447,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Mesmo com erro no banco, ainda listamos o arquivo no resultado
           }
             
-          // Use the full public URL from Cloudflare R2
-          const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${filename}`;
-          
+          // Usar a URL retornada pela função de upload
           uploadedFiles.push({
             originalName: file.originalname,
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: publicUrl, // Store the full public URL for consistency
+            url: result.url, // Usar a URL retornada pelo método uploadFileToR2
             key: result.key
           });
         } catch (uploadError) {
