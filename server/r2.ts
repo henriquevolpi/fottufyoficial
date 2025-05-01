@@ -18,6 +18,7 @@
 import { S3Client, PutObjectCommand, HeadBucketCommand, ListBucketsCommand, CreateBucketCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import multer from "multer";
+import { processImage } from "./imageProcessor";
 
 // Check for required environment variables
 if (!process.env.R2_ACCESS_KEY_ID) {
@@ -110,13 +111,27 @@ export async function uploadFileToR2(
   contentType: string
 ): Promise<{ url: string, key: string }> {
   try {
+    // Processar a imagem somente se for um tipo de imagem suportado
+    let processedBuffer = buffer;
+    if (isValidFileType(contentType)) {
+      try {
+        console.log(`Processando imagem: ${fileName} (redimensionamento e marca d'água)`);
+        processedBuffer = await processImage(buffer, contentType);
+        console.log(`Imagem processada com sucesso: ${fileName}`);
+      } catch (processingError) {
+        console.error(`Erro ao processar imagem ${fileName}:`, processingError);
+        // Em caso de erro no processamento, continua com o buffer original
+        processedBuffer = buffer;
+      }
+    }
+
     // Create command to upload file
     // Note: Cloudflare R2 does not support ACLs like AWS S3
     // Public access is controlled via bucket-level settings in the Cloudflare dashboard
     const uploadCommand = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: fileName,
-      Body: buffer,
+      Body: processedBuffer,
       ContentType: contentType
     });
 
@@ -169,9 +184,23 @@ export async function downloadAndUploadToR2(
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
+    // Processar a imagem somente se for um tipo de imagem suportado
+    let processedBuffer = buffer;
+    if (isValidFileType(contentType)) {
+      try {
+        console.log(`Processando imagem baixada: ${filename} (redimensionamento e marca d'água)`);
+        processedBuffer = await processImage(buffer, contentType);
+        console.log(`Imagem baixada processada com sucesso: ${filename}`);
+      } catch (processingError) {
+        console.error(`Erro ao processar imagem baixada ${filename}:`, processingError);
+        // Em caso de erro no processamento, continua com o buffer original
+        processedBuffer = buffer;
+      }
+    }
+    
     // Upload the image to R2
     const result = await uploadFileToR2(
-      buffer,
+      processedBuffer,
       filename,
       contentType
     );
