@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Constantes para processamento
-const TARGET_WIDTH = 720; // Largura alvo para o redimensionamento
+const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
 const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 
 // Determinar o caminho da marca d'água

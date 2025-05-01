@@ -74,7 +74,7 @@ export default function TestImageUpload() {
           <CardHeader>
             <CardTitle>Teste de Processamento de Imagem</CardTitle>
             <CardDescription>
-              Esta página testa o redimensionamento para 720px de largura e a adição de marca d'água
+              Esta página testa o redimensionamento para 920px de largura e a adição de marca d'água
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
