@@ -336,16 +336,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file.mimetype
           );
           
-          // Use the full public URL from Cloudflare R2
-          // Format: https://<account_id>.r2.cloudflarestorage.com/<bucket_name>/<filename>
-          const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${filename}`;
+          // Usar a URL retornada pela função de upload para R2 (que já usa o domínio CDN)
+          // Atualmente, o formato é: https://cdn.fottufy.com/{filename}
           
           uploadedFiles.push({
             originalName: file.originalname,
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: publicUrl, // Store the full public URL
+            url: result.url, // Usar a URL retornada pelo método uploadFileToR2
             key: result.key
           });
         } catch (error) {
@@ -428,15 +427,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file.mimetype
           );
           
-          // Use the full public URL from Cloudflare R2
-          // Format: https://<account_id>.r2.cloudflarestorage.com/<bucket_name>/<filename>
+          // Usar a URL retornada pela função de upload, que usa o domínio CDN
+          // Formato atual: https://cdn.fottufy.com/{filename}
           
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
-            const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${filename}`;
             const newPhoto = await db.insert(photos).values({
               projectId,
-              url: publicUrl, // Store the full public R2 URL for proper display
+              url: result.url, // Usar a URL retornada pelo método uploadFileToR2
               filename,
               selected: false
             }).returning();

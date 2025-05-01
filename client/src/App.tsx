@@ -50,6 +50,7 @@ function ProjectViewPublicRoute({ params }: { params: { id: string }}) {
 // Importar a página de preços
 import PricingPage from "@/pages/pricing";
 import TestR2 from "@/pages/test-r2";
+import TestImageUpload from "@/pages/test-image-upload";
 
 function Router() {
   return (
@@ -78,6 +79,9 @@ function Router() {
       </Route>
       <Route path="/test-r2">
         {() => <TestR2 />}
+      </Route>
+      <Route path="/test-image-upload">
+        {() => <TestImageUpload />}
       </Route>
       <Route path="/home">
         {() => <LandingPage />}
