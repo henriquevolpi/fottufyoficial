@@ -287,8 +287,8 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-wrap gap-2 justify-between">
-        <div className="flex gap-2">
+      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2 justify-between">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {/* Delete project button */}
           <Button
             variant="ghost"
@@ -314,11 +314,11 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           )}
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
             size="sm"
-            className="text-xs"
+            className="text-xs flex-grow sm:flex-grow-0"
             onClick={() => setLocation(`/project/${project.id}`)}
           >
             Ver Detalhes
@@ -328,7 +328,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-blue-600"
+            className="text-xs text-blue-600 flex-grow sm:flex-grow-0"
             onClick={(e) => {
               e.stopPropagation();
               // Copy link for the client
@@ -351,7 +351,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             <Button 
               variant="outline" 
               size="sm"
-              className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800"
+              className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 flex-grow sm:flex-grow-0"
               onClick={handleEditGallery}
             >
               Editar Galeria
@@ -362,17 +362,18 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       
       {/* Delete confirmation modal */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Excluir Projeto</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm mt-1">
               Tem certeza que deseja excluir o projeto "{project?.name || project?.nome || 'Sem título'}"? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end mt-4">
             <Button
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
@@ -380,6 +381,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               variant="destructive"
               onClick={handleDeleteProject}
               disabled={isDeleting}
+              className="w-full sm:w-auto"
             >
               {isDeleting ? (
                 <>
@@ -396,10 +398,10 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       
       {/* View selections modal */}
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
-        <DialogContent className="sm:max-w-[900px]">
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Fotos Selecionadas - {project?.name || project?.nome || 'Sem título'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">Fotos Selecionadas - {project?.name || project?.nome || 'Sem título'}</DialogTitle>
+            <DialogDescription className="text-sm mt-1">
               O cliente selecionou {project?.selectedPhotos?.length || project?.selecionadas || 0} de {project?.photos?.length || project?.fotos || 0} fotos.
             </DialogDescription>
           </DialogHeader>
@@ -413,15 +415,15 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
                   alt={photo.filename}
                   className="w-full h-full object-cover" 
                 />
-                <div className="absolute bottom-2 left-2 right-2 bg-black/50 text-white text-xs p-2 rounded">
+                <div className="absolute bottom-2 left-2 right-2 bg-black/50 text-white text-xs p-2 rounded truncate">
                   {photo.filename}
                 </div>
               </div>
             ))}
           </div>
           
-          <DialogFooter>
-            <Button onClick={() => setShowSelectionsModal(false)}>
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setShowSelectionsModal(false)} className="w-full sm:w-auto">
               Fechar
             </Button>
           </DialogFooter>
@@ -593,10 +595,10 @@ function UploadModal({
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-auto">
         <DialogHeader>
           <DialogTitle>Criar Novo Projeto</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm mt-1">
             Preencha os detalhes do projeto e faça upload das fotos.
           </DialogDescription>
         </DialogHeader>
@@ -732,11 +734,21 @@ function UploadModal({
               </div>
             )}
             
-            <DialogFooter className="sticky bottom-0 pt-4 mt-4 bg-white border-t z-10">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isUploading}>
+            <DialogFooter className="sticky bottom-0 pt-4 mt-4 bg-white border-t z-10 flex flex-col sm:flex-row gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose} 
+                disabled={isUploading}
+                className="w-full sm:w-auto"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isUploading}>
+              <Button 
+                type="submit" 
+                disabled={isUploading}
+                className="w-full sm:w-auto"
+              >
                 {isUploading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -829,7 +841,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   };
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
       {/* Active projects card */}
       <Card>
         <CardHeader className="pb-2">
@@ -1217,29 +1229,29 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="container mx-auto py-4 px-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="text-2xl font-bold text-gray-900">Fottufy</h1>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => setUploadModalOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full sm:w-auto"
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
                 New Project
               </Button>
               
-              <div className="flex items-center border-l pl-4 ml-2">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+              <div className="flex items-center border-t sm:border-t-0 sm:border-l pt-4 sm:pt-0 pl-0 sm:pl-4 mt-2 sm:mt-0 w-full sm:w-auto">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 shrink-0">
                   <span className="text-gray-700 font-medium">
                     {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                   </span>
                 </div>
-                <div>
-                  <p className="font-medium">{user?.name || "User"}</p>
-                  <p className="text-gray-500">{user?.email}</p>
+                <div className="flex-grow mr-2">
+                  <p className="font-medium truncate">{user?.name || "User"}</p>
+                  <p className="text-gray-500 text-sm truncate">{user?.email}</p>
                 </div>
-                <Button variant="outline" onClick={handleLogout}>
+                <Button variant="outline" onClick={handleLogout} size="sm" className="shrink-0">
                   Logout
                 </Button>
               </div>
@@ -1282,11 +1294,11 @@ export default function Dashboard() {
           </div>
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="reviewed">Reviewed</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsList className="mb-6 flex w-full overflow-x-auto scrollbar-none">
+              <TabsTrigger value="all" className="flex-shrink-0">All</TabsTrigger>
+              <TabsTrigger value="pending" className="flex-shrink-0">Pending</TabsTrigger>
+              <TabsTrigger value="reviewed" className="flex-shrink-0">Reviewed</TabsTrigger>
+              <TabsTrigger value="completed" className="flex-shrink-0">Completed</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
