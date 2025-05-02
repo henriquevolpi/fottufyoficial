@@ -4,7 +4,7 @@ import path from 'path';
 
 // Constantes para processamento
 const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
-const WATERMARK_OPACITY = 0.25; // 25% de opacidade
+const WATERMARK_OPACITY = 0.15; // 15% de opacidade
 
 // Determinar o caminho da marca d'água
 const WATERMARK_PATH = path.resolve('./public/watermark.png'); 
@@ -46,15 +46,12 @@ export async function processImage(
       // Carregar o arquivo de marca d'água
       const watermarkBuffer = fs.readFileSync(WATERMARK_PATH);
       
-      // Aplicar a marca d'água diretamente com a opção tile
+      // Aplicar a marca d'água usando o padrão repetido
+      const watermarkPattern = await createWatermarkPattern(watermarkBuffer, width);
+      
+      // Aplicar o padrão de marca d'água na imagem
       processedImage = processedImage.composite([
-        {
-          input: watermarkBuffer,
-          tile: true,
-          blend: 'overlay',
-          gravity: 'center',
-          opacity: 0.25,
-        }
+        { input: watermarkPattern, blend: 'over' }
       ]);
       
       // Converter para o formato apropriado baseado no mimetype original
@@ -126,7 +123,7 @@ async function createWatermarkPattern(
       throw new Error('Não foi possível obter as dimensões da marca d\'água');
     }
     
-    // Aplicar alfa para garantir canal de transparência e opacidade de 25%
+    // Aplicar alfa para garantir canal de transparência e opacidade de 15%
     const watermarkWithAlpha = await watermark
       .ensureAlpha()
       .composite([{
