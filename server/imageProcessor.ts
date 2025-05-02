@@ -7,7 +7,7 @@ const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
 const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 
 // Determinar o caminho da marca d'água
-const WATERMARK_PATH = path.resolve('./public/watermark.webp'); 
+const WATERMARK_PATH = path.resolve('./public/watermark.png'); 
 console.log(`Caminho da marca d'água: ${WATERMARK_PATH}`);
 
 // Função principal para processar a imagem
@@ -120,25 +120,14 @@ async function createWatermarkPattern(
     const watermarkSize = Math.max(Math.floor(targetWidth / 5), 100); // 20% da largura ou mínimo 100px
     
     // Redimensionar a marca d'água
+    // Simplificamos o processamento para melhorar a compatibilidade com PNG
     const resizedWatermark = await watermark
       .resize({
         width: watermarkSize, 
         fit: 'inside', 
         withoutEnlargement: false
       })
-      .ensureAlpha()
-      .composite([{
-        input: {
-          create: {
-            width: watermarkSize,
-            height: watermarkSize,
-            channels: 4,
-            background: { r: 0, g: 0, b: 0, alpha: 0 }
-          }
-        },
-        blend: 'dest-in',
-        gravity: 'centre'
-      }])
+      .ensureAlpha() // Garantir que a imagem tem canal alpha
       .toBuffer();
     
     // Criar um padrão de marca d'água em grade
