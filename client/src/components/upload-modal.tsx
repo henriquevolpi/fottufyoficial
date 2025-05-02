@@ -253,36 +253,8 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
   };
 
   const addFiles = (newFiles: File[]) => {
-    // Verificar o tamanho das imagens - limite de 1MB (1048576 bytes)
-    const MAX_FILE_SIZE = 1048576; // 1MB em bytes
-    const oversizedFiles: string[] = [];
-    const validFiles: File[] = [];
-    
-    // Separar arquivos válidos e inválidos
-    newFiles.forEach(file => {
-      if (file.size > MAX_FILE_SIZE) {
-        oversizedFiles.push(file.name);
-      } else {
-        validFiles.push(file);
-      }
-    });
-    
-    // Se houver arquivos muito grandes, exibir alerta
-    if (oversizedFiles.length > 0) {
-      const fileList = oversizedFiles.slice(0, 3).join(", ") + 
-                      (oversizedFiles.length > 3 ? ` e mais ${oversizedFiles.length - 3} arquivo(s)` : "");
-      
-      toast({
-        title: "Imagem muito grande",
-        description: `O tamanho máximo permitido é 1MB. Os seguintes arquivos excedem este limite: ${fileList}`,
-        variant: "destructive",
-      });
-      
-      // Se não houver arquivos válidos, encerrar o processo
-      if (validFiles.length === 0) {
-        return;
-      }
-    }
+    // Não há mais verificação de tamanho máximo - todos os arquivos são aceitos
+    const validFiles: File[] = newFiles;
     
     // Continuar apenas com os arquivos válidos
     const combinedFiles = [...files, ...validFiles];
@@ -439,7 +411,7 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
                     onChange={handleFileSelect}
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    JPG, PNG, GIF até 1MB por imagem
+                    JPG, PNG, GIF - sem limite de tamanho
                   </p>
                 </div>
               </div>

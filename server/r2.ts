@@ -59,7 +59,7 @@ export const r2Client = new S3Client({
 
 // File upload configurations
 export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE = 1000 * 1024 * 1024; // 1000MB (1GB) - efetivamente sem limite para uso normal
 
 // Configure multer for R2 uploads using memory storage
 export const r2Upload = multer({

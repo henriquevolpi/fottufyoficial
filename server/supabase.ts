@@ -18,7 +18,7 @@ export const supabase = createClient(
 // Configurações para upload de arquivos
 export const BUCKET_NAME = 'photos';
 export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE = 1000 * 1024 * 1024; // 1000MB (1GB) - efetivamente sem limite para uso normal
 
 // Função para gerar nome de arquivo único
 export function generateUniqueFileName(originalName: string): string {
