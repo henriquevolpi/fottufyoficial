@@ -1238,6 +1238,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use fields from FormData format or fallback to JSON format
       const name = projectName || req.body.nome || req.body.name;
       
+      // Parse watermark setting (convert string "true"/"false" to boolean)
+      const shouldApplyWatermark = applyWatermark === "false" ? false : true;
+      
       console.log("Project data (raw):", { projectName, clientName, clientEmail, photographerId });
       console.log("Project data (processed):", { name, clientName, clientEmail, photographerId });
       
