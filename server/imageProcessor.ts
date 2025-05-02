@@ -7,7 +7,7 @@ const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
 const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 
 // Determinar o caminho da marca d'água
-const WATERMARK_PATH = path.resolve('./public/watermark.png'); 
+const WATERMARK_PATH = path.resolve('./public/watermark.webp'); 
 console.log(`Caminho da marca d'água: ${WATERMARK_PATH}`);
 
 // Função principal para processar a imagem
@@ -111,73 +111,26 @@ async function createWatermarkPattern(
   targetWidth: number
 ): Promise<Buffer> {
   try {
-    // Carregar a marca d'água
+    // Garantir que a largura alvo é um número inteiro
+    const safeWidth = Math.floor(targetWidth);
+    const safeHeight = Math.floor(targetWidth); // Mantemos proporção quadrada para o padrão
+
+    // Carregar a marca d'água sem redimensionar
     const watermark = sharp(watermarkBuffer);
     const watermarkMeta = await watermark.metadata();
     
-    // Definir o tamanho da marca d'água em relação à largura alvo
-    // Garantir que é um número inteiro para evitar erros do Sharp
-    const watermarkSize = Math.max(Math.floor(targetWidth / 5), 100); // 20% da largura ou mínimo 100px
-    
-    // Redimensionar a marca d'água
-    // Simplificamos o processamento para melhorar a compatibilidade com PNG
-    const resizedWatermark = await watermark
-      .resize({
-        width: watermarkSize, 
-        fit: 'inside', 
-        withoutEnlargement: false
-      })
-      .ensureAlpha() // Garantir que a imagem tem canal alpha
-      .toBuffer();
-    
-    // Criar um padrão de marca d'água em grade
-    // Calcular quantas marcas d'água cabem na horizontal e vertical
-    const rows = 3;
-    const cols = 3;
-    // Garantir que largura e altura são números inteiros
-    const patternWidth = Math.floor(targetWidth);
-    const patternHeight = Math.floor(targetWidth); // Quadrado para facilitar
-    
-    // Criar uma imagem base transparente
-    const basePattern = sharp({
-      create: {
-        width: patternWidth,
-        height: patternHeight,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
-      }
-    });
-    
-    // Criar array de composições para posicionar as marcas d'água
-    const compositeOperations = [];
-    const spacingX = patternWidth / cols;
-    const spacingY = patternHeight / rows;
-    
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        compositeOperations.push({
-          input: resizedWatermark,
-          left: Math.floor(col * spacingX + (spacingX - watermarkSize) / 2),
-          top: Math.floor(row * spacingY + (spacingY - watermarkSize) / 2),
-          blend: 'over' as const
-        });
-      }
+    if (!watermarkMeta.width || !watermarkMeta.height) {
+      throw new Error('Não foi possível obter as dimensões da marca d\'água');
     }
     
-    // Aplicar todas as marcas d'água no padrão
-    const pattern = await basePattern
-      .composite(compositeOperations)
-      .png()
-      .toBuffer();
-    
-    // Ajustar a opacidade do padrão completo
-    return await sharp(pattern)
+    // Aplicar alfa para garantir canal de transparência e opacidade de 25%
+    const watermarkWithAlpha = await watermark
       .ensureAlpha()
       .composite([{
         input: {
           create: {
-            width: patternWidth,
-            height: patternHeight,
+            width: watermarkMeta.width,
+            height: watermarkMeta.height,
             channels: 4,
             background: { r: 255, g: 255, b: 255, alpha: WATERMARK_OPACITY }
           }
@@ -186,10 +139,47 @@ async function createWatermarkPattern(
         gravity: 'centre'
       }])
       .toBuffer();
+    
+    // Criar uma imagem base transparente com tamanho da imagem de destino
+    const basePattern = sharp({
+      create: {
+        width: safeWidth,
+        height: safeHeight,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      }
+    });
+    
+    // Calcular quantas marcas d'água cabem em cada direção
+    // Vamos supor que a marca d'água tenha aproximadamente 100x100px
+    const watermarkWidth = watermarkMeta.width;
+    const watermarkHeight = watermarkMeta.height;
+    
+    // Calcular quantas cópias são necessárias para cobrir a imagem inteira
+    const cols = Math.ceil(safeWidth / watermarkWidth) + 1; // +1 para garantir cobertura completa
+    const rows = Math.ceil(safeHeight / watermarkHeight) + 1;
+    
+    // Criar array de composições para repetir a marca d'água em toda a imagem
+    const compositeOperations = [];
+    
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        compositeOperations.push({
+          input: watermarkWithAlpha,
+          left: col * watermarkWidth,
+          top: row * watermarkHeight,
+          blend: 'over' as const
+        });
+      }
+    }
+    
+    // Aplicar todas as marcas d'água no padrão
+    return await basePattern
+      .composite(compositeOperations)
+      .toBuffer();
   } catch (error) {
     console.error('Erro ao criar padrão de marca d\'água:', error);
     // Criar uma imagem transparente de fallback
-    // Garantir que as dimensões são inteiros
     const safeWidth = Math.floor(targetWidth);
     const safeHeight = Math.floor(targetWidth);
     return await sharp({
