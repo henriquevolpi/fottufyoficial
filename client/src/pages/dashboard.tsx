@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   BarChart, 
@@ -511,6 +512,7 @@ function UploadModal({
       formData.append('clientName', data.clientName);
       formData.append('clientEmail', data.clientEmail);
       formData.append('data', data.data);
+      formData.append('applyWatermark', data.applyWatermark.toString());
       
       // Add photographer ID from the user context
       if (user && user.id) {

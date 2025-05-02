@@ -1233,7 +1233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Extract project data from request body
       // When using FormData, form fields come as strings instead of JSON objects
-      const { projectName, clientName, clientEmail, photographerId, photos, photosData } = req.body;
+      const { projectName, clientName, clientEmail, photographerId, photos, photosData, applyWatermark } = req.body;
       
       // Use fields from FormData format or fallback to JSON format
       const name = projectName || req.body.nome || req.body.name;
