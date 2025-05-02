@@ -113,10 +113,12 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
       formData.append('photoCount', files.length.toString());
 
       // Use a fallback approach for browsers that don't support FormData properly
-      // Create JSON photosData as a backup
+      // Create JSON photosData as a backup - sem usar os previews visuais
       const photoDataJson = JSON.stringify(
-        files.map((file, index) => ({
-          url: previews[index],
+        files.map(file => ({
+          // Não enviamos URLs de preview, apenas o nome do arquivo que é suficiente
+          // para o servidor processar o upload corretamente
+          url: "",  // Campo vazio, o servidor usará os arquivos enviados diretamente
           filename: file.name
         }))
       );
@@ -285,17 +287,10 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
     // Continuar apenas com os arquivos válidos
     const combinedFiles = [...files, ...validFiles];
     setFiles(combinedFiles);
-
-    // Criar previews para as novas imagens válidas
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        if (e.target?.result) {
-          setPreviews(prev => [...prev, e.target!.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    
+    // Apenas atualizar a contagem de arquivos sem criar previews visuais
+    // Isso é importante para que o resto da lógica continue funcionando
+    setPreviews(prev => [...prev, ...Array(validFiles.length).fill("placeholder")]);
   };
 
   const removeFile = (index: number) => {
