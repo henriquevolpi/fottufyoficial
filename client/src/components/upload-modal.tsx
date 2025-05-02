@@ -455,43 +455,31 @@ export default function UploadModal({ open, onClose, onUpload }: UploadModalProp
                     {previews.length} photo{previews.length !== 1 ? "s" : ""} selected
                   </p>
                   
-                  {/* Show max 12 thumbnails (4 rows of 3) */}
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-[260px] overflow-y-auto">
-                    {previews.slice(0, 24).map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <div className="relative aspect-square rounded-md overflow-hidden border h-[60px]">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="object-cover w-full h-full"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-white hover:text-red-400 h-8 w-8 p-0"
-                              onClick={() => removeFile(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
+                  {/* Lista de nomes de arquivos */}
+                  <div className="border rounded-md max-h-[260px] overflow-y-auto">
+                    {files.map((file, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-center justify-between py-2 px-3 border-b last:border-b-0 hover:bg-gray-50"
+                      >
+                        <div className="flex items-center space-x-2 overflow-hidden">
+                          <Image className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <p className="text-sm truncate">{file.name}</p>
                         </div>
-                        <p className="text-xs truncate mt-0.5 text-[10px] leading-tight">
-                          {files[index]?.name?.length > 10 
-                            ? files[index]?.name?.substring(0, 10) + '...' 
-                            : files[index]?.name}
-                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
                   
-                  {/* Show count of remaining photos if more than 24 */}
-                  {previews.length > 24 && (
-                    <div className="mt-2 text-center text-xs text-gray-500">
-                      +{previews.length - 24} more photo{previews.length - 24 !== 1 ? "s" : ""} selected
-                    </div>
-                  )}
+                  {/* Contador removido já que todas as fotos são exibidas na lista */}
                 </div>
               )}
             </div>
