@@ -9,10 +9,14 @@ const WATERMARK_FONT_SIZE = 36; // Tamanho da fonte em pixels
 /**
  * Função principal para processar a imagem
  * Redimensiona para 920px de largura e aplica marca d'água com texto repetido
+ * @param buffer Buffer da imagem original
+ * @param mimetype Tipo MIME da imagem
+ * @param applyWatermark Flag que indica se deve aplicar marca d'água (padrão: true)
  */
 export async function processImage(
   buffer: Buffer, 
-  mimetype: string
+  mimetype: string,
+  applyWatermark: boolean = true
 ): Promise<Buffer> {
   try {
     // Primeiro, redimensionar a imagem
@@ -36,16 +40,25 @@ export async function processImage(
         throw new Error('Não foi possível obter as dimensões da imagem');
       }
 
-      // Criar padrão de marca d'água repetitiva diretamente com texto
-      const watermarkPattern = await createTextWatermarkPattern(
-        metadata.width,
-        metadata.height
-      );
+      // Inicializar a imagem que será processada
+      let finalImage = processedImage;
       
-      // Aplicar marca d'água e formato adequado
-      let finalImage = processedImage.composite([
-        { input: watermarkPattern, blend: 'over' }
-      ]);
+      // Aplicar marca d'água apenas se o parâmetro applyWatermark for true
+      if (applyWatermark) {
+        console.log(`Aplicando marca d'água à imagem`);
+        // Criar padrão de marca d'água repetitiva diretamente com texto
+        const watermarkPattern = await createTextWatermarkPattern(
+          metadata.width,
+          metadata.height
+        );
+        
+        // Aplicar marca d'água
+        finalImage = processedImage.composite([
+          { input: watermarkPattern, blend: 'over' }
+        ]);
+      } else {
+        console.log(`Pulando aplicação de marca d'água conforme solicitado`);
+      }
       
       // Definir formato de saída baseado no mimetype original
       if (mimetype === 'image/png') {

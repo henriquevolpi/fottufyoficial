@@ -108,15 +108,17 @@ export function isValidFileSize(size: number): boolean {
 export async function uploadFileToR2(
   buffer: Buffer, 
   fileName: string,
-  contentType: string
+  contentType: string,
+  applyWatermark: boolean = true
 ): Promise<{ url: string, key: string }> {
   try {
     // Processar a imagem somente se for um tipo de imagem suportado
     let processedBuffer = buffer;
     if (isValidFileType(contentType)) {
       try {
-        console.log(`Processando imagem: ${fileName} (redimensionamento e marca d'água)`);
-        processedBuffer = await processImage(buffer, contentType);
+        const watermarkStatus = applyWatermark ? "com marca d'água" : "sem marca d'água";
+        console.log(`Processando imagem: ${fileName} (redimensionamento ${watermarkStatus})`);
+        processedBuffer = await processImage(buffer, contentType, applyWatermark);
         console.log(`Imagem processada com sucesso: ${fileName}`);
       } catch (processingError) {
         console.error(`Erro ao processar imagem ${fileName}:`, processingError);
@@ -167,7 +169,8 @@ export async function uploadFileToR2(
  */
 export async function downloadAndUploadToR2(
   sourceUrl: string,
-  filename: string
+  filename: string,
+  applyWatermark: boolean = true
 ): Promise<{ url: string, key: string }> {
   try {
     // Fetch the image from the URL
@@ -188,8 +191,9 @@ export async function downloadAndUploadToR2(
     let processedBuffer = buffer;
     if (isValidFileType(contentType)) {
       try {
-        console.log(`Processando imagem baixada: ${filename} (redimensionamento e marca d'água)`);
-        processedBuffer = await processImage(buffer, contentType);
+        const watermarkStatus = applyWatermark ? "com marca d'água" : "sem marca d'água";
+        console.log(`Processando imagem baixada: ${filename} (redimensionamento ${watermarkStatus})`);
+        processedBuffer = await processImage(buffer, contentType, applyWatermark);
         console.log(`Imagem baixada processada com sucesso: ${filename}`);
       } catch (processingError) {
         console.error(`Erro ao processar imagem baixada ${filename}:`, processingError);
@@ -202,7 +206,8 @@ export async function downloadAndUploadToR2(
     const result = await uploadFileToR2(
       processedBuffer,
       filename,
-      contentType
+      contentType,
+      applyWatermark
     );
     
     return result;
