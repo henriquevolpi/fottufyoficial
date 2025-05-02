@@ -1376,7 +1376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               file.buffer,
               filename,
               file.mimetype
-            );
+            , shouldApplyWatermark);
             
             // Add processed photo to array
             processedPhotos.push({
