@@ -599,6 +599,9 @@ function UploadModal({
           <DialogTitle>Criar Novo Projeto</DialogTitle>
           <DialogDescription className="text-sm mt-1">
             Preencha os detalhes do projeto e faça upload das fotos.
+            <p className="text-sm text-gray-600 underline decoration-green-500">
+              Prefira fotos de 3mb ou menos, para evitar grande espera de upload
+            </p>
           </DialogDescription>
         </DialogHeader>
         
@@ -749,7 +752,7 @@ function UploadModal({
                   />
                 </div>
                 <div className="text-xs text-gray-500 mt-1 text-center">
-                  Enviando fotos... {uploadProgress}%
+                  Enviando fotos... Caso seja acima de 100 fotos, pode demorar um pouco, mas nao feche ou atualize a pagina {uploadProgress}%
                 </div>
               </div>
             )}
