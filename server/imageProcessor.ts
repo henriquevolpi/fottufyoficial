@@ -46,12 +46,15 @@ export async function processImage(
       // Carregar o arquivo de marca d'água
       const watermarkBuffer = fs.readFileSync(WATERMARK_PATH);
       
-      // Criar um padrão de marca d'água repetida
-      const watermarkPattern = await createWatermarkPattern(watermarkBuffer, width);
-      
-      // Aplicar a marca d'água
+      // Aplicar a marca d'água usando composite com a opção tile
       processedImage = processedImage.composite([
-        { input: watermarkPattern, blend: 'over' }
+        {
+          input: watermarkBuffer,
+          tile: true,
+          blend: 'overlay',
+          gravity: 'center',
+          opacity: 0.25,
+        }
       ]);
       
       // Converter para o formato apropriado baseado no mimetype original
