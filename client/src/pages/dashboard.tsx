@@ -477,14 +477,9 @@ function UploadModal({
     const newFiles = Array.from(event.target.files);
     setSelectedFiles((prev) => [...prev, ...newFiles]);
     
-    // Generate thumbnails for preview
-    newFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setThumbnails((prev) => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    // Não geramos mais thumbnails, apenas registramos a quantidade de arquivos
+    // para manter a contagem correta e permitir a remoção de arquivos
+    setThumbnails(prev => [...prev, ...Array(newFiles.length).fill("placeholder")]);
   };
   
   const removeFile = (index: number) => {
@@ -718,28 +713,26 @@ function UploadModal({
                 <h4 className="text-sm font-medium mb-2">
                   {thumbnails.length} foto(s) selecionada(s)
                 </h4>
-                {/* Added max-height and overflow-y-auto for scrolling when many photos are selected */}
-                <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 ${thumbnails.length > 8 ? 'max-h-[250px] overflow-y-auto pr-2' : ''}`}>
-                  {thumbnails.map((thumbnail, i) => (
-                    <div key={i} className="group relative rounded-md overflow-hidden h-24">
-                      <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${thumbnail})` }}
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="h-8 w-8"
-                          type="button"
-                          onClick={() => removeFile(i)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                {/* Lista simples de nomes de arquivos sem miniaturas */}
+                <div className="border rounded-md max-h-[260px] overflow-y-auto">
+                  {selectedFiles.map((file, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between py-2 px-3 border-b last:border-b-0 hover:bg-gray-50"
+                    >
+                      <div className="flex items-center space-x-2 overflow-hidden">
+                        <Camera className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <p className="text-sm truncate">{file.name}</p>
                       </div>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2">
-                        <p className="text-white text-xs truncate">{selectedFiles[i].name}</p>
-                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                        onClick={() => removeFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
