@@ -1,24 +1,21 @@
-import sharp, { Blend } from 'sharp';
-import fs from 'fs';
-import path from 'path';
+import sharp, { OverlayOptions } from 'sharp';
 
 // Constantes para processamento
 const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
 const WATERMARK_OPACITY = 0.15; // 15% de opacidade
+const WATERMARK_TEXT = 'fottufy (não copie)'; // Texto para a marca d'água
 
-// Determinar o caminho da marca d'água
-const WATERMARK_PATH = path.resolve('./public/watermark.png'); 
-console.log(`Caminho da marca d'água: ${WATERMARK_PATH}`);
-
-// Função principal para processar a imagem
+/**
+ * Função principal para processar a imagem
+ * Redimensiona para 920px de largura e aplica marca d'água com texto repetido
+ */
 export async function processImage(
   buffer: Buffer, 
   mimetype: string
 ): Promise<Buffer> {
   try {
-    // Primeiro, garanta que a imagem seja redimensionada corretamente
-    // Isso garante que mesmo se houver problemas com a marca d'água, pelo menos a imagem será redimensionada
-    let resizedBuffer = buffer;
+    // Primeiro, redimensionar a imagem
+    let resizedBuffer: Buffer;
     try {
       resizedBuffer = await resizeImage(buffer);
     } catch (resizeError) {
@@ -26,61 +23,59 @@ export async function processImage(
       // Se falhar no redimensionamento, use o buffer original
       resizedBuffer = buffer;
     }
-    
-    // Verifique se o arquivo de marca d'água existe
-    if (!fs.existsSync(WATERMARK_PATH)) {
-      console.warn(`Arquivo de marca d'água não encontrado em ${WATERMARK_PATH}. A imagem será processada sem marca d'água.`);
-      return resizedBuffer;
-    }
 
     try {
-      // Carregar o buffer da imagem para o processamento
-      let processedImage = sharp(resizedBuffer);
+      // Obter a imagem redimensionada para processamento
+      const processedImage = sharp(resizedBuffer);
       
-      // Obter metadados da imagem para cálculos
+      // Obter metadados da imagem redimensionada para determinar dimensões
       const metadata = await processedImage.metadata();
       
-      // Cálculo seguro da largura para o padrão de marca d'água
-      const width = metadata.width || TARGET_WIDTH;
+      if (!metadata.width || !metadata.height) {
+        throw new Error('Não foi possível obter as dimensões da imagem');
+      }
+
+      // Criar padrão de marca d'água repetitiva diretamente com texto
+      const watermarkPattern = await createTextWatermarkPattern(
+        metadata.width,
+        metadata.height
+      );
       
-      // Carregar o arquivo de marca d'água
-      const watermarkBuffer = fs.readFileSync(WATERMARK_PATH);
-      
-      // Aplicar a marca d'água usando o padrão repetido
-      const watermarkPattern = await createWatermarkPattern(watermarkBuffer, width);
-      
-      // Aplicar o padrão de marca d'água na imagem
-      processedImage = processedImage.composite([
+      // Aplicar marca d'água e formato adequado
+      let finalImage = processedImage.composite([
         { input: watermarkPattern, blend: 'over' }
       ]);
       
-      // Converter para o formato apropriado baseado no mimetype original
+      // Definir formato de saída baseado no mimetype original
       if (mimetype === 'image/png') {
-        processedImage = processedImage.png();
+        finalImage = finalImage.png();
       } else if (mimetype === 'image/webp') {
-        processedImage = processedImage.webp();
+        finalImage = finalImage.webp();
       } else if (mimetype === 'image/gif') {
-        processedImage = processedImage.gif();
+        finalImage = finalImage.gif();
       } else {
-        // Padrão para JPEG
-        processedImage = processedImage.jpeg({ quality: 85 });
+        // Padrão para JPEG com boa qualidade
+        finalImage = finalImage.jpeg({ quality: 85 });
       }
       
-      // Converter a imagem processada de volta para um buffer
-      return await processedImage.toBuffer();
+      // Converter para buffer final e retornar
+      return await finalImage.toBuffer();
     } catch (watermarkError) {
       console.error('Erro ao aplicar marca d\'água:', watermarkError);
-      // Se falhar na aplicação da marca d'água, retorne pelo menos a imagem redimensionada
+      // Se falhar na aplicação da marca d'água, retorna pelo menos a imagem redimensionada
       return resizedBuffer;
     }
   } catch (error) {
     console.error('Erro ao processar imagem:', error);
-    // Retornar buffer original em caso de erro
+    // Falha geral - retornar buffer original em último caso
     return buffer;
   }
 }
 
-// Função auxiliar para apenas redimensionar (usado se não houver marca d'água)
+/**
+ * Função auxiliar para redimensionar a imagem para 920px de largura
+ * Mantém a proporção original e só redimensiona se for maior que o alvo
+ */
 async function resizeImage(buffer: Buffer): Promise<Buffer> {
   try {
     const image = sharp(buffer);
@@ -105,83 +100,64 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
   }
 }
 
-// Função para criar um padrão de marca d'água repetido
-async function createWatermarkPattern(
-  watermarkBuffer: Buffer, 
-  targetWidth: number
-): Promise<Buffer> {
+/**
+ * Cria um padrão de marca d'água com texto repetido
+ * Gera uma grade de textos "fottufy (não copie)" com opacidade 15%
+ */
+async function createTextWatermarkPattern(width: number, height: number): Promise<Buffer> {
+  // Garantir dimensões seguras
+  const safeWidth = Math.floor(width);
+  const safeHeight = Math.floor(height);
+  
   try {
-    // Garantir que a largura alvo é um número inteiro
-    const safeWidth = Math.floor(targetWidth);
-    const safeHeight = Math.floor(targetWidth); // Mantemos proporção quadrada para o padrão
-
-    // Carregar a marca d'água sem redimensionar
-    const watermark = sharp(watermarkBuffer);
-    const watermarkMeta = await watermark.metadata();
+    // Criar uma imagem SVG com texto repetido
+    // Definimos uma grade de texto com rotação sutil para melhor cobertura
     
-    if (!watermarkMeta.width || !watermarkMeta.height) {
-      throw new Error('Não foi possível obter as dimensões da marca d\'água');
-    }
+    // Tamanho de cada célula da grade
+    const cellWidth = 200;
+    const cellHeight = 80;
     
-    // Aplicar alfa para garantir canal de transparência e opacidade de 15%
-    const watermarkWithAlpha = await watermark
-      .ensureAlpha()
-      .composite([{
-        input: {
-          create: {
-            width: watermarkMeta.width,
-            height: watermarkMeta.height,
-            channels: 4,
-            background: { r: 255, g: 255, b: 255, alpha: WATERMARK_OPACITY }
-          }
-        },
-        blend: 'dest-in',
-        gravity: 'centre'
-      }])
-      .toBuffer();
+    // Calcular número de repetições necessárias em cada direção
+    const cols = Math.ceil(safeWidth / cellWidth) + 1;
+    const rows = Math.ceil(safeHeight / cellHeight) + 1;
     
-    // Criar uma imagem base transparente com tamanho da imagem de destino
-    const basePattern = sharp({
-      create: {
-        width: safeWidth,
-        height: safeHeight,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
+    // Criar SVG com texto repetido
+    let svgContent = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg">`;
+    
+    // Definir estilo do texto
+    svgContent += `<style>
+      .watermark { 
+        font-family: Arial, sans-serif; 
+        font-size: 14px; 
+        fill: black; 
+        fill-opacity: ${WATERMARK_OPACITY}; 
+        font-weight: normal;
       }
-    });
+    </style>`;
     
-    // Calcular quantas marcas d'água cabem em cada direção
-    // Vamos supor que a marca d'água tenha aproximadamente 100x100px
-    const watermarkWidth = watermarkMeta.width;
-    const watermarkHeight = watermarkMeta.height;
-    
-    // Calcular quantas cópias são necessárias para cobrir a imagem inteira
-    const cols = Math.ceil(safeWidth / watermarkWidth) + 1; // +1 para garantir cobertura completa
-    const rows = Math.ceil(safeHeight / watermarkHeight) + 1;
-    
-    // Criar array de composições para repetir a marca d'água em toda a imagem
-    const compositeOperations = [];
-    
+    // Criar um padrão de repetição do texto
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        compositeOperations.push({
-          input: watermarkWithAlpha,
-          left: col * watermarkWidth,
-          top: row * watermarkHeight,
-          blend: 'over' as const
-        });
+        // Posicionar cada texto em uma célula da grade
+        const x = col * cellWidth;
+        const y = row * cellHeight;
+        
+        // Alternar rotação para melhor cobertura visual
+        const rotation = (row + col) % 2 === 0 ? -15 : 0;
+        
+        svgContent += `<text class="watermark" x="${x}" y="${y + 30}" transform="rotate(${rotation}, ${x}, ${y})">${WATERMARK_TEXT}</text>`;
       }
     }
     
-    // Aplicar todas as marcas d'água no padrão
-    return await basePattern
-      .composite(compositeOperations)
+    svgContent += `</svg>`;
+    
+    // Converter SVG para buffer usando Sharp
+    return await sharp(Buffer.from(svgContent))
       .toBuffer();
   } catch (error) {
-    console.error('Erro ao criar padrão de marca d\'água:', error);
-    // Criar uma imagem transparente de fallback
-    const safeWidth = Math.floor(targetWidth);
-    const safeHeight = Math.floor(targetWidth);
+    console.error('Erro ao criar padrão de marca d\'água de texto:', error);
+    
+    // Em caso de falha, criar uma imagem transparente
     return await sharp({
       create: {
         width: safeWidth,
