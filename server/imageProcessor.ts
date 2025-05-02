@@ -2,8 +2,9 @@ import sharp, { OverlayOptions } from 'sharp';
 
 // Constantes para processamento
 const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
-const WATERMARK_OPACITY = 0.15; // 15% de opacidade
+const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 const WATERMARK_TEXT = 'fottufy (não copie)'; // Texto para a marca d'água
+const WATERMARK_FONT_SIZE = 36; // Tamanho da fonte em pixels
 
 /**
  * Função principal para processar a imagem
@@ -102,7 +103,7 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Cria um padrão de marca d'água com texto repetido
- * Gera uma grade de textos "fottufy (não copie)" com opacidade 15%
+ * Gera uma grade de textos "fottufy (não copie)" com opacidade 25%
  */
 async function createTextWatermarkPattern(width: number, height: number): Promise<Buffer> {
   // Garantir dimensões seguras
@@ -111,11 +112,11 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
   
   try {
     // Criar uma imagem SVG com texto repetido
-    // Definimos uma grade de texto com rotação sutil para melhor cobertura
+    // Definimos uma grade de texto com rotação para melhor cobertura e visibilidade
     
-    // Tamanho de cada célula da grade
-    const cellWidth = 200;
-    const cellHeight = 80;
+    // Tamanho de cada célula da grade, ajustado para maior espaçamento
+    const cellWidth = 300; // Distância horizontal entre repetições do texto
+    const cellHeight = 150; // Distância vertical entre repetições do texto
     
     // Calcular número de repetições necessárias em cada direção
     const cols = Math.ceil(safeWidth / cellWidth) + 1;
@@ -124,28 +125,51 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     // Criar SVG com texto repetido
     let svgContent = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg">`;
     
-    // Definir estilo do texto
+    // Definir dois estilos para melhor contraste em fundos diferentes
     svgContent += `<style>
-      .watermark { 
+      .watermark-dark { 
         font-family: Arial, sans-serif; 
-        font-size: 14px; 
+        font-size: ${WATERMARK_FONT_SIZE}px; 
         fill: black; 
         fill-opacity: ${WATERMARK_OPACITY}; 
         font-weight: normal;
+        text-anchor: middle;
+      }
+      .watermark-light { 
+        font-family: Arial, sans-serif; 
+        font-size: ${WATERMARK_FONT_SIZE}px; 
+        fill: white; 
+        fill-opacity: ${WATERMARK_OPACITY}; 
+        font-weight: normal;
+        text-anchor: middle;
       }
     </style>`;
     
     // Criar um padrão de repetição do texto
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        // Posicionar cada texto em uma célula da grade
-        const x = col * cellWidth;
-        const y = row * cellHeight;
+        // Centro de cada célula da grade
+        const centerX = col * cellWidth + cellWidth / 2;
+        const centerY = row * cellHeight + cellHeight / 2;
         
         // Alternar rotação para melhor cobertura visual
-        const rotation = (row + col) % 2 === 0 ? -15 : 0;
+        const rotation = (row + col) % 3 === 0 ? -20 : 
+                       (row + col) % 3 === 1 ? 0 : 20;
         
-        svgContent += `<text class="watermark" x="${x}" y="${y + 30}" transform="rotate(${rotation}, ${x}, ${y})">${WATERMARK_TEXT}</text>`;
+        // Propriedade CSS para o texto preto (para fundos claros)
+        svgContent += `<text class="watermark-dark" 
+          x="${centerX}" 
+          y="${centerY}" 
+          transform="rotate(${rotation}, ${centerX}, ${centerY})">${WATERMARK_TEXT}</text>`;
+        
+        // Posição ligeiramente deslocada para o texto branco (para fundos escuros)
+        // Criamos versões em cores alternadas para garantir visibilidade em qualquer fundo
+        if ((row + col) % 4 === 0) {
+          svgContent += `<text class="watermark-light" 
+            x="${centerX + 120}" 
+            y="${centerY + 60}" 
+            transform="rotate(${rotation + 10}, ${centerX + 120}, ${centerY + 60})">${WATERMARK_TEXT}</text>`;
+        }
       }
     }
     
