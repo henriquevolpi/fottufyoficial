@@ -1375,8 +1375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const result = await uploadFileToR2(
               file.buffer,
               filename,
-              file.mimetype
-            , shouldApplyWatermark);
+              file.mimetype,
+              shouldApplyWatermark
+            );
             
             // Add processed photo to array
             processedPhotos.push({
@@ -1551,6 +1552,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/photos", authenticate, requireActiveUser, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
     try {
       const idParam = req.params.id;
+      const { applyWatermark } = req.body;
+      
+      // Parse watermark setting (convert string "true"/"false" to boolean)
+      const shouldApplyWatermark = applyWatermark === "false" ? false : true;
       
       // Verificar se o projeto existe
       const project = await storage.getProject(idParam);
@@ -1589,7 +1594,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const result = await uploadFileToR2(
               file.buffer,
               filename,
-              file.mimetype
+              file.mimetype,
+              shouldApplyWatermark
             );
             
             // Add processed photo to array
