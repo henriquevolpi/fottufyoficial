@@ -7,7 +7,7 @@ const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
 const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 
 // Determinar o caminho da marca d'água
-const WATERMARK_PATH = path.resolve('./public/watermark.webp'); 
+const WATERMARK_PATH = path.resolve('./public/watermark.png'); 
 console.log(`Caminho da marca d'água: ${WATERMARK_PATH}`);
 
 // Função principal para processar a imagem
@@ -46,7 +46,7 @@ export async function processImage(
       // Carregar o arquivo de marca d'água
       const watermarkBuffer = fs.readFileSync(WATERMARK_PATH);
       
-      // Aplicar a marca d'água usando composite com a opção tile
+      // Aplicar a marca d'água diretamente com a opção tile
       processedImage = processedImage.composite([
         {
           input: watermarkBuffer,
