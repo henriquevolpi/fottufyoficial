@@ -166,7 +166,7 @@ export default function UploadPage() {
     <Sidebar>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Create New Project</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Create New P</h1>
         </div>
 
         <div className="bg-white shadow-sm rounded-lg p-6">

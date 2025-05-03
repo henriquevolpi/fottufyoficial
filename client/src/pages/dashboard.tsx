@@ -943,7 +943,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />
-            Gerenciar Assinatura
+            ✅Ver Planos de Assinatura
           </Button>
         </CardFooter>
       </Card>
@@ -1261,7 +1261,7 @@ export default function Dashboard() {
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full sm:w-auto"
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
-                New Project
+                Novo Projeto
               </Button>
               
               <div className="flex items-center border-t sm:border-t-0 sm:border-l pt-4 sm:pt-0 pl-0 sm:pl-4 mt-2 sm:mt-0 w-full sm:w-auto">
@@ -1358,7 +1358,7 @@ export default function Dashboard() {
                   </p>
                   <Button onClick={() => setUploadModalOpen(true)}>
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Create New Project
+                    Criar novo projeto
                   </Button>
                 </div>
               ) : (
