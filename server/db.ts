@@ -12,7 +12,10 @@ const replicateLocalConfig: PoolConfig = {
   // Configuration para Replit - SSL é necessário mesmo localmente
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 30, // ✅ Aumentado de 10 para 30 conexões simultâneas
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 };
 
 // For Supabase or other external PostgreSQL providers (Render deployment)
@@ -22,10 +25,12 @@ const externalDbConfig: PoolConfig = {
   host: process.env.DB_HOST || process.env.PGHOST,
   port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432'),
   database: process.env.DB_NAME || process.env.PGDATABASE,
-  // Required for most cloud providers like Supabase
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 30, // ✅ Também aqui para produção (Render, Supabase, etc.)
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 };
 
 // Force using Replit's local PostgreSQL for now
