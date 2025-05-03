@@ -10,7 +10,7 @@ interface ImageUploaderProps {
 }
 
 // Tamanho máximo do lote
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 30;
 
 export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null)
