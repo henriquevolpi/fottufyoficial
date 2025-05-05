@@ -1765,6 +1765,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         BASIC: { ...SUBSCRIPTION_PLANS.BASIC, current: req.user?.planType === 'basic' },
         STANDARD: { ...SUBSCRIPTION_PLANS.STANDARD, current: req.user?.planType === 'standard' },
         PROFESSIONAL: { ...SUBSCRIPTION_PLANS.PROFESSIONAL, current: req.user?.planType === 'professional' },
+        // Adicionar os novos planos V2
+        BASIC_V2: { ...SUBSCRIPTION_PLANS.BASIC_V2, current: req.user?.planType === 'basic_v2' },
+        STANDARD_V2: { ...SUBSCRIPTION_PLANS.STANDARD_V2, current: req.user?.planType === 'standard_v2' },
+        PROFESSIONAL_V2: { ...SUBSCRIPTION_PLANS.PROFESSIONAL_V2, current: req.user?.planType === 'professional_v2' },
       };
       
       // Incluir estatísticas do usuário atual
@@ -1838,7 +1842,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { planType } = req.body;
       
-      if (!planType || !['free', 'basic', 'standard', 'professional'].includes(planType)) {
+      const validPlans = [
+        'free', 
+        'basic', 'standard', 'professional',
+        'basic_v2', 'standard_v2', 'professional_v2'
+      ];
+      
+      if (!planType || !validPlans.includes(planType)) {
         return res.status(400).json({ message: "Tipo de plano inválido" });
       }
       
