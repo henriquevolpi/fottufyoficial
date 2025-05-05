@@ -125,21 +125,20 @@ export default function Checkout() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Obter o nome e o preço do plano para exibição
-  const getPlanInfo = (type: string) => {
-    switch (type) {
-      case 'basic':
-        return { name: 'Básico', price: 14.90 };
-      case 'standard':
-        return { name: 'Padrão', price: 37.90 };
-      case 'professional':
-        return { name: 'Profissional', price: 70.00 };
-      default:
-        return { name: 'Desconhecido', price: 0 };
-    }
+  // Vamos obter o nome do plano para exibição inicial
+  // O preço real será determinado pelo backend, garantindo consistência
+  const getInitialPlanName = (type: string) => {
+    const planKey = type.toLowerCase();
+    if (planKey.includes('basic')) return 'Básico';
+    if (planKey.includes('standard')) return 'Padrão';
+    if (planKey.includes('professional')) return 'Profissional';
+    return 'Plano Selecionado';
   };
   
-  const planInfo = getPlanInfo(planType);
+  const [planInfo, setPlanInfo] = useState({
+    name: getInitialPlanName(planType),
+    price: 0 // O preço real será obtido após criar o PaymentIntent
+  });
 
   useEffect(() => {
     // Redirecionar para login se não estiver autenticado
@@ -155,13 +154,18 @@ export default function Checkout() {
     
     // Criar PaymentIntent assim que a página carregar
     if (user) {
-      apiRequest("POST", "/api/create-payment-intent", { 
-        planType,
-        amount: planInfo.price
-      })
+      apiRequest("POST", "/api/create-payment-intent", { planType })
         .then((res) => res.json())
         .then((data) => {
           setClientSecret(data.clientSecret);
+          
+          // Extrair informações do plano da descrição do PaymentIntent (se disponível)
+          if (data.planName && data.planPrice) {
+            setPlanInfo({
+              name: data.planName,
+              price: parseFloat(data.planPrice)
+            });
+          }
         })
         .catch(err => {
           console.error('Erro ao criar intent de pagamento:', err);
@@ -172,7 +176,7 @@ export default function Checkout() {
           });
         });
     }
-  }, [user, isLoading, planType, planInfo.price, setLocation, toast]);
+  }, [user, isLoading, planType, setLocation, toast]);
 
   if (isLoading) {
     return (

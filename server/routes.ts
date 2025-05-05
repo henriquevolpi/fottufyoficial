@@ -1830,17 +1830,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email || '',
       };
       
-      // Criar o PaymentIntent no Stripe usando o preço do plano do esquema
+      // Criar o PaymentIntent no Stripe usando os dados do plano do esquema
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(plan.price * 100), // Stripe trabalha com centavos
         currency: "brl",
-        metadata,
-        description: `Assinatura do plano ${planType.toUpperCase()} - PhotoSelect`,
+        metadata: {
+          ...metadata,
+          planName: plan.name, // Adicionar o nome amigável do plano aos metadados
+          planPrice: plan.price.toString() // Adicionar o preço do plano aos metadados
+        },
+        description: `Assinatura do plano ${plan.name} - R$${plan.price.toFixed(2)} - PhotoSelect`,
       });
       
-      // Retornar o client_secret para o frontend fazer a confirmação
+      // Retornar o client_secret junto com informações do plano para exibição no frontend
       res.json({
         clientSecret: paymentIntent.client_secret,
+        planName: plan.name,
+        planPrice: plan.price.toString()
       });
     } catch (error) {
       console.error("Erro ao criar intent de pagamento:", error);
