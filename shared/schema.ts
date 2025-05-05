@@ -223,6 +223,14 @@ export type SubscriptionWebhookPayload = {
       id: string;
       status: string;
       current_period_end: number;
+      metadata?: {
+        planType?: string;
+        planPrice?: string;
+        planName?: string;
+        userId?: string;
+        userEmail?: string;
+        [key: string]: string | undefined;
+      };
       plan: {
         id: string;
         product: string;

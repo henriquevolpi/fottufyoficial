@@ -1855,10 +1855,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calcular o valor em centavos a partir do preço do plano
       const amountInCents = Math.round(selectedPlan.price * 100);
       
+      // Determinar se estamos usando um plano V2 ou um plano legado
+      const isV2Plan = planKey.includes('_V2') || planType.includes('_v2');
+      
+      // Normalizar o tipo de plano para garantir que esteja no formato correto
+      // Sempre usar a versão v2 se disponível
+      const normalizedPlanType = isV2Plan 
+        ? planType.toLowerCase() 
+        : `${planType.toLowerCase()}_v2`;
+      
+      console.log(`Criando PaymentIntent para plano: ${normalizedPlanType} (valor: R$${selectedPlan.price.toFixed(2)}, limite: ${selectedPlan.uploadLimit} uploads)`);
+      
       // Armazenar os metadados do plano para usar após o pagamento ser concluído
       const metadata = {
         userId: req.user?.id.toString() || '',
-        planType,
+        planType: normalizedPlanType, // Usar a versão normalizada do planType
         userEmail: req.user?.email || '',
       };
       
@@ -1869,9 +1880,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           ...metadata,
           planName: selectedPlan.name, // Adicionar o nome amigável do plano aos metadados
-          planPrice: selectedPlan.price.toString() // Adicionar o preço do plano aos metadados
+          planPrice: selectedPlan.price.toString(), // Adicionar o preço do plano aos metadados
+          uploadLimit: selectedPlan.uploadLimit.toString() // Adicionar o limite de uploads aos metadados
         },
-        description: `Assinatura do plano ${selectedPlan.name} - R$${selectedPlan.price.toFixed(2)} - PhotoSelect`,
+        description: `Assinatura do plano ${selectedPlan.name} - R$${selectedPlan.price.toFixed(2)} - ${selectedPlan.uploadLimit} uploads - PhotoSelect`,
       });
       
       // Retornar o client_secret junto com informações do plano para exibição no frontend

@@ -188,21 +188,37 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) return undefined;
     
-    // Obter informações do plano
-    let plan;
-    switch(planType) {
-      case "basic":
-        plan = SUBSCRIPTION_PLANS.BASIC;
-        break;
-      case "standard":
-        plan = SUBSCRIPTION_PLANS.STANDARD;
-        break;
-      case "professional":
-        plan = SUBSCRIPTION_PLANS.PROFESSIONAL;
-        break;
-      default:
-        plan = SUBSCRIPTION_PLANS.FREE;
+    // Primeiro, normalizar o planType para UPPERCASE para facilitar a busca nos planos V2
+    const planKey = planType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+    
+    // Verificar diretamente no esquema SUBSCRIPTION_PLANS
+    let plan = SUBSCRIPTION_PLANS[planKey];
+    
+    // Se não encontrado, verifica os planos V2 ou planos legados
+    if (!plan) {
+      // Verificar se é um plano V2
+      if (planType.includes('_v2')) {
+        const upperPlanType = planType.toUpperCase();
+        plan = SUBSCRIPTION_PLANS[upperPlanType as keyof typeof SUBSCRIPTION_PLANS];
+      } else {
+        // Usar o switch para planos legados
+        switch(planType) {
+          case "basic":
+            plan = SUBSCRIPTION_PLANS.BASIC;
+            break;
+          case "standard":
+            plan = SUBSCRIPTION_PLANS.STANDARD;
+            break;
+          case "professional":
+            plan = SUBSCRIPTION_PLANS.PROFESSIONAL;
+            break;
+          default:
+            plan = SUBSCRIPTION_PLANS.FREE;
+        }
+      }
     }
+    
+    console.log(`MemStorage: Atualizando assinatura: userId=${userId}, planType=${planType}, uploadLimit=${plan.uploadLimit}`);
     
     // Definir datas de início e fim da assinatura
     const now = new Date();
@@ -251,6 +267,10 @@ export class MemStorage implements IStorage {
     // Atualizar status da assinatura com base no evento
     let subscriptionStatus = user.subscriptionStatus;
     let userStatus = user.status;
+    let planType = user.planType;
+    let uploadLimit = user.uploadLimit;
+    
+    console.log(`MemStorage: Processando webhook Stripe: evento=${payload.type}, usuário=${user.id}, customer=${payload.data.customer.id}`);
     
     switch(payload.type) {
       case "subscription.created":
@@ -258,6 +278,27 @@ export class MemStorage implements IStorage {
         if (payload.data.subscription.status === "active") {
           subscriptionStatus = "active";
           userStatus = "active";
+          
+          // Verificar se há metadados com o tipo de plano
+          const metadata = payload.data.subscription.metadata || {};
+          if (metadata.planType) {
+            planType = metadata.planType;
+            
+            // Obter o limite de upload correspondente ao plano
+            const planKey = planType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+            let plan = SUBSCRIPTION_PLANS[planKey];
+            
+            // Se não encontrado diretamente, verificar planos V2
+            if (!plan && planType && planType.includes('_v2')) {
+              const upperPlanType = planType.toUpperCase();
+              plan = SUBSCRIPTION_PLANS[upperPlanType as keyof typeof SUBSCRIPTION_PLANS];
+            }
+            
+            if (plan) {
+              uploadLimit = plan.uploadLimit;
+              console.log(`MemStorage: Atualizando plano via webhook: planType=${planType}, uploadLimit=${uploadLimit}`);
+            }
+          }
         } else if (payload.data.subscription.status === "canceled") {
           subscriptionStatus = "inactive";
           // Não alteramos o status do usuário quando a assinatura é cancelada
@@ -276,6 +317,8 @@ export class MemStorage implements IStorage {
     
     // Atualizar o usuário
     const updatedUser = await this.updateUser(user.id, {
+      planType,
+      uploadLimit,
       subscriptionStatus,
       status: userStatus,
       subscriptionEndDate,
