@@ -1807,11 +1807,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Tipo de plano é obrigatório" });
       }
       
-      // Obter o preço do plano diretamente do esquema SUBSCRIPTION_PLANS
-      const planKey = planType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+      // Processar o nome do plano para garantir que encontraremos no SUBSCRIPTION_PLANS
+      // Converter para uppercase e tratar casos de planos V2 (basic_v2, standard_v2, etc.)
+      let planKey: keyof typeof SUBSCRIPTION_PLANS;
+      
+      if (planType.includes('_')) {
+        // Se já tem underline, é um formato como 'basic_v2'
+        planKey = planType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+      } else if (planType === 'free') {
+        planKey = 'FREE';
+      } else {
+        // Para compatibilidade com formatos como 'basic', 'standard', etc.
+        planKey = planType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+      }
+      
+      // Obter o plano diretamente do esquema SUBSCRIPTION_PLANS
       const plan = SUBSCRIPTION_PLANS[planKey];
       
       if (!plan || plan.price === undefined) {
+        // Se não encontrou o plano exato, tente encontrar uma versão V2 compatível
+        const fallbackKey = `${planType.toUpperCase()}_V2` as keyof typeof SUBSCRIPTION_PLANS;
+        const fallbackPlan = SUBSCRIPTION_PLANS[fallbackKey];
+        
+        if (!fallbackPlan) {
+          return res.status(400).json({ message: "Plano inválido ou não encontrado" });
+        }
+        
+        // Use o plano V2 como fallback
+        console.log(`Plano ${planKey} não encontrado, usando fallback ${fallbackKey}`);
+        planKey = fallbackKey;
+      }
+      
+      // Garantir que temos um plano válido
+      const selectedPlan = SUBSCRIPTION_PLANS[planKey];
+      if (!selectedPlan) {
         return res.status(400).json({ message: "Plano inválido ou não encontrado" });
       }
       
@@ -1823,6 +1852,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Calcular o valor em centavos a partir do preço do plano
+      const amountInCents = Math.round(selectedPlan.price * 100);
+      
       // Armazenar os metadados do plano para usar após o pagamento ser concluído
       const metadata = {
         userId: req.user?.id.toString() || '',
@@ -1832,14 +1864,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Criar o PaymentIntent no Stripe usando os dados do plano do esquema
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(plan.price * 100), // Stripe trabalha com centavos
+        amount: amountInCents, // Valor em centavos calculado a partir do preço do plano
         currency: "brl",
         metadata: {
           ...metadata,
-          planName: plan.name, // Adicionar o nome amigável do plano aos metadados
-          planPrice: plan.price.toString() // Adicionar o preço do plano aos metadados
+          planName: selectedPlan.name, // Adicionar o nome amigável do plano aos metadados
+          planPrice: selectedPlan.price.toString() // Adicionar o preço do plano aos metadados
         },
-        description: `Assinatura do plano ${plan.name} - R$${plan.price.toFixed(2)} - PhotoSelect`,
+        description: `Assinatura do plano ${selectedPlan.name} - R$${selectedPlan.price.toFixed(2)} - PhotoSelect`,
       });
       
       // Retornar o client_secret junto com informações do plano para exibição no frontend
