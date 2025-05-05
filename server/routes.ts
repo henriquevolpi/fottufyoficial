@@ -1877,8 +1877,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Retornar o client_secret junto com informações do plano para exibição no frontend
       res.json({
         clientSecret: paymentIntent.client_secret,
-        planName: plan.name,
-        planPrice: plan.price.toString()
+        planName: selectedPlan.name,
+        planPrice: selectedPlan.price.toString()
       });
     } catch (error) {
       console.error("Erro ao criar intent de pagamento:", error);
