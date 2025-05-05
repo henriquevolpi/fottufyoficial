@@ -1801,14 +1801,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para criar intent de pagamento no Stripe
   app.post("/api/create-payment-intent", authenticate, async (req: Request, res: Response) => {
     try {
-      const { planType, amount } = req.body;
+      const { planType } = req.body;
       
       if (!planType) {
         return res.status(400).json({ message: "Tipo de plano é obrigatório" });
       }
       
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ message: "Valor inválido" });
+      // Obter o preço do plano diretamente do esquema SUBSCRIPTION_PLANS
+      const planKey = planType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+      const plan = SUBSCRIPTION_PLANS[planKey];
+      
+      if (!plan || plan.price === undefined) {
+        return res.status(400).json({ message: "Plano inválido ou não encontrado" });
       }
       
       // Verificar se temos o Stripe inicializado
@@ -1826,9 +1830,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email || '',
       };
       
-      // Criar o PaymentIntent no Stripe
+      // Criar o PaymentIntent no Stripe usando o preço do plano do esquema
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Stripe trabalha com centavos
+        amount: Math.round(plan.price * 100), // Stripe trabalha com centavos
         currency: "brl",
         metadata,
         description: `Assinatura do plano ${planType.toUpperCase()} - PhotoSelect`,
