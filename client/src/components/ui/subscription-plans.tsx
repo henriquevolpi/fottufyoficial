@@ -142,10 +142,9 @@ export default function SubscriptionPlans() {
   }
   
   const { plans, userStats } = subscriptionData;
-
-  // Conforme solicitado pelo usuário, vamos exibir todos os planos na página de assinatura
-  // Não faremos nenhuma filtragem, exibindo tanto os planos antigos quanto os novos planos V2
   
+  // A API já está retornando apenas os planos V2 (FREE, BASIC_V2, STANDARD_V2, PROFESSIONAL_V2)
+  // e, para usuários com planos antigos, incluindo o plano atual como uma opção
   // Convertemos o objeto de planos para um array para uso no mapeamento
   const plansToDisplay = Object.entries(plans);
   

@@ -93,7 +93,7 @@ export const SUBSCRIPTION_PLANS = {
   STANDARD_V2: {
     name: "Padrão",
     type: "standard_v2",
-    price: 37.9,
+    price: 29.9,
     uploadLimit: 25000,
     description: "25.000 uploads por conta",
     stripePriceId: "price_1RLDCLHhs27r0l2SXe9gkVlD",
@@ -101,7 +101,7 @@ export const SUBSCRIPTION_PLANS = {
   PROFESSIONAL_V2: {
     name: "Profissional",
     type: "professional_v2",
-    price: 70,
+    price: 49.9,
     uploadLimit: 60000,
     description: "60.000 uploads por conta",
     stripePriceId: "price_1RLDCpHhs27r0l2S4InekNvP",

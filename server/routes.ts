@@ -1759,24 +1759,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Obter planos de assinatura
   app.get("/api/subscription/plans", authenticate, async (req: Request, res: Response) => {
     try {
-      // Retornar os planos de assinatura disponíveis
-      const plans = {
+      // Preparar os planos V2 para mostrar a todos os usuários
+      const plansV2 = {
         FREE: { ...SUBSCRIPTION_PLANS.FREE, current: req.user?.planType === 'free' },
-        BASIC: { ...SUBSCRIPTION_PLANS.BASIC, current: req.user?.planType === 'basic' },
-        STANDARD: { ...SUBSCRIPTION_PLANS.STANDARD, current: req.user?.planType === 'standard' },
-        PROFESSIONAL: { ...SUBSCRIPTION_PLANS.PROFESSIONAL, current: req.user?.planType === 'professional' },
-        // Adicionar os novos planos V2
         BASIC_V2: { ...SUBSCRIPTION_PLANS.BASIC_V2, current: req.user?.planType === 'basic_v2' },
         STANDARD_V2: { ...SUBSCRIPTION_PLANS.STANDARD_V2, current: req.user?.planType === 'standard_v2' },
         PROFESSIONAL_V2: { ...SUBSCRIPTION_PLANS.PROFESSIONAL_V2, current: req.user?.planType === 'professional_v2' },
       };
+      
+      // Verificar se o usuário está em um plano antigo
+      const userPlanType = req.user?.planType || 'free';
+      const isLegacyPlan = ['basic', 'standard', 'professional'].includes(userPlanType);
+      
+      // Se o usuário está em um plano antigo, adicione esse plano específico aos planos disponíveis
+      let plans = plansV2;
+      if (isLegacyPlan) {
+        const planKey = userPlanType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
+        plans = {
+          ...plansV2,
+          [planKey]: { ...SUBSCRIPTION_PLANS[planKey], current: true }
+        };
+      }
       
       // Incluir estatísticas do usuário atual
       const userStats = {
         uploadLimit: req.user?.uploadLimit || 0,
         usedUploads: req.user?.usedUploads || 0,
         remainingUploads: (req.user?.uploadLimit || 0) - (req.user?.usedUploads || 0),
-        planType: req.user?.planType || 'free',
+        planType: userPlanType,
         subscriptionStatus: req.user?.subscriptionStatus || 'inactive',
         subscriptionEndDate: req.user?.subscriptionEndDate
       };
@@ -1841,15 +1851,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/subscription/upgrade", authenticate, async (req: Request, res: Response) => {
     try {
       const { planType } = req.body;
+      const userPlanType = req.user?.planType || 'free';
       
+      // Lista de planos válidos para upgrade: planos V2 ou o plano atual do usuário
       const validPlans = [
-        'free', 
-        'basic', 'standard', 'professional',
-        'basic_v2', 'standard_v2', 'professional_v2'
+        'free',
+        'basic_v2', 'standard_v2', 'professional_v2',
+        userPlanType // permitir que o usuário permaneça no seu plano atual, mesmo se for legado
       ];
       
       if (!planType || !validPlans.includes(planType)) {
-        return res.status(400).json({ message: "Tipo de plano inválido" });
+        return res.status(400).json({ message: "Tipo de plano inválido. Apenas os novos planos V2 estão disponíveis para upgrade." });
       }
       
       // Na implementação real, aqui integraríamos com o Stripe para processar o pagamento
