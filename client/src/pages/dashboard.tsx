@@ -599,8 +599,8 @@ function UploadModal({
           <DialogTitle>Criar Novo Projeto</DialogTitle>
           <DialogDescription className="text-sm mt-1">
             Preencha os detalhes do projeto e faça upload das fotos.
-            <p className="text-sm text-gray-600 underline decoration-green-500">
-              Prefira fotos de 3mb ou menos, para evitar grande espera de upload
+            <p className="bg-yellow-200 text-black font-semibold inline px-1 rounded-sm">
+              Envie fotos de 3mb ou menos, para evitar erros no Upload
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -688,7 +688,7 @@ function UploadModal({
             
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">
-                Fotos do Projeto
+                Fotos do Projeto (jpeg, png, webp, até 3mb cada)
               </label>
               <div className="border border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition relative">
                 <input
@@ -702,7 +702,7 @@ function UploadModal({
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <Camera className="h-8 w-8 text-gray-400" />
                   <p className="text-sm text-gray-500">
-                    Clique ou arraste fotos para upload
+                    Clique ou arraste fotos para upload :)
                   </p>
                   <p className="text-xs text-gray-400">
                     (Formatos aceitos: JPG, PNG, WEBP)

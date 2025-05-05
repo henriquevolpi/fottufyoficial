@@ -63,6 +63,7 @@ export const SUBSCRIPTION_PLANS = {
     price: 14.9,
     uploadLimit: 10000,
     description: "10.000 uploads por conta",
+    stripePriceId: "price_1RLDC2Hhs27r0l2SJGfPUumX", // Adicionando o mesmo priceId do Basic_V2 para compatibilidade
   },
   STANDARD: {
     name: "Padrão",
@@ -70,6 +71,7 @@ export const SUBSCRIPTION_PLANS = {
     price: 37.9,
     uploadLimit: 50000,
     description: "50.000 uploads por conta",
+    stripePriceId: "price_1RLDCLHhs27r0l2SXe9gkVlD", // Adicionando o mesmo priceId do Standard_V2 para compatibilidade
   },
   PROFESSIONAL: {
     name: "Profissional",
@@ -77,6 +79,32 @@ export const SUBSCRIPTION_PLANS = {
     price: 70,
     uploadLimit: 100000,
     description: "100.000 uploads por conta",
+    stripePriceId: "price_1RLDCpHhs27r0l2S4InekNvP", // Adicionando o mesmo priceId do Professional_V2 para compatibilidade
+  },
+  // Novos planos V2
+  BASIC_V2: {
+    name: "Básico",
+    type: "basic_v2",
+    price: 14.9,
+    uploadLimit: 6000,
+    description: "6.000 uploads por conta",
+    stripePriceId: "price_1RLDC2Hhs27r0l2SJGfPUumX",
+  },
+  STANDARD_V2: {
+    name: "Padrão",
+    type: "standard_v2",
+    price: 37.9,
+    uploadLimit: 25000,
+    description: "25.000 uploads por conta",
+    stripePriceId: "price_1RLDCLHhs27r0l2SXe9gkVlD",
+  },
+  PROFESSIONAL_V2: {
+    name: "Profissional",
+    type: "professional_v2",
+    price: 70,
+    uploadLimit: 60000,
+    description: "60.000 uploads por conta",
+    stripePriceId: "price_1RLDCpHhs27r0l2S4InekNvP",
   },
 };
 

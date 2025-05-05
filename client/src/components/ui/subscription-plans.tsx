@@ -33,6 +33,9 @@ interface SubscriptionData {
     BASIC: Plan;
     STANDARD: Plan;
     PROFESSIONAL: Plan;
+    BASIC_V2?: Plan;
+    STANDARD_V2?: Plan;
+    PROFESSIONAL_V2?: Plan;
   };
   userStats: UserSubscriptionStats;
 }
@@ -139,6 +142,33 @@ export default function SubscriptionPlans() {
   }
   
   const { plans, userStats } = subscriptionData;
+
+  // Determinar quais planos exibir:
+  // - Se o usuário tem um plano antigo (basic, standard, professional), mostrar os planos antigos
+  // - Para novos usuários ou usuários com plano free, mostrar apenas os planos V2
+  const isOnLegacyPlan = userStats.planType === "BASIC" || 
+                         userStats.planType === "STANDARD" || 
+                         userStats.planType === "PROFESSIONAL";
+
+  // Filtrar os planos a serem exibidos
+  const plansToDisplay = Object.entries(plans).filter(([key, plan]) => {
+    // Se o usuário tem plano antigo, mostrar FREE e planos antigos (não mostrar os V2)
+    if (isOnLegacyPlan) {
+      return key === "FREE" || 
+             key === "BASIC" || 
+             key === "STANDARD" || 
+             key === "PROFESSIONAL" ||
+             plan.current; // Garantir que o plano atual sempre seja exibido
+    }
+    // Para novos usuários, mostrar FREE e os planos V2
+    else {
+      return key === "FREE" || 
+             key === "BASIC_V2" || 
+             key === "STANDARD_V2" || 
+             key === "PROFESSIONAL_V2" ||
+             plan.current; // Garantir que o plano atual sempre seja exibido
+    }
+  });
   
   return (
     <div className="space-y-6">
@@ -216,7 +246,7 @@ export default function SubscriptionPlans() {
       
       {/* Lista de planos */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {Object.entries(plans).map(([key, plan]) => (
+        {plansToDisplay.map(([key, plan]) => (
           <Card key={key} className={plan.current ? "border-primary" : ""}>
             <CardHeader>
               <div className="flex justify-between items-center">
