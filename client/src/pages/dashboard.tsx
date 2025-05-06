@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1292,6 +1292,9 @@ export default function Dashboard() {
             className="w-full h-auto object-cover" 
           />
         </div>
+        
+        {/* Promotional Banner - only shown for free users */}
+        {user?.planType === 'free' && <PromotionalBanner />}
         
         <Statistics setLocation={setLocation} />
         
