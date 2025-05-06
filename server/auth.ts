@@ -99,7 +99,9 @@ export function setupAuth(app: Express) {
       passwordField: 'password'
     }, async (email, password, done) => {
       try {
-        const user = await storage.getUserByEmail(email);
+        // Normalize email to lowercase
+        const normalizedEmail = email.toLowerCase();
+        const user = await storage.getUserByEmail(normalizedEmail);
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         } else {
@@ -127,10 +129,13 @@ export function setupAuth(app: Express) {
       console.log("Registration data:", JSON.stringify(req.body));
       
       // Validate required fields
-      const { email, password } = req.body;
+      let { email, password } = req.body;
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
+      
+      // Normalize email to lowercase
+      email = email.toLowerCase();
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
@@ -180,6 +185,11 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    // Normalize email to lowercase if provided
+    if (req.body?.email) {
+      req.body.email = req.body.email.toLowerCase();
+    }
+    
     console.log("[LOGIN] Processing login request for email:", req.body?.email);
     
     // Use standard passport authentication
