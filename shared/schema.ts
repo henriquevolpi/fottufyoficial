@@ -29,6 +29,9 @@ export const users = pgTable("users", {
     type: string;
     timestamp: string;
   } | null>(),
+  
+  // Campo para rastrear o último login do usuário
+  lastLoginAt: timestamp("last_login_at"),
 });
 
 // Relations for users
@@ -40,6 +43,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   lastEvent: true,
+  lastLoginAt: true,
   uploadLimit: true,
   usedUploads: true,
   subscriptionStartDate: true,

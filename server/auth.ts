@@ -206,28 +206,63 @@ export function setupAuth(app: Express) {
       
       console.log(`[LOGIN] User authenticated successfully: ID=${user.id}, email=${user.email}`);
       
-      // Login the user and establish a session
-      req.login(user, (err) => {
-        if (err) {
-          console.error("[LOGIN] Session creation error:", err);
-          return next(err);
-        }
-        
-        console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
-        
-        // Set a direct cookie with the user ID for tracking
-        res.cookie('user_id', user.id.toString(), {
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-          httpOnly: false,
-          secure: false,
-          path: '/',
-          sameSite: 'lax'
+      // Atualizar o campo lastLoginAt
+      storage.updateUser(user.id, { lastLoginAt: new Date() })
+        .then(updatedUser => {
+          console.log(`[LOGIN] Last login timestamp updated for user ID=${user.id}`);
+          
+          // Se o updateUser retornar um usuário atualizado, usamos ele, caso contrário mantém o original
+          const userToLogin = updatedUser || user;
+          
+          // Login the user and establish a session
+          req.login(userToLogin, (err) => {
+            if (err) {
+              console.error("[LOGIN] Session creation error:", err);
+              return next(err);
+            }
+            
+            console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
+            
+            // Set a direct cookie with the user ID for tracking
+            res.cookie('user_id', userToLogin.id.toString(), {
+              maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+              httpOnly: false,
+              secure: false,
+              path: '/',
+              sameSite: 'lax'
+            });
+            
+            // Return user data without password
+            const { password, ...userData } = userToLogin;
+            res.status(200).json(userData);
+          });
+        })
+        .catch(error => {
+          console.error("[LOGIN] Error updating last login timestamp:", error);
+          
+          // Mesmo com erro no registro do último login, prosseguimos com o login
+          req.login(user, (err) => {
+            if (err) {
+              console.error("[LOGIN] Session creation error:", err);
+              return next(err);
+            }
+            
+            console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
+            
+            // Set a direct cookie with the user ID for tracking
+            res.cookie('user_id', user.id.toString(), {
+              maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+              httpOnly: false,
+              secure: false,
+              path: '/',
+              sameSite: 'lax'
+            });
+            
+            // Return user data without password
+            const { password, ...userData } = user;
+            res.status(200).json(userData);
+          });
         });
-        
-        // Return user data without password
-        const { password, ...userData } = user;
-        res.status(200).json(userData);
-      });
     })(req, res, next);
   });
 
@@ -287,18 +322,43 @@ export function setupAuth(app: Express) {
             if (user) {
               console.log(`[USER] Successfully loaded user from cookie ID: ${userId}`);
               
-              // Login the user to establish a session
-              req.login(user, (err) => {
-                if (err) {
-                  console.error('[USER] Error establishing session from cookie:', err);
-                  return res.status(401).json({ message: "Não autorizado" });
-                }
-                
-                // Return the user data
-                console.log('[USER] Successfully established session from cookie');
-                const { password, ...userData } = user;
-                return res.json(userData);
-              });
+              // Atualizar o campo lastLoginAt
+              storage.updateUser(user.id, { lastLoginAt: new Date() })
+                .then(updatedUser => {
+                  console.log(`[USER] Last login timestamp updated for user ID=${user.id} (cookie login)`);
+                  
+                  // Se o updateUser retornar um usuário atualizado, usamos ele, caso contrário mantém o original
+                  const userToLogin = updatedUser || user;
+                  
+                  // Login the user to establish a session
+                  req.login(userToLogin, (err) => {
+                    if (err) {
+                      console.error('[USER] Error establishing session from cookie:', err);
+                      return res.status(401).json({ message: "Não autorizado" });
+                    }
+                    
+                    // Return the user data
+                    console.log('[USER] Successfully established session from cookie');
+                    const { password, ...userData } = userToLogin;
+                    return res.json(userData);
+                  });
+                })
+                .catch(error => {
+                  console.error("[USER] Error updating last login timestamp (cookie login):", error);
+                  
+                  // Login the user to establish a session (mesmo com erro na atualização do timestamp)
+                  req.login(user, (err) => {
+                    if (err) {
+                      console.error('[USER] Error establishing session from cookie:', err);
+                      return res.status(401).json({ message: "Não autorizado" });
+                    }
+                    
+                    // Return the user data
+                    console.log('[USER] Successfully established session from cookie');
+                    const { password, ...userData } = user;
+                    return res.json(userData);
+                  });
+                });
               return; // Important to prevent executing the code below
             } else {
               console.log(`[USER] Could not find user with ID ${userId} from cookie`);
