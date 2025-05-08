@@ -241,36 +241,56 @@ app.use((req, res, next) => {
     // Converter bytes para MB para facilitar a leitura
     const bytesToMB = (bytes: number) => Math.round(bytes / 1024 / 1024 * 100) / 100;
     
+    // Variável para rastrear última vez que fizemos log detalhado
+    let lastFullLogTime = 0;
+    
     // Função que realiza o log do uso de memória
     const logMemoryUsage = () => {
       const memoryData = process.memoryUsage();
-      console.log('=== MEMORY USAGE ===');
-      console.log(`RSS: ${bytesToMB(memoryData.rss)} MB`);
-      console.log(`Heap Total: ${bytesToMB(memoryData.heapTotal)} MB`);
-      console.log(`Heap Used: ${bytesToMB(memoryData.heapUsed)} MB`);
-      console.log(`External: ${bytesToMB(memoryData.external)} MB`);
       
-      // Verificar se temos acesso aos caches inteligentes da classe MemStorage
-      // Só exibe as estatísticas de cache se a storage implementada for do tipo MemStorage
-      if (storage && 'users' in storage && 'projects' in storage && 
-          storage.users && typeof storage.users.getStats === 'function' && 
-          storage.projects && typeof storage.projects.getStats === 'function') {
-          
-        // As estatísticas do cache só estarão disponíveis na implementação MemStorage
-        try {
-          const userCacheStats = storage.users.getStats();
-          const projectCacheStats = storage.projects.getStats();
-          
-          console.log('=== CACHE STATS ===');
-          console.log(`Users cache: ${userCacheStats.size}/${userCacheStats.maxSize} items (${Math.round(userCacheStats.hitRatio * 100)}% hit ratio)`);
-          console.log(`Projects cache: ${projectCacheStats.size}/${projectCacheStats.maxSize} items (${Math.round(projectCacheStats.hitRatio * 100)}% hit ratio)`);
-          console.log(`Oldest item age: Users ${Math.round(userCacheStats.oldestItemAge / 60)} min, Projects ${Math.round(projectCacheStats.oldestItemAge / 60)} min`);
-        } catch (error) {
-          console.log('=== CACHE STATS: Not available (Error) ===');
+      // Verificar se devemos fazer log detalhado
+      const now = Date.now();
+      const isFullInterval = (now - lastFullLogTime) >= 10 * 60 * 1000; // A cada 10 minutos
+      
+      if (process.env.DEBUG_MEMORY === 'true' || isFullInterval) {
+        // Atualizar timestamp do último log completo
+        if (isFullInterval) {
+          lastFullLogTime = now;
         }
+        
+        console.log('=== MEMORY USAGE ===');
+        console.log(`RSS: ${bytesToMB(memoryData.rss)} MB`);
+        console.log(`Heap Total: ${bytesToMB(memoryData.heapTotal)} MB`);
+        console.log(`Heap Used: ${bytesToMB(memoryData.heapUsed)} MB`);
+        console.log(`External: ${bytesToMB(memoryData.external)} MB`);
+        
+        // Verificar se temos acesso aos caches inteligentes da classe MemStorage
+        // Só exibe as estatísticas de cache se a storage implementada for do tipo MemStorage e DEBUG_MEMORY ativado
+        if (process.env.DEBUG_MEMORY === 'true' && storage && 'users' in storage && 'projects' in storage) {
+          const usersObj = storage.users as any;
+          const projectsObj = storage.projects as any;
+          
+          if (usersObj && typeof usersObj.getStats === 'function' &&
+              projectsObj && typeof projectsObj.getStats === 'function') {
+            // As estatísticas do cache só estarão disponíveis na implementação MemStorage
+            try {
+              const userCacheStats = usersObj.getStats();
+              const projectCacheStats = projectsObj.getStats();
+              
+              console.log('=== CACHE STATS ===');
+              console.log(`Users cache: ${userCacheStats.size}/${userCacheStats.maxSize} items (${Math.round(userCacheStats.hitRatio * 100)}% hit ratio)`);
+              console.log(`Projects cache: ${projectCacheStats.size}/${projectCacheStats.maxSize} items (${Math.round(projectCacheStats.hitRatio * 100)}% hit ratio)`);
+              console.log(`Oldest item age: Users ${Math.round(userCacheStats.oldestItemAge / 60)} min, Projects ${Math.round(projectCacheStats.oldestItemAge / 60)} min`);
+            } catch (error) {
+              if (process.env.DEBUG_MEMORY === 'true') {
+                console.log('=== CACHE STATS: Not available ===');
+              }
+            }
+          }
+        }
+        
+        console.log('===================');
       }
-      
-      console.log('===================');
     };
     
     // Executar imediatamente para ter um valor inicial
@@ -284,9 +304,13 @@ app.use((req, res, next) => {
       if (global.gc) {
         try {
           global.gc();
-          console.log('[MEMORY] Manual garbage collection executed');
+          if (process.env.DEBUG_MEMORY === 'true') {
+            console.log('[MEMORY] Manual garbage collection executed');
+          }
         } catch (e) {
-          console.error('[MEMORY] Failed to execute garbage collection:', e);
+          if (process.env.DEBUG_MEMORY === 'true') {
+            console.error('[MEMORY] Failed to execute garbage collection');
+          }
         }
       }
     }, 15 * 60 * 1000); // A cada 15 minutos
