@@ -100,35 +100,42 @@ async function downloadImage(url: string, filename: string): Promise<string> {
   });
 }
 
-// Basic authentication middleware
+// Basic authentication middleware (otimizado para menor uso de memória)
 const authenticate = async (req: Request, res: Response, next: Function) => {
-  console.log(`[AUTH] Checking authentication for ${req.method} ${req.path}`);
-  console.log(`[AUTH] Session ID: ${req.sessionID}, isAuthenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
-  console.log(`[AUTH] Raw cookies: ${req.headers.cookie || "none"}`);
-  console.log(`[AUTH] User: ${req.user ? `ID=${req.user.id}, role=${req.user.role}` : "undefined"}`);
+  // Logs reduzidos para economizar memória - apenas para rotas importantes ou debug
+  if (process.env.DEBUG_AUTH === 'true' || req.path.includes('/login') || req.path.includes('/logout')) {
+    console.log(`[AUTH] ${req.method} ${req.path} | Session ID: ${req.sessionID} | Auth: ${req.isAuthenticated ? req.isAuthenticated() : "no"}`);
+  }
   
   // First check for session-based authentication (Passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
-    console.log(`[AUTH] User authenticated via session: ID=${req.user?.id}`);
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log(`[AUTH] User ${req.user?.id} authenticated via session`);
+    }
     return next();
   }
   
   // Check if we have any cookie that can be used to authenticate
   if (req.headers.cookie) {
-    console.log(`[AUTH] Cookies found but no passport session: ${req.headers.cookie}`);
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log(`[AUTH] Cookies found but no session`);
+    }
     
     // First, try to recover from the session cookie
     if (req.headers.cookie.includes('studio.sid') && req.session && req.sessionID) {
-      console.log(`[AUTH] Attempting to recover session ${req.sessionID}`);
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`[AUTH] Attempting session recovery`);
+      }
       
       // If we have session cookie but no session data, try to force a session refresh
       req.session.reload((err) => {
-        if (err) {
-          console.error(`[AUTH] Failed to reload session:`, err);
-        } else {
-          console.log(`[AUTH] Session reloaded, checking authentication again`);
+        if (err && process.env.DEBUG_AUTH === 'true') {
+          console.error(`[AUTH] Failed to reload session`);
+        } else if (!err) {
           if (req.isAuthenticated && req.isAuthenticated()) {
-            console.log(`[AUTH] User authenticated after session reload: ID=${req.user?.id}`);
+            if (process.env.DEBUG_AUTH === 'true') {
+              console.log(`[AUTH] User authenticated after reload`);
+            }
             return next();
           }
         }
@@ -137,7 +144,9 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     
     // Check for our direct authentication cookie
     if (req.headers.cookie.includes('user_id=')) {
-      console.log(`[AUTH] Found direct user_id cookie, extracting ID`);
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`[AUTH] Found direct user_id cookie`);
+      }
       
       // Try to extract user ID from cookie
       let userId = null;
@@ -146,7 +155,6 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
         const [name, value] = cookie.trim().split('=');
         if (name === 'user_id') {
           userId = parseInt(value);
-          console.log(`[AUTH] Found user ID ${userId} in direct cookie`);
           break;
         }
       }
@@ -156,21 +164,23 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
         storage.getUser(userId)
           .then(user => {
             if (user) {
-              console.log(`[AUTH] Successfully loaded user from direct cookie ID: ${userId}`);
-              
               // Login the user to establish a session
               req.login(user, (err) => {
-                if (err) {
-                  console.error('[AUTH] Error establishing session from direct cookie:', err);
-                } else {
-                  console.log(`[AUTH] Session established from direct cookie, continuing request`);
+                if (err && process.env.DEBUG_AUTH === 'true') {
+                  console.error('[AUTH] Error establishing session from cookie');
+                } else if (!err) {
+                  if (process.env.DEBUG_AUTH === 'true') {
+                    console.log(`[AUTH] Session established from cookie`);
+                  }
                   next();
                 }
               });
             }
           })
           .catch(err => {
-            console.error('[AUTH] Error loading user from direct cookie ID:', err);
+            if (process.env.DEBUG_AUTH === 'true') {
+              console.error('[AUTH] Error loading user from cookie');
+            }
           });
           
         // Important: return to prevent execution of code below
@@ -207,17 +217,13 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   }
   
   // If we reach here, user is not authenticated
-  console.log("[AUTH] No authentication found, returning 401");
+  if (process.env.DEBUG_AUTH === 'true') {
+    console.log("[AUTH] No authentication found, returning 401");
+  }
   
-  // Return more helpful error for debugging
+  // Return simplified error message to economizar memória
   return res.status(401).json({ 
-    message: "Não autorizado", 
-    debug: {
-      sessionId: req.sessionID,
-      hasCookies: Boolean(req.headers.cookie),
-      sessionExists: Boolean(req.session),
-      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false
-    }
+    message: "Não autorizado"
   });
 };
 
@@ -1031,6 +1037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name,
         email,
         password,
+        phone: "",  // Campo obrigatório, usar string vazia como padrão
         role: userRole,
         status: "active",
         planType: userPlanType,
