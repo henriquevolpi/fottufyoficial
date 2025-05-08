@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
 import { testConnection, pool } from "./db";
+import { storage } from "./storage";
 // Import necessary environment variables
 import dotenv from "dotenv";
 
@@ -246,6 +247,27 @@ app.use((req, res, next) => {
       console.log(`Heap Total: ${bytesToMB(memoryData.heapTotal)} MB`);
       console.log(`Heap Used: ${bytesToMB(memoryData.heapUsed)} MB`);
       console.log(`External: ${bytesToMB(memoryData.external)} MB`);
+      
+      // Verificar se temos acesso aos caches inteligentes da classe MemStorage
+      // Só exibe as estatísticas de cache se a storage implementada for do tipo MemStorage
+      if (storage && 'users' in storage && 'projects' in storage && 
+          storage.users && typeof storage.users.getStats === 'function' && 
+          storage.projects && typeof storage.projects.getStats === 'function') {
+          
+        // As estatísticas do cache só estarão disponíveis na implementação MemStorage
+        try {
+          const userCacheStats = storage.users.getStats();
+          const projectCacheStats = storage.projects.getStats();
+          
+          console.log('=== CACHE STATS ===');
+          console.log(`Users cache: ${userCacheStats.size}/${userCacheStats.maxSize} items (${Math.round(userCacheStats.hitRatio * 100)}% hit ratio)`);
+          console.log(`Projects cache: ${projectCacheStats.size}/${projectCacheStats.maxSize} items (${Math.round(projectCacheStats.hitRatio * 100)}% hit ratio)`);
+          console.log(`Oldest item age: Users ${Math.round(userCacheStats.oldestItemAge / 60)} min, Projects ${Math.round(projectCacheStats.oldestItemAge / 60)} min`);
+        } catch (error) {
+          console.log('=== CACHE STATS: Not available (Error) ===');
+        }
+      }
+      
       console.log('===================');
     };
     
@@ -255,14 +277,28 @@ app.use((req, res, next) => {
     // Configurar intervalo para executar a cada 1 minuto (60000 ms)
     const intervalId = setInterval(logMemoryUsage, 60000);
     
+    // Limpeza periódica do NodeJS heap (pode ajudar a reduzir fragmentação)
+    const gcIntervalId = setInterval(() => {
+      if (global.gc) {
+        try {
+          global.gc();
+          console.log('[MEMORY] Manual garbage collection executed');
+        } catch (e) {
+          console.error('[MEMORY] Failed to execute garbage collection:', e);
+        }
+      }
+    }, 15 * 60 * 1000); // A cada 15 minutos
+    
     // Garantir que o intervalo seja limpo quando o processo for encerrado
     process.on('SIGINT', () => {
       clearInterval(intervalId);
+      clearInterval(gcIntervalId);
       process.exit(0);
     });
     
     process.on('SIGTERM', () => {
       clearInterval(intervalId);
+      clearInterval(gcIntervalId);
       process.exit(0);
     });
   }

@@ -19,6 +19,281 @@ import { pool } from "./db";
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
 
+/**
+ * Classe para gerenciar cache de dados em memória com expiração
+ * Implementa limpeza inteligente para evitar vazamentos de memória
+ */
+class MemoryCacheManager<K, V> {
+  // Map principal para armazenar os dados
+  private cache: Map<K, V>;
+  // Map para rastrear quando cada item foi acessado pela última vez
+  private lastAccessed: Map<K, number>;
+  // Map para rastrear quando cada item foi criado
+  private createdAt: Map<K, number>;
+  // Limite de tamanho do cache
+  private maxSize: number;
+  // Tempo de expiração em ms (padrão: 1 hora)
+  private expirationTime: number;
+  // ID do intervalo de limpeza
+  private cleanupIntervalId: NodeJS.Timeout | null;
+  // Frequência da limpeza em ms (padrão: 5 minutos)
+  private cleanupFrequency: number;
+  // Nome para identificação nos logs
+  private name: string;
+  // Contador de acessos para estatísticas
+  private hitCount: number = 0;
+  private missCount: number = 0;
+  // Lista de IDs que nunca devem ser removidos do cache (ex: admin)
+  private protectedKeys: Set<K>;
+
+  constructor(name: string, options: {
+    maxSize?: number,
+    expirationTime?: number,
+    cleanupFrequency?: number,
+    protectedKeys?: K[]
+  } = {}) {
+    this.cache = new Map<K, V>();
+    this.lastAccessed = new Map<K, number>();
+    this.createdAt = new Map<K, number>();
+    this.name = name;
+    this.maxSize = options.maxSize || 1000; // Padrão: máximo de 1000 itens
+    this.expirationTime = options.expirationTime || 60 * 60 * 1000; // Padrão: 1 hora
+    this.cleanupFrequency = options.cleanupFrequency || 5 * 60 * 1000; // Padrão: 5 minutos
+    this.cleanupIntervalId = null;
+    this.protectedKeys = new Set(options.protectedKeys || []);
+    
+    // Iniciar o intervalo de limpeza automaticamente
+    this.startCleanupInterval();
+    
+    console.log(`[MEMORY] Cache '${this.name}' iniciado. Limite: ${this.maxSize} itens, Expiração: ${this.expirationTime/60000} minutos`);
+  }
+  
+  /**
+   * Obtém um item do cache
+   * Atualiza o timestamp de último acesso
+   */
+  get(key: K): V | undefined {
+    const item = this.cache.get(key);
+    
+    if (item !== undefined) {
+      // Atualizar o timestamp de último acesso
+      this.lastAccessed.set(key, Date.now());
+      this.hitCount++;
+      return item;
+    }
+    
+    this.missCount++;
+    return undefined;
+  }
+  
+  /**
+   * Verifica se um item existe no cache
+   * Não atualiza o timestamp de último acesso
+   */
+  has(key: K): boolean {
+    return this.cache.has(key);
+  }
+  
+  /**
+   * Adiciona ou atualiza um item no cache
+   * Se o cache atingir o tamanho máximo, remove o item menos recentemente acessado
+   */
+  set(key: K, value: V): void {
+    const now = Date.now();
+    
+    // Se o item já existe, apenas atualiza
+    if (this.cache.has(key)) {
+      this.cache.set(key, value);
+      this.lastAccessed.set(key, now);
+      return;
+    }
+    
+    // Verificar se precisa liberar espaço antes de adicionar um novo item
+    if (this.cache.size >= this.maxSize) {
+      this.removeOldestItem();
+    }
+    
+    // Adicionar o novo item
+    this.cache.set(key, value);
+    this.lastAccessed.set(key, now);
+    this.createdAt.set(key, now);
+  }
+  
+  /**
+   * Remove um item do cache
+   */
+  delete(key: K): boolean {
+    if (!this.cache.has(key)) return false;
+    
+    this.cache.delete(key);
+    this.lastAccessed.delete(key);
+    this.createdAt.delete(key);
+    return true;
+  }
+  
+  /**
+   * Tamanho atual do cache
+   */
+  get size(): number {
+    return this.cache.size;
+  }
+  
+  /**
+   * Limpa todos os itens do cache, exceto os protegidos
+   */
+  clear(): void {
+    // Preservar apenas itens protegidos
+    for (const key of this.cache.keys()) {
+      if (!this.protectedKeys.has(key)) {
+        this.delete(key);
+      }
+    }
+  }
+  
+  /**
+   * Obtém todas as chaves do cache
+   */
+  keys(): IterableIterator<K> {
+    return this.cache.keys();
+  }
+  
+  /**
+   * Obtém todos os valores do cache
+   */
+  values(): IterableIterator<V> {
+    return this.cache.values();
+  }
+  
+  /**
+   * Obtém todos os itens do cache como array
+   */
+  entries(): Array<[K, V]> {
+    return Array.from(this.cache.entries());
+  }
+  
+  /**
+   * Inicia o intervalo de limpeza automática
+   */
+  startCleanupInterval(): void {
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+    }
+    
+    this.cleanupIntervalId = setInterval(() => {
+      this.cleanup();
+    }, this.cleanupFrequency);
+  }
+  
+  /**
+   * Para o intervalo de limpeza
+   */
+  stopCleanupInterval(): void {
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = null;
+    }
+  }
+  
+  /**
+   * Limpa itens expirados do cache
+   */
+  cleanup(): void {
+    const now = Date.now();
+    let expiredCount = 0;
+    
+    for (const [key, lastAccessed] of this.lastAccessed.entries()) {
+      // Nunca remove itens protegidos
+      if (this.protectedKeys.has(key)) {
+        continue;
+      }
+      
+      // Remover itens que não foram acessados recentemente
+      if (now - lastAccessed > this.expirationTime) {
+        this.delete(key);
+        expiredCount++;
+      }
+    }
+    
+    if (expiredCount > 0) {
+      console.log(`[MEMORY] Cache '${this.name}': ${expiredCount} itens expirados removidos. Tamanho atual: ${this.cache.size}`);
+    }
+  }
+  
+  /**
+   * Remove o item menos recentemente acessado
+   * Não remove itens protegidos
+   */
+  private removeOldestItem(): void {
+    let oldestKey: K | null = null;
+    let oldestTime = Infinity;
+    
+    for (const [key, time] of this.lastAccessed.entries()) {
+      // Nunca remove itens protegidos
+      if (this.protectedKeys.has(key)) {
+        continue;
+      }
+      
+      if (time < oldestTime) {
+        oldestTime = time;
+        oldestKey = key;
+      }
+    }
+    
+    if (oldestKey !== null) {
+      this.delete(oldestKey);
+      console.log(`[MEMORY] Cache '${this.name}': Item mais antigo removido (ID=${oldestKey}). Último acesso há ${Math.round((Date.now() - oldestTime) / 60000)} minutos.`);
+    }
+  }
+  
+  /**
+   * Retorna estatísticas do cache
+   */
+  getStats(): {
+    size: number,
+    maxSize: number,
+    hits: number,
+    misses: number,
+    hitRatio: number,
+    oldestItemAge: number
+  } {
+    let oldestTime = Infinity;
+    const now = Date.now();
+    
+    for (const time of this.lastAccessed.values()) {
+      if (time < oldestTime) {
+        oldestTime = time;
+      }
+    }
+    
+    const oldestItemAge = oldestTime !== Infinity ? (now - oldestTime) / 1000 : 0;
+    const totalRequests = this.hitCount + this.missCount;
+    const hitRatio = totalRequests > 0 ? this.hitCount / totalRequests : 0;
+    
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      hits: this.hitCount,
+      misses: this.missCount,
+      hitRatio: hitRatio,
+      oldestItemAge: oldestItemAge
+    };
+  }
+  
+  /**
+   * Adiciona uma chave à lista de protegidos
+   */
+  addProtectedKey(key: K): void {
+    this.protectedKeys.add(key);
+  }
+  
+  /**
+   * Remove uma chave da lista de protegidos
+   */
+  removeProtectedKey(key: K): void {
+    this.protectedKeys.delete(key);
+  }
+}
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -57,21 +332,33 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private projects: Map<number, Project>;
+  private users: MemoryCacheManager<number, User>;
+  private projects: MemoryCacheManager<number, Project>;
   private userId: number;
   private projectId: number;
   public sessionStore: any;
 
   constructor() {
-    this.users = new Map();
-    this.projects = new Map();
+    // Inicializar os gerenciadores de cache com configurações específicas
+    this.users = new MemoryCacheManager<number, User>('users', {
+      maxSize: 500,              // Máximo de 500 usuários em memória
+      expirationTime: 2 * 60 * 60 * 1000, // 2 horas sem acesso para expirar
+      cleanupFrequency: 10 * 60 * 1000,   // Limpar a cada 10 minutos
+      protectedKeys: [1]         // Proteger o usuário admin (ID=1)
+    });
+    
+    this.projects = new MemoryCacheManager<number, Project>('projects', {
+      maxSize: 1000,             // Máximo de 1000 projetos em memória
+      expirationTime: 60 * 60 * 1000, // 1 hora sem acesso para expirar
+      cleanupFrequency: 5 * 60 * 1000 // Limpar a cada 5 minutos
+    });
+    
     this.userId = 1;
     this.projectId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // 24 hours to clean expired sessions
       stale: false, // Do not delete stale sessions
-      ttl: 7 * 24 * 60 * 60 // 7 days TTL (matches cookie maxAge)
+      ttl: 7 * 24 * 60 * 60 * 1000 // 7 days TTL (matches cookie maxAge)
     });
     
     // Create a default admin user for testing
@@ -95,6 +382,7 @@ export class MemStorage implements IStorage {
       lastEvent: null
     };
     
+    // Adicionar o usuário admin como protegido (nunca será removido da memória)
     this.users.set(adminUser.id, adminUser);
   }
 
@@ -441,7 +729,7 @@ export class MemStorage implements IStorage {
   // Project methods
   async getProject(id: number | string): Promise<Project | undefined> {
     console.log(`MemStorage: Buscando projeto ID=${id}`);
-    console.log(`MemStorage: Projetos disponíveis: ${Array.from(this.projects.keys()).join(", ")}`);
+    console.log(`MemStorage: Projetos em cache: ${this.projects.size}`);
     
     let project: Project | undefined;
     
@@ -469,9 +757,9 @@ export class MemStorage implements IStorage {
     } else {
       console.log(`MemStorage: Projeto ID=${id} não encontrado`);
       
-      // Não inicializamos mais projetos de exemplo automaticamente
+      // Se não encontrado no cache, e o ID é numérico, talvez precise ser carregado do banco de dados
       if (this.projects.size === 0) {
-        console.log("MemStorage: Nenhum projeto encontrado e nenhum exemplo será criado.");
+        console.log("MemStorage: Nenhum projeto em cache. Poderia buscar do banco de dados se necessário.");
         return undefined;
       }
     }
