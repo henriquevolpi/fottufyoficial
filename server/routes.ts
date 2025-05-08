@@ -103,60 +103,42 @@ async function downloadImage(url: string, filename: string): Promise<string> {
 // Basic authentication middleware (otimizado para menor uso de memória)
 const authenticate = async (req: Request, res: Response, next: Function) => {
   // Logs reduzidos para economizar memória - apenas para rotas importantes ou debug
-  if (process.env.DEBUG_AUTH === 'true' || req.path.includes('/login') || req.path.includes('/logout')) {
-    console.log(`[AUTH] ${req.method} ${req.path} | Session ID: ${req.sessionID} | Auth: ${req.isAuthenticated ? req.isAuthenticated() : "no"}`);
+  if (process.env.DEBUG_AUTH === 'true' && (req.path.includes('/login') || req.path.includes('/logout'))) {
+    console.log(`[AUTH] ${req.method} ${req.path}`);
   }
   
   // First check for session-based authentication (Passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
-    if (process.env.DEBUG_AUTH === 'true') {
-      console.log(`[AUTH] User ${req.user?.id} authenticated via session`);
-    }
     return next();
   }
   
   // Check if we have any cookie that can be used to authenticate
   if (req.headers.cookie) {
-    if (process.env.DEBUG_AUTH === 'true') {
-      console.log(`[AUTH] Cookies found but no session`);
-    }
-    
     // First, try to recover from the session cookie
     if (req.headers.cookie.includes('studio.sid') && req.session && req.sessionID) {
-      if (process.env.DEBUG_AUTH === 'true') {
-        console.log(`[AUTH] Attempting session recovery`);
-      }
-      
       // If we have session cookie but no session data, try to force a session refresh
       req.session.reload((err) => {
-        if (err && process.env.DEBUG_AUTH === 'true') {
-          console.error(`[AUTH] Failed to reload session`);
-        } else if (!err) {
-          if (req.isAuthenticated && req.isAuthenticated()) {
-            if (process.env.DEBUG_AUTH === 'true') {
-              console.log(`[AUTH] User authenticated after reload`);
-            }
-            return next();
-          }
+        if (!err && req.isAuthenticated && req.isAuthenticated()) {
+          return next();
         }
       });
     }
     
-    // Check for our direct authentication cookie
-    if (req.headers.cookie.includes('user_id=')) {
-      if (process.env.DEBUG_AUTH === 'true') {
-        console.log(`[AUTH] Found direct user_id cookie`);
-      }
+    // Check for our direct authentication cookie - Using optimized string parsing
+    const cookieStr = req.headers.cookie;
+    if (cookieStr.includes('user_id=')) {
+      // Try to extract user ID from cookie - algoritmo otimizado
+      let userId: number | null = null;
+      const userIdIndex = cookieStr.indexOf('user_id=');
       
-      // Try to extract user ID from cookie
-      let userId = null;
-      const cookies = req.headers.cookie.split(';');
-      for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'user_id') {
-          userId = parseInt(value);
-          break;
-        }
+      if (userIdIndex >= 0) {
+        const valueStart = userIdIndex + 8; // 'user_id='.length
+        const valueEnd = cookieStr.indexOf(';', valueStart);
+        const valueStr = valueEnd >= 0 
+          ? cookieStr.substring(valueStart, valueEnd) 
+          : cookieStr.substring(valueStart);
+          
+        userId = parseInt(valueStr);
       }
       
       if (userId && !isNaN(userId)) {
@@ -166,21 +148,20 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
             if (user) {
               // Login the user to establish a session
               req.login(user, (err) => {
-                if (err && process.env.DEBUG_AUTH === 'true') {
-                  console.error('[AUTH] Error establishing session from cookie');
-                } else if (!err) {
-                  if (process.env.DEBUG_AUTH === 'true') {
-                    console.log(`[AUTH] Session established from cookie`);
-                  }
+                if (!err) {
+                  // Update last login timestamp silently but don't wait for it
+                  storage.updateUser(user.id, { lastLoginAt: new Date() })
+                    .catch(() => {
+                      // Falha silenciosa para não impactar o usuário
+                    });
+                  
                   next();
                 }
               });
             }
           })
-          .catch(err => {
-            if (process.env.DEBUG_AUTH === 'true') {
-              console.error('[AUTH] Error loading user from cookie');
-            }
+          .catch(() => {
+            // Falha silenciosa para economizar memória
           });
           
         // Important: return to prevent execution of code below
