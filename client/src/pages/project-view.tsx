@@ -855,8 +855,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             )}
           </div>
           
-          {/* Contador de fotos - Aprimorado com fundo para melhor visibilidade */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+          {/* Contador de fotos - Movido para lado esquerdo para evitar sobreposição com botões */}
+          <div className="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
             {currentPhotoIndex + 1} / {project.photos.length}
           </div>
         </DialogContent>
