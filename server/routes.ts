@@ -1913,7 +1913,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Use o plano V2 como fallback
-        console.log(`Plano ${planKey} não encontrado, usando fallback ${fallbackKey}`);
+        if (process.env.DEBUG_SUBSCRIPTION === 'true') {
+          console.log(`Plano ${planKey} não encontrado, usando fallback ${fallbackKey}`);
+        }
         planKey = fallbackKey;
       }
       
@@ -1943,7 +1945,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? planType.toLowerCase() 
         : `${planType.toLowerCase()}_v2`;
       
-      console.log(`Criando PaymentIntent para plano: ${normalizedPlanType} (valor: R$${selectedPlan.price.toFixed(2)}, limite: ${selectedPlan.uploadLimit} uploads)`);
+      if (process.env.DEBUG_SUBSCRIPTION === 'true') {
+        console.log(`Criando PaymentIntent para plano: ${normalizedPlanType} (valor: R$${selectedPlan.price.toFixed(2)}, limite: ${selectedPlan.uploadLimit} uploads)`);
+      }
       
       // Armazenar os metadados do plano para usar após o pagamento ser concluído
       const metadata = {
@@ -1972,10 +1976,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         planPrice: selectedPlan.price.toString()
       });
     } catch (error) {
-      console.error("Erro ao criar intent de pagamento:", error);
+      if (process.env.DEBUG_SUBSCRIPTION === 'true') {
+        console.error("Erro ao criar intent de pagamento:", 
+          error instanceof Error ? error.message : "Erro desconhecido");
+      }
       res.status(500).json({ 
-        message: "Falha ao processar pagamento", 
-        details: error instanceof Error ? error.message : "Erro desconhecido" 
+        message: "Falha ao processar pagamento"
       });
     }
   });

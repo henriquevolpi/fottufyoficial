@@ -35,13 +35,18 @@ interface SendEmailParams {
 export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; message: string; data?: any }> {
   const { to, subject, html, from = 'Fottufy <noreply@fottufy.com>' } = params;
 
+  // Se DEBUG_EMAIL estiver desabilitado, evitar logs detalhados para economizar memória
+  const debug = process.env.DEBUG_EMAIL === 'true';
+
   try {
     // Verifica se o cliente Resend está configurado
     if (!resendClient) {
-      console.error('Erro ao enviar e-mail: Cliente Resend não configurado');
+      if (debug) {
+        console.error('Erro ao enviar e-mail: Cliente Resend não configurado');
+      }
       return { 
         success: false, 
-        message: 'Serviço de e-mail não configurado. Verifique a variável de ambiente RESEND_API_KEY.' 
+        message: 'Serviço de e-mail não configurado.' 
       };
     }
 
@@ -49,7 +54,7 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
     if (!to || !subject || !html) {
       return { 
         success: false, 
-        message: 'Destinatário, assunto e conteúdo HTML são obrigatórios.' 
+        message: 'Parâmetros de email incompletos.' 
       };
     }
 
@@ -63,25 +68,29 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
 
     // Verifica se ocorreu algum erro
     if (error) {
-      console.error('Erro ao enviar e-mail via Resend:', error);
+      if (debug) {
+        console.error('Erro ao enviar e-mail via Resend:', error.message);
+      }
       return { 
         success: false, 
-        message: `Falha ao enviar e-mail: ${error.message}` 
+        message: 'Falha ao enviar e-mail.' 
       };
     }
 
-    // Retorna sucesso
+    // Retorna sucesso com dados mínimos para economizar memória
     return { 
       success: true, 
-      message: 'E-mail enviado com sucesso', 
-      data 
+      message: 'E-mail enviado' 
     };
   } catch (error) {
     // Captura e trata qualquer erro inesperado
-    console.error('Erro inesperado ao enviar e-mail:', error);
+    if (debug) {
+      console.error('Erro inesperado ao enviar e-mail:', 
+        error instanceof Error ? error.message : 'Erro desconhecido');
+    }
     return { 
       success: false, 
-      message: `Erro inesperado ao enviar e-mail: ${error instanceof Error ? error.message : 'Erro desconhecido'}` 
+      message: 'Erro ao enviar e-mail.' 
     };
   }
 }
