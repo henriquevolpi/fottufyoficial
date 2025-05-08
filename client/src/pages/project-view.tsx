@@ -715,7 +715,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       <Check className="mr-1 h-4 w-4" /> Selected
                     </>
                   ) : (
-                    "Select Photo"
+                    "Selecionar"
                   )}
                 </Button>
               </CardContent>
@@ -790,7 +790,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black"
               aria-label="Foto anterior"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-8 w-8" />
             </button>
           )}
           
@@ -801,7 +801,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black"
               aria-label="Próxima foto"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-8 w-8" />
             </button>
           )}
           
@@ -848,7 +848,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       <Check className="mr-2 h-5 w-5" /> Selected
                     </>
                   ) : (
-                    "Select Photo"
+                    "Selecionar"
                   )}
                 </Button>
               </div>
