@@ -408,7 +408,10 @@ export default function Admin() {
                 <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <Card 
                     className={`cursor-pointer hover:shadow-md transition-shadow ${!filters.planType ? 'ring-2 ring-primary' : ''}`}
-                    onClick={() => setFilters({...filters, planType: undefined})}
+                    onClick={() => {
+                      setFilters({...filters, planType: undefined});
+                      updateTempFiltersFromPlanClick(undefined);
+                    }}
                   >
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium">Todos os Planos</CardTitle>
@@ -437,7 +440,10 @@ export default function Admin() {
                           <Card 
                             key={key} 
                             className={`cursor-pointer hover:shadow-md transition-shadow ${filters.planType === plan.type ? 'ring-2 ring-primary' : ''}`}
-                            onClick={() => setFilters({...filters, planType: plan.type})}
+                            onClick={() => {
+                              setFilters({...filters, planType: plan.type});
+                              updateTempFiltersFromPlanClick(plan.type);
+                            }}
                           >
                             <CardHeader className="pb-2">
                               <CardTitle className="text-sm font-medium">{plan.name}</CardTitle>
