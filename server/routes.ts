@@ -37,6 +37,7 @@ import {
   isValidFileSize,
   downloadAndUploadToR2
 } from "./r2";
+import { streamUploadMiddleware, cleanupTempFiles, processAndStreamToR2 } from "./streamUpload";
 import multer from "multer";
 
 // Helper function to download an image from a URL to the uploads directory
@@ -287,7 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage (endpoint genérico)
-  app.post("/api/photos/upload", authenticate, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
+  // Usando streaming para maior eficiência de memória
+  app.post("/api/photos/upload", authenticate, streamUploadMiddleware(), cleanupTempFiles, async (req: Request & { files?: any[] }, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -313,13 +315,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Upload cada arquivo para o Cloudflare R2 Storage
       const uploadedFiles = [];
       
-      for (const file of req.files as Express.Multer.File[]) {
+      for (const file of req.files) {
         const filename = generateUniqueFileName(file.originalname);
         
         try {
-          // Upload para o R2
-          const result = await uploadFileToR2(
-            file.buffer, 
+          // Upload para o R2 usando streaming
+          const result = await processAndStreamToR2(
+            file.path, 
             filename, 
             file.mimetype
           );
@@ -332,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             filename: filename,
             size: file.size,
             mimetype: file.mimetype,
-            url: result.url, // Usar a URL retornada pelo método uploadFileToR2
+            url: result.url, // Usar a URL retornada pelo método de streaming
             key: result.key
           });
         } catch (error) {
@@ -357,13 +359,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error uploading photos to R2:", error);
       return res.status(500).json({
         message: "Failed to upload files",
-        error: (error as Error).message
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
   
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage e associa a um projeto específico
-  app.post("/api/projects/:id/photos/upload", authenticate, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
+  // Usando streaming para maior eficiência de memória
+  app.post("/api/projects/:id/photos/upload", authenticate, streamUploadMiddleware(), cleanupTempFiles, async (req: Request & { files?: any[] }, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -400,13 +403,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Upload cada arquivo para o Cloudflare R2 Storage
-      // Utilizamos arrays menores para reduzir o consumo de memória
-      // e liberamos o buffer após o upload
+      // Upload cada arquivo para o Cloudflare R2 Storage usando streaming
       const uploadedFiles = [];
       const newPhotos = [];
       
-      for (const file of req.files as Express.Multer.File[]) {
+      for (const file of req.files) {
         const filename = generateUniqueFileName(file.originalname);
         
         try {
@@ -415,16 +416,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const fileSize = file.size;
           const fileMimetype = file.mimetype;
           
-          // Upload para o R2
-          const result = await uploadFileToR2(
-            file.buffer, 
+          // Upload para o R2 usando streaming
+          const result = await processAndStreamToR2(
+            file.path, 
             filename, 
             fileMimetype
           );
-          
-          // Liberar referência ao buffer grande logo após o upload
-          // @ts-ignore - Usamos delete intencionalmente para ajudar o GC
-          delete file.buffer;
           
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
@@ -475,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error uploading photos to project:", error);
       return res.status(500).json({
         message: "Failed to upload files to project",
-        error: (error as Error).message
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
