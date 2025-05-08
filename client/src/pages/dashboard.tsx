@@ -1193,12 +1193,18 @@ export default function Dashboard() {
         // Apply search filter if any
         if (searchQuery && searchQuery.length > 0) {
           const query = searchQuery.toLowerCase();
-          filtered = filtered.filter(
-            project =>
-              project.nome.toLowerCase().includes(query) ||
-              project.cliente.toLowerCase().includes(query) ||
-              project.emailCliente.toLowerCase().includes(query)
-          );
+          filtered = filtered.filter(project => {
+            // Verificar nome/name - aceitar ambos os formatos
+            const projectName = project.nome || project.name || '';
+            const clientName = project.cliente || project.clientName || '';
+            const clientEmail = project.emailCliente || project.clientEmail || '';
+            
+            return (
+              projectName.toString().toLowerCase().includes(query) ||
+              clientName.toString().toLowerCase().includes(query) ||
+              clientEmail.toString().toLowerCase().includes(query)
+            );
+          });
         }
         
         setFilteredProjects(filtered);
@@ -1238,12 +1244,18 @@ export default function Dashboard() {
     // Apply search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        project => 
-          project.nome.toLowerCase().includes(query) ||
-          project.cliente.toLowerCase().includes(query) ||
-          project.emailCliente.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(project => {
+        // Verificar nome/name - aceitar ambos os formatos
+        const projectName = project.nome || project.name || '';
+        const clientName = project.cliente || project.clientName || '';
+        const clientEmail = project.emailCliente || project.clientEmail || '';
+        
+        return (
+          projectName.toString().toLowerCase().includes(query) ||
+          clientName.toString().toLowerCase().includes(query) ||
+          clientEmail.toString().toLowerCase().includes(query)
+        );
+      });
     }
     
     setFilteredProjects(filtered);
