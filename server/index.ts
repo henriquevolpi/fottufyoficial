@@ -228,5 +228,42 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port} (NODE_ENV: ${process.env.NODE_ENV})`);
+    
+    // Inicializar o monitor de uso de memória
+    setupMemoryMonitor();
   });
+  
+  // Função para monitorar o uso de memória
+  function setupMemoryMonitor() {
+    // Converter bytes para MB para facilitar a leitura
+    const bytesToMB = (bytes: number) => Math.round(bytes / 1024 / 1024 * 100) / 100;
+    
+    // Função que realiza o log do uso de memória
+    const logMemoryUsage = () => {
+      const memoryData = process.memoryUsage();
+      console.log('=== MEMORY USAGE ===');
+      console.log(`RSS: ${bytesToMB(memoryData.rss)} MB`);
+      console.log(`Heap Total: ${bytesToMB(memoryData.heapTotal)} MB`);
+      console.log(`Heap Used: ${bytesToMB(memoryData.heapUsed)} MB`);
+      console.log(`External: ${bytesToMB(memoryData.external)} MB`);
+      console.log('===================');
+    };
+    
+    // Executar imediatamente para ter um valor inicial
+    logMemoryUsage();
+    
+    // Configurar intervalo para executar a cada 1 minuto (60000 ms)
+    const intervalId = setInterval(logMemoryUsage, 60000);
+    
+    // Garantir que o intervalo seja limpo quando o processo for encerrado
+    process.on('SIGINT', () => {
+      clearInterval(intervalId);
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      clearInterval(intervalId);
+      process.exit(0);
+    });
+  }
 })();
