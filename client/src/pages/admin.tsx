@@ -47,7 +47,8 @@ import {
   SearchIcon,
   Trash2Icon,
   UsersIcon,
-  XCircleIcon
+  XCircleIcon,
+  BarChart
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -118,6 +119,26 @@ export default function Admin() {
       return response.json();
     }
   });
+  
+  // Get counts of users by plan
+  const { 
+    data: planCounts = {}, 
+    isLoading: isLoadingPlanCounts
+  } = useQuery<Record<string, number>>({
+    queryKey: ['/api/admin/users/counts-by-plan'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users/counts-by-plan');
+      if (!response.ok) {
+        throw new Error('Failed to fetch plan counts');
+      }
+      return response.json();
+    }
+  });
+  
+  // Atualiza o estado temporário quando o filtro por plano muda através dos cards
+  const updateTempFiltersFromPlanClick = (planType?: string) => {
+    setTempFilters({...filters, planType});
+  }
   
   // Filtered Users (by search query)
   const filteredUsers = filters.searchQuery && filters.searchQuery.trim() !== ""
@@ -381,6 +402,55 @@ export default function Admin() {
                       <FilterIcon className="h-4 w-4" />
                     </Button>
                   </div>
+                </div>
+                
+                {/* Filtro de planos */}
+                <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <Card 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${!filters.planType ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setFilters({...filters, planType: undefined})}
+                  >
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Todos os Planos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{users.length}</div>
+                      <div className="text-xs text-gray-500 mt-1">Todos os usuários</div>
+                    </CardContent>
+                  </Card>
+                  
+                  {isLoadingPlanCounts 
+                    ? Array(4).fill(null).map((_, index) => (
+                        <Card key={index}>
+                          <CardHeader className="pb-2">
+                            <Skeleton className="h-4 w-20" />
+                          </CardHeader>
+                          <CardContent>
+                            <Skeleton className="h-8 w-12 mb-1" />
+                            <Skeleton className="h-3 w-24" />
+                          </CardContent>
+                        </Card>
+                      ))
+                    : Object.entries(SUBSCRIPTION_PLANS)
+                        .sort(([,a], [,b]) => a.price > b.price ? 1 : -1)
+                        .map(([key, plan]) => (
+                          <Card 
+                            key={key} 
+                            className={`cursor-pointer hover:shadow-md transition-shadow ${filters.planType === plan.type ? 'ring-2 ring-primary' : ''}`}
+                            onClick={() => setFilters({...filters, planType: plan.type})}
+                          >
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium">{plan.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold">{planCounts[plan.type] || 0}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {plan.price > 0 ? `R$ ${plan.price.toFixed(2)}` : 'Gratuito'}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                  }
                 </div>
                 
                 {isLoadingUsers ? (

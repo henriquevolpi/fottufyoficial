@@ -794,6 +794,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to retrieve users" });
     }
   });
+  
+  // Get user counts by plan type for admin dashboard
+  app.get("/api/admin/users/counts-by-plan", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getUsers();
+      
+      // Create a map of plan types to count
+      const planCounts: Record<string, number> = {};
+      
+      // Count users for each plan type
+      users.forEach(user => {
+        const planType = user.planType || 'unknown';
+        if (planCounts[planType]) {
+          planCounts[planType]++;
+        } else {
+          planCounts[planType] = 1;
+        }
+      });
+      
+      res.json(planCounts);
+    } catch (error) {
+      console.error("Error retrieving plan counts:", error);
+      res.status(500).json({ message: "Failed to retrieve plan counts" });
+    }
+  });
 
   // Get all users (legacy endpoint - keeping for backward compatibility)
   app.get("/api/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
