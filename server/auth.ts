@@ -22,8 +22,16 @@ const BOT_CONVERSA_WEBHOOK_URL = "https://new-backend.botconversa.com.br/api/v1/
  * Falha silenciosamente em caso de erro para não bloquear o processo de registro
  */
 async function sendBotConversaWebhook(name: string, phone: string) {
+  // Evitar enviar webhook em ambiente de desenvolvimento para economizar recursos
+  if (process.env.NODE_ENV === 'development' && process.env.FORCE_WEBHOOK !== 'true') {
+    return;
+  }
+  
   try {
-    console.log(`[WEBHOOK] Enviando dados para BotConversa: ${name} / ${phone}`);
+    // Log condicional baseado em variável de ambiente
+    if (process.env.DEBUG_WEBHOOK === 'true') {
+      console.log(`[WEBHOOK] Enviando dados para BotConversa`);
+    }
     
     await axios.post(BOT_CONVERSA_WEBHOOK_URL, {
       name, 
@@ -35,10 +43,15 @@ async function sendBotConversaWebhook(name: string, phone: string) {
       timeout: 5000 // Timeout de 5 segundos para não atrasar o fluxo principal
     });
     
-    console.log('[WEBHOOK] Dados enviados com sucesso para BotConversa');
+    // Log condicional
+    if (process.env.DEBUG_WEBHOOK === 'true') {
+      console.log('[WEBHOOK] Dados enviados com sucesso');
+    }
   } catch (error: any) {
     // Apenas loga o erro sem interromper o fluxo principal
-    console.error('[WEBHOOK] Erro ao enviar dados para BotConversa:', error.message || 'Erro desconhecido');
+    if (process.env.DEBUG_WEBHOOK === 'true') {
+      console.error('[WEBHOOK] Erro ao enviar dados');
+    }
   }
 }
 
@@ -47,103 +60,21 @@ async function sendBotConversaWebhook(name: string, phone: string) {
  * Falha silenciosamente em caso de erro para não bloquear o processo de registro
  */
 async function sendWelcomeEmail(name: string, email: string) {
+  // Evitar enviar email em ambiente de desenvolvimento para economizar recursos
+  if (process.env.NODE_ENV === 'development' && process.env.FORCE_EMAIL !== 'true') {
+    return;
+  }
+  
   try {
-    console.log(`[EMAIL] Enviando e-mail de boas-vindas para: ${email}`);
+    if (process.env.DEBUG_EMAIL === 'true') {
+      console.log(`[EMAIL] Enviando e-mail de boas-vindas`);
+    }
     
     // Formatação básica do nome para exibição
     const displayName = name.split(' ')[0]; // Pega apenas o primeiro nome
     
-    // Montagem do HTML do e-mail de boas-vindas
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Bem-vindo à Fottufy</title>
-        <style>
-          body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            background-color: #6366f1;
-            padding: 20px;
-            text-align: center;
-            color: white;
-            border-radius: 8px 8px 0 0;
-          }
-          .content {
-            background-color: #f9fafb;
-            padding: 30px;
-            border-radius: 0 0 8px 8px;
-            border: 1px solid #e5e7eb;
-            border-top: none;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #6b7280;
-            font-size: 14px;
-          }
-          h1 {
-            color: white;
-            margin: 0;
-            font-size: 24px;
-          }
-          .button {
-            display: inline-block;
-            background-color: #6366f1;
-            color: white;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            margin-top: 20px;
-            font-weight: bold;
-          }
-          p {
-            margin-bottom: 16px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Bem-vindo à Fottufy!</h1>
-          </div>
-          <div class="content">
-            <p>Olá, <strong>${displayName}</strong>!</p>
-            <p>É com grande prazer que damos as boas-vindas à Fottufy, sua nova plataforma para gerenciamento de fotos profissionais.</p>
-            <p>Com a Fottufy, você poderá:</p>
-            <ul>
-              <li>Fazer upload e organizar suas fotos em projetos</li>
-              <li>Compartilhar seus projetos com clientes através de links únicos</li>
-              <li>Acompanhar quais fotos seus clientes selecionaram</li>
-              <li>Gerenciar entregas e visualizações de seus trabalhos</li>
-            </ul>
-            <p>Para começar, faça login na plataforma e crie seu primeiro projeto:</p>
-            <div style="text-align: center;">
-              <a href="https://fottufy.com/dashboard" class="button">Acessar Minha Conta</a>
-            </div>
-            <p style="margin-top: 30px;">Se você tiver qualquer dúvida, basta responder a este e-mail que nossa equipe estará pronta para ajudar.</p>
-            <p>Atenciosamente,<br>Equipe Fottufy</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} Fottufy. Todos os direitos reservados.</p>
-            <p>Está recebendo este e-mail porque você se registrou na plataforma Fottufy.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    // Template HTML do email (armazenado estaticamente para evitar processamento repetitivo)
+    const htmlContent = getWelcomeEmailTemplate(displayName, new Date().getFullYear());
     
     // Enviar o e-mail
     const result = await sendEmail({
@@ -153,14 +84,115 @@ async function sendWelcomeEmail(name: string, email: string) {
     });
     
     if (result.success) {
-      console.log(`[EMAIL] E-mail de boas-vindas enviado com sucesso para: ${email}`);
+      if (process.env.DEBUG_EMAIL === 'true') {
+        console.log(`[EMAIL] E-mail enviado com sucesso`);
+      }
     } else {
-      console.error(`[EMAIL] Falha ao enviar e-mail de boas-vindas: ${result.message}`);
+      if (process.env.DEBUG_EMAIL === 'true') {
+        console.error(`[EMAIL] Falha ao enviar e-mail: ${result.message}`);
+      }
     }
   } catch (error: any) {
-    // Apenas loga o erro sem interromper o fluxo principal
-    console.error('[EMAIL] Erro ao enviar e-mail de boas-vindas:', error.message || 'Erro desconhecido');
+    // Apenas loga o erro em modo debug
+    if (process.env.DEBUG_EMAIL === 'true') {
+      console.error('[EMAIL] Erro ao enviar e-mail');
+    }
   }
+}
+
+// Função separada para o template do email de boas-vindas
+// Evita recriação do template HTML em cada chamada
+function getWelcomeEmailTemplate(displayName: string, currentYear: number): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Bem-vindo à Fottufy</title>
+      <style>
+        body {
+          font-family: 'Helvetica Neue', Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background-color: #6366f1;
+          padding: 20px;
+          text-align: center;
+          color: white;
+          border-radius: 8px 8px 0 0;
+        }
+        .content {
+          background-color: #f9fafb;
+          padding: 30px;
+          border-radius: 0 0 8px 8px;
+          border: 1px solid #e5e7eb;
+          border-top: none;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 20px;
+          color: #6b7280;
+          font-size: 14px;
+        }
+        h1 {
+          color: white;
+          margin: 0;
+          font-size: 24px;
+        }
+        .button {
+          display: inline-block;
+          background-color: #6366f1;
+          color: white;
+          text-decoration: none;
+          padding: 12px 24px;
+          border-radius: 4px;
+          margin-top: 20px;
+          font-weight: bold;
+        }
+        p {
+          margin-bottom: 16px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Bem-vindo à Fottufy!</h1>
+        </div>
+        <div class="content">
+          <p>Olá, <strong>${displayName}</strong>!</p>
+          <p>É com grande prazer que damos as boas-vindas à Fottufy, sua nova plataforma para gerenciamento de fotos profissionais.</p>
+          <p>Com a Fottufy, você poderá:</p>
+          <ul>
+            <li>Fazer upload e organizar suas fotos em projetos</li>
+            <li>Compartilhar seus projetos com clientes através de links únicos</li>
+            <li>Acompanhar quais fotos seus clientes selecionaram</li>
+            <li>Gerenciar entregas e visualizações de seus trabalhos</li>
+          </ul>
+          <p>Para começar, faça login na plataforma e crie seu primeiro projeto:</p>
+          <div style="text-align: center;">
+            <a href="https://fottufy.com/dashboard" class="button">Acessar Minha Conta</a>
+          </div>
+          <p style="margin-top: 30px;">Se você tiver qualquer dúvida, basta responder a este e-mail que nossa equipe estará pronta para ajudar.</p>
+          <p>Atenciosamente,<br>Equipe Fottufy</p>
+        </div>
+        <div class="footer">
+          <p>© ${currentYear} Fottufy. Todos os direitos reservados.</p>
+          <p>Está recebendo este e-mail porque você se registrou na plataforma Fottufy.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 async function hashPassword(password: string): Promise<string> {
@@ -247,8 +279,9 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log("Processing registration request");
-      console.log("Registration data:", JSON.stringify(req.body));
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log("Processing registration request");
+      }
       
       // Validate required fields
       let { email, password } = req.body;
@@ -278,25 +311,27 @@ export function setupAuth(app: Express) {
         status: "active"      // Default to active status
       };
       
-      console.log("Creating new user");
+      // Criar usuário de forma assíncrona
       const user = await storage.createUser(userData);
       
-      // Enviar webhook para BotConversa (não bloqueia o fluxo principal)
-      sendBotConversaWebhook(userData.name, userData.phone)
-        .catch((error: any) => console.error("[WEBHOOK] Erro ao enviar webhook:", error.message || 'Erro desconhecido'));
-      
-      // Enviar e-mail de boas-vindas (não bloqueia o fluxo principal)
-      sendWelcomeEmail(userData.name, userData.email)
-        .catch((error: any) => console.error("[EMAIL] Erro ao enviar e-mail de boas-vindas:", error.message || 'Erro desconhecido'));
+      // Enviar webhook e email em background sem await (não bloqueia o fluxo principal)
+      Promise.all([
+        sendBotConversaWebhook(userData.name, userData.phone).catch(() => {}),
+        sendWelcomeEmail(userData.name, userData.email).catch(() => {})
+      ]);
       
       // Establish session by logging in the user
       req.login(user, (err) => {
         if (err) {
-          console.error("Error establishing session after registration:", err);
+          if (process.env.DEBUG_AUTH === 'true') {
+            console.error("Error establishing session after registration");
+          }
           return next(err);
         }
         
-        console.log(`Registration successful for: ${email}, ID: ${user.id}`);
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.log(`Registration successful for ID: ${user.id}`);
+        }
         
         // Return only id and email as requested
         res.status(201).json({
@@ -305,7 +340,9 @@ export function setupAuth(app: Express) {
         });
       });
     } catch (error) {
-      console.error("Error during registration:", error);
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.error("Error during registration");
+      }
       next(error);
     }
   });
@@ -316,79 +353,67 @@ export function setupAuth(app: Express) {
       req.body.email = req.body.email.toLowerCase();
     }
     
-    console.log("[LOGIN] Processing login request for email:", req.body?.email);
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log("[LOGIN] Processing login request");
+    }
     
     // Use standard passport authentication
     passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
       if (err) {
-        console.error("[LOGIN] Authentication error:", err);
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.error("[LOGIN] Authentication error");
+        }
         return next(err);
       }
       
       if (!user) {
-        console.log("[LOGIN] Invalid credentials for email:", req.body?.email);
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.log("[LOGIN] Invalid credentials");
+        }
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
       
-      console.log(`[LOGIN] User authenticated successfully: ID=${user.id}, email=${user.email}`);
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`[LOGIN] User authenticated successfully`);
+      }
       
-      // Atualizar o campo lastLoginAt
-      storage.updateUser(user.id, { lastLoginAt: new Date() })
-        .then(updatedUser => {
-          console.log(`[LOGIN] Last login timestamp updated for user ID=${user.id}`);
-          
-          // Se o updateUser retornar um usuário atualizado, usamos ele, caso contrário mantém o original
-          const userToLogin = updatedUser || user;
-          
-          // Login the user and establish a session
-          req.login(userToLogin, (err) => {
-            if (err) {
-              console.error("[LOGIN] Session creation error:", err);
-              return next(err);
-            }
-            
-            console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
-            
-            // Set a direct cookie with the user ID for tracking
-            res.cookie('user_id', userToLogin.id.toString(), {
-              maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-              httpOnly: false,
-              secure: false,
-              path: '/',
-              sameSite: 'lax'
-            });
-            
-            // Return user data without password
-            const { password, ...userData } = userToLogin;
-            res.status(200).json(userData);
-          });
-        })
-        .catch(error => {
-          console.error("[LOGIN] Error updating last login timestamp:", error);
-          
-          // Mesmo com erro no registro do último login, prosseguimos com o login
-          req.login(user, (err) => {
-            if (err) {
-              console.error("[LOGIN] Session creation error:", err);
-              return next(err);
-            }
-            
-            console.log(`[LOGIN] Session established, ID: ${req.sessionID}`);
-            
-            // Set a direct cookie with the user ID for tracking
-            res.cookie('user_id', user.id.toString(), {
-              maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-              httpOnly: false,
-              secure: false,
-              path: '/',
-              sameSite: 'lax'
-            });
-            
-            // Return user data without password
-            const { password, ...userData } = user;
-            res.status(200).json(userData);
-          });
+      // Atualizar o campo lastLoginAt - não bloqueia o fluxo principal
+      // Criamos a Promise mas não usamos await para continuar o fluxo rapidamente
+      const updatePromise = storage.updateUser(user.id, { lastLoginAt: new Date() });
+      
+      // Login the user and establish a session imediatamente
+      req.login(user, (err) => {
+        if (err) {
+          if (process.env.DEBUG_AUTH === 'true') {
+            console.error("[LOGIN] Session creation error");
+          }
+          return next(err);
+        }
+        
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.log(`[LOGIN] Session established`);
+        }
+        
+        // Set a direct cookie with the user ID for tracking
+        res.cookie('user_id', user.id.toString(), {
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          httpOnly: false,
+          secure: false,
+          path: '/',
+          sameSite: 'lax'
         });
+        
+        // Return user data without password
+        const { password, ...userData } = user;
+        res.status(200).json(userData);
+        
+        // Aguardamos a atualização do timestamp sem bloquear a resposta
+        updatePromise.catch(error => {
+          if (process.env.DEBUG_AUTH === 'true') {
+            console.error("[LOGIN] Error updating last login timestamp");
+          }
+        });
+      });
     })(req, res, next);
   });
 
@@ -407,17 +432,21 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    console.log("[USER] Checking user authentication");
-    console.log(`[USER] Session ID: ${req.sessionID}`);
-    console.log(`[USER] Cookies: ${JSON.stringify(req.headers.cookie)}`);
-    console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
-    console.log(`[USER] User in request: ${req.user ? `ID=${req.user.id}, role=${req.user.role}` : "not set"}`);
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log("[USER] Checking user authentication");
+      console.log(`[USER] Session ID: ${req.sessionID}`);
+      console.log(`[USER] Cookies: ${req.headers.cookie ? 'present' : 'undefined'}`);
+      console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
+      console.log(`[USER] User in request: ${req.user ? 'set' : "not set"}`);
+    }
     
     // First, handle normal passport session authentication
     if (req.isAuthenticated && req.isAuthenticated()) {
-      console.log(`[USER] User authenticated via session, ID=${req.user.id}`);
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`[USER] User authenticated via session`);
+      }
       
-      // Return user data without password
+      // Return user data without password - enviando apenas os dados necessários
       const { password, ...userData } = req.user;
       return res.json(userData);
     }
@@ -495,12 +524,14 @@ export function setupAuth(app: Express) {
                   });
                 });
               return; // Important to prevent executing the code below
-            } else {
-              console.log(`[USER] Could not find user with ID ${userId} from cookie`);
+            } else if (process.env.DEBUG_AUTH === 'true') {
+              console.log(`[USER] Could not find user from cookie`);
             }
           })
           .catch(err => {
-            console.error('[USER] Error loading user from cookie ID:', err);
+            if (process.env.DEBUG_AUTH === 'true') {
+              console.error('[USER] Error loading user from cookie');
+            }
           });
         
         // Return early since we're handling response in promise
