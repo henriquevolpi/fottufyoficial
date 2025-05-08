@@ -2054,5 +2054,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== Email Test Route ====================
+  
+  /**
+   * Rota temporária para testar o envio de e-mails
+   * 
+   * POST /api/test-email
+   * Body: { to: string, subject: string, html: string }
+   * 
+   * Retorna o resultado do envio de e-mail
+   */
+  app.post("/api/test-email", async (req: Request, res: Response) => {
+    try {
+      const { to, subject, html } = req.body;
+      
+      // Valida os campos necessários
+      if (!to || !subject || !html) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Os campos 'to', 'subject' e 'html' são obrigatórios" 
+        });
+      }
+      
+      // Valida o formato do e-mail
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(to)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Endereço de e-mail inválido" 
+        });
+      }
+      
+      // Tenta enviar o e-mail
+      const result = await sendEmail({ to, subject, html });
+      
+      // Retorna o resultado
+      return res.status(result.success ? 200 : 500).json(result);
+    } catch (error) {
+      console.error("Erro ao testar envio de e-mail:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Erro inesperado ao enviar e-mail: ${error instanceof Error ? error.message : 'Erro desconhecido'}` 
+      });
+    }
+  });
+
   return httpServer;
 }

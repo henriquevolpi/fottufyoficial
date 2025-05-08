@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import axios from "axios";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { sendEmail } from "./utils/sendEmail";
 
 declare global {
   namespace Express {
@@ -38,6 +39,127 @@ async function sendBotConversaWebhook(name: string, phone: string) {
   } catch (error: any) {
     // Apenas loga o erro sem interromper o fluxo principal
     console.error('[WEBHOOK] Erro ao enviar dados para BotConversa:', error.message || 'Erro desconhecido');
+  }
+}
+
+/**
+ * Envia um e-mail de boas-vindas para o usuário recém registrado
+ * Falha silenciosamente em caso de erro para não bloquear o processo de registro
+ */
+async function sendWelcomeEmail(name: string, email: string) {
+  try {
+    console.log(`[EMAIL] Enviando e-mail de boas-vindas para: ${email}`);
+    
+    // Formatação básica do nome para exibição
+    const displayName = name.split(' ')[0]; // Pega apenas o primeiro nome
+    
+    // Montagem do HTML do e-mail de boas-vindas
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bem-vindo à Fottufy</title>
+        <style>
+          body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            background-color: #6366f1;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            border-radius: 8px 8px 0 0;
+          }
+          .content {
+            background-color: #f9fafb;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #6b7280;
+            font-size: 14px;
+          }
+          h1 {
+            color: white;
+            margin: 0;
+            font-size: 24px;
+          }
+          .button {
+            display: inline-block;
+            background-color: #6366f1;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-weight: bold;
+          }
+          p {
+            margin-bottom: 16px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Bem-vindo à Fottufy!</h1>
+          </div>
+          <div class="content">
+            <p>Olá, <strong>${displayName}</strong>!</p>
+            <p>É com grande prazer que damos as boas-vindas à Fottufy, sua nova plataforma para gerenciamento de fotos profissionais.</p>
+            <p>Com a Fottufy, você poderá:</p>
+            <ul>
+              <li>Fazer upload e organizar suas fotos em projetos</li>
+              <li>Compartilhar seus projetos com clientes através de links únicos</li>
+              <li>Acompanhar quais fotos seus clientes selecionaram</li>
+              <li>Gerenciar entregas e visualizações de seus trabalhos</li>
+            </ul>
+            <p>Para começar, faça login na plataforma e crie seu primeiro projeto:</p>
+            <div style="text-align: center;">
+              <a href="https://fottufy.com/dashboard" class="button">Acessar Minha Conta</a>
+            </div>
+            <p style="margin-top: 30px;">Se você tiver qualquer dúvida, basta responder a este e-mail que nossa equipe estará pronta para ajudar.</p>
+            <p>Atenciosamente,<br>Equipe Fottufy</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Fottufy. Todos os direitos reservados.</p>
+            <p>Está recebendo este e-mail porque você se registrou na plataforma Fottufy.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Enviar o e-mail
+    const result = await sendEmail({
+      to: email,
+      subject: `Bem-vindo à Fottufy, ${displayName}!`,
+      html: htmlContent
+    });
+    
+    if (result.success) {
+      console.log(`[EMAIL] E-mail de boas-vindas enviado com sucesso para: ${email}`);
+    } else {
+      console.error(`[EMAIL] Falha ao enviar e-mail de boas-vindas: ${result.message}`);
+    }
+  } catch (error: any) {
+    // Apenas loga o erro sem interromper o fluxo principal
+    console.error('[EMAIL] Erro ao enviar e-mail de boas-vindas:', error.message || 'Erro desconhecido');
   }
 }
 
@@ -162,6 +284,10 @@ export function setupAuth(app: Express) {
       // Enviar webhook para BotConversa (não bloqueia o fluxo principal)
       sendBotConversaWebhook(userData.name, userData.phone)
         .catch((error: any) => console.error("[WEBHOOK] Erro ao enviar webhook:", error.message || 'Erro desconhecido'));
+      
+      // Enviar e-mail de boas-vindas (não bloqueia o fluxo principal)
+      sendWelcomeEmail(userData.name, userData.email)
+        .catch((error: any) => console.error("[EMAIL] Erro ao enviar e-mail de boas-vindas:", error.message || 'Erro desconhecido'));
       
       // Establish session by logging in the user
       req.login(user, (err) => {
