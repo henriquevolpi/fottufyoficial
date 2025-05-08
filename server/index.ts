@@ -174,13 +174,21 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
+      // Versão simplificada do log para reduzir uso de memória
+      // Não inclui o corpo da resposta nos logs
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      
+      // Se for uma resposta muito grande (como de fotos), apenas registrar o tamanho
+      if (capturedJsonResponse && Array.isArray(capturedJsonResponse)) {
+        logLine += ` :: Array[${capturedJsonResponse.length}]`;
+      } else if (capturedJsonResponse && typeof capturedJsonResponse === 'object') {
+        // Para objetos, capturar apenas as chaves mas não os valores
+        const keys = Object.keys(capturedJsonResponse).join(',');
+        logLine += ` :: Object{${keys}}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 120) {
+        logLine = logLine.slice(0, 119) + "…";
       }
 
       log(logLine);

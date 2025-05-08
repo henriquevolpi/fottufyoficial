@@ -25,7 +25,7 @@ import https from "https";
 import bodyParser from "body-parser";
 import passport from "passport";
 import { db } from "./db";
-import { eq, and, or, not, desc } from "drizzle-orm";
+import { eq, and, or, not, desc, count } from "drizzle-orm";
 import { sendEmail } from "./utils/sendEmail";
 // Use Cloudflare R2 for storage
 import { 
@@ -414,6 +414,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Upload cada arquivo para o Cloudflare R2 Storage
+      // Utilizamos arrays menores para reduzir o consumo de memória
+      // e liberamos o buffer após o upload
       const uploadedFiles = [];
       const newPhotos = [];
       
@@ -421,41 +423,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const filename = generateUniqueFileName(file.originalname);
         
         try {
+          // Capturar informações mínimas antes do upload
+          const originalName = file.originalname;
+          const fileSize = file.size;
+          const fileMimetype = file.mimetype;
+          
           // Upload para o R2
           const result = await uploadFileToR2(
             file.buffer, 
             filename, 
-            file.mimetype
+            fileMimetype
           );
           
-          // Usar a URL retornada pela função de upload, que usa o domínio CDN
-          // Formato atual: https://cdn.fottufy.com/{filename}
+          // Liberar referência ao buffer grande logo após o upload
+          // @ts-ignore - Usamos delete intencionalmente para ajudar o GC
+          delete file.buffer;
           
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
             const newPhoto = await db.insert(photos).values({
               projectId,
-              url: result.url, // Usar a URL retornada pelo método uploadFileToR2
+              url: result.url,
               filename,
               selected: false
             }).returning();
             
+            // Armazenar apenas o ID se precisar recuperar depois
             if (newPhoto && newPhoto[0]) {
-              newPhotos.push(newPhoto[0]);
+              newPhotos.push(newPhoto[0].id);
             }
           } catch (dbError) {
-            console.error(`Error adding photo to database: ${dbError}`);
-            // Mesmo com erro no banco, ainda listamos o arquivo no resultado
+            console.error(`Error adding photo to database: ${filename}`);
+            // Não log do erro completo para economizar memória
           }
             
-          // Usar a URL retornada pela função de upload
+          // Armazenar apenas dados essenciais
           uploadedFiles.push({
-            originalName: file.originalname,
-            filename: filename,
-            size: file.size,
-            mimetype: file.mimetype,
-            url: result.url, // Usar a URL retornada pelo método uploadFileToR2
-            key: result.key
+            originalName,
+            filename,
+            size: fileSize,
+            url: result.url,
           });
         } catch (uploadError) {
           console.error(`Error uploading file ${filename} to R2:`, uploadError);
@@ -488,21 +495,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== New Project Management Routes ====================
   
-  // Get all projects for the authenticated user
+  // Get all projects for the authenticated user (otimizado para menor uso de memória)
   app.get("/api/v2/projects", authenticate, async (req: Request, res: Response) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
       }
       
+      // Buscar projetos sem as fotos para reduzir o consumo de memória
       const projects = await db.query.newProjects.findMany({
-        where: eq(newProjects.userId, req.user.id),
-        with: {
-          photos: true
-        }
+        where: eq(newProjects.userId, req.user.id)
       });
       
-      res.json(projects);
+      // Para cada projeto, adicionar apenas a contagem de fotos e não os arrays completos
+      const projectsWithCounts = await Promise.all(
+        projects.map(async (project) => {
+          // Buscar a contagem de fotos para este projeto
+          const photoCountResult = await db.select({ count: count() })
+            .from(photos)
+            .where(eq(photos.projectId, project.id));
+            
+          const photoCount = photoCountResult[0]?.count || 0;
+          
+          // Buscar a contagem de fotos selecionadas
+          const selectedCountResult = await db.select({ count: count() })
+            .from(photos)
+            .where(and(
+              eq(photos.projectId, project.id),
+              eq(photos.selected, true)
+            ));
+            
+          const selectedCount = selectedCountResult[0]?.count || 0;
+          
+          // Retornar o projeto com as contagens, mas sem o array completo
+          return {
+            ...project,
+            photoCount,
+            selectedCount,
+            // Não incluímos o array 'photos' aqui para economizar memória
+          };
+        })
+      );
+      
+      res.json(projectsWithCounts);
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects", error: (error as Error).message });
@@ -535,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get a specific project by ID
+  // Get a specific project by ID (com paginação para reduzir consumo de memória)
   app.get("/api/v2/projects/:id", authenticate, async (req: Request, res: Response) => {
     try {
       if (!req.user) {
@@ -544,21 +579,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const projectId = req.params.id;
       
+      // Parâmetros de paginação
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 100; // valor padrão reduzido para 100 itens
+      const offset = (page - 1) * pageSize;
+      
+      // Primeiro buscar detalhes do projeto sem as fotos
       const project = await db.query.newProjects.findFirst({
         where: and(
           eq(newProjects.id, projectId),
           eq(newProjects.userId, req.user.id)
-        ),
-        with: {
-          photos: true
-        }
+        )
       });
       
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      res.json(project);
+      // Buscar contagem total de fotos para este projeto
+      const totalPhotosResult = await db.select({ count: count() })
+        .from(photos)
+        .where(eq(photos.projectId, projectId));
+      
+      const totalPhotos = totalPhotosResult[0]?.count || 0;
+      const totalPages = Math.ceil(totalPhotos / pageSize);
+      
+      // Agora buscar apenas as fotos da página atual
+      const projectPhotos = await db.select()
+        .from(photos)
+        .where(eq(photos.projectId, projectId))
+        .limit(pageSize)
+        .offset(offset);
+      
+      // Combinar os resultados
+      const projectWithPhotos = {
+        ...project,
+        photos: projectPhotos,
+        pagination: {
+          page,
+          pageSize,
+          totalItems: totalPhotos,
+          totalPages
+        }
+      };
+      
+      res.json(projectWithPhotos);
     } catch (error) {
       console.error("Error fetching project:", error);
       res.status(500).json({ message: "Failed to fetch project", error: (error as Error).message });
