@@ -26,6 +26,7 @@ import bodyParser from "body-parser";
 import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc } from "drizzle-orm";
+import { sendEmail } from "./utils/sendEmail";
 // Use Cloudflare R2 for storage
 import { 
   BUCKET_NAME as R2_BUCKET_NAME, 
