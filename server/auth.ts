@@ -424,7 +424,9 @@ export function setupAuth(app: Express) {
     
     // If we have any backup cookies but no session, try to rebuild session
     if (req.headers.cookie) {
-      console.log('[USER] Found cookies but no passport session. Attempting to recover...');
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log('[USER] Found cookies but no passport session. Attempting to recover...');
+      }
       
       // Try to extract user ID from any available cookie
       let userId = null;
@@ -434,53 +436,60 @@ export function setupAuth(app: Express) {
         // Check both our original cookie and the new user_id cookie
         if (name === 'studio_user_id' || name === 'user_id') {
           userId = parseInt(value);
-          console.log(`[USER] Found user ID ${userId} in cookie ${name}`);
           break;
         }
       }
       
       if (userId && !isNaN(userId)) {
-        console.log(`[USER] Found user ID ${userId} in cookie, loading user...`);
-        
         // Try to get the user data
         storage.getUser(userId)
           .then(user => {
             if (user) {
-              console.log(`[USER] Successfully loaded user from cookie ID: ${userId}`);
+              if (process.env.DEBUG_AUTH === 'true') {
+                console.log(`[USER] Loaded user from cookie`);
+              }
               
               // Atualizar o campo lastLoginAt
               storage.updateUser(user.id, { lastLoginAt: new Date() })
                 .then(updatedUser => {
-                  console.log(`[USER] Last login timestamp updated for user ID=${user.id} (cookie login)`);
+                  if (process.env.DEBUG_AUTH === 'true') {
+                    console.log(`[USER] Last login timestamp updated`);
+                  }
                   
                   // Se o updateUser retornar um usuário atualizado, usamos ele, caso contrário mantém o original
                   const userToLogin = updatedUser || user;
                   
                   // Login the user to establish a session
                   req.login(userToLogin, (err) => {
-                    if (err) {
-                      console.error('[USER] Error establishing session from cookie:', err);
+                    if (err && process.env.DEBUG_AUTH === 'true') {
+                      console.error('[USER] Error establishing session');
                       return res.status(401).json({ message: "Não autorizado" });
                     }
                     
                     // Return the user data
-                    console.log('[USER] Successfully established session from cookie');
+                    if (process.env.DEBUG_AUTH === 'true') {
+                      console.log('[USER] Session established');
+                    }
                     const { password, ...userData } = userToLogin;
                     return res.json(userData);
                   });
                 })
                 .catch(error => {
-                  console.error("[USER] Error updating last login timestamp (cookie login):", error);
+                  if (process.env.DEBUG_AUTH === 'true') {
+                    console.error("[USER] Error updating last login timestamp");
+                  }
                   
                   // Login the user to establish a session (mesmo com erro na atualização do timestamp)
                   req.login(user, (err) => {
-                    if (err) {
-                      console.error('[USER] Error establishing session from cookie:', err);
+                    if (err && process.env.DEBUG_AUTH === 'true') {
+                      console.error('[USER] Error establishing session');
                       return res.status(401).json({ message: "Não autorizado" });
                     }
                     
                     // Return the user data
-                    console.log('[USER] Successfully established session from cookie');
+                    if (process.env.DEBUG_AUTH === 'true') {
+                      console.log('[USER] Session established');
+                    }
                     const { password, ...userData } = user;
                     return res.json(userData);
                   });
@@ -499,25 +508,17 @@ export function setupAuth(app: Express) {
       }
     }
     
-    // Log additional debug information about session and cookies
-    if (req.session) {
-      console.log('[USER] Session object:', {
-        id: req.sessionID,
-        cookie: req.session.cookie ? {
-          expires: req.session.cookie.expires,
-          maxAge: req.session.cookie.maxAge,
-          httpOnly: req.session.cookie.httpOnly,
-          path: req.session.cookie.path,
-          domain: req.session.cookie.domain,
-          secure: req.session.cookie.secure
-        } : 'No cookie in session',
-        passport: (req.session as any).passport
-      });
-    } else {
-      console.log('[USER] No session object found');
+    // Log adicional apenas se DEBUG_AUTH for habilitado
+    if (process.env.DEBUG_AUTH === 'true' && req.session) {
+      console.log('[USER] Session object debug info');
     }
     
-    console.log("[USER] Authentication failed, returning 401");
+    // Sem log detalhado em produção para economizar memória
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log("[USER] Authentication failed, returning 401");
+    }
+    
+    // Resposta simplificada para economizar memória
     return res.status(401).json({ message: "Não autorizado" });
   });
 }
