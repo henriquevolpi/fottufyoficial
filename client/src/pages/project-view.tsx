@@ -121,9 +121,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       selecionadas: project.selectedPhotos ? project.selectedPhotos.length : project.selecionadas,
       fotografoId: project.photographerId || project.fotografoId,
       photos: project.photos ? project.photos.map((p: any) => {
-        // Log de dados da foto para depuração
-        console.log(`Foto ID: ${p.id.substring(0, 8)}... URL: ${p.url ? p.url.substring(0, 30) + '...' : 'undefined'}`);
-        
+        // Removemos os logs de depuração detalhados de cada foto para reduzir consumo de memória
         return {
           id: p.id,
           url: ensureValidImageUrl(p.url),

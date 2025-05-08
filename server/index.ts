@@ -100,32 +100,26 @@ app.use(cors({
 import { setupAuth } from './auth';
 setupAuth(app);
 
-// Configure session logging middleware
+// Configure session logging middleware (otimizado para menor uso de memória)
 app.use((req, res, next) => {
-  // Log detailed session and cookie data for debugging
-  if (req.path.startsWith('/api/')) {
-    console.log(`[DEBUG-REQ] ${req.method} ${req.path}`);
-    console.log(`[DEBUG-REQ] Session ID: ${req.sessionID}`);
-    console.log(`[DEBUG-REQ] Authenticated: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'}`);
-    console.log(`[DEBUG-REQ] User: ${req.user ? `ID=${req.user.id}` : 'none'}`);
+  // Log apenas informações essenciais, apenas para rotas selecionadas que realmente precisam de debug
+  // Reduz a quantidade de strings em memória e objetos temporários
+  if (req.path.startsWith('/api/') && (
+      req.path.includes('/auth') || 
+      req.path.includes('/login') || 
+      req.path.includes('/logout') ||
+      process.env.DEBUG_REQUESTS === 'true'
+    )) {
+    console.log(`[DEBUG-REQ] ${req.method} ${req.path} | Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'} | User: ${req.user ? req.user.id : 'none'}`);
     
-    // Parse and log cookies in detail
-    if (req.headers.cookie) {
-      console.log(`[DEBUG-REQ] Raw cookies: ${req.headers.cookie}`);
-      const cookies = req.headers.cookie.split(';').map(cookie => {
-        const [name, value] = cookie.trim().split('=');
-        return { name, value };
-      });
-      console.log(`[DEBUG-REQ] Parsed cookies:`, JSON.stringify(cookies, null, 2));
-    } else {
-      console.log(`[DEBUG-REQ] No cookies in request`);
+    // Versão simplificada que usa menos memória, sem criar objetos extras
+    if (process.env.DEBUG_COOKIES === 'true' && req.headers.cookie) {
+      console.log(`[DEBUG-REQ] Cookies: "${req.headers.cookie}"`);
     }
 
-    // Log passport session data
-    if (req.session && req.session.passport) {
-      console.log(`[DEBUG-REQ] Passport session:`, req.session.passport);
-    } else {
-      console.log(`[DEBUG-REQ] No passport data in session`);
+    // Log passport session data apenas quando realmente necessário
+    if (process.env.DEBUG_SESSION === 'true' && req.session && req.session.passport) {
+      console.log(`[DEBUG-REQ] Passport session: ${JSON.stringify(req.session.passport)}`);
     }
   }
   next();
