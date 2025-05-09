@@ -14,6 +14,7 @@ import SubscriptionPage from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
 import DebugPage from "@/pages/debug";
 import LandingPage from "@/pages/landing";
+import CreatePassword from "@/pages/create-password";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";

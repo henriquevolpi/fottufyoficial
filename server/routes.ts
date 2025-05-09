@@ -27,6 +27,7 @@ import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc, count } from "drizzle-orm";
 import { sendEmail } from "./utils/sendEmail";
+import { verifyPasswordResetToken, resetPasswordWithToken } from "./utils/passwordReset";
 // Use Cloudflare R2 for storage
 import { 
   BUCKET_NAME as R2_BUCKET_NAME, 
@@ -2239,6 +2240,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ 
         success: false, 
         message: `Erro inesperado ao enviar e-mail: ${error instanceof Error ? error.message : 'Erro desconhecido'}` 
+      });
+    }
+  });
+  
+  // ==================== Rotas para redefinição de senha ====================
+  
+  /**
+   * Rota para verificar se um token de redefinição de senha é válido
+   * 
+   * GET /api/password/verify-token?token=xxx
+   * 
+   * Retorna:
+   * - 200 { isValid: true } se o token for válido
+   * - 400 { isValid: false, message: "..." } se o token for inválido
+   */
+  app.get("/api/password/verify-token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ 
+          isValid: false, 
+          message: "Token inválido ou ausente" 
+        });
+      }
+      
+      const result = await verifyPasswordResetToken(token);
+      
+      if (result.isValid) {
+        return res.json({ isValid: true });
+      } else {
+        return res.status(400).json({ 
+          isValid: false, 
+          message: "Token expirado ou inválido" 
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao verificar token de redefinição de senha:", error);
+      return res.status(500).json({ 
+        isValid: false, 
+        message: "Erro ao verificar token" 
+      });
+    }
+  });
+  
+  /**
+   * Rota para redefinir a senha usando um token
+   * 
+   * POST /api/password/reset
+   * Body: { token: string, password: string }
+   * 
+   * Retorna:
+   * - 200 { success: true, message: "..." } se a senha for alterada com sucesso
+   * - 400 { success: false, message: "..." } se o token for inválido ou a senha não atender aos requisitos
+   */
+  app.post("/api/password/reset", async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Token e senha são obrigatórios" 
+        });
+      }
+      
+      // Verificar se a senha atende aos requisitos mínimos
+      if (password.length < 6) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "A senha deve ter pelo menos 6 caracteres" 
+        });
+      }
+      
+      // Redefinir a senha usando o token
+      const result = await resetPasswordWithToken(token, password);
+      
+      if (result) {
+        return res.json({ 
+          success: true, 
+          message: "Senha alterada com sucesso" 
+        });
+      } else {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Não foi possível redefinir a senha. O token pode estar expirado ou já ter sido utilizado." 
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao redefinir senha:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Erro ao redefinir senha" 
       });
     }
   });
