@@ -52,13 +52,24 @@ export default function CreatePassword({ token: propToken }: CreatePasswordProps
     }
     
     // Verificar se existe um token salvo no localStorage (de uma página estática)
+    // Esta é a fonte primária para garantir que a página HTML estática possa passar
+    // o token corretamente, mesmo com problemas de MIME type
     const localStorageToken = localStorage.getItem('passwordCreateToken');
     if (localStorageToken) {
       console.log("CreatePassword - Token recuperado do localStorage:", localStorageToken);
       setToken(localStorageToken);
       verifyToken(localStorageToken);
-      // Limpar o token do localStorage após uso
-      localStorage.removeItem('passwordCreateToken');
+      // Importante: Não remover o token do localStorage imediatamente
+      // para garantir que ele possa ser recuperado em caso de erro MIME type
+      // Configurar um temporizador para remover o token após a verificação ser bem-sucedida
+      setTimeout(() => {
+        try {
+          localStorage.removeItem('passwordCreateToken');
+          console.log("Token removido do localStorage após uso");
+        } catch (error) {
+          console.error("Erro ao limpar token:", error);
+        }
+      }, 5000);
       return;
     }
     
@@ -70,6 +81,15 @@ export default function CreatePassword({ token: propToken }: CreatePasswordProps
       console.log("CreatePassword - Token obtido via query param:", tokenFromUrl);
       setToken(tokenFromUrl);
       verifyToken(tokenFromUrl);
+      
+      // Como medida de segurança, armazenar no localStorage para recuperação
+      // em caso de erro de MIME type
+      try {
+        localStorage.setItem('passwordCreateToken', tokenFromUrl);
+        console.log("Token de query param armazenado no localStorage como backup");
+      } catch (error) {
+        console.error("Erro ao armazenar token de backup:", error);
+      }
     } else {
       console.log("CreatePassword - Nenhum token encontrado");
       setIsTokenValid(false);

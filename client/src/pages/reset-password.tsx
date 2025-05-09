@@ -50,21 +50,41 @@ export default function ResetPasswordPage({ token: propToken }: ResetPasswordPag
     }
     
     // Verificar se existe um token salvo no localStorage (de uma página estática)
+    // Esta é a fonte primária para garantir que a página HTML estática possa passar
+    // o token corretamente, mesmo com problemas de MIME type
     const localStorageToken = localStorage.getItem('passwordResetToken');
     if (localStorageToken) {
       console.log("ResetPasswordPage - Token recuperado do localStorage:", localStorageToken);
       setToken(localStorageToken);
-      // Limpar o token do localStorage após uso
-      localStorage.removeItem('passwordResetToken');
+      // Importante: Não remover o token do localStorage imediatamente
+      // para garantir que ele possa ser recuperado em caso de erro MIME type
+      // Configurar um temporizador para remover o token após a verificação ser bem-sucedida
+      setTimeout(() => {
+        try {
+          localStorage.removeItem('passwordResetToken');
+          console.log("Token removido do localStorage após uso");
+        } catch (error) {
+          console.error("Erro ao limpar token:", error);
+        }
+      }, 5000);
       return;
     }
     
-    // Se não, extrair token da query string
+    // Se não, extrair token da query string como fallback
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get("token");
     if (tokenParam) {
       console.log("ResetPasswordPage - Token obtido via query param:", tokenParam);
       setToken(tokenParam);
+      
+      // Como medida de segurança, armazenar no localStorage para recuperação
+      // em caso de erro de MIME type
+      try {
+        localStorage.setItem('passwordResetToken', tokenParam);
+        console.log("Token de query param armazenado no localStorage como backup");
+      } catch (error) {
+        console.error("Erro ao armazenar token de backup:", error);
+      }
     } else {
       console.log("ResetPasswordPage - Nenhum token encontrado");
       setStatus("error");
