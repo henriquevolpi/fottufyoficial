@@ -88,7 +88,18 @@ export function validateHotmartSignature(payload: string, signature: string, sec
   return calculatedSignature === signature;
 }
 
-// Função para determinar o tipo de plano com base na oferta da Hotmart
+/**
+ * Determina o tipo de plano com base na oferta da Hotmart
+ * 
+ * Esta função implementa:
+ * 1. Busca de ID da oferta em múltiplos locais do payload
+ * 2. Verificação do ID contra o mapeamento de ofertas para planos
+ * 3. Detecção e rejeição de planos de teste (retorna null)
+ * 4. Busca recursiva de IDs de oferta em estruturas complexas
+ * 
+ * @param payload O payload recebido do webhook da Hotmart
+ * @returns String com o tipo de plano ou null se não for encontrado/válido
+ */
 export function determinePlanType(payload: HotmartWebhookPayload): string | null {
   try {
     if (!payload) {
@@ -640,7 +651,19 @@ const EVENT_MAP: Record<string, string> = {
   'CANCELAMENTO_ASSINATURA': 'subscription.canceled'
 };
 
-// Função para processar webhooks da Hotmart
+/**
+ * Processa webhooks da Hotmart
+ * 
+ * Esta função implementa:
+ * 1. Normalização de eventos com suporte a múltiplos formatos (PURCHASE_APPROVED, SUBSCRIPTION_CANCELLATION, etc.)
+ * 2. Extração robusta de dados do cliente em diferentes estruturas de payload
+ * 3. Detecção e rejeição de planos de teste
+ * 4. Processamento de eventos de cancelamento mesmo sem ID de oferta válido
+ * 5. Criação de usuários automaticamente para novos clientes
+ * 
+ * @param payload O payload recebido do webhook da Hotmart
+ * @returns Objeto com status de sucesso e mensagem
+ */
 export async function processHotmartWebhook(payload: HotmartWebhookPayload): Promise<{ success: boolean, message: string }> {
   try {
     // Verificar se o payload é válido

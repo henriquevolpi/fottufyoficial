@@ -2112,6 +2112,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Hotmart webhook
+  /**
+   * Webhook para integração com a Hotmart
+   * 
+   * Eventos suportados:
+   * - Compra aprovada: PURCHASE_APPROVED, SALE, PURCHASE_COMPLETE, etc.
+   * - Reembolso: PURCHASE_REFUNDED, REFUND, REEMBOLSO, etc.
+   * - Cancelamento: PURCHASE_CANCELED, ORDER_CANCELED, CANCELLED, etc.
+   * - Disputa/Chargeback: PURCHASE_CHARGEBACK, PROTEST, DISPUTA, etc.
+   * - Cancelamento de assinatura: SUBSCRIPTION_CANCELLATION, ASSINATURA_CANCELADA, etc.
+   * 
+   * Funcionalidades:
+   * - Criação automática de usuários quando uma compra é aprovada
+   * - Definição do plano correto com base no ID da oferta
+   * - Rejeição de planos de teste
+   * - Cancelamento de assinaturas quando há reembolso ou cancelamento
+   */
   app.post("/api/webhook/hotmart", async (req: Request, res: Response) => {
     try {
       console.log("========== INICIO WEBHOOK HOTMART ==========");
