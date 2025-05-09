@@ -1,10 +1,10 @@
-import { v4 as uuidv4 } from 'uuid';
-import { sendEmail } from './sendEmail';
-import { db } from '../db';
-import { passwordResetTokens, users } from '@shared/schema';
-import { add, isPast } from 'date-fns';
-import { eq, and } from 'drizzle-orm';
-import { hashPassword } from '../auth';
+import { db } from "../db";
+import { eq } from "drizzle-orm";
+import { randomBytes } from "crypto";
+import { addHours } from "date-fns";
+import { passwordResetTokens, users } from "@shared/schema";
+import { hashPassword } from "../auth";
+import { sendEmail } from "./sendEmail";
 
 /**
  * Gera um token de redefinição de senha para um usuário
@@ -15,31 +15,29 @@ import { hashPassword } from '../auth';
 export async function generatePasswordResetToken(userId: number, expiresInMinutes: number = 60): Promise<string | null> {
   try {
     // Verifica se o usuário existe
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) {
-      console.error(`Usuário com ID ${userId} não encontrado`);
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user.length) {
+      console.error(`Usuário ID ${userId} não encontrado para gerar token`);
       return null;
     }
 
+    // Gera um token aleatório
+    const token = randomBytes(32).toString('hex');
+    
     // Define a data de expiração
-    const expiresAt = add(new Date(), { minutes: expiresInMinutes });
+    const expiresAt = addHours(new Date(), expiresInMinutes / 60);
 
-    // Insere o token na tabela
-    const [newToken] = await db.insert(passwordResetTokens)
-      .values({
-        userId,
-        expiresAt,
-      })
-      .returning({ token: passwordResetTokens.token });
+    // Insere o token no banco de dados
+    await db.insert(passwordResetTokens).values({
+      token,
+      userId,
+      expiresAt,
+      isUsed: false
+    });
 
-    if (!newToken?.token) {
-      console.error('Falha ao gerar token de redefinição de senha');
-      return null;
-    }
-
-    return newToken.token as string;
+    return token;
   } catch (error) {
-    console.error('Erro ao gerar token de redefinição de senha:', error);
+    console.error("Erro ao gerar token de redefinição de senha:", error);
     return null;
   }
 }
@@ -57,78 +55,24 @@ export async function sendPasswordResetEmail(
   isNewUser: boolean = false
 ): Promise<boolean> {
   try {
-    // Verificar se o usuário existe
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    if (!user) {
-      console.error(`Usuário com email ${email} não encontrado`);
-      return false;
-    }
-
-    // Personaliza o assunto e texto com base se é novo usuário ou redefinição
-    const subject = isNewUser 
-      ? 'Bem-vindo à Fottufy! Complete seu cadastro' 
-      : 'Redefinição de senha na Fottufy';
-    
-    const title = isNewUser 
-      ? 'Bem-vindo à Fottufy!' 
-      : 'Redefinição de Senha';
-    
-    const intro = isNewUser 
-      ? `Seja bem-vindo(a), ${user.name}! Sua conta na Fottufy foi criada com sucesso a partir da sua compra na Hotmart.` 
-      : `Olá, ${user.name}! Recebemos uma solicitação para redefinir sua senha na Fottufy.`;
-    
-    const actionText = isNewUser 
-      ? 'Criar minha senha' 
-      : 'Redefinir minha senha';
-    
-    const currentYear = new Date().getFullYear();
-    const displayName = user.name.split(' ')[0]; // Pega apenas o primeiro nome
-
-    // URL base do frontend - deve ser configurado corretamente para produção
     const baseUrl = process.env.FRONTEND_URL || 'https://fottufy.com';
-    const resetUrl = `${baseUrl}/create-password?token=${token}`;
-
-    // Template do email
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://fottufy.com/logo.png" alt="Fottufy Logo" style="height: 60px;">
-        </div>
-        
-        <h1 style="color: #4F46E5; text-align: center;">${title}</h1>
-        
-        <p>Olá, ${displayName}!</p>
-        
-        <p>${intro}</p>
-        
-        <p>Para ${isNewUser ? 'criar' : 'redefinir'} sua senha, clique no botão abaixo:</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">${actionText}</a>
-        </div>
-        
-        <p><strong>Atenção:</strong> Este link é válido por ${isNewUser ? '24 horas' : '1 hora'} e pode ser usado apenas uma vez.</p>
-        
-        <p>Se você não solicitou ${isNewUser ? 'a criação de uma conta' : 'a redefinição de senha'}, ignore este email ou entre em contato com nossa equipe de suporte.</p>
-        
-        <p>Atenciosamente,<br>Equipe Fottufy</p>
-        
-        <div style="border-top: 1px solid #eee; margin-top: 30px; padding-top: 20px; font-size: 12px; color: #777; text-align: center;">
-          <p>© ${currentYear} Fottufy. Todos os direitos reservados.</p>
-        </div>
-      </div>
-    `;
-
-    // Envia o email
-    const result = await sendEmail({
+    const resetLink = `${baseUrl}/create-password?token=${token}`;
+    
+    const subject = isNewUser 
+      ? "Bem-vindo ao Fottufy: Crie sua senha" 
+      : "Redefinição de senha Fottufy";
+      
+    const body = isNewUser 
+      ? getWelcomeEmailTemplate(resetLink)
+      : getResetPasswordEmailTemplate(resetLink);
+    
+    return await sendEmail({
       to: email,
       subject,
-      html: htmlContent
+      html: body
     });
-
-    return true;
   } catch (error) {
-    console.error('Erro ao enviar email de redefinição de senha:', error);
+    console.error("Erro ao enviar email de redefinição de senha:", error);
     return false;
   }
 }
@@ -140,31 +84,31 @@ export async function sendPasswordResetEmail(
  */
 export async function verifyPasswordResetToken(token: string): Promise<{ isValid: boolean; userId?: number }> {
   try {
-    // Busca o token no banco
-    const [tokenRecord] = await db.select()
+    // Busca o token no banco de dados
+    const [resetToken] = await db
+      .select()
       .from(passwordResetTokens)
-      .where(
-        and(
-          eq(passwordResetTokens.token, token as unknown as string),
-          eq(passwordResetTokens.used, false)
-        )
-      );
-
-    // Verifica se o token existe e não está expirado
-    if (!tokenRecord) {
-      console.warn('Token de redefinição de senha não encontrado ou já utilizado');
+      .where(eq(passwordResetTokens.token, token))
+      .limit(1);
+    
+    if (!resetToken) {
       return { isValid: false };
     }
-
-    // Verifica se o token está expirado
-    if (isPast(tokenRecord.expiresAt)) {
-      console.warn(`Token expirado em ${tokenRecord.expiresAt}`);
+    
+    // Verifica se o token já foi usado
+    if (resetToken.isUsed) {
       return { isValid: false };
     }
-
-    return { isValid: true, userId: tokenRecord.userId };
+    
+    // Verifica se o token expirou
+    if (new Date() > resetToken.expiresAt) {
+      return { isValid: false };
+    }
+    
+    // Token válido, retorna true e o ID do usuário
+    return { isValid: true, userId: resetToken.userId };
   } catch (error) {
-    console.error('Erro ao verificar token de redefinição de senha:', error);
+    console.error("Erro ao verificar token de redefinição de senha:", error);
     return { isValid: false };
   }
 }
@@ -179,26 +123,127 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   try {
     // Verifica se o token é válido
     const { isValid, userId } = await verifyPasswordResetToken(token);
+    
     if (!isValid || !userId) {
       return false;
     }
-
+    
     // Hash da nova senha
     const hashedPassword = await hashPassword(newPassword);
-
+    
     // Atualiza a senha do usuário
-    await db.update(users)
+    await db
+      .update(users)
       .set({ password: hashedPassword })
       .where(eq(users.id, userId));
-
+    
     // Marca o token como usado
-    await db.update(passwordResetTokens)
-      .set({ used: true })
-      .where(eq(passwordResetTokens.token, token as unknown as string));
-
+    await db
+      .update(passwordResetTokens)
+      .set({ isUsed: true })
+      .where(eq(passwordResetTokens.token, token));
+    
     return true;
   } catch (error) {
-    console.error('Erro ao redefinir senha:', error);
+    console.error("Erro ao redefinir senha com token:", error);
     return false;
   }
+}
+
+// Template de e-mail para novos usuários criarem senha
+function getWelcomeEmailTemplate(resetLink: string): string {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo ao Fottufy</title>
+    <style>
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { text-align: center; margin-bottom: 20px; }
+      .logo { max-width: 150px; }
+      h1 { color: #0056b3; }
+      .button { display: inline-block; background-color: #0056b3; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; margin: 20px 0; }
+      .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="https://cdn.fottufy.com/assets/logo.png" alt="Fottufy Logo" class="logo">
+    </div>
+    
+    <h1>Bem-vindo ao Fottufy!</h1>
+    
+    <p>Sua conta foi criada com sucesso. Para começar a usar nossa plataforma, você precisa criar uma senha.</p>
+    
+    <p>Clique no botão abaixo para criar sua senha:</p>
+    
+    <p style="text-align: center;">
+      <a href="${resetLink}" class="button">Criar minha senha</a>
+    </p>
+    
+    <p>Ou copie e cole este link no seu navegador:</p>
+    <p style="word-break: break-all;">${resetLink}</p>
+    
+    <p><strong>Observação:</strong> Este link é válido por 24 horas. Após esse período, você precisará solicitar um novo link de redefinição de senha.</p>
+    
+    <p>Se você não se inscreveu para uma conta Fottufy, por favor ignore este e-mail.</p>
+    
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Fottufy. Todos os direitos reservados.</p>
+      <p>Este é um e-mail automático, por favor não responda.</p>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+// Template de e-mail para redefinição de senha
+function getResetPasswordEmailTemplate(resetLink: string): string {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinição de Senha Fottufy</title>
+    <style>
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { text-align: center; margin-bottom: 20px; }
+      .logo { max-width: 150px; }
+      h1 { color: #0056b3; }
+      .button { display: inline-block; background-color: #0056b3; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; margin: 20px 0; }
+      .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="https://cdn.fottufy.com/assets/logo.png" alt="Fottufy Logo" class="logo">
+    </div>
+    
+    <h1>Redefinição de Senha</h1>
+    
+    <p>Recebemos uma solicitação para redefinir a senha da sua conta Fottufy.</p>
+    
+    <p>Clique no botão abaixo para criar uma nova senha:</p>
+    
+    <p style="text-align: center;">
+      <a href="${resetLink}" class="button">Redefinir minha senha</a>
+    </p>
+    
+    <p>Ou copie e cole este link no seu navegador:</p>
+    <p style="word-break: break-all;">${resetLink}</p>
+    
+    <p><strong>Observação:</strong> Este link é válido por 1 hora. Após esse período, você precisará solicitar um novo link de redefinição de senha.</p>
+    
+    <p>Se você não solicitou a redefinição de senha, por favor ignore este e-mail.</p>
+    
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Fottufy. Todos os direitos reservados.</p>
+      <p>Este é um e-mail automático, por favor não responda.</p>
+    </div>
+  </body>
+  </html>
+  `;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import { Loader2, Lock, ShieldCheck, AlertTriangle } from 'lucide-react';
  * 4. Redireciona para a página de login em caso de sucesso
  */
 export default function CreatePassword() {
-  const [location, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   
   // Estado do token e validação
@@ -125,7 +125,7 @@ export default function CreatePassword() {
         
         // Redirecionar para a página de login após 3 segundos
         setTimeout(() => {
-          navigate('/auth');
+          setLocation('/auth');
         }, 3000);
       } else {
         setError(data.message || 'Não foi possível criar a senha. Tente novamente.');
@@ -162,7 +162,7 @@ export default function CreatePassword() {
           <p className="text-sm text-muted-foreground mt-2 mb-6">
             {error || 'O link que você usou é inválido ou já expirou.'}
           </p>
-          <Button onClick={() => navigate('/auth')}>
+          <Button onClick={() => setLocation('/auth')}>
             Voltar para login
           </Button>
         </div>
@@ -178,7 +178,7 @@ export default function CreatePassword() {
           <p className="text-sm text-muted-foreground mt-2 mb-6">
             Você será redirecionado para a página de login em alguns segundos.
           </p>
-          <Button onClick={() => navigate('/auth')}>
+          <Button onClick={() => setLocation('/auth')}>
             Ir para login
           </Button>
         </div>

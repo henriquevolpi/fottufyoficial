@@ -59,6 +59,9 @@ function Router() {
       <Route path="/auth">
         {() => <AuthPage />}
       </Route>
+      <Route path="/create-password">
+        {() => <CreatePassword />}
+      </Route>
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/upload" component={Upload} />
       <ProtectedRoute path="/project/:id" component={Project} />
