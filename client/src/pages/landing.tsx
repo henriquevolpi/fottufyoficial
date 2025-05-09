@@ -101,7 +101,7 @@ export default function LandingPage() {
             {/* Basic Plan */}
             <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="text-2xl font-bold mb-2 text-blue-600">📷 R$14,90</div>
-              <div className="text-lg text-gray-500 mb-6">por 10.000 imagens</div>
+              <div className="text-lg text-gray-500 mb-6">por 6.000 imagens</div>
               
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start">
@@ -128,8 +128,8 @@ export default function LandingPage() {
             
             {/* Standard Plan */}
             <div className="bg-white p-8 rounded-xl shadow-lg border-2 border-blue-400 hover:shadow-xl transition-shadow duration-300 transform scale-105">
-              <div className="text-2xl font-bold mb-2 text-blue-600">📸 R$37,90</div>
-              <div className="text-lg text-gray-500 mb-6">por 50.000 imagens</div>
+              <div className="text-2xl font-bold mb-2 text-blue-600">🏆 R$29,90</div>
+              <div className="text-lg text-gray-500 mb-6">por 15.000 imagens</div>
               
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start">
@@ -156,8 +156,8 @@ export default function LandingPage() {
             
             {/* Premium Plan */}
             <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-              <div className="text-2xl font-bold mb-2 text-blue-600">🏆 R$70,00</div>
-              <div className="text-lg text-gray-500 mb-6">por 100.000 imagens</div>
+              <div className="text-2xl font-bold mb-2 text-blue-600">📸 R$49,90</div>
+              <div className="text-lg text-gray-500 mb-6">por 35.000 imagens</div>
               
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start">
