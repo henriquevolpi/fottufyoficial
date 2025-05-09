@@ -249,16 +249,35 @@ async function sendWelcomeEmailWithPassword(name: string, email: string, passwor
  */
 function findEmailInPayload(obj: any, depth: number = 0): string | null {
   // Limite de profundidade para evitar loops infinitos em objetos circulares
-  if (depth > 10 || !obj || typeof obj !== 'object') {
+  if (depth > 15 || !obj || typeof obj !== 'object') {
     return null;
   }
-
-  // Procurar por propriedades que possam conter um email (adicionado email_address ao array)
-  const emailKeys = ['email', 'mail', 'e-mail', 'emailAddress', 'email_address', 'subscriber_email', 'buyer_email', 'customer_email'];
   
-  // Verificar diretamente nas propriedades
+  // Verificar estruturas específicas conhecidas que são mais complexas
+  // 1. Estrutura: data.transaction.details.purchaseInfo.clientProfile.personalInfo.contact.email.primaryAddress
+  const complexEmail1 = obj?.data?.transaction?.details?.purchaseInfo?.clientProfile?.personalInfo?.contact?.email?.primaryAddress;
+  if (complexEmail1 && typeof complexEmail1 === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(complexEmail1)) {
+    console.log(`Hotmart: Email encontrado em estrutura complexa (tipo 1):`, complexEmail1);
+    return complexEmail1;
+  }
+  
+  // 2. Estrutura: data.order.details.buyer.user_identity.contact.primary.email_address
+  const complexEmail2 = obj?.data?.order?.details?.buyer?.user_identity?.contact?.primary?.email_address;
+  if (complexEmail2 && typeof complexEmail2 === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(complexEmail2)) {
+    console.log(`Hotmart: Email encontrado em estrutura complexa (tipo 2):`, complexEmail2);
+    return complexEmail2;
+  }
+  
+  // Procurar por propriedades que possam conter um email
+  const emailKeys = [
+    'email', 'mail', 'e-mail', 'emailAddress', 'email_address', 'subscriber_email', 
+    'buyer_email', 'customer_email', 'primaryAddress', 'primaryEmail', 'emailPrimary',
+    'userEmail', 'client_email', 'contactEmail'
+  ];
+  
+  // Procurar por valores que parecem ser emails, mesmo em propriedades com nomes não padrão
   for (const key of Object.keys(obj)) {
-    // Verificar se a propriedade atual é um email
+    // Verificar se a propriedade atual é um email (verificando pelo nome da propriedade)
     if (emailKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
       const potentialEmail = obj[key];
       // Validação básica de email
@@ -268,11 +287,172 @@ function findEmailInPayload(obj: any, depth: number = 0): string | null {
       }
     }
     
+    // Verificar se o valor parece ser um email, independente do nome da propriedade
+    if (typeof obj[key] === 'string') {
+      const value = obj[key];
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        console.log(`Hotmart: Email encontrado como valor da propriedade ${key}:`, value);
+        return value;
+      }
+    }
+    
     // Verificar objetos aninhados
     if (obj[key] && typeof obj[key] === 'object') {
       const nestedEmail = findEmailInPayload(obj[key], depth + 1);
       if (nestedEmail) {
         return nestedEmail;
+      }
+    }
+  }
+  
+  return null;
+}
+
+// Função para extrair telefone do cliente de diferentes locais no payload
+function findCustomerPhone(payload: any): string | null {
+  try {
+    // Verificar estruturas complexas primeiro
+    // 1. Estrutura: data.transaction.details.purchaseInfo.clientProfile.personalInfo.contact.phone.mobile
+    const complexPhone1 = payload?.data?.transaction?.details?.purchaseInfo?.clientProfile?.personalInfo?.contact?.phone?.mobile;
+    if (complexPhone1 && typeof complexPhone1 === 'string' && complexPhone1.length > 2) {
+      console.log(`Hotmart: Telefone do cliente encontrado em estrutura complexa (tipo 1): ${complexPhone1}`);
+      return complexPhone1;
+    }
+    
+    // 2. Estrutura: data.order.details.buyer.user_identity.contact.primary.phone.number
+    // Tenta combinar código do país + número
+    const countryCode = payload?.data?.order?.details?.buyer?.user_identity?.contact?.primary?.phone?.countryCode;
+    const phoneNumber = payload?.data?.order?.details?.buyer?.user_identity?.contact?.primary?.phone?.number;
+    if (countryCode && phoneNumber && typeof countryCode === 'string' && typeof phoneNumber === 'string') {
+      const fullPhone = countryCode.startsWith('+') ? `${countryCode}${phoneNumber}` : `+${countryCode}${phoneNumber}`;
+      console.log(`Hotmart: Telefone do cliente composto a partir de countryCode e number: ${fullPhone}`);
+      return fullPhone;
+    }
+    
+    // Verificar locais conhecidos
+    const phone = 
+      payload.data?.buyer?.phone || 
+      payload.data?.customer?.contact?.phone ||
+      payload.data?.purchase?.customer?.contact?.phone ||
+      payload.data?.contact?.phone ||
+      payload.customer?.contact?.phone ||
+      payload.customer?.phone ||
+      payload.buyer?.phone;
+    
+    if (phone && typeof phone === 'string' && phone.length > 2) {
+      console.log(`Hotmart: Telefone do cliente encontrado em local padrão: ${phone}`);
+      return phone;
+    }
+    
+    // Busca recursiva manual em objetos aninhados
+    function findPhoneRecursive(obj: any, depth: number = 0): string | null {
+      if (depth > 10 || !obj || typeof obj !== 'object') {
+        return null;
+      }
+      
+      // Procurar por chaves que podem conter números de telefone
+      const phoneKeys = ['phone', 'mobile', 'cellphone', 'telephone', 'tel', 'contactNumber', 'phoneNumber'];
+      
+      for (const key of Object.keys(obj)) {
+        // Se encontrar uma propriedade que parece ser um telefone
+        if (phoneKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
+          const potentialPhone = obj[key];
+          // Validação básica: pelo menos 8 dígitos
+          if (/^[+\d\s()-]{8,}$/.test(potentialPhone)) {
+            console.log(`Hotmart: Telefone do cliente encontrado na propriedade ${key}: ${potentialPhone}`);
+            return potentialPhone;
+          }
+        }
+        
+        // Verificar objetos aninhados
+        if (obj[key] && typeof obj[key] === 'object') {
+          const nestedPhone = findPhoneRecursive(obj[key], depth + 1);
+          if (nestedPhone) {
+            return nestedPhone;
+          }
+        }
+      }
+      
+      return null;
+    }
+    
+    // Tentar busca recursiva se nenhum telefone foi encontrado
+    return findPhoneRecursive(payload);
+  } catch (error) {
+    console.error('Erro ao buscar telefone:', error);
+    return null;
+  }
+}
+
+/**
+ * Função recursiva auxiliar para encontrar o nome do cliente em qualquer lugar do payload
+ * Verifica diversos locais onde o nome pode estar localizado
+ */
+function findCustomerName(payload: any, depth: number = 0): string | null {
+  // Limite de profundidade para evitar loops infinitos
+  if (depth > 15 || !payload || typeof payload !== 'object') {
+    return null;
+  }
+  
+  // Verificar estruturas complexas conhecidas
+  // 1. Estrutura: data.transaction.details.purchaseInfo.clientProfile.personalInfo.identification.fullName
+  const complexName1 = payload?.data?.transaction?.details?.purchaseInfo?.clientProfile?.personalInfo?.identification?.fullName;
+  if (complexName1 && typeof complexName1 === 'string' && complexName1.length > 0) {
+    console.log(`Hotmart: Nome do cliente encontrado em estrutura complexa (tipo 1): ${complexName1}`);
+    return complexName1;
+  }
+  
+  // 2. Estrutura alternativa para nome composto
+  const firstName = payload?.data?.transaction?.details?.purchaseInfo?.clientProfile?.personalInfo?.identification?.firstName;
+  const lastName = payload?.data?.transaction?.details?.purchaseInfo?.clientProfile?.personalInfo?.identification?.lastName;
+  if (firstName && lastName && typeof firstName === 'string' && typeof lastName === 'string') {
+    const fullName = `${firstName} ${lastName}`;
+    console.log(`Hotmart: Nome do cliente composto a partir de firstName e lastName: ${fullName}`);
+    return fullName;
+  }
+  
+  // 3. Estrutura: data.order.details.buyer.user_identity.name.fullName
+  const complexName3 = payload?.data?.order?.details?.buyer?.user_identity?.name?.fullName;
+  if (complexName3 && typeof complexName3 === 'string' && complexName3.length > 0) {
+    console.log(`Hotmart: Nome do cliente encontrado em estrutura complexa (tipo 3): ${complexName3}`);
+    return complexName3;
+  }
+  
+  // Procurar por propriedades específicas que podem conter o nome do cliente
+  const nameKeys = [
+    'name', 'customer_name', 'clientName', 'buyer_name', 'fullName', 
+    'primeiro_nome', 'full_name', 'completeName', 'displayName',
+    'userName', 'customerFullName', 'buyerName'
+  ];
+  
+  // Verificar locais específicos que são conhecidos por conter nomes
+  // Aqui estamos checando locais conhecidos primeiro
+  const customerName = 
+    payload.data?.customer?.name || 
+    payload.data?.purchase?.customer?.name ||
+    payload.data?.buyer?.name || 
+    payload.purchase?.customer?.name ||
+    payload.customer?.name ||
+    payload.data?.subscriber?.name;
+  
+  if (customerName && typeof customerName === 'string' && customerName.length > 0) {
+    console.log(`Hotmart: Nome do cliente encontrado em local específico: ${customerName}`);
+    return customerName;
+  }
+  
+  // Verificar propriedades diretamente
+  for (const key of Object.keys(payload)) {
+    // Verificar se a propriedade atual é um nome
+    if (nameKeys.includes(key.toLowerCase()) && typeof payload[key] === 'string' && payload[key].length > 0) {
+      console.log(`Hotmart: Nome do cliente encontrado na propriedade ${key}: ${payload[key]}`);
+      return payload[key];
+    }
+    
+    // Verificar objetos aninhados
+    if (payload[key] && typeof payload[key] === 'object') {
+      const nestedName = findCustomerName(payload[key], depth + 1);
+      if (nestedName) {
+        return nestedName;
       }
     }
   }
@@ -400,8 +580,9 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           const hashedPassword = await hashPassword(randomPassword);
           
           // Dados para o novo usuário, com validação segura para evitar erros
-          // Tentar extrair o nome de diferentes locais do payload
+          // Extrair informações do cliente de diferentes locais do payload
           const customerName = findCustomerName(payload);
+          const customerPhone = findCustomerPhone(payload);
           
           const userData: InsertUser = {
             name: (customerName || data?.buyer?.name || email.split('@')[0]) || 'Usuário Fottufy',
@@ -409,7 +590,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             password: hashedPassword, // Usar hash da senha
             role: 'photographer',
             status: 'active',
-            phone: data?.buyer?.phone || '',
+            phone: customerPhone || data?.buyer?.phone || '',
             planType,
             subscriptionStatus: 'active'
           };
