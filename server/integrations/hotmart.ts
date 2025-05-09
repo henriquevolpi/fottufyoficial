@@ -9,35 +9,47 @@ import { hashPassword } from '../auth';
 // Definição da interface para o payload do webhook da Hotmart
 interface HotmartWebhookPayload {
   event: string;          // Tipo do evento (compra, cancelamento, etc)
+  email?: string;         // Email pode estar em diferentes níveis do payload
+  buyer?: {
+    email?: string;       // Email pode estar aqui também
+  };
+  purchase?: {
+    buyer?: {
+      email?: string;     // Ou aqui
+    };
+  };
   data: {
-    buyer: {
-      email: string;      // Email do comprador
-      name: string;       // Nome do comprador
+    buyer_email?: string; // Em alguns formatos, o email pode estar aqui como string
+    buyer?: {
+      email?: string;     // Email do comprador
+      name?: string;      // Nome do comprador
       phone?: string;     // Telefone do comprador (opcional)
     };
-    purchase: {
-      transaction: string; // ID da transação ou URL com parâmetros (pode conter "off=XXXX")
-      status: string;      // Status da compra (approved, refunded, etc)
+    purchase?: {
+      transaction?: string; // ID da transação ou URL com parâmetros (pode conter "off=XXXX")
+      status?: string;      // Status da compra (approved, refunded, etc)
       offer?: {
-        code: string;      // Código da oferta (usado para mapear o plano)
-        off?: string;      // ID da oferta conforme especificado (ex: ro76q5uz)
-        status?: string;   // Status da oferta
+        code?: string;      // Código da oferta (usado para mapear o plano)
+        off?: string;       // ID da oferta conforme especificado (ex: ro76q5uz)
+        status?: string;    // Status da oferta
       };
       plan?: {
-        name: string;      // Nome do plano (usado como fallback)
+        name?: string;      // Nome do plano (usado como fallback)
       };
     };
     subscription?: {
-      subscriber: string;  // ID do assinante na Hotmart
-      status: string;      // Status da assinatura (active, cancelled, etc)
-      plan?: string;       // Nome ou identificador do plano
+      subscriber?: string;  // ID do assinante na Hotmart
+      status?: string;      // Status da assinatura (active, cancelled, etc)
+      plan?: string | {     // Nome ou identificador do plano (pode ser string ou objeto)
+        name?: string;
+      };
     };
     product?: {
-      id: string;          // ID do produto
-      name: string;        // Nome do produto
+      id?: string;          // ID do produto
+      name?: string;        // Nome do produto
     };
     params?: {
-      off?: string;        // ID da oferta como parâmetro
+      off?: string;         // ID da oferta como parâmetro
     };
   };
 }
@@ -120,10 +132,18 @@ export function determinePlanType(payload: HotmartWebhookPayload): string {
   const planName = payload.data?.purchase?.plan?.name || payload.data?.subscription?.plan;
   if (planName) {
     console.log(`Hotmart: Determinando plano pelo nome: ${planName}`);
-    // Lógica de fallback para determinar o plano pelo nome
-    if (planName.toLowerCase().includes('basic')) return 'basic_v2';
-    if (planName.toLowerCase().includes('standard')) return 'standard';
-    if (planName.toLowerCase().includes('pro')) return 'professional';
+    // Garantir que planName seja tratado como string
+    const rawName = typeof planName === 'string'
+      ? planName
+      : (typeof planName === 'object' && planName?.name ? planName.name : '');
+    
+    if (rawName) {
+      console.log(`Hotmart: Nome do plano normalizado: ${rawName}`);
+      // Lógica de fallback para determinar o plano pelo nome
+      if (rawName.toLowerCase().includes('basic')) return 'basic_v2';
+      if (rawName.toLowerCase().includes('standard')) return 'standard';
+      if (rawName.toLowerCase().includes('pro')) return 'professional';
+    }
   }
   
   // Se nada funcionar, usar o plano básico como padrão
@@ -188,7 +208,22 @@ async function sendWelcomeEmailWithPassword(name: string, email: string, passwor
 export async function processHotmartWebhook(payload: HotmartWebhookPayload): Promise<{ success: boolean, message: string }> {
   try {
     const { event, data } = payload;
-    const email = data.buyer.email;
+    
+    // Extração mais robusta do email, buscando em diferentes locais do payload
+    const email = 
+      payload.email || 
+      payload.buyer?.email || 
+      data?.buyer?.email || 
+      data?.buyer_email || 
+      payload?.purchase?.buyer?.email;
+    
+    // Verificar se temos um email válido
+    if (!email) {
+      console.error('Hotmart webhook: email não encontrado no payload', JSON.stringify(payload));
+      return { success: false, message: 'Email ausente no payload' };
+    }
+    
+    console.log(`Hotmart: Processando evento ${event} para email: ${email}`);
     
     // Verificar se já existe um usuário com este email
     let user = await storage.getUserByEmail(email);
@@ -209,7 +244,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             status: 'active',
             subscriptionStatus: 'active',
             // Salvar ID da transação no campo subscription_id para referência
-            subscription_id: data.purchase.transaction
+            subscription_id: data?.purchase?.transaction || `hotmart_${Date.now()}`
           });
         } else {
           // Criar um novo usuário com o plano ativado
@@ -220,14 +255,14 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           // Hash da senha
           const hashedPassword = await hashPassword(randomPassword);
           
-          // Dados para o novo usuário
+          // Dados para o novo usuário, com validação segura para evitar erros
           const userData: InsertUser = {
-            name: data.buyer.name || email.split('@')[0], // Usar parte do email se não tiver nome
+            name: (data?.buyer?.name || email.split('@')[0]) || 'Usuário Fottufy', // Usar parte do email se não tiver nome
             email,
             password: hashedPassword, // Usar hash da senha
             role: 'photographer',
             status: 'active',
-            phone: data.buyer.phone || '',
+            phone: data?.buyer?.phone || '',
             planType,
             subscriptionStatus: 'active'
           };
@@ -240,7 +275,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           
           // Salvar ID da transação para referência
           await storage.updateUser(user.id, {
-            subscription_id: data.purchase.transaction
+            subscription_id: data?.purchase?.transaction || `hotmart_${Date.now()}`
           });
           
           // Enviar email de boas-vindas com a senha

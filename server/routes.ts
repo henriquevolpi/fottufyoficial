@@ -2132,6 +2132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Avisar se a verificação de assinatura estiver desativada
         console.warn("Verificação de assinatura da Hotmart desativada - HOTMART_WEBHOOK_SECRET não configurado");
+        console.log("Para maior segurança, defina a variável HOTMART_WEBHOOK_SECRET com a chave compartilhada da Hotmart");
       }
       
       // Processar o payload do webhook
