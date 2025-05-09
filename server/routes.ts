@@ -2247,6 +2247,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== Rotas para redefinição de senha ====================
   
   /**
+   * Rota para solicitar redefinição de senha
+   * 
+   * POST /api/password/forgot
+   * Body: { email: string }
+   * 
+   * Retorna:
+   * - 200 { success: true } independente se o email existe ou não (por segurança)
+   * - 400 { success: false, message: "..." } apenas em caso de erro de validação
+   */
+  app.post("/api/password/forgot", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      // Validar email
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: "Email inválido"
+        });
+      }
+      
+      // Normalizar o email para minúsculas
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Validar formato do email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        return res.status(400).json({
+          success: false,
+          message: "Formato de email inválido"
+        });
+      }
+      
+      // Buscar usuário pelo email
+      const user = await storage.getUserByEmail(normalizedEmail);
+      
+      // Se o usuário existir, gerar token e enviar email
+      if (user) {
+        // Gerar token com validade de 1 hora
+        const token = await generatePasswordResetToken(user.id, 60);
+        
+        if (token) {
+          // Enviar email com link para redefinição
+          await sendPasswordResetEmail(user.email, token, false, user.name);
+          console.log(`Token de redefinição de senha gerado para: ${normalizedEmail}`);
+        } else {
+          console.error(`Falha ao gerar token para: ${normalizedEmail}`);
+        }
+      } else {
+        console.log(`Tentativa de redefinição para email não cadastrado: ${normalizedEmail}`);
+      }
+      
+      // Sempre retornar sucesso para evitar enumeração de emails
+      return res.status(200).json({
+        success: true,
+        message: "Se este email estiver cadastrado, você receberá instruções para redefinir sua senha"
+      });
+      
+    } catch (error) {
+      console.error("Erro ao processar solicitação de redefinição de senha:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Ocorreu um erro ao processar sua solicitação"
+      });
+    }
+  });
+  
+  /**
    * Rota para verificar se um token de redefinição de senha é válido
    * 
    * GET /api/password/verify-token?token=xxx
