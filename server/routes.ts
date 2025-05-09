@@ -2366,7 +2366,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota específica para lidar com os links de redefinição de senha
   // Esta rota captura todas as solicitações para /reset-password e /create-password
   // E retorna o HTML principal, permitindo que o React faça o roteamento do lado do cliente
-  app.get(["/reset-password*", "/create-password*"], (req: Request, res: Response) => {
+  // IMPORTANTE: excluímos explicitamente os arquivos .html para que eles sejam servidos pelo express.static
+  app.get(["/reset-password", "/reset-password/*", "/create-password", "/create-password/*"], (req: Request, res: Response) => {
+    // Ignorar solicitações para arquivos HTML estáticos
+    if (req.path.endsWith('.html')) {
+      return res.status(404).send('Not found');
+    }
+    
     const clientHtmlPath = path.resolve(
       import.meta.dirname,
       "..",
@@ -2375,7 +2381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
     
     // Log para depuração
-    console.log(`Redirecionando rota de redefinição de senha: ${req.url}`);
+    console.log(`Servindo app React para rota de senha: ${req.url}`);
     
     // Retorna o HTML principal para que o React possa assumir o roteamento
     res.sendFile(clientHtmlPath);

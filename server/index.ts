@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
 import { testConnection, pool } from "./db";
-import { storage } from "./storage";
+import { storage as dbStorage } from "./storage";
 // Import necessary environment variables
 import dotenv from "dotenv";
 
@@ -26,7 +26,7 @@ if (!fs.existsSync(uploadsDir)) {
 console.log(`Upload directory path: ${uploadsDir}`); // Log for debugging
 
 // Configure multer storage
-const storage = multer.diskStorage({
+const multerStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
@@ -70,7 +70,7 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
 
 // Create multer instance
 export const upload = multer({
-  storage,
+  storage: multerStorage,
   fileFilter,
   limits: {
     fileSize: 1000 * 1024 * 1024, // 1000MB (1GB) limit - efetivamente sem limite para uso normal
@@ -83,6 +83,17 @@ const app = express();
 // Configure essential middleware first
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Servir arquivos estáticos do diretório public
+// IMPORTANTE: este middleware deve estar antes de qualquer outro que manipule as rotas
+app.use(express.static(path.join(process.cwd(), 'public'), {
+  setHeaders: (res, filepath) => {
+    // Definir os cabeçalhos corretos para arquivos HTML estáticos
+    if (filepath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    }
+  }
+}));
 
 // CRITICAL FIX: Setup proper CORS to fully support cookies
 // We must use the cors package rather than custom headers to ensure consistent behavior
@@ -266,9 +277,9 @@ app.use((req, res, next) => {
         
         // Verificar se temos acesso aos caches inteligentes da classe MemStorage
         // Só exibe as estatísticas de cache se a storage implementada for do tipo MemStorage e DEBUG_MEMORY ativado
-        if (process.env.DEBUG_MEMORY === 'true' && storage && 'users' in storage && 'projects' in storage) {
-          const usersObj = storage.users as any;
-          const projectsObj = storage.projects as any;
+        if (process.env.DEBUG_MEMORY === 'true' && dbStorage && 'users' in dbStorage && 'projects' in dbStorage) {
+          const usersObj = dbStorage.users as any;
+          const projectsObj = dbStorage.projects as any;
           
           if (usersObj && typeof usersObj.getStats === 'function' &&
               projectsObj && typeof projectsObj.getStats === 'function') {
