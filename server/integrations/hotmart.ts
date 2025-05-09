@@ -89,11 +89,11 @@ export function validateHotmartSignature(payload: string, signature: string, sec
 }
 
 // Função para determinar o tipo de plano com base na oferta da Hotmart
-export function determinePlanType(payload: HotmartWebhookPayload): string {
+export function determinePlanType(payload: HotmartWebhookPayload): string | null {
   try {
     if (!payload) {
-      console.log('Hotmart: Payload inválido, usando plano padrão');
-      return 'basic_v2';
+      console.log('Hotmart: Payload inválido');
+      return null;
     }
     
     // Primeiro verificar locais conhecidos
@@ -147,11 +147,11 @@ export function determinePlanType(payload: HotmartWebhookPayload): string {
       return HOTMART_OFFER_TO_PLAN_MAP[offerId];
     }
     
-    // Fallback: tentar usar o nome do plano se disponível
+    // Verificar se o plano encontrado não é um plano de teste
     const planName = payload.data?.purchase?.plan?.name || payload.data?.subscription?.plan;
     
     if (planName) {
-      console.log(`Hotmart: Determinando plano pelo nome: ${JSON.stringify(planName)}`);
+      console.log(`Hotmart: Verificando nome do plano: ${JSON.stringify(planName)}`);
       
       // Extrair o nome correto dependendo do tipo
       let rawName = '';
@@ -171,22 +171,24 @@ export function determinePlanType(payload: HotmartWebhookPayload): string {
         // Converter para minúsculas de forma segura e verificar
         const lowerName = rawName.toLowerCase();
         
-        // Lógica de fallback para determinar o plano pelo nome
-        if (lowerName.includes('basic')) return 'basic_v2';
-        if (lowerName.includes('standard')) return 'standard';
-        if (lowerName.includes('pro')) return 'professional';
-      } else {
-        console.log(`Hotmart: Nome do plano inválido após normalização: ${rawName}`);
+        // Verificar se é um plano de teste (não devemos processar)
+        if (lowerName.includes('teste') || lowerName.includes('test')) {
+          console.log(`Hotmart: Plano de teste detectado, não será processado`);
+          return null;
+        }
+        
+        // Não usar mais o nome como fallback para determinar o tipo de plano
+        // Agora só processamos se tivermos um ID de oferta válido
       }
     }
     
-    // Se nada funcionar, usar o plano básico como padrão
-    console.log(`Hotmart: Nenhum plano identificado, usando plano padrão: basic_v2`);
-    return 'basic_v2';
+    // Se não encontrou um ID de oferta válido, retornar null para indicar que não deve processar
+    console.log(`Hotmart: Nenhuma oferta válida encontrada`);
+    return null;
   } catch (error) {
     console.error('Erro ao determinar tipo de plano:', error);
-    // Em caso de erro, sempre retornar um valor padrão seguro
-    return 'basic_v2';
+    // Em caso de erro, retornar null para não processar
+    return null;
   }
 }
 
@@ -552,6 +554,51 @@ function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
   return null;
 }
 
+// Mapeamento de eventos da Hotmart para nomes normalizados
+const EVENT_MAP: Record<string, string> = {
+  // Compra aprovada - variações
+  'PURCHASE_APPROVED': 'purchase.approved',
+  'PURCHASE.APPROVED': 'purchase.approved',
+  'purchase.approved': 'purchase.approved',
+  'APPROVED': 'purchase.approved',
+  
+  // Reembolso - variações
+  'PURCHASE_REFUNDED': 'purchase.refunded',
+  'PURCHASE.REFUNDED': 'purchase.refunded',
+  'purchase.refunded': 'purchase.refunded',
+  'REFUNDED': 'purchase.refunded',
+  
+  // Cancelamento - variações 
+  'PURCHASE_CANCELED': 'purchase.canceled',
+  'PURCHASE.CANCELED': 'purchase.canceled',
+  'purchase.canceled': 'purchase.canceled',
+  'CANCELED': 'purchase.canceled',
+  
+  // Atraso no pagamento
+  'PURCHASE_DELAYED': 'purchase.delayed',
+  'PURCHASE.DELAYED': 'purchase.delayed',
+  'purchase.delayed': 'purchase.delayed',
+  'DELAYED': 'purchase.delayed',
+  
+  // Disputa/Chargeback
+  'PURCHASE_PROTEST': 'purchase.chargeback',
+  'PURCHASE.PROTEST': 'purchase.chargeback',
+  'purchase.protest': 'purchase.chargeback',
+  'PROTEST': 'purchase.chargeback',
+  'PURCHASE_CHARGEBACK': 'purchase.chargeback',
+  'PURCHASE.CHARGEBACK': 'purchase.chargeback',
+  'purchase.chargeback': 'purchase.chargeback',
+  'CHARGEBACK': 'purchase.chargeback',
+  
+  // Cancelamento de assinatura
+  'SUBSCRIPTION_CANCELLATION': 'subscription.canceled',
+  'SUBSCRIPTION.CANCELLATION': 'subscription.canceled',
+  'subscription.cancellation': 'subscription.canceled',
+  'SUBSCRIPTION_CANCELED': 'subscription.canceled',
+  'SUBSCRIPTION.CANCELED': 'subscription.canceled',
+  'subscription.canceled': 'subscription.canceled'
+};
+
 // Função para processar webhooks da Hotmart
 export async function processHotmartWebhook(payload: HotmartWebhookPayload): Promise<{ success: boolean, message: string }> {
   try {
@@ -561,9 +608,27 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
       return { success: false, message: 'Payload inválido ou vazio' };
     }
     
-    // Tentar extrair o evento
-    const event = payload.event || 'unknown_event';
-    console.log(`Hotmart: Evento recebido: ${event}`);
+    // Extrair e normalizar o evento (case-insensitive)
+    let rawEvent = payload.event || 'unknown_event';
+    const normalizedEvent = EVENT_MAP[rawEvent] || EVENT_MAP[rawEvent.toUpperCase()] || EVENT_MAP[rawEvent.toLowerCase()];
+    
+    // Usar o evento normalizado se encontrado, caso contrário manter o original
+    const event = normalizedEvent || String(rawEvent);
+    console.log(`Hotmart: Evento recebido: ${rawEvent} (normalizado: ${event})`);
+    
+    // Verificar se é um evento suportado
+    const supportedEvents = [
+      'purchase.approved', 
+      'purchase.refunded',
+      'purchase.chargeback',
+      'purchase.canceled',
+      'subscription.canceled'
+    ];
+    
+    if (!supportedEvents.includes(event)) {
+      console.log(`Hotmart: Evento não suportado: ${event}`);
+      return { success: false, message: `Evento não suportado: ${event}` };
+    }
     
     // Garantir que data existe (para evitar erros)
     const data = payload.data || {};
@@ -584,7 +649,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
       const foundEmail = findEmailInPayload(payload);
       // Converter de string | null para string | undefined para compatibilidade
       if (foundEmail) {
-        email = foundEmail;
+        email = String(foundEmail);
       }
     }
     
@@ -601,6 +666,12 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
     
     // Determinar o tipo de plano com base na oferta
     const planType = determinePlanType(payload);
+    
+    // Se não encontrou um plano válido (oferta não encontrada ou plano de teste)
+    if (!planType) {
+      console.log(`Hotmart: Nenhum plano válido encontrado para o email ${email}, webhook ignorado`);
+      return { success: false, message: 'Nenhuma oferta válida encontrada' };
+    }
     
     // Processar de acordo com o tipo de evento
     switch (event) {
@@ -668,6 +739,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
         
       case 'purchase.refunded':
       case 'purchase.chargeback':
+      case 'purchase.canceled':
       case 'subscription.canceled':
         if (user) {
           console.log(`Hotmart: Desativando plano para usuário: ${email} (evento: ${event})`);
@@ -678,8 +750,11 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             // Opcionalmente, pode deixar o usuário inativo também
             // status: 'inactive' 
           });
+          return { success: true, message: 'Plano desativado' };
+        } else {
+          console.log(`Hotmart: Usuário não encontrado para o email ${email}, nada a fazer`);
+          return { success: false, message: 'Usuário não encontrado' };
         }
-        return { success: true, message: 'Plano desativado' };
         
       default:
         console.log(`Hotmart: Evento não processado: ${event}`);
