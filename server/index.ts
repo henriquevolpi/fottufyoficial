@@ -88,9 +88,15 @@ app.use(express.urlencoded({ extended: true }));
 // IMPORTANTE: este middleware deve estar antes de qualquer outro que manipule as rotas
 app.use(express.static(path.join(process.cwd(), 'public'), {
   setHeaders: (res, filepath) => {
-    // Definir os cabeçalhos corretos para arquivos HTML estáticos
+    // Definir os cabeçalhos corretos para diferentes tipos de arquivos
     if (filepath.endsWith('.html')) {
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    } else if (filepath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    } else if (filepath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+    } else if (filepath.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json; charset=UTF-8');
     }
   }
 }));

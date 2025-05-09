@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
@@ -2364,13 +2364,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota específica para lidar com os links de redefinição de senha
-  // Esta rota captura todas as solicitações para /reset-password e /create-password
-  // E retorna o HTML principal, permitindo que o React faça o roteamento do lado do cliente
-  // IMPORTANTE: excluímos explicitamente os arquivos .html para que eles sejam servidos pelo express.static
-  app.get(["/reset-password", "/reset-password/*", "/create-password", "/create-password/*"], (req: Request, res: Response) => {
-    // Ignorar solicitações para arquivos HTML estáticos
+  // Primeiro, registre um middleware para garantir que os arquivos HTML sejam servidos corretamente
+  app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.endsWith('.html')) {
-      return res.status(404).send('Not found');
+      console.log(`Servindo arquivo HTML estático: ${req.path}`);
+      // Garantir que o Content-Type esteja correto para arquivos HTML
+      res.type('html');
+    } else if (req.path.endsWith('.js')) {
+      // Garantir que o Content-Type esteja correto para arquivos JavaScript
+      res.type('application/javascript');
+    }
+    next();
+  });
+  
+  // Rota para o app React nas rotas de redefinição/criação de senha
+  app.get(["/reset-password", "/reset-password/*", "/create-password", "/create-password/*"], (req: Request, res: Response, next: NextFunction) => {
+    // Se for uma solicitação ao arquivo HTML estático, passamos para o próximo middleware
+    if (req.path.endsWith('.html')) {
+      console.log(`Redirecionando para arquivo HTML estático: ${req.path}`);
+      return next();
     }
     
     const clientHtmlPath = path.resolve(
@@ -2380,11 +2392,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "index.html",
     );
     
-    // Log para depuração
     console.log(`Servindo app React para rota de senha: ${req.url}`);
     
-    // Retorna o HTML principal para que o React possa assumir o roteamento
-    res.sendFile(clientHtmlPath);
+    // Retorna o HTML principal para o React com o Content-Type correto
+    res.type('html').sendFile(clientHtmlPath);
   });
   
   /**
