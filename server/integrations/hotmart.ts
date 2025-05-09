@@ -5,6 +5,7 @@ import { storage } from '../storage';
 import { randomBytes } from 'crypto';
 import { sendEmail } from '../utils/sendEmail';
 import { hashPassword } from '../auth';
+import { generatePasswordResetToken, sendPasswordResetEmail } from '../utils/passwordReset';
 
 // Definição da interface para o payload do webhook da Hotmart
 interface HotmartWebhookPayload {
@@ -752,7 +753,12 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
         if (user) {
           // Usuário existente - ativar o plano
           console.log(`Hotmart: Ativando plano ${planType} para usuário existente: ${email}`);
-          await storage.updateUserSubscription(user.id, planType);
+          // Verificar se planType é válido (não é null)
+          if (planType) {
+            await storage.updateUserSubscription(user.id, planType);
+          } else {
+            console.error(`Hotmart: Tipo de plano inválido para usuário existente: ${email}`);
+          }
           
           // Atualizar status e informações da Hotmart
           await storage.updateUser(user.id, {
@@ -765,24 +771,27 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           // Criar um novo usuário com o plano ativado
           console.log(`Hotmart: Criando novo usuário com plano ${planType}: ${email}`);
           
-          // Gerar senha aleatória
-          const randomPassword = generateRandomPassword();
-          // Hash da senha
-          const hashedPassword = await hashPassword(randomPassword);
+          // Gerar uma senha temporária (será substituída pelo usuário)
+          // A senha temporária é apenas um placeholder e não será usada diretamente
+          const tempPassword = generateRandomPassword();
+          const hashedPassword = await hashPassword(tempPassword);
           
           // Dados para o novo usuário, com validação segura para evitar erros
           // Extrair informações do cliente de diferentes locais do payload
           const customerName = findCustomerName(payload);
           const customerPhone = findCustomerPhone(payload);
           
+          // Verificar se planType é válido e definir um tipo válido para o caso de ser null
+          const validPlanType = planType || 'free';
+          
           const userData: InsertUser = {
             name: (customerName || data?.buyer?.name || email.split('@')[0]) || 'Usuário Fottufy',
             email,
-            password: hashedPassword, // Usar hash da senha
+            password: hashedPassword, // Senha temporária (será redefinida pelo usuário)
             role: 'photographer',
             status: 'active',
             phone: customerPhone || data?.buyer?.phone || '',
-            planType,
+            planType: validPlanType, // Usar o planType validado
             subscriptionStatus: 'active'
           };
           
@@ -790,22 +799,31 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           user = await storage.createUser(userData);
           
           // Atualizar limite de uploads com base no plano
-          await storage.updateUserSubscription(user.id, planType);
+          if (planType) {
+            await storage.updateUserSubscription(user.id, planType);
+          } else {
+            console.error(`Hotmart: Tipo de plano inválido para novo usuário: ${email}`);
+          }
           
           // Salvar ID da transação para referência
           await storage.updateUser(user.id, {
             subscription_id: data?.purchase?.transaction || `hotmart_${Date.now()}`
           });
           
-          // Enviar email de boas-vindas com a senha
+          // Gerar token para criação de senha (válido por 24 horas)
           try {
-            await sendWelcomeEmailWithPassword(
-              userData.name, 
-              userData.email, 
-              randomPassword // Enviar senha em texto plano no email
-            );
+            // Gerar token para criação de senha (validade de 24 horas = 1440 minutos)
+            const token = await generatePasswordResetToken(user.id, 1440);
+            
+            if (token) {
+              // Enviar email com link para criação de senha
+              await sendPasswordResetEmail(userData.email, token, true);
+              console.log(`Hotmart: Email para criação de senha enviado para: ${email}`);
+            } else {
+              console.error(`Hotmart: Falha ao gerar token para criação de senha: ${email}`);
+            }
           } catch (emailError) {
-            console.error('Erro ao enviar email de boas-vindas:', emailError);
+            console.error('Erro ao enviar email para criação de senha:', emailError);
           }
         }
         return { success: true, message: 'Plano ativado com sucesso' };
