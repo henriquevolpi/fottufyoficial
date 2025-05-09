@@ -19,11 +19,15 @@ interface HotmartWebhookPayload {
     };
   };
   data: {
+    email?: string;       // Email pode estar diretamente em data
     buyer_email?: string; // Em alguns formatos, o email pode estar aqui como string
     buyer?: {
       email?: string;     // Email do comprador
       name?: string;      // Nome do comprador
       phone?: string;     // Telefone do comprador (opcional)
+    };
+    contact?: {
+      email?: string;     // Email pode estar no objeto de contato em alguns payloads
     };
     purchase?: {
       transaction?: string; // ID da transação ou URL com parâmetros (pode conter "off=XXXX")
@@ -130,19 +134,34 @@ export function determinePlanType(payload: HotmartWebhookPayload): string {
   
   // Fallback: tentar usar o nome do plano se disponível
   const planName = payload.data?.purchase?.plan?.name || payload.data?.subscription?.plan;
+  
   if (planName) {
-    console.log(`Hotmart: Determinando plano pelo nome: ${planName}`);
-    // Garantir que planName seja tratado como string
-    const rawName = typeof planName === 'string'
-      ? planName
-      : (typeof planName === 'object' && planName?.name ? planName.name : '');
+    console.log(`Hotmart: Determinando plano pelo nome: ${JSON.stringify(planName)}`);
     
-    if (rawName) {
+    // Extrair o nome correto dependendo do tipo
+    let rawName = '';
+    
+    if (typeof planName === 'string') {
+      // Se for string, usar diretamente
+      rawName = planName;
+    } else if (typeof planName === 'object' && planName !== null) {
+      // Se for objeto, tentar extrair a propriedade name
+      rawName = planName.name || '';
+    }
+    
+    // Verificar se temos um nome válido após a normalização
+    if (rawName && typeof rawName === 'string') {
       console.log(`Hotmart: Nome do plano normalizado: ${rawName}`);
+      
+      // Converter para minúsculas de forma segura e verificar
+      const lowerName = rawName.toLowerCase();
+      
       // Lógica de fallback para determinar o plano pelo nome
-      if (rawName.toLowerCase().includes('basic')) return 'basic_v2';
-      if (rawName.toLowerCase().includes('standard')) return 'standard';
-      if (rawName.toLowerCase().includes('pro')) return 'professional';
+      if (lowerName.includes('basic')) return 'basic_v2';
+      if (lowerName.includes('standard')) return 'standard';
+      if (lowerName.includes('pro')) return 'professional';
+    } else {
+      console.log(`Hotmart: Nome do plano inválido após normalização: ${rawName}`);
     }
   }
   
@@ -213,8 +232,10 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
     const email = 
       payload.email || 
       payload.buyer?.email || 
+      data?.email || 
       data?.buyer?.email || 
       data?.buyer_email || 
+      data?.contact?.email || 
       payload?.purchase?.buyer?.email;
     
     // Verificar se temos um email válido
