@@ -47,7 +47,7 @@ async function simulateHotmartPurchase() {
     const result = await response.json();
     console.log("✅ Resposta do webhook:", result);
     
-    if (result.success) {
+    if (result.message === "Hotmart webhook processado com sucesso") {
       console.log(`
 📝 Resumo do teste:
 1. Webhook enviado com sucesso
