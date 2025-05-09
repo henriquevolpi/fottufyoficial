@@ -16,10 +16,12 @@ interface HotmartWebhookPayload {
       phone?: string;     // Telefone do comprador (opcional)
     };
     purchase: {
-      transaction: string; // ID da transação
+      transaction: string; // ID da transação ou URL com parâmetros (pode conter "off=XXXX")
       status: string;      // Status da compra (approved, refunded, etc)
       offer?: {
         code: string;      // Código da oferta (usado para mapear o plano)
+        off?: string;      // ID da oferta conforme especificado (ex: ro76q5uz)
+        status?: string;   // Status da oferta
       };
       plan?: {
         name: string;      // Nome do plano (usado como fallback)
@@ -30,20 +32,24 @@ interface HotmartWebhookPayload {
       status: string;      // Status da assinatura (active, cancelled, etc)
       plan?: string;       // Nome ou identificador do plano
     };
+    product?: {
+      id: string;          // ID do produto
+      name: string;        // Nome do produto
+    };
+    params?: {
+      off?: string;        // ID da oferta como parâmetro
+    };
   };
 }
 
 // Mapeamento dos códigos de oferta da Hotmart para os planos do Fottufy
-// Isso deve ser configurado de acordo com as ofertas reais na Hotmart
+// Configurado com os códigos reais das ofertas da Hotmart
 const HOTMART_OFFER_TO_PLAN_MAP: Record<string, string> = {
-  // Exemplo: se sua oferta na Hotmart tem código "BASIC123", mapeie para o plano básico
-  "BASIC123": "basic_v2",
-  "STANDARD456": "standard_v2",
-  "PRO789": "professional_v2",
-  // Planos antigos/legados para compatibilidade
-  "BASICOLD": "basic",
-  "STDOLD": "standard",
-  "PROOLD": "professional"
+  // Mapeamento conforme especificado
+  "ro76q5uz": "basic_v2",
+  "z0pxaesy": "basic_fottufy",
+  "tpfhcllk": "standard",
+  "xtuh4ji0": "professional"
 };
 
 // Função para gerar uma senha aleatória para novos usuários
@@ -68,22 +74,60 @@ export function validateHotmartSignature(payload: string, signature: string, sec
 
 // Função para determinar o tipo de plano com base na oferta da Hotmart
 export function determinePlanType(payload: HotmartWebhookPayload): string {
-  // Tentar pegar o código da oferta (maneira mais segura)
+  // Verificar se temos o ID da oferta diretamente nos parâmetros
+  if (payload.data?.params?.off) {
+    const offerId = payload.data.params.off;
+    console.log(`Hotmart: ID da oferta encontrado em params: ${offerId}`);
+    if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
+      return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+    }
+  }
+  
+  // Verificar se temos o ID da oferta diretamente no objeto offer
+  if (payload.data?.purchase?.offer?.off) {
+    const offerId = payload.data.purchase.offer.off;
+    console.log(`Hotmart: ID da oferta encontrado em offer: ${offerId}`);
+    if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
+      return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+    }
+  }
+  
+  // Buscar o ID da oferta no parâmetro "off" dentro da URL da transação
+  if (payload.data?.purchase?.transaction) {
+    const transactionUrl = payload.data.purchase.transaction;
+    // Verificar se a URL contém o parâmetro "off"
+    if (typeof transactionUrl === 'string' && transactionUrl.includes('off=')) {
+      // Extrair o ID da oferta do parâmetro "off"
+      const offMatch = transactionUrl.match(/off=([a-zA-Z0-9]+)/);
+      if (offMatch && offMatch[1]) {
+        const offerId = offMatch[1];
+        console.log(`Hotmart: ID da oferta encontrado na URL: ${offerId}`);
+        if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
+          return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+        }
+      }
+    }
+  }
+  
+  // Tentar pegar o código da oferta (segunda tentativa)
   const offerCode = payload.data?.purchase?.offer?.code;
   if (offerCode && HOTMART_OFFER_TO_PLAN_MAP[offerCode]) {
+    console.log(`Hotmart: Usando código da oferta: ${offerCode}`);
     return HOTMART_OFFER_TO_PLAN_MAP[offerCode];
   }
   
   // Fallback: tentar usar o nome do plano se disponível
   const planName = payload.data?.purchase?.plan?.name || payload.data?.subscription?.plan;
   if (planName) {
+    console.log(`Hotmart: Determinando plano pelo nome: ${planName}`);
     // Lógica de fallback para determinar o plano pelo nome
     if (planName.toLowerCase().includes('basic')) return 'basic_v2';
-    if (planName.toLowerCase().includes('standard')) return 'standard_v2';
-    if (planName.toLowerCase().includes('pro')) return 'professional_v2';
+    if (planName.toLowerCase().includes('standard')) return 'standard';
+    if (planName.toLowerCase().includes('pro')) return 'professional';
   }
   
   // Se nada funcionar, usar o plano básico como padrão
+  console.log(`Hotmart: Nenhum plano identificado, usando plano padrão: basic_v2`);
   return 'basic_v2';
 }
 

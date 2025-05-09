@@ -38,6 +38,7 @@ import {
   downloadAndUploadToR2
 } from "./r2";
 import { streamUploadMiddleware, cleanupTempFiles, processAndStreamToR2 } from "./streamUpload";
+import { processHotmartWebhook, validateHotmartSignature } from "./integrations/hotmart";
 import multer from "multer";
 
 // Helper function to download an image from a URL to the uploads directory
@@ -2107,6 +2108,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao processar webhook do Stripe:", error);
       res.status(500).json({ message: "Falha ao processar webhook do Stripe" });
+    }
+  });
+  
+  // Hotmart webhook
+  app.post("/api/webhook/hotmart", async (req: Request, res: Response) => {
+    try {
+      console.log("Recebido evento da Hotmart");
+      
+      // Extrair assinatura do cabeçalho (se existir)
+      const signature = req.headers['x-hotmart-signature'] as string;
+      const webhookSecret = process.env.HOTMART_WEBHOOK_SECRET || '';
+      
+      // Verificar assinatura (se configurada)
+      if (signature && webhookSecret) {
+        const rawBody = JSON.stringify(req.body);
+        const isValid = validateHotmartSignature(rawBody, signature, webhookSecret);
+        
+        if (!isValid) {
+          console.warn("Assinatura inválida no webhook da Hotmart");
+          return res.status(401).json({ message: "Assinatura inválida" });
+        }
+      } else {
+        // Avisar se a verificação de assinatura estiver desativada
+        console.warn("Verificação de assinatura da Hotmart desativada - HOTMART_WEBHOOK_SECRET não configurado");
+      }
+      
+      // Processar o payload do webhook
+      const result = await processHotmartWebhook(req.body);
+      
+      if (result.success) {
+        console.log(`Hotmart webhook processado: ${result.message}`);
+        return res.status(200).json({ 
+          message: "Hotmart webhook processado com sucesso",
+          details: result.message
+        });
+      } else {
+        console.warn(`Hotmart webhook com erro: ${result.message}`);
+        return res.status(400).json({ 
+          message: "Erro ao processar webhook",
+          details: result.message
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro ao processar webhook da Hotmart:", error);
+      return res.status(500).json({ 
+        message: "Falha ao processar webhook da Hotmart",
+        error: error.message || "Erro desconhecido"
+      });
     }
   });
 
