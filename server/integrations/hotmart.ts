@@ -66,6 +66,7 @@ const HOTMART_OFFER_TO_PLAN_MAP: Record<string, string> = {
   "ro76q5uz": "basic_v2",
   "z0pxaesy": "basic_fottufy",
   "tpfhcllk": "standard",
+  "hjb8gqn7": "standard",
   "xtuh4ji0": "professional"
 };
 
