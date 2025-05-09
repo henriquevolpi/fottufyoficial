@@ -169,6 +169,12 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
+                      
+                      <div className="text-sm text-right">
+                        <Link href="/forgot-password" className="text-primary hover:underline">
+                          Esqueci minha senha
+                        </Link>
+                      </div>
 
                       <Button 
                         type="submit" 

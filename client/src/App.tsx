@@ -52,12 +52,20 @@ function ProjectViewPublicRoute({ params }: { params: { id: string }}) {
 import PricingPage from "@/pages/pricing";
 import TestR2 from "@/pages/test-r2";
 import TestImageUpload from "@/pages/test-image-upload";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth">
         {() => <AuthPage />}
+      </Route>
+      <Route path="/forgot-password">
+        {() => <ForgotPasswordPage />}
+      </Route>
+      <Route path="/reset-password">
+        {() => <ResetPasswordPage />}
       </Route>
       <Route path="/create-password">
         {() => <CreatePassword />}
