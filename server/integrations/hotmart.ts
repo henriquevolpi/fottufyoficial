@@ -308,7 +308,43 @@ function findEmailInPayload(obj: any, depth: number = 0): string | null {
   return null;
 }
 
-// Função para extrair telefone do cliente de diferentes locais no payload
+/**
+ * Função auxiliar recursiva para buscar telefone em objetos aninhados
+ */
+function findPhoneRecursive(obj: any, depth: number = 0): string | null {
+  if (depth > 10 || !obj || typeof obj !== 'object') {
+    return null;
+  }
+  
+  // Procurar por chaves que podem conter números de telefone
+  const phoneKeys = ['phone', 'mobile', 'cellphone', 'telephone', 'tel', 'contactNumber', 'phoneNumber'];
+  
+  for (const key of Object.keys(obj)) {
+    // Se encontrar uma propriedade que parece ser um telefone
+    if (phoneKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
+      const potentialPhone = obj[key];
+      // Validação básica: pelo menos 8 dígitos
+      if (/^[+\d\s()-]{8,}$/.test(potentialPhone)) {
+        console.log(`Hotmart: Telefone do cliente encontrado na propriedade ${key}: ${potentialPhone}`);
+        return potentialPhone;
+      }
+    }
+    
+    // Verificar objetos aninhados
+    if (obj[key] && typeof obj[key] === 'object') {
+      const nestedPhone = findPhoneRecursive(obj[key], depth + 1);
+      if (nestedPhone) {
+        return nestedPhone;
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Função para extrair telefone do cliente de diferentes locais no payload 
+ */
 function findCustomerPhone(payload: any): string | null {
   try {
     // Verificar estruturas complexas primeiro
@@ -328,6 +364,15 @@ function findCustomerPhone(payload: any): string | null {
       console.log(`Hotmart: Telefone do cliente composto a partir de countryCode e number: ${fullPhone}`);
       return fullPhone;
     }
+
+    // 3. Estrutura: purchaseDetails.subscriber.userDetails.personalIdentity.contactPhone
+    const complexPhone3 = payload?.purchaseDetails?.subscriber?.userDetails?.personalIdentity?.contactPhone;
+    if (complexPhone3 && typeof complexPhone3 === 'string' && complexPhone3.length > 2) {
+      // Formatação básica: adicionar + se for só números e não tiver o prefixo internacional
+      const formattedPhone = /^\d+$/.test(complexPhone3) ? `+${complexPhone3}` : complexPhone3;
+      console.log(`Hotmart: Telefone do cliente encontrado em estrutura complexa (tipo 3): ${formattedPhone}`);
+      return formattedPhone;
+    }
     
     // Verificar locais conhecidos
     const phone = 
@@ -342,38 +387,6 @@ function findCustomerPhone(payload: any): string | null {
     if (phone && typeof phone === 'string' && phone.length > 2) {
       console.log(`Hotmart: Telefone do cliente encontrado em local padrão: ${phone}`);
       return phone;
-    }
-    
-    // Busca recursiva manual em objetos aninhados
-    function findPhoneRecursive(obj: any, depth: number = 0): string | null {
-      if (depth > 10 || !obj || typeof obj !== 'object') {
-        return null;
-      }
-      
-      // Procurar por chaves que podem conter números de telefone
-      const phoneKeys = ['phone', 'mobile', 'cellphone', 'telephone', 'tel', 'contactNumber', 'phoneNumber'];
-      
-      for (const key of Object.keys(obj)) {
-        // Se encontrar uma propriedade que parece ser um telefone
-        if (phoneKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
-          const potentialPhone = obj[key];
-          // Validação básica: pelo menos 8 dígitos
-          if (/^[+\d\s()-]{8,}$/.test(potentialPhone)) {
-            console.log(`Hotmart: Telefone do cliente encontrado na propriedade ${key}: ${potentialPhone}`);
-            return potentialPhone;
-          }
-        }
-        
-        // Verificar objetos aninhados
-        if (obj[key] && typeof obj[key] === 'object') {
-          const nestedPhone = findPhoneRecursive(obj[key], depth + 1);
-          if (nestedPhone) {
-            return nestedPhone;
-          }
-        }
-      }
-      
-      return null;
     }
     
     // Tentar busca recursiva se nenhum telefone foi encontrado
@@ -465,12 +478,27 @@ function findCustomerName(payload: any, depth: number = 0): string | null {
  */
 function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
   // Limite de profundidade para evitar loops infinitos
-  if (depth > 10 || !obj || typeof obj !== 'object') {
+  if (depth > 15 || !obj || typeof obj !== 'object') {
     return null;
   }
   
+  // Verificar estruturas específicas conhecidas
+  // 1. Estrutura: data.transaction.details.purchaseInfo.vendorInfo.productData.offerId
+  const complexOfferId1 = obj?.data?.transaction?.details?.purchaseInfo?.vendorInfo?.productData?.offerId;
+  if (complexOfferId1 && typeof complexOfferId1 === 'string' && HOTMART_OFFER_TO_PLAN_MAP[complexOfferId1]) {
+    console.log(`Hotmart: ID da oferta encontrado em estrutura complexa (tipo 1):`, complexOfferId1);
+    return complexOfferId1;
+  }
+  
+  // 2. Estrutura: purchaseDetails.product.information.offerId
+  const complexOfferId2 = obj?.purchaseDetails?.product?.information?.offerId;
+  if (complexOfferId2 && typeof complexOfferId2 === 'string' && HOTMART_OFFER_TO_PLAN_MAP[complexOfferId2]) {
+    console.log(`Hotmart: ID da oferta encontrado em estrutura complexa (tipo 2):`, complexOfferId2);
+    return complexOfferId2;
+  }
+  
   // Procurar por propriedades específicas que podem conter um ID de oferta
-  const offerIdKeys = ['off', 'offer_id', 'offerId', 'offer_code', 'offerCode'];
+  const offerIdKeys = ['off', 'offer_id', 'offerId', 'offer_code', 'offerCode', 'productCode', 'planId'];
   
   // Verificar diretamente nas propriedades
   for (const key of Object.keys(obj)) {
@@ -498,6 +526,25 @@ function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
       const nestedOfferId = findOfferIdInPayload(obj[key], depth + 1);
       if (nestedOfferId) {
         return nestedOfferId;
+      }
+    }
+  }
+  
+  // Verificar se existe uma oferta diretamente em offerName/productName - checando pelo nome do plano
+  for (const key of Object.keys(obj)) {
+    if (['offerName', 'productName', 'planName', 'subscription_name'].includes(key.toLowerCase()) && typeof obj[key] === 'string') {
+      const planName = obj[key].toLowerCase();
+      console.log(`Hotmart: Verificando nome de plano "${planName}" para inferir oferta`);
+      
+      // Verificar se o nome contém palavras-chave que indicam o plano
+      if (planName.includes('basic') || planName.includes('básico')) {
+        return 'ro76q5uz'; // ID da oferta do plano básico
+      } 
+      else if (planName.includes('standard') || planName.includes('padrão')) {
+        return 'tpfhcllk'; // ID da oferta do plano standard
+      }
+      else if (planName.includes('professional') || planName.includes('profissional') || planName.includes('pro')) {
+        return 'xtuh4ji0'; // ID da oferta do plano professional
       }
     }
   }
