@@ -2363,21 +2363,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Rota específica para lidar com os links de redefinição de senha
-  // Primeiro, registre um middleware para garantir que os arquivos HTML sejam servidos corretamente
+  // 1. Primeiro, registre um middleware para garantir que todos os arquivos sejam servidos com o MIME type correto
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.endsWith('.html')) {
-      console.log(`Servindo arquivo HTML estático: ${req.path}`);
-      // Garantir que o Content-Type esteja correto para arquivos HTML
-      res.type('html');
-    } else if (req.path.endsWith('.js')) {
-      // Garantir que o Content-Type esteja correto para arquivos JavaScript
-      res.type('application/javascript');
+    const path = req.path;
+    
+    // Configurar o Content-Type adequado baseado na extensão do arquivo
+    if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    } else if (path.endsWith('.js') || path.endsWith('.mjs')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    } else if (path.endsWith('.jsx') || path.endsWith('.tsx')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+    } else if (path.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json; charset=UTF-8');
     }
+    
     next();
   });
   
-  // Rota para o app React nas rotas de redefinição/criação de senha
+  // Middleware específico para arquivos .tsx e .jsx no desenvolvimento do Vite
+  app.get(['*.tsx', '*.jsx', '*/src/*.tsx', '*/src/*.jsx'], (req: Request, res: Response, next: NextFunction) => {
+    // Configurar corretamente o Content-Type para módulos ES
+    res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    next();
+  });
+  
+  // 2. Middleware específico para processar os arquivos HTML estáticos de redefinição/criação de senha
+  app.get(['*/reset-password.html', '*/create-password.html'], (req: Request, res: Response, next: NextFunction) => {
+    console.log(`Servindo arquivo HTML estático: ${req.path}`);
+    // Garantir que seja processado como HTML
+    res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    next();
+  });
+  
+  // 3. Rota para o app React nas rotas de redefinição/criação de senha
   app.get(["/reset-password", "/reset-password/*", "/create-password", "/create-password/*"], (req: Request, res: Response, next: NextFunction) => {
     // Se for uma solicitação ao arquivo HTML estático, passamos para o próximo middleware
     if (req.path.endsWith('.html')) {
@@ -2395,7 +2416,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`Servindo app React para rota de senha: ${req.url}`);
     
     // Retorna o HTML principal para o React com o Content-Type correto
-    res.type('html').sendFile(clientHtmlPath);
+    res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    res.sendFile(clientHtmlPath);
   });
   
   /**

@@ -91,13 +91,17 @@ app.use(express.static(path.join(process.cwd(), 'public'), {
     // Definir os cabeçalhos corretos para diferentes tipos de arquivos
     if (filepath.endsWith('.html')) {
       res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-    } else if (filepath.endsWith('.js')) {
+    } else if (filepath.endsWith('.js') || filepath.endsWith('.mjs')) {
       res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    } else if (filepath.endsWith('.jsx') || filepath.endsWith('.tsx')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=UTF-8'); 
     } else if (filepath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css; charset=UTF-8');
     } else if (filepath.endsWith('.json')) {
       res.setHeader('Content-Type', 'application/json; charset=UTF-8');
     }
+    
+    console.log(`Servindo arquivo estático: ${filepath} com Content-Type: ${res.getHeader('Content-Type')}`);
   }
 }));
 
