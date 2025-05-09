@@ -57,10 +57,10 @@ export async function sendPasswordResetEmail(
 ): Promise<boolean> {
   try {
     const baseUrl = process.env.FRONTEND_URL || 'https://fottufy.com';
-    // Formatando o link para usar o formato de path parameter em vez de query parameter
+    // Voltando ao formato com query parameter que já está testado em produção
     const resetLink = isNewUser
-      ? `${baseUrl}/create-password/${token}`
-      : `${baseUrl}/reset-password/${token}`;
+      ? `${baseUrl}/create-password?token=${token}`
+      : `${baseUrl}/reset-password?token=${token}`;
     
     const subject = isNewUser 
       ? "🥳 Sua conta foi criada! Crie sua senha para acessar agora" 
