@@ -2114,7 +2114,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hotmart webhook
   app.post("/api/webhook/hotmart", async (req: Request, res: Response) => {
     try {
+      console.log("========== INICIO WEBHOOK HOTMART ==========");
       console.log("Recebido evento da Hotmart");
+      
+      // Registrar a estrutura completa do payload (removendo dados sensíveis)
+      try {
+        // Criar uma cópia do payload para logar
+        const safePayload = JSON.parse(JSON.stringify(req.body));
+        
+        // Remover ou mascarar dados sensíveis para log
+        if (safePayload.data && safePayload.data.buyer) {
+          if (safePayload.data.buyer.phone) safePayload.data.buyer.phone = '[REDACTED]';
+          if (safePayload.data.buyer.document) safePayload.data.buyer.document = '[REDACTED]';
+        }
+        
+        // Logar a estrutura completa para análise e debugging
+        console.log("Estrutura completa do payload Hotmart:");
+        console.log(JSON.stringify(safePayload, null, 2));
+      } catch (logError) {
+        console.error("Erro ao logar payload da Hotmart:", logError);
+      }
       
       // Extrair assinatura do cabeçalho (se existir)
       const signature = req.headers['x-hotmart-signature'] as string;
@@ -2140,12 +2159,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (result.success) {
         console.log(`Hotmart webhook processado: ${result.message}`);
+        console.log("========== FIM WEBHOOK HOTMART ==========");
         return res.status(200).json({ 
           message: "Hotmart webhook processado com sucesso",
           details: result.message
         });
       } else {
         console.warn(`Hotmart webhook com erro: ${result.message}`);
+        console.log("========== FIM WEBHOOK HOTMART (COM ERRO) ==========");
         return res.status(400).json({ 
           message: "Erro ao processar webhook",
           details: result.message
@@ -2153,6 +2174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error: any) {
       console.error("Erro ao processar webhook da Hotmart:", error);
+      console.log("========== FIM WEBHOOK HOTMART (COM EXCEÇÃO) ==========");
       return res.status(500).json({ 
         message: "Falha ao processar webhook da Hotmart",
         error: error.message || "Erro desconhecido"

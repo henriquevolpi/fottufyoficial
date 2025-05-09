@@ -90,84 +90,104 @@ export function validateHotmartSignature(payload: string, signature: string, sec
 
 // Função para determinar o tipo de plano com base na oferta da Hotmart
 export function determinePlanType(payload: HotmartWebhookPayload): string {
-  // Verificar se temos o ID da oferta diretamente nos parâmetros
-  if (payload.data?.params?.off) {
-    const offerId = payload.data.params.off;
-    console.log(`Hotmart: ID da oferta encontrado em params: ${offerId}`);
-    if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
-      return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+  try {
+    if (!payload) {
+      console.log('Hotmart: Payload inválido, usando plano padrão');
+      return 'basic_v2';
     }
-  }
-  
-  // Verificar se temos o ID da oferta diretamente no objeto offer
-  if (payload.data?.purchase?.offer?.off) {
-    const offerId = payload.data.purchase.offer.off;
-    console.log(`Hotmart: ID da oferta encontrado em offer: ${offerId}`);
-    if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
-      return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+    
+    // Primeiro verificar locais conhecidos
+    // Verificar se temos o ID da oferta diretamente nos parâmetros
+    if (payload.data?.params?.off) {
+      const offerId = payload.data.params.off;
+      console.log(`Hotmart: ID da oferta encontrado em params: ${offerId}`);
+      if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
+        return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+      }
     }
-  }
-  
-  // Buscar o ID da oferta no parâmetro "off" dentro da URL da transação
-  if (payload.data?.purchase?.transaction) {
-    const transactionUrl = payload.data.purchase.transaction;
-    // Verificar se a URL contém o parâmetro "off"
-    if (typeof transactionUrl === 'string' && transactionUrl.includes('off=')) {
-      // Extrair o ID da oferta do parâmetro "off"
-      const offMatch = transactionUrl.match(/off=([a-zA-Z0-9]+)/);
-      if (offMatch && offMatch[1]) {
-        const offerId = offMatch[1];
-        console.log(`Hotmart: ID da oferta encontrado na URL: ${offerId}`);
-        if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
-          return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+    
+    // Verificar se temos o ID da oferta diretamente no objeto offer
+    if (payload.data?.purchase?.offer?.off) {
+      const offerId = payload.data.purchase.offer.off;
+      console.log(`Hotmart: ID da oferta encontrado em offer: ${offerId}`);
+      if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
+        return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+      }
+    }
+    
+    // Buscar o ID da oferta no parâmetro "off" dentro da URL da transação
+    if (payload.data?.purchase?.transaction) {
+      const transactionUrl = payload.data.purchase.transaction;
+      // Verificar se a URL contém o parâmetro "off"
+      if (typeof transactionUrl === 'string' && transactionUrl.includes('off=')) {
+        // Extrair o ID da oferta do parâmetro "off"
+        const offMatch = transactionUrl.match(/off=([a-zA-Z0-9]+)/);
+        if (offMatch && offMatch[1]) {
+          const offerId = offMatch[1];
+          console.log(`Hotmart: ID da oferta encontrado na URL: ${offerId}`);
+          if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
+            return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+          }
         }
       }
     }
-  }
-  
-  // Tentar pegar o código da oferta (segunda tentativa)
-  const offerCode = payload.data?.purchase?.offer?.code;
-  if (offerCode && HOTMART_OFFER_TO_PLAN_MAP[offerCode]) {
-    console.log(`Hotmart: Usando código da oferta: ${offerCode}`);
-    return HOTMART_OFFER_TO_PLAN_MAP[offerCode];
-  }
-  
-  // Fallback: tentar usar o nome do plano se disponível
-  const planName = payload.data?.purchase?.plan?.name || payload.data?.subscription?.plan;
-  
-  if (planName) {
-    console.log(`Hotmart: Determinando plano pelo nome: ${JSON.stringify(planName)}`);
     
-    // Extrair o nome correto dependendo do tipo
-    let rawName = '';
-    
-    if (typeof planName === 'string') {
-      // Se for string, usar diretamente
-      rawName = planName;
-    } else if (typeof planName === 'object' && planName !== null) {
-      // Se for objeto, tentar extrair a propriedade name
-      rawName = planName.name || '';
+    // Tentar pegar o código da oferta (segunda tentativa)
+    const offerCode = payload.data?.purchase?.offer?.code;
+    if (offerCode && HOTMART_OFFER_TO_PLAN_MAP[offerCode]) {
+      console.log(`Hotmart: Usando código da oferta: ${offerCode}`);
+      return HOTMART_OFFER_TO_PLAN_MAP[offerCode];
     }
     
-    // Verificar se temos um nome válido após a normalização
-    if (rawName && typeof rawName === 'string') {
-      console.log(`Hotmart: Nome do plano normalizado: ${rawName}`);
-      
-      // Converter para minúsculas de forma segura e verificar
-      const lowerName = rawName.toLowerCase();
-      
-      // Lógica de fallback para determinar o plano pelo nome
-      if (lowerName.includes('basic')) return 'basic_v2';
-      if (lowerName.includes('standard')) return 'standard';
-      if (lowerName.includes('pro')) return 'professional';
-    } else {
-      console.log(`Hotmart: Nome do plano inválido após normalização: ${rawName}`);
+    // Buscar recursivamente em qualquer parte do payload
+    console.log('Hotmart: Iniciando busca recursiva por ID de oferta...');
+    const offerId = findOfferIdInPayload(payload);
+    if (offerId) {
+      console.log(`Hotmart: ID da oferta encontrado por busca recursiva: ${offerId}`);
+      return HOTMART_OFFER_TO_PLAN_MAP[offerId];
     }
+    
+    // Fallback: tentar usar o nome do plano se disponível
+    const planName = payload.data?.purchase?.plan?.name || payload.data?.subscription?.plan;
+    
+    if (planName) {
+      console.log(`Hotmart: Determinando plano pelo nome: ${JSON.stringify(planName)}`);
+      
+      // Extrair o nome correto dependendo do tipo
+      let rawName = '';
+      
+      if (typeof planName === 'string') {
+        // Se for string, usar diretamente
+        rawName = planName;
+      } else if (typeof planName === 'object' && planName !== null) {
+        // Se for objeto, tentar extrair a propriedade name
+        rawName = planName.name || '';
+      }
+      
+      // Verificar se temos um nome válido após a normalização
+      if (rawName && typeof rawName === 'string') {
+        console.log(`Hotmart: Nome do plano normalizado: ${rawName}`);
+        
+        // Converter para minúsculas de forma segura e verificar
+        const lowerName = rawName.toLowerCase();
+        
+        // Lógica de fallback para determinar o plano pelo nome
+        if (lowerName.includes('basic')) return 'basic_v2';
+        if (lowerName.includes('standard')) return 'standard';
+        if (lowerName.includes('pro')) return 'professional';
+      } else {
+        console.log(`Hotmart: Nome do plano inválido após normalização: ${rawName}`);
+      }
+    }
+    
+    // Se nada funcionar, usar o plano básico como padrão
+    console.log(`Hotmart: Nenhum plano identificado, usando plano padrão: basic_v2`);
+    return 'basic_v2';
+  } catch (error) {
+    console.error('Erro ao determinar tipo de plano:', error);
+    // Em caso de erro, sempre retornar um valor padrão seguro
+    return 'basic_v2';
   }
-  
-  // Se nada funcionar, usar o plano básico como padrão
-  console.log(`Hotmart: Nenhum plano identificado, usando plano padrão: basic_v2`);
-  return 'basic_v2';
 }
 
 // Função para enviar email de boas-vindas com senha
@@ -223,13 +243,106 @@ async function sendWelcomeEmailWithPassword(name: string, email: string, passwor
   }
 }
 
+/**
+ * Função recursiva auxiliar para buscar o email em qualquer lugar do objeto payload
+ * Verifica em todas as propriedades, incluindo objetos aninhados
+ */
+function findEmailInPayload(obj: any, depth: number = 0): string | null {
+  // Limite de profundidade para evitar loops infinitos em objetos circulares
+  if (depth > 10 || !obj || typeof obj !== 'object') {
+    return null;
+  }
+
+  // Procurar por propriedades que possam conter um email (adicionado email_address ao array)
+  const emailKeys = ['email', 'mail', 'e-mail', 'emailAddress', 'email_address', 'subscriber_email', 'buyer_email', 'customer_email'];
+  
+  // Verificar diretamente nas propriedades
+  for (const key of Object.keys(obj)) {
+    // Verificar se a propriedade atual é um email
+    if (emailKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
+      const potentialEmail = obj[key];
+      // Validação básica de email
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(potentialEmail)) {
+        console.log(`Hotmart: Email encontrado na propriedade ${key}:`, potentialEmail);
+        return potentialEmail;
+      }
+    }
+    
+    // Verificar objetos aninhados
+    if (obj[key] && typeof obj[key] === 'object') {
+      const nestedEmail = findEmailInPayload(obj[key], depth + 1);
+      if (nestedEmail) {
+        return nestedEmail;
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Função recursiva auxiliar para buscar o ID da oferta em qualquer lugar do objeto payload
+ */
+function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
+  // Limite de profundidade para evitar loops infinitos
+  if (depth > 10 || !obj || typeof obj !== 'object') {
+    return null;
+  }
+  
+  // Procurar por propriedades específicas que podem conter um ID de oferta
+  const offerIdKeys = ['off', 'offer_id', 'offerId', 'offer_code', 'offerCode'];
+  
+  // Verificar diretamente nas propriedades
+  for (const key of Object.keys(obj)) {
+    // Verificar se a propriedade é um ID de oferta
+    if (offerIdKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
+      const potentialOfferId = obj[key];
+      // Verificar se existe no mapeamento
+      if (HOTMART_OFFER_TO_PLAN_MAP[potentialOfferId]) {
+        console.log(`Hotmart: ID da oferta encontrado na propriedade ${key}:`, potentialOfferId);
+        return potentialOfferId;
+      }
+    }
+    
+    // Verificar se existe algum padrão de URL com off=XXXX
+    if (typeof obj[key] === 'string' && obj[key].includes('off=')) {
+      const offMatch = obj[key].match(/off=([a-zA-Z0-9]+)/);
+      if (offMatch && offMatch[1] && HOTMART_OFFER_TO_PLAN_MAP[offMatch[1]]) {
+        console.log(`Hotmart: ID da oferta encontrado em URL:`, offMatch[1]);
+        return offMatch[1];
+      }
+    }
+    
+    // Verificar objetos aninhados
+    if (obj[key] && typeof obj[key] === 'object') {
+      const nestedOfferId = findOfferIdInPayload(obj[key], depth + 1);
+      if (nestedOfferId) {
+        return nestedOfferId;
+      }
+    }
+  }
+  
+  return null;
+}
+
 // Função para processar webhooks da Hotmart
 export async function processHotmartWebhook(payload: HotmartWebhookPayload): Promise<{ success: boolean, message: string }> {
   try {
-    const { event, data } = payload;
+    // Verificar se o payload é válido
+    if (!payload) {
+      console.error('Hotmart webhook: payload inválido ou vazio');
+      return { success: false, message: 'Payload inválido ou vazio' };
+    }
     
-    // Extração mais robusta do email, buscando em diferentes locais do payload
-    const email = 
+    // Tentar extrair o evento
+    const event = payload.event || 'unknown_event';
+    console.log(`Hotmart: Evento recebido: ${event}`);
+    
+    // Garantir que data existe (para evitar erros)
+    const data = payload.data || {};
+    
+    // Primeiro, tentar extração direta nos locais conhecidos
+    let email = 
       payload.email || 
       payload.buyer?.email || 
       data?.email || 
@@ -237,6 +350,16 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
       data?.buyer_email || 
       data?.contact?.email || 
       payload?.purchase?.buyer?.email;
+    
+    // Se não encontrou, tentar busca recursiva (isso irá encontrar em qualquer lugar do payload)
+    if (!email) {
+      console.log('Hotmart: Email não encontrado nas propriedades conhecidas, iniciando busca recursiva...');
+      const foundEmail = findEmailInPayload(payload);
+      // Converter de string | null para string | undefined para compatibilidade
+      if (foundEmail) {
+        email = foundEmail;
+      }
+    }
     
     // Verificar se temos um email válido
     if (!email) {
@@ -277,8 +400,11 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           const hashedPassword = await hashPassword(randomPassword);
           
           // Dados para o novo usuário, com validação segura para evitar erros
+          // Tentar extrair o nome de diferentes locais do payload
+          const customerName = findCustomerName(payload);
+          
           const userData: InsertUser = {
-            name: (data?.buyer?.name || email.split('@')[0]) || 'Usuário Fottufy', // Usar parte do email se não tiver nome
+            name: (customerName || data?.buyer?.name || email.split('@')[0]) || 'Usuário Fottufy',
             email,
             password: hashedPassword, // Usar hash da senha
             role: 'photographer',
