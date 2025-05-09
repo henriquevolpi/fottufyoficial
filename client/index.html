@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>Fottufy - Plataforma para Fotógrafos</title>
+    <base href="/" />
+    <script>
+      // Registrar o service worker para gerenciar roteamento SPA e cache offline
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/serviceWorker.js')
+            .then(registration => {
+              console.log('ServiceWorker registrado com sucesso:', registration.scope);
+            })
+            .catch(error => {
+              console.log('Falha ao registrar ServiceWorker:', error);
+            });
+        });
+      }
+    </script>
   </head>
   <script src="//code.jivosite.com/widget/njKtWA4AEl" async></script>
   <body>
