@@ -195,7 +195,7 @@ function getWelcomeEmailTemplate(displayName: string, currentYear: number): stri
   `;
 }
 
-async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string): Promise<string> {
   try {
     return await bcrypt.hash(password, SALT_ROUNDS);
   } catch (error) {
