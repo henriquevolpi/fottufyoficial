@@ -2,6 +2,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import React, { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Upload from "@/pages/upload";
@@ -16,9 +17,13 @@ import DebugPage from "@/pages/debug";
 import LandingPage from "@/pages/landing";
 import CreatePassword from "@/pages/create-password";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
 import AdminLayout from "@/components/layout/admin-layout";
+import PricingPage from "@/pages/pricing";
+import TestR2 from "@/pages/test-r2";
+import TestImageUpload from "@/pages/test-image-upload";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -48,12 +53,25 @@ function ProjectViewPublicRoute({ params }: { params: { id: string }}) {
   return <ProjectView params={params} />;
 }
 
-// Importar a página de preços
-import PricingPage from "@/pages/pricing";
-import TestR2 from "@/pages/test-r2";
-import TestImageUpload from "@/pages/test-image-upload";
-import ForgotPasswordPage from "@/pages/forgot-password";
-import ResetPasswordPage from "@/pages/reset-password";
+function PasswordHandler() {
+  // Component for handling password reset tokens in the URL
+  const urlSearch = window.location.search;
+  const params = new URLSearchParams(urlSearch);
+  const resetToken = params.get('reset-password');
+  const createToken = params.get('create-password');
+  
+  useEffect(() => {
+    if (resetToken) {
+      window.history.replaceState({}, document.title, '/');
+      window.location.href = `/reset-password?token=${resetToken}`;
+    } else if (createToken) {
+      window.history.replaceState({}, document.title, '/');
+      window.location.href = `/create-password?token=${createToken}`;
+    }
+  }, [resetToken, createToken]);
+  
+  return null;
+}
 
 function Router() {
   return (
@@ -105,7 +123,12 @@ function Router() {
         {() => <LandingPage />}
       </Route>
       <Route path="/">
-        {() => <LandingPage />}
+        {() => (
+          <>
+            <PasswordHandler />
+            <LandingPage />
+          </>
+        )}
       </Route>
       <Route>
         {() => <NotFound />}
