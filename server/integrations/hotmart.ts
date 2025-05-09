@@ -5,7 +5,7 @@ import { storage } from '../storage';
 import { randomBytes } from 'crypto';
 import { sendEmail } from '../utils/sendEmail';
 import { hashPassword } from '../auth';
-import { generatePasswordResetToken, sendPasswordResetEmail } from '../utils/passwordReset';
+import { sendWelcomeEmail } from '../utils/welcomeEmail';
 
 // Definição da interface para o payload do webhook da Hotmart
 interface HotmartWebhookPayload {
@@ -205,58 +205,7 @@ export function determinePlanType(payload: HotmartWebhookPayload): string | null
   }
 }
 
-// Função para enviar email de boas-vindas com senha
-async function sendWelcomeEmailWithPassword(name: string, email: string, password: string): Promise<boolean> {
-  try {
-    const currentYear = new Date().getFullYear();
-    const displayName = name.split(' ')[0]; // Pega apenas o primeiro nome
-    
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://fottufy.com/logo.png" alt="Fottufy Logo" style="height: 60px;">
-        </div>
-        
-        <h1 style="color: #4F46E5; text-align: center;">Bem-vindo à Fottufy!</h1>
-        
-        <p>Olá, ${displayName}!</p>
-        
-        <p>Sua conta na Fottufy foi criada com sucesso a partir da sua compra na Hotmart!</p>
-        
-        <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <p><strong>Suas credenciais de acesso:</strong></p>
-          <p><strong>E-mail:</strong> ${email}</p>
-          <p><strong>Senha temporária:</strong> ${password}</p>
-        </div>
-        
-        <p>Por favor, faça login e altere sua senha o mais rápido possível para garantir a segurança da sua conta.</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="https://fottufy.com/auth" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Acessar minha conta</a>
-        </div>
-        
-        <p>Se tiver qualquer dúvida, sinta-se à vontade para responder este email.</p>
-        
-        <p>Atenciosamente,<br>Equipe Fottufy</p>
-        
-        <div style="border-top: 1px solid #eee; margin-top: 30px; padding-top: 20px; font-size: 12px; color: #777; text-align: center;">
-          <p>© ${currentYear} Fottufy. Todos os direitos reservados.</p>
-        </div>
-      </div>
-    `;
-    
-    const result = await sendEmail({
-      to: email,
-      subject: `Bem-vindo à Fottufy, ${displayName}!`,
-      html: htmlContent
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('Erro ao enviar email de boas-vindas:', error);
-    return false;
-  }
-}
+// Esta seção foi removida e substituída pelo módulo dedicado welcomeEmail.ts
 
 /**
  * Função recursiva auxiliar para buscar o email em qualquer lugar do objeto payload
@@ -772,12 +721,10 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           // Criar um novo usuário com o plano ativado
           console.log(`Hotmart: Criando novo usuário com plano ${planType}: ${email}`);
           
-          // Gerar uma senha temporária (será substituída pelo usuário)
-          // A senha temporária é apenas um placeholder e não será usada diretamente
-          const tempPassword = generateRandomPassword();
+          // Gerar uma senha temporária para o novo usuário
+          const tempPassword = generateRandomPassword(8); // Senha de 8 caracteres
           const hashedPassword = await hashPassword(tempPassword);
           
-          // Dados para o novo usuário, com validação segura para evitar erros
           // Extrair informações do cliente de diferentes locais do payload
           const customerName = findCustomerName(payload);
           const customerPhone = findCustomerPhone(payload);
@@ -785,10 +732,11 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           // Verificar se planType é válido e definir um tipo válido para o caso de ser null
           const validPlanType = planType || 'free';
           
+          // Dados para o novo usuário, com validação segura para evitar erros
           const userData: InsertUser = {
             name: (customerName || data?.buyer?.name || email.split('@')[0]) || 'Usuário Fottufy',
             email,
-            password: hashedPassword, // Senha temporária (será redefinida pelo usuário)
+            password: hashedPassword,
             role: 'photographer',
             status: 'active',
             phone: customerPhone || data?.buyer?.phone || '',
@@ -811,20 +759,17 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             subscription_id: data?.purchase?.transaction || `hotmart_${Date.now()}`
           });
           
-          // Gerar token para criação de senha (válido por 24 horas)
+          // Enviar email com dados de acesso
           try {
-            // Gerar token para criação de senha (validade de 24 horas = 1440 minutos)
-            const token = await generatePasswordResetToken(user.id, 1440);
-            
-            if (token) {
-              // Enviar email com link para criação de senha, incluindo o nome do usuário
-              await sendPasswordResetEmail(userData.email, token, true, userData.name);
-              console.log(`Hotmart: Email para criação de senha enviado para: ${email}`);
+            // Enviar email de boas-vindas com a senha temporária
+            const result = await sendWelcomeEmail(userData.email, userData.name, tempPassword);
+            if (result.success) {
+              console.log(`Hotmart: Email com dados de acesso enviado para: ${email}`);
             } else {
-              console.error(`Hotmart: Falha ao gerar token para criação de senha: ${email}`);
+              console.error(`Hotmart: Falha ao enviar email com dados de acesso: ${email}`);
             }
           } catch (emailError) {
-            console.error('Erro ao enviar email para criação de senha:', emailError);
+            console.error('Erro ao enviar email com dados de acesso:', emailError);
           }
         }
         return { success: true, message: 'Plano ativado com sucesso' };
