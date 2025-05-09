@@ -561,34 +561,67 @@ const EVENT_MAP: Record<string, string> = {
   'PURCHASE.APPROVED': 'purchase.approved',
   'purchase.approved': 'purchase.approved',
   'APPROVED': 'purchase.approved',
+  'PURCHASE_COMPLETE': 'purchase.approved',
+  'PURCHASE.COMPLETE': 'purchase.approved',
+  'purchase.complete': 'purchase.approved',
+  'PURCHASE_CONFIRMED': 'purchase.approved',
+  'PURCHASE.CONFIRMED': 'purchase.approved',
+  'purchase.confirmed': 'purchase.approved',
+  'SALE': 'purchase.approved',
+  'SALE_COMPLETE': 'purchase.approved',
+  'ORDER_COMPLETED': 'purchase.approved',
   
   // Reembolso - variações
   'PURCHASE_REFUNDED': 'purchase.refunded',
   'PURCHASE.REFUNDED': 'purchase.refunded',
   'purchase.refunded': 'purchase.refunded',
   'REFUNDED': 'purchase.refunded',
+  'REFUND': 'purchase.refunded',
+  'REFUND_COMPLETE': 'purchase.refunded',
+  'REFUND.COMPLETE': 'purchase.refunded',
+  'PURCHASE_REFUND': 'purchase.refunded',
+  'PURCHASE.REFUND': 'purchase.refunded',
+  'REEMBOLSO': 'purchase.refunded',
+  'REEMBOLSO_COMPLETO': 'purchase.refunded',
   
   // Cancelamento - variações 
   'PURCHASE_CANCELED': 'purchase.canceled',
   'PURCHASE.CANCELED': 'purchase.canceled',
   'purchase.canceled': 'purchase.canceled',
   'CANCELED': 'purchase.canceled',
+  'CANCEL': 'purchase.canceled',
+  'CANCELAMENTO': 'purchase.canceled',
+  'ORDER_CANCELED': 'purchase.canceled',
+  'PURCHASE_CANCELLED': 'purchase.canceled', // Variação com escrita britânica
+  'PURCHASE.CANCELLED': 'purchase.canceled',
+  'purchase.cancelled': 'purchase.canceled',
+  'CANCELLED': 'purchase.canceled',
   
   // Atraso no pagamento
   'PURCHASE_DELAYED': 'purchase.delayed',
   'PURCHASE.DELAYED': 'purchase.delayed',
   'purchase.delayed': 'purchase.delayed',
   'DELAYED': 'purchase.delayed',
+  'PAYMENT_DELAYED': 'purchase.delayed',
+  'PAYMENT.DELAYED': 'purchase.delayed',
+  'payment.delayed': 'purchase.delayed',
+  'ATRASO': 'purchase.delayed',
+  'PAGAMENTO_ATRASADO': 'purchase.delayed',
   
   // Disputa/Chargeback
   'PURCHASE_PROTEST': 'purchase.chargeback',
   'PURCHASE.PROTEST': 'purchase.chargeback',
   'purchase.protest': 'purchase.chargeback',
   'PROTEST': 'purchase.chargeback',
+  'CHARGEBACK_INITIATED': 'purchase.chargeback',
+  'CHARGEBACK.INITIATED': 'purchase.chargeback',
   'PURCHASE_CHARGEBACK': 'purchase.chargeback',
   'PURCHASE.CHARGEBACK': 'purchase.chargeback',
   'purchase.chargeback': 'purchase.chargeback',
   'CHARGEBACK': 'purchase.chargeback',
+  'DISPUTA': 'purchase.chargeback',
+  'DISPUTA_INICIADA': 'purchase.chargeback',
+  'CONTESTACAO': 'purchase.chargeback',
   
   // Cancelamento de assinatura
   'SUBSCRIPTION_CANCELLATION': 'subscription.canceled',
@@ -596,7 +629,15 @@ const EVENT_MAP: Record<string, string> = {
   'subscription.cancellation': 'subscription.canceled',
   'SUBSCRIPTION_CANCELED': 'subscription.canceled',
   'SUBSCRIPTION.CANCELED': 'subscription.canceled',
-  'subscription.canceled': 'subscription.canceled'
+  'subscription.canceled': 'subscription.canceled',
+  'SUBSCRIPTION_CANCELLED': 'subscription.canceled', // Variação com escrita britânica
+  'SUBSCRIPTION.CANCELLED': 'subscription.canceled',
+  'subscription.cancelled': 'subscription.canceled',
+  'CANCEL_SUBSCRIPTION': 'subscription.canceled',
+  'CANCEL.SUBSCRIPTION': 'subscription.canceled',
+  'cancel.subscription': 'subscription.canceled',
+  'ASSINATURA_CANCELADA': 'subscription.canceled',
+  'CANCELAMENTO_ASSINATURA': 'subscription.canceled'
 };
 
 // Função para processar webhooks da Hotmart
@@ -667,8 +708,17 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
     // Determinar o tipo de plano com base na oferta
     const planType = determinePlanType(payload);
     
+    // Verificar se é um evento de cancelamento (eventos de cancelamento não precisam de planType)
+    const isCancellationEvent = [
+      'purchase.refunded',
+      'purchase.chargeback', 
+      'purchase.canceled',
+      'subscription.canceled'
+    ].includes(event);
+    
     // Se não encontrou um plano válido (oferta não encontrada ou plano de teste)
-    if (!planType) {
+    // E não é um evento de cancelamento (que não precisa de planType)
+    if (!planType && !isCancellationEvent) {
       console.log(`Hotmart: Nenhum plano válido encontrado para o email ${email}, webhook ignorado`);
       return { success: false, message: 'Nenhuma oferta válida encontrada' };
     }
