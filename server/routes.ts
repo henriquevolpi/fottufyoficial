@@ -2258,10 +2258,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/password/forgot", async (req: Request, res: Response) => {
     try {
+      console.log("[Forgot Password] Requisição recebida:", req.body);
       const { email } = req.body;
       
       // Validar email
       if (!email || typeof email !== 'string') {
+        console.log("[Forgot Password] Email inválido:", email);
         return res.status(400).json({
           success: false,
           message: "Email inválido"
@@ -2270,10 +2272,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Normalizar o email para minúsculas
       const normalizedEmail = email.toLowerCase().trim();
+      console.log("[Forgot Password] Email normalizado:", normalizedEmail);
       
       // Validar formato do email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(normalizedEmail)) {
+        console.log("[Forgot Password] Formato de email inválido:", normalizedEmail);
         return res.status(400).json({
           success: false,
           message: "Formato de email inválido"
@@ -2281,16 +2285,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Buscar usuário pelo email
+      console.log("[Forgot Password] Buscando usuário pelo email:", normalizedEmail);
       const user = await storage.getUserByEmail(normalizedEmail);
       
       // Se o usuário existir, gerar token e enviar email
       if (user) {
+        console.log("[Forgot Password] Usuário encontrado:", user.id, user.email);
         // Gerar token com validade de 1 hora
+        console.log("[Forgot Password] Gerando token para o usuário ID:", user.id);
         const token = await generatePasswordResetToken(user.id, 60);
         
         if (token) {
+          console.log("[Forgot Password] Token gerado com sucesso:", token.substring(0, 8) + "...");
           // Enviar email com link para redefinição
-          await sendPasswordResetEmail(user.email, token, false, user.name);
+          console.log("[Forgot Password] Enviando email para:", user.email);
+          const emailResult = await sendPasswordResetEmail(user.email, token, false, user.name);
+          console.log("[Forgot Password] Resultado do envio de email:", emailResult);
           console.log(`Token de redefinição de senha gerado para: ${normalizedEmail}`);
         } else {
           console.error(`Falha ao gerar token para: ${normalizedEmail}`);
