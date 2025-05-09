@@ -57,10 +57,10 @@ export async function sendPasswordResetEmail(
 ): Promise<boolean> {
   try {
     const baseUrl = process.env.FRONTEND_URL || 'https://fottufy.com';
-    // Usando um formato especial de URL que será capturado pela página HTML estática e depois pelo React
+    // Usamos uma página HTML estática intermediária que irá cuidar do redirecionamento
     const resetLink = isNewUser
-      ? `${baseUrl}/?create-password=${token}`
-      : `${baseUrl}/?reset-password=${token}`;
+      ? `${baseUrl}/create-password.html?token=${token}`
+      : `${baseUrl}/reset-password.html?token=${token}`;
     
     const subject = isNewUser 
       ? "🥳 Sua conta foi criada! Crie sua senha para acessar agora" 

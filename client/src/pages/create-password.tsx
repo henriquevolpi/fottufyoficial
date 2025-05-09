@@ -48,7 +48,17 @@ export default function CreatePassword({ token: propToken }: CreatePasswordProps
       return;
     }
     
-    // Se não houver token via prop, buscar da query string
+    // Verificar se existe um token salvo no localStorage (de uma página estática)
+    const localStorageToken = window.localStorage.getItem('passwordCreateToken');
+    if (localStorageToken) {
+      setToken(localStorageToken);
+      verifyToken(localStorageToken);
+      // Limpar o token do localStorage após uso
+      window.localStorage.removeItem('passwordCreateToken');
+      return;
+    }
+    
+    // Se não houver token via localStorage, buscar da query string
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     
@@ -58,7 +68,7 @@ export default function CreatePassword({ token: propToken }: CreatePasswordProps
     } else {
       setIsTokenValid(false);
       setIsValidating(false);
-      setError('Token não encontrado. Verifique o link que você recebeu por e-mail.');
+      setError('Token não encontrado. Verifique o link que você recebeu por e-mail ou solicite um novo.');
     }
   }, [propToken]);
   

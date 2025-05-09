@@ -46,6 +46,15 @@ export default function ResetPasswordPage({ token: propToken }: ResetPasswordPag
       return;
     }
     
+    // Verificar se existe um token salvo no localStorage (de uma página estática)
+    const localStorageToken = window.localStorage.getItem('passwordResetToken');
+    if (localStorageToken) {
+      setToken(localStorageToken);
+      // Limpar o token do localStorage após uso
+      window.localStorage.removeItem('passwordResetToken');
+      return;
+    }
+    
     // Se não, extrair token da query string
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get("token");
@@ -53,7 +62,7 @@ export default function ResetPasswordPage({ token: propToken }: ResetPasswordPag
       setToken(tokenParam);
     } else {
       setStatus("error");
-      setErrorMessage("Token de redefinição não encontrado. Verifique se o link está correto.");
+      setErrorMessage("Token de redefinição não encontrado. Verifique se o link está correto ou solicite um novo.");
     }
   }, [propToken]);
 
