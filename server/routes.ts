@@ -2363,6 +2363,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota específica para lidar com os links de redefinição de senha
+  // Esta rota captura todas as solicitações para /reset-password e /create-password
+  // E retorna o HTML principal, permitindo que o React faça o roteamento do lado do cliente
+  app.get(["/reset-password*", "/create-password*"], (req: Request, res: Response) => {
+    const clientHtmlPath = path.resolve(
+      import.meta.dirname,
+      "..",
+      "client",
+      "index.html",
+    );
+    
+    // Log para depuração
+    console.log(`Redirecionando rota de redefinição de senha: ${req.url}`);
+    
+    // Retorna o HTML principal para que o React possa assumir o roteamento
+    res.sendFile(clientHtmlPath);
+  });
+  
   /**
    * Rota para redefinir a senha usando um token
    * 
