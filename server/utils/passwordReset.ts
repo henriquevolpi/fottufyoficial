@@ -32,7 +32,7 @@ export async function generatePasswordResetToken(userId: number, expiresInMinute
       token,
       userId,
       expiresAt,
-      isUsed: false
+      used: false
     });
 
     return token;
@@ -66,11 +66,13 @@ export async function sendPasswordResetEmail(
       ? getWelcomeEmailTemplate(resetLink)
       : getResetPasswordEmailTemplate(resetLink);
     
-    return await sendEmail({
+    const result = await sendEmail({
       to: email,
       subject,
       html: body
     });
+    
+    return result.success;
   } catch (error) {
     console.error("Erro ao enviar email de redefinição de senha:", error);
     return false;
@@ -96,7 +98,7 @@ export async function verifyPasswordResetToken(token: string): Promise<{ isValid
     }
     
     // Verifica se o token já foi usado
-    if (resetToken.isUsed) {
+    if (resetToken.used) {
       return { isValid: false };
     }
     
@@ -140,7 +142,7 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
     // Marca o token como usado
     await db
       .update(passwordResetTokens)
-      .set({ isUsed: true })
+      .set({ used: true })
       .where(eq(passwordResetTokens.token, token));
     
     return true;

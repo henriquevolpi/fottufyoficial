@@ -27,7 +27,7 @@ import passport from "passport";
 import { db } from "./db";
 import { eq, and, or, not, desc, count } from "drizzle-orm";
 import { sendEmail } from "./utils/sendEmail";
-import { verifyPasswordResetToken, resetPasswordWithToken } from "./utils/passwordReset";
+import { verifyPasswordResetToken, resetPasswordWithToken, generatePasswordResetToken, sendPasswordResetEmail } from "./utils/passwordReset";
 // Use Cloudflare R2 for storage
 import { 
   BUCKET_NAME as R2_BUCKET_NAME, 
