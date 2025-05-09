@@ -21,21 +21,20 @@ export async function generatePasswordResetToken(userId: number, expiresInMinute
       return null;
     }
 
-    // Gera um token aleatório
-    const token = randomBytes(32).toString('hex');
-    
     // Define a data de expiração
     const expiresAt = addHours(new Date(), expiresInMinutes / 60);
+    
+    // Não precisamos gerar o token manualmente, pois o campo no banco de dados
+    // está configurado com defaultRandom() que gera UUID automaticamente
 
-    // Insere o token no banco de dados
-    await db.insert(passwordResetTokens).values({
-      token,
+    // Insere o token no banco de dados e retorna o token gerado
+    const [insertedToken] = await db.insert(passwordResetTokens).values({
       userId,
       expiresAt,
       used: false
-    });
+    }).returning();
 
-    return token;
+    return insertedToken.token;
   } catch (error) {
     console.error("Erro ao gerar token de redefinição de senha:", error);
     return null;
@@ -58,7 +57,9 @@ export async function sendPasswordResetEmail(
 ): Promise<boolean> {
   try {
     const baseUrl = process.env.FRONTEND_URL || 'https://fottufy.com';
-    const resetLink = `${baseUrl}/create-password?token=${token}`;
+    const resetLink = isNewUser
+      ? `${baseUrl}/create-password?token=${token}`
+      : `${baseUrl}/reset-password?token=${token}`;
     
     const subject = isNewUser 
       ? "🥳 Sua conta foi criada! Crie sua senha para acessar agora" 

@@ -38,15 +38,16 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
   // Se DEBUG_EMAIL estiver desabilitado, evitar logs detalhados para economizar memória
   const debug = process.env.DEBUG_EMAIL === 'true';
 
+  // Sempre logar informações básicas para depuração
+  console.log(`[Email] Tentando enviar email para: ${to}, assunto: ${subject}`);
+  
   try {
     // Verifica se o cliente Resend está configurado
     if (!resendClient) {
-      if (debug) {
-        console.error('Erro ao enviar e-mail: Cliente Resend não configurado');
-      }
+      console.error('Erro ao enviar e-mail: RESEND_API_KEY não está configurada');
       return { 
         success: false, 
-        message: 'Serviço de e-mail não configurado.' 
+        message: 'Serviço de e-mail não configurado. RESEND_API_KEY não está definida.' 
       };
     }
 
@@ -66,14 +67,18 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
       html,
     });
 
+    // Log do resultado para depuração
+    if (data) {
+      console.log(`[Email] Email enviado com sucesso para ${to}, ID: ${data.id}`);
+    }
+
     // Verifica se ocorreu algum erro
     if (error) {
-      if (debug) {
-        console.error('Erro ao enviar e-mail via Resend:', error.message);
-      }
+      console.error('Erro ao enviar e-mail via Resend:', error.message);
+      console.error('Detalhes do erro:', JSON.stringify(error));
       return { 
         success: false, 
-        message: 'Falha ao enviar e-mail.' 
+        message: `Falha ao enviar e-mail: ${error.message}` 
       };
     }
 
@@ -84,13 +89,17 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
     };
   } catch (error) {
     // Captura e trata qualquer erro inesperado
-    if (debug) {
-      console.error('Erro inesperado ao enviar e-mail:', 
-        error instanceof Error ? error.message : 'Erro desconhecido');
+    console.error('Erro inesperado ao enviar e-mail:', 
+      error instanceof Error ? error.message : 'Erro desconhecido');
+    
+    // Log detalhado para depuração
+    if (error instanceof Error) {
+      console.error('Stack trace:', error.stack);
     }
+    
     return { 
       success: false, 
-      message: 'Erro ao enviar e-mail.' 
+      message: `Erro ao enviar e-mail: ${error instanceof Error ? error.message : 'Erro desconhecido'}` 
     };
   }
 }
