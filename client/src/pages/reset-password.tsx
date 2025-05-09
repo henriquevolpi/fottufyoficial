@@ -40,18 +40,22 @@ export default function ResetPasswordPage({ token: propToken }: ResetPasswordPag
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("ResetPasswordPage - Verificando token");
+    
     // Verificar primeiro se o token foi passado como prop (para o caso de rota com parâmetro)
     if (propToken) {
+      console.log("ResetPasswordPage - Token disponível via prop:", propToken);
       setToken(propToken);
       return;
     }
     
     // Verificar se existe um token salvo no localStorage (de uma página estática)
-    const localStorageToken = window.localStorage.getItem('passwordResetToken');
+    const localStorageToken = localStorage.getItem('passwordResetToken');
     if (localStorageToken) {
+      console.log("ResetPasswordPage - Token recuperado do localStorage:", localStorageToken);
       setToken(localStorageToken);
       // Limpar o token do localStorage após uso
-      window.localStorage.removeItem('passwordResetToken');
+      localStorage.removeItem('passwordResetToken');
       return;
     }
     
@@ -59,8 +63,10 @@ export default function ResetPasswordPage({ token: propToken }: ResetPasswordPag
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get("token");
     if (tokenParam) {
+      console.log("ResetPasswordPage - Token obtido via query param:", tokenParam);
       setToken(tokenParam);
     } else {
+      console.log("ResetPasswordPage - Nenhum token encontrado");
       setStatus("error");
       setErrorMessage("Token de redefinição não encontrado. Verifique se o link está correto ou solicite um novo.");
     }

@@ -41,20 +41,24 @@ export default function CreatePassword({ token: propToken }: CreatePasswordProps
   
   // Extrair token da URL ou usar o token passado como prop
   useEffect(() => {
+    console.log("CreatePassword - Verificando token");
+    
     // Verificar primeiro se o token foi passado como prop (parâmetro de rota)
     if (propToken) {
+      console.log("CreatePassword - Token disponível via prop:", propToken);
       setToken(propToken);
       verifyToken(propToken);
       return;
     }
     
     // Verificar se existe um token salvo no localStorage (de uma página estática)
-    const localStorageToken = window.localStorage.getItem('passwordCreateToken');
+    const localStorageToken = localStorage.getItem('passwordCreateToken');
     if (localStorageToken) {
+      console.log("CreatePassword - Token recuperado do localStorage:", localStorageToken);
       setToken(localStorageToken);
       verifyToken(localStorageToken);
       // Limpar o token do localStorage após uso
-      window.localStorage.removeItem('passwordCreateToken');
+      localStorage.removeItem('passwordCreateToken');
       return;
     }
     
@@ -63,9 +67,11 @@ export default function CreatePassword({ token: propToken }: CreatePasswordProps
     const tokenFromUrl = params.get('token');
     
     if (tokenFromUrl) {
+      console.log("CreatePassword - Token obtido via query param:", tokenFromUrl);
       setToken(tokenFromUrl);
       verifyToken(tokenFromUrl);
     } else {
+      console.log("CreatePassword - Nenhum token encontrado");
       setIsTokenValid(false);
       setIsValidating(false);
       setError('Token não encontrado. Verifique o link que você recebeu por e-mail ou solicite um novo.');
