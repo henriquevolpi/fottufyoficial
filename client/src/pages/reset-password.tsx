@@ -29,14 +29,24 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
-export default function ResetPasswordPage() {
+type ResetPasswordPageProps = {
+  token?: string;
+};
+
+export default function ResetPasswordPage({ token: propToken }: ResetPasswordPageProps = {}) {
   const [location, setLocation] = useLocation();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Extrair token da URL
+    // Verificar primeiro se o token foi passado como prop (para o caso de rota com parâmetro)
+    if (propToken) {
+      setToken(propToken);
+      return;
+    }
+    
+    // Se não, extrair token da query string
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get("token");
     if (tokenParam) {
@@ -45,7 +55,7 @@ export default function ResetPasswordPage() {
       setStatus("error");
       setErrorMessage("Token de redefinição não encontrado. Verifique se o link está correto.");
     }
-  }, []);
+  }, [propToken]);
 
   // Verificar se o token é válido
   const tokenQuery = useQuery({

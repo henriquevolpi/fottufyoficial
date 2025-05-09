@@ -17,7 +17,11 @@ import { Loader2, Lock, ShieldCheck, AlertTriangle } from 'lucide-react';
  * 3. Envia a nova senha junto com o token (POST /api/password/reset)
  * 4. Redireciona para a página de login em caso de sucesso
  */
-export default function CreatePassword() {
+interface CreatePasswordProps {
+  token?: string;
+}
+
+export default function CreatePassword({ token: propToken }: CreatePasswordProps = {}) {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   
@@ -35,8 +39,16 @@ export default function CreatePassword() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   
-  // Extrair token da URL quando o componente montar
+  // Extrair token da URL ou usar o token passado como prop
   useEffect(() => {
+    // Verificar primeiro se o token foi passado como prop (parâmetro de rota)
+    if (propToken) {
+      setToken(propToken);
+      verifyToken(propToken);
+      return;
+    }
+    
+    // Se não houver token via prop, buscar da query string
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     
@@ -48,7 +60,7 @@ export default function CreatePassword() {
       setIsValidating(false);
       setError('Token não encontrado. Verifique o link que você recebeu por e-mail.');
     }
-  }, []);
+  }, [propToken]);
   
   // Validar o token
   const verifyToken = async (tokenValue: string) => {
