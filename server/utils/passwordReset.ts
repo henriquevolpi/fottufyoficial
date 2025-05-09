@@ -56,11 +56,17 @@ export async function sendPasswordResetEmail(
   userName?: string
 ): Promise<boolean> {
   try {
-    const baseUrl = process.env.FRONTEND_URL || 'https://fottufy.com';
-    // Voltando ao formato com query parameter que já está testado em produção
+    // Forçar URL de acordo com o ambiente de execução
+    const isDev = process.env.NODE_ENV === 'development';
+    const baseUrl = isDev ? 'http://localhost:5000' : 'https://fottufy.com';
+    
+    // Log do ambiente e URL base para debug
+    console.log(`[PasswordReset] Ambiente: ${process.env.NODE_ENV}, URL base: ${baseUrl}`);
+    
+    // Usar formato mais simples e compatível
     const resetLink = isNewUser
-      ? `${baseUrl}/create-password?token=${token}`
-      : `${baseUrl}/reset-password?token=${token}`;
+      ? `${baseUrl}/nova-senha?token=${token}`
+      : `${baseUrl}/redefinir-senha?token=${token}`;
     
     const subject = isNewUser 
       ? "🥳 Sua conta foi criada! Crie sua senha para acessar agora" 

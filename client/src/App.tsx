@@ -76,6 +76,14 @@ function Router() {
       <Route path="/create-password/:token">
         {(params) => <CreatePassword token={params.token} />}
       </Route>
+      
+      {/* Novas rotas simplificadas para redefinição de senha */}
+      <Route path="/redefinir-senha">
+        {() => <ResetPasswordPage />}
+      </Route>
+      <Route path="/nova-senha">
+        {() => <CreatePassword />}
+      </Route>
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/upload" component={Upload} />
       <ProtectedRoute path="/project/:id" component={Project} />
