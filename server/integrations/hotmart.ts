@@ -816,8 +816,8 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             const token = await generatePasswordResetToken(user.id, 1440);
             
             if (token) {
-              // Enviar email com link para criação de senha
-              await sendPasswordResetEmail(userData.email, token, true);
+              // Enviar email com link para criação de senha, incluindo o nome do usuário
+              await sendPasswordResetEmail(userData.email, token, true, userData.name);
               console.log(`Hotmart: Email para criação de senha enviado para: ${email}`);
             } else {
               console.error(`Hotmart: Falha ao gerar token para criação de senha: ${email}`);
