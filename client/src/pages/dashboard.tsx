@@ -18,10 +18,12 @@ import {
   ArrowUpRight,
   Loader2,
   X,
-  Link,
+  Link as LinkIcon,
   RotateCcw,
   CreditCard,
-  Settings
+  Settings,
+  Key,
+  HelpCircle
 } from "lucide-react";
 import { 
   Tabs, 
@@ -39,6 +41,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import {
   Form,
   FormControl,
@@ -965,8 +968,9 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   
-  // State for upload modal
+  // State for modals
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
   
   // Carregar projetos
   useEffect(() => {
