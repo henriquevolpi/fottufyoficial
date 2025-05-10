@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import PromotionalBanner from "@/components/PromotionalBanner";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
@@ -347,7 +347,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             }}
           >
             Link do Cliente
-            <Link className="h-3 w-3 ml-1" />
+            <LinkIcon className="h-3 w-3 ml-1" />
           </Button>
           
 
@@ -1463,7 +1463,7 @@ export default function Dashboard() {
                 <Key className="h-3.5 w-3.5 mr-1" />
                 Alterar minha senha
               </Button>
-              <Link href="/forgot-password" className="text-sm text-muted-foreground hover:text-muted-foreground/80 flex items-center">
+              <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-muted-foreground/80 flex items-center">
                 <HelpCircle className="h-3.5 w-3.5 mr-1" />
                 Esqueceu sua senha?
               </Link>
@@ -1477,6 +1477,12 @@ export default function Dashboard() {
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onUpload={handleProjectCreated}
+      />
+
+      {/* Modal for changing password */}
+      <ChangePasswordModal
+        open={changePasswordModalOpen}
+        onClose={() => setChangePasswordModalOpen(false)}
       />
     </div>
   );

@@ -1,18 +1,18 @@
 import { useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -22,29 +22,35 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
-  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "Confirmação da senha é obrigatória"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-});
+// Esquema para validação do formulário
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "A senha atual é obrigatória"),
+    newPassword: z.string().min(6, "A nova senha deve ter pelo menos 6 caracteres"),
+    confirmPassword: z.string().min(1, "A confirmação de senha é obrigatória"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "As senhas não conferem",
+    path: ["confirmPassword"],
+  });
 
+// Tipagem para o formulário
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
+// Props para o componente
 interface ChangePasswordModalProps {
   open: boolean;
   onClose: () => void;
 }
 
+// Componente Modal de alteração de senha
 export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Configuração do formulário com validação
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
@@ -54,31 +60,53 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
     },
   });
 
-  const onSubmit = async (data: ChangePasswordFormValues) => {
-    setIsSubmitting(true);
+  // Função para enviar o formulário
+  const onSubmit = async (values: ChangePasswordFormValues) => {
     try {
-      const res = await apiRequest("POST", "/api/user/change-password", {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
+      setIsSubmitting(true);
+
+      // Enviar a requisição para alterar a senha
+      const response = await apiRequest("POST", "/api/user/change-password", {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
       });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Falha ao alterar a senha");
+
+      // Verificar se a resposta foi bem-sucedida
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Mostrar mensagem de sucesso
+        toast({
+          title: "Senha alterada com sucesso",
+          description: "Sua senha foi alterada com sucesso.",
+        });
+        
+        // Resetar o formulário e fechar o modal
+        form.reset();
+        onClose();
+      } else {
+        // Tratar erros específicos
+        const errorData = await response.json();
+        if (response.status === 400) {
+          // Senha atual incorreta
+          form.setError("currentPassword", {
+            type: "manual",
+            message: errorData.message || "Senha atual incorreta",
+          });
+        } else {
+          // Outros erros
+          toast({
+            title: "Erro ao alterar senha",
+            description: errorData.message || "Ocorreu um erro ao alterar sua senha. Por favor, tente novamente.",
+            variant: "destructive",
+          });
+        }
       }
-      
-      toast({
-        title: "Senha alterada",
-        description: "Sua senha foi alterada com sucesso.",
-        variant: "default",
-      });
-      
-      form.reset();
-      onClose();
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Erro ao alterar senha:", error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao alterar a senha",
+        description: "Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -86,16 +114,22 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
     }
   };
 
+  // Função para fechar o modal e resetar o formulário
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Alterar senha</DialogTitle>
+          <DialogTitle>Alterar Senha</DialogTitle>
           <DialogDescription>
-            Preencha os campos abaixo para alterar sua senha.
+            Preencha o formulário abaixo para alterar sua senha.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -103,50 +137,57 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Senha atual</FormLabel>
+                  <FormLabel>Senha Atual</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Digite sua senha atual" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Digite sua senha atual"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nova senha</FormLabel>
+                  <FormLabel>Nova Senha</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Digite a nova senha" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Digite sua nova senha"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirmar senha</FormLabel>
+                  <FormLabel>Confirmar Nova Senha</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Confirme a nova senha" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Confirme sua nova senha"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose} 
-                disabled={isSubmitting}
-              >
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -156,7 +197,7 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
                     Alterando...
                   </>
                 ) : (
-                  "Salvar alterações"
+                  "Alterar Senha"
                 )}
               </Button>
             </DialogFooter>
