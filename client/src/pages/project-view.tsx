@@ -577,13 +577,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   </Badge>
                   <div className="space-x-2">
                     <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={saveSelections}
-                    >
-                      Salvar
-                    </Button>
-                    <Button 
                       size="sm"
                       onClick={() => setShowConfirmDialog(true)}
                     >
