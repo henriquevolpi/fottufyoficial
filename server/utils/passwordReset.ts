@@ -91,7 +91,14 @@ export async function sendPasswordResetEmail(
  */
 export async function verifyPasswordResetToken(token: string): Promise<{ isValid: boolean; userId?: number }> {
   try {
+    // Validar formato de UUID no token antes de consultar o banco de dados
+    if (!token.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      console.error("Token com formato inválido:", token.substring(0, 8) + "...");
+      return { isValid: false };
+    }
+    
     // Busca o token no banco de dados
+    console.log(`Verificando token no banco de dados: ${token.substring(0, 8)}...`);
     const [resetToken] = await db
       .select()
       .from(passwordResetTokens)
@@ -99,20 +106,24 @@ export async function verifyPasswordResetToken(token: string): Promise<{ isValid
       .limit(1);
     
     if (!resetToken) {
+      console.log(`Token não encontrado no banco: ${token.substring(0, 8)}...`);
       return { isValid: false };
     }
     
     // Verifica se o token já foi usado
     if (resetToken.used) {
+      console.log(`Token já foi usado: ${token.substring(0, 8)}...`);
       return { isValid: false };
     }
     
     // Verifica se o token expirou
     if (new Date() > resetToken.expiresAt) {
+      console.log(`Token expirado: ${token.substring(0, 8)}..., expirou em ${resetToken.expiresAt}`);
       return { isValid: false };
     }
     
     // Token válido, retorna true e o ID do usuário
+    console.log(`Token válido: ${token.substring(0, 8)}... para usuário ID ${resetToken.userId}`);
     return { isValid: true, userId: resetToken.userId };
   } catch (error) {
     console.error("Erro ao verificar token de redefinição de senha:", error);

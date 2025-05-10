@@ -2338,27 +2338,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { token } = req.query;
       
       if (!token || typeof token !== 'string') {
+        console.log("Verificação de token falhou: token não fornecido ou em formato incorreto");
         return res.status(400).json({ 
           isValid: false, 
           message: "Token inválido ou ausente" 
         });
       }
       
-      const result = await verifyPasswordResetToken(token);
+      console.log(`Verificando token: ${token.substring(0, 8)}...`);
       
-      if (result.isValid) {
-        return res.json({ isValid: true });
-      } else {
-        return res.status(400).json({ 
-          isValid: false, 
-          message: "Token expirado ou inválido" 
+      // Antes de verificar na DB, verificar se o token tem formato válido de UUID
+      if (!token.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        console.log(`Token com formato inválido: ${token.substring(0, 8)}...`);
+        return res.status(400).json({
+          isValid: false,
+          message: "Formato de token inválido"
         });
       }
-    } catch (error) {
+      
+      try {
+        const result = await verifyPasswordResetToken(token);
+        
+        if (result.isValid) {
+          console.log(`Token válido: ${token.substring(0, 8)}...`);
+          return res.json({ isValid: true });
+        } else {
+          console.log(`Token expirado ou inválido: ${token.substring(0, 8)}...`);
+          return res.status(400).json({ 
+            isValid: false, 
+            message: "Token expirado ou inválido" 
+          });
+        }
+      } catch (dbError: any) {
+        // Erro específico de banco de dados
+        console.error("Erro de banco de dados ao verificar token:", dbError);
+        return res.status(400).json({
+          isValid: false,
+          message: "Token inválido",
+          detail: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+        });
+      }
+    } catch (error: any) {
       console.error("Erro ao verificar token de redefinição de senha:", error);
       return res.status(500).json({ 
         isValid: false, 
-        message: "Erro ao verificar token" 
+        message: "Erro ao verificar token",
+        detail: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
@@ -2434,7 +2459,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Verificar se há token na query string
     const token = req.query.token;
     
-    // Se há token, servir o arquivo HTML estático diretamente
+    /**
+     * MELHORIAS NO FLUXO DE REDEFINIÇÃO DE SENHA:
+     * 
+     * 1. Em ambiente de desenvolvimento, sempre passamos para o app React para facilitar debugging
+     * 2. Em produção com token, servimos a página HTML estática sem problemas de MIME type
+     * 3. Sem token, passamos para o app React que exibirá mensagem de erro apropriada
+     */
+    
+    // Em ambiente de desenvolvimento, sempre passar para o React
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Ambiente de desenvolvimento: delegando ${req.path} para o React`);
+      
+      // Configurar cabeçalhos para garantir funcionamento adequado
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      
+      // No desenvolvimento, passar para o próximo middleware (Vite/React)
+      return next();
+    }
+    
+    // Em produção, se há token, servir o arquivo HTML estático diretamente
     if (token) {
       console.log(`Token encontrado na URL ${req.path}, servindo página HTML estática`);
       
@@ -2455,6 +2499,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      // Registrar detalhes para debug
+      console.log(`Servindo arquivo HTML estático: ${htmlPath} com Content-Type: ${res.getHeader('Content-Type')}`);
       
       // Servir o arquivo HTML estático
       return res.sendFile(htmlPath);
