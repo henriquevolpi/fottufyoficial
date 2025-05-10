@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useLocation } from "wouter";
-import { Loader2, AlertCircle, Check, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
+import { Loader2, AlertCircle, Check, Mail } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Separator } from "@/components/ui/separator";
 
 // Schema de validação
 const forgotPasswordSchema = z.object({
@@ -38,7 +37,7 @@ export default function ForgotPasswordPage() {
   // Mutation para enviar o pedido de redefinição
   const forgotPasswordMutation = useMutation({
     mutationFn: async (data: ForgotPasswordFormValues) => {
-      const res = await apiRequest("POST", "/api/password/forgot", data);
+      const res = await apiRequest("POST", "/api/password/send-current", data);
       return await res.json();
     },
     onSuccess: () => {
@@ -62,7 +61,7 @@ export default function ForgotPasswordPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Recuperar senha</CardTitle>
           <CardDescription className="text-center">
-            Digite seu email para receber um link de redefinição de senha
+            Digite seu email e enviaremos sua senha atual
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -86,7 +85,7 @@ export default function ForgotPasswordPage() {
                 <Alert className="bg-green-50 text-green-800 border-green-200">
                   <Check className="h-4 w-4 text-green-600" />
                   <AlertDescription>
-                    Se este email estiver cadastrado, você receberá instruções para redefinir sua senha.
+                    Enviamos sua senha para o email informado. Por favor, verifique sua caixa de entrada.
                   </AlertDescription>
                 </Alert>
               )}
@@ -109,27 +108,16 @@ export default function ForgotPasswordPage() {
                     Processando...
                   </>
                 ) : (
-                  "Enviar link de recuperação"
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Enviar senha por email
+                  </>
                 )}
               </Button>
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Separator />
-          
-          <div className="text-center">
-            <div className="text-sm font-medium mb-2">Prefere redefinir a senha diretamente?</div>
-            <Link href="/simple-reset">
-              <Button variant="outline" className="w-full">
-                Usar método simplificado <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
-            <p className="text-xs text-muted-foreground mt-2">
-              O método simplificado permite redefinir sua senha sem precisar de um link por email.
-            </p>
-          </div>
-          
+        <CardFooter className="flex flex-col space-y-4">          
           <div className="text-sm text-center text-muted-foreground">
             Lembrou sua senha?{" "}
             <Link href="/auth" className="text-primary underline hover:text-primary/80">

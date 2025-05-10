@@ -1442,6 +1442,23 @@ export default function Dashboard() {
         </div>
       </main>
       
+      {/* Seção de redefinição de senha discreta no rodapé */}
+      <div className="border-t pt-4 pb-8 mt-8">
+        <div className="container max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Fottufy. Todos os direitos reservados.
+            </div>
+            <div className="mt-4 md:mt-0">
+              <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80 flex items-center">
+                <Settings className="h-3.5 w-3.5 mr-1" />
+                Esqueceu sua senha?
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Modal for uploading new projects */}
       <UploadModal 
         open={uploadModalOpen}

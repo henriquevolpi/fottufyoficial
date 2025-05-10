@@ -2587,90 +2587,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   /**
-   * Rota SIMPLIFICADA para redefinição de senha (sem tokens)
-   * Somente requer email e nova senha.
+   * Rota para enviar a senha atual do usuário por email
    * 
-   * POST /api/password/reset-simple
-   * Body: { email: string, newPassword: string }
+   * POST /api/password/send-current
+   * Body: { email: string }
    * 
    * Retorna:
-   * - 200 { success: true, message: "..." } se a senha for alterada com sucesso
-   * - 400 { success: false, message: "..." } se o email não existir ou a senha não atender aos requisitos
+   * - 200 { success: true, message: "..." } se o email for enviado com sucesso
+   * - 400 { success: false, message: "..." } se o email não existir
    */
-  app.post("/api/password/reset-simple", async (req: Request, res: Response) => {
+  app.post("/api/password/send-current", async (req: Request, res: Response) => {
     try {
-      console.log("[Reset Simple] Requisição recebida");
-      const { email, newPassword } = req.body;
+      console.log("[Send Current Password] Requisição recebida");
+      const { email } = req.body;
       
-      if (!email || !newPassword) {
+      if (!email) {
         return res.status(400).json({
           success: false,
-          message: "Email e nova senha são obrigatórios"
-        });
-      }
-      
-      // Verificar se a senha atende aos requisitos mínimos
-      if (newPassword.length < 6) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "A senha deve ter pelo menos 6 caracteres" 
+          message: "Email é obrigatório"
         });
       }
       
       // Normalizar email para busca
       const normalizedEmail = email.toLowerCase().trim();
       
-      console.log("[Reset Simple] Buscando usuário pelo email:", normalizedEmail);
+      console.log("[Send Current Password] Buscando usuário pelo email:", normalizedEmail);
       const user = await storage.getUserByEmail(normalizedEmail);
       
-      // Se o usuário existir, atualizar a senha diretamente
+      // Se o usuário existir, gerar uma senha temporária e enviá-la por email
       if (user) {
-        console.log("[Reset Simple] Usuário encontrado, atualizando senha:", user.id);
+        console.log("[Send Current Password] Usuário encontrado:", user.id);
+        
+        // Gerar uma senha temporária de 8 caracteres (letras e números)
+        const temporaryPassword = Math.random().toString(36).substring(2, 10);
         
         // Gerar hash da nova senha
-        const hashedPassword = await hashPassword(newPassword);
+        const hashedPassword = await hashPassword(temporaryPassword);
         
-        // Atualizar senha diretamente no banco de dados
+        // Atualizar senha do usuário no banco de dados
         await db
           .update(users)
           .set({ password: hashedPassword })
           .where(eq(users.id, user.id));
         
-        console.log("[Reset Simple] Senha atualizada com sucesso para usuário ID:", user.id);
+        console.log("[Send Current Password] Senha temporária gerada para usuário ID:", user.id);
         
-        // Enviar email de confirmação
+        // Enviar a senha por email
         try {
           await sendEmail({
             to: user.email,
-            subject: "Sua senha foi alterada - Fottufy",
+            subject: "Sua senha de acesso - Fottufy",
             html: `
-              <h1>Sua senha foi alterada com sucesso</h1>
+              <h1>Recuperação de acesso</h1>
               <p>Olá ${user.name || ''},</p>
-              <p>Sua senha da conta Fottufy foi alterada com sucesso.</p>
-              <p>Se você não realizou esta alteração, entre em contato com nosso suporte imediatamente.</p>
+              <p>Conforme solicitado, aqui está a sua senha de acesso para a plataforma Fottufy:</p>
+              <p style="font-size: 18px; font-weight: bold; padding: 10px; background-color: #f5f5f5; text-align: center; border: 1px solid #ddd; border-radius: 4px;">${temporaryPassword}</p>
+              <p>Recomendamos que você altere esta senha após fazer login.</p>
+              <p>Se você não solicitou esta recuperação, por favor, entre em contato com nosso suporte imediatamente.</p>
               <p>Atenciosamente,<br>Equipe Fottufy</p>
             `
           });
+          
+          console.log("[Send Current Password] Email enviado com sucesso para:", user.email);
         } catch (emailError) {
-          console.error("Erro ao enviar email de confirmação:", emailError);
-          // Continuar mesmo se o email falhar, a senha já foi alterada
+          console.error("Erro ao enviar email com a senha:", emailError);
+          return res.status(500).json({
+            success: false,
+            message: "Erro ao enviar email. Por favor, tente novamente mais tarde."
+          });
         }
         
+        // Sempre retornar sucesso para não revelar se o email existe
         return res.status(200).json({
           success: true,
-          message: "Senha alterada com sucesso. Faça login com sua nova senha."
+          message: "Se este email estiver cadastrado, você receberá sua senha em instantes."
         });
       } else {
-        console.log("[Reset Simple] Usuário não encontrado:", normalizedEmail);
+        console.log("[Send Current Password] Usuário não encontrado:", normalizedEmail);
         
-        // Não revelar que o usuário não existe
-        return res.status(400).json({
-          success: false,
-          message: "Não foi possível redefinir a senha. Verifique seu email."
+        // Não revelar que o usuário não existe (segurança)
+        return res.status(200).json({
+          success: true,
+          message: "Se este email estiver cadastrado, você receberá sua senha em instantes."
         });
       }
     } catch (error) {
-      console.error("Erro ao processar redefinição de senha simplificada:", error);
+      console.error("Erro ao processar envio de senha:", error);
       return res.status(500).json({
         success: false,
         message: "Ocorreu um erro ao processar sua solicitação"
