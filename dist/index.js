@@ -3997,6 +3997,16 @@ async function registerRoutes(app2) {
   });
   app2.get(["*.tsx", "*.jsx", "*/src/*.tsx", "*/src/*.jsx"], (req, res, next) => {
     res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+    if (process.env.DEBUG_MIME === "true") {
+      console.log(`[MIME] Servindo ${req.path} com Content-Type: application/javascript`);
+    }
+    next();
+  });
+  app2.get(["*.ts", "*.mjs", "*/src/*.ts", "*/src/*.mjs"], (req, res, next) => {
+    res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+    if (process.env.DEBUG_MIME === "true") {
+      console.log(`[MIME] Servindo ${req.path} com Content-Type: application/javascript`);
+    }
     next();
   });
   app2.get(["*/reset-password.html", "*/create-password.html"], (req, res, next) => {
@@ -4146,18 +4156,6 @@ async function setupVite(app2, server) {
       vite.ssrFixStacktrace(e);
       next(e);
     }
-  });
-}
-function serveStatic(app2) {
-  const distPath = path4.resolve(import.meta.dirname, "public");
-  if (!fs2.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path4.resolve(distPath, "index.html"));
   });
 }
 
@@ -4319,10 +4317,73 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
+  app.use((req, res, next) => {
+    const knownSPARoutes = [
+      "/reset-password",
+      "/create-password",
+      "/forgot-password",
+      "/dashboard",
+      "/auth",
+      "/pricing",
+      "/upload"
+    ];
+    const isKnownSPARoute = knownSPARoutes.some(
+      (route) => req.path === route || req.path.startsWith(`${route}/`)
+    );
+    if (isKnownSPARoute) {
+      res.setHeader("Content-Type", "text/html; charset=UTF-8");
+    } else if (req.path.includes(".")) {
+      const ext = path5.extname(req.path).toLowerCase();
+      if (ext === ".js" || ext === ".mjs") {
+        res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+      } else if (ext === ".css") {
+        res.setHeader("Content-Type", "text/css; charset=UTF-8");
+      } else if (ext === ".json") {
+        res.setHeader("Content-Type", "application/json; charset=UTF-8");
+      } else if (ext === ".html") {
+        res.setHeader("Content-Type", "text/html; charset=UTF-8");
+      } else if (ext === ".png") {
+        res.setHeader("Content-Type", "image/png");
+      } else if (ext === ".jpg" || ext === ".jpeg") {
+        res.setHeader("Content-Type", "image/jpeg");
+      } else if (ext === ".svg") {
+        res.setHeader("Content-Type", "image/svg+xml");
+      }
+    }
+    next();
+  });
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    const staticMiddleware = express2.static(path5.resolve(import.meta.dirname, "public"), {
+      index: false,
+      // Não servir index.html automaticamente
+      setHeaders: (res, filepath) => {
+        const ext = path5.extname(filepath).toLowerCase();
+        if (ext === ".js" || ext === ".mjs") {
+          res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+        } else if (ext === ".css") {
+          res.setHeader("Content-Type", "text/css; charset=UTF-8");
+        } else if (ext === ".html") {
+          res.setHeader("Content-Type", "text/html; charset=UTF-8");
+        }
+      }
+    });
+    app.use(staticMiddleware);
+    app.get(["*/reset-password.html", "*/create-password.html"], (req, res, next) => {
+      res.setHeader("Content-Type", "text/html; charset=UTF-8");
+      next();
+    });
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api/")) {
+        return next();
+      }
+      if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        return next();
+      }
+      res.setHeader("Content-Type", "text/html; charset=UTF-8");
+      res.sendFile(path5.resolve(import.meta.dirname, "public", "index.html"));
+    });
   }
   const port = Number(process.env.PORT) || 5e3;
   server.listen({

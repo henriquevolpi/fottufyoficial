@@ -89,19 +89,32 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(process.cwd(), 'public'), {
   setHeaders: (res, filepath) => {
     // Definir os cabeçalhos corretos para diferentes tipos de arquivos
-    if (filepath.endsWith('.html')) {
+    const isHTML = filepath.endsWith('.html');
+    const isJavaScript = filepath.endsWith('.js') || filepath.endsWith('.mjs') || 
+                         filepath.endsWith('.jsx') || filepath.endsWith('.tsx');
+    const isCSS = filepath.endsWith('.css');
+    const isJSON = filepath.endsWith('.json');
+    
+    if (isHTML) {
       res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-    } else if (filepath.endsWith('.js') || filepath.endsWith('.mjs')) {
+    } else if (isJavaScript) {
       res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
-    } else if (filepath.endsWith('.jsx') || filepath.endsWith('.tsx')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=UTF-8'); 
-    } else if (filepath.endsWith('.css')) {
+    } else if (isCSS) {
       res.setHeader('Content-Type', 'text/css; charset=UTF-8');
-    } else if (filepath.endsWith('.json')) {
+    } else if (isJSON) {
       res.setHeader('Content-Type', 'application/json; charset=UTF-8');
     }
     
-    console.log(`Servindo arquivo estático: ${filepath} com Content-Type: ${res.getHeader('Content-Type')}`);
+    // Para páginas específicas, garantir cabeçalhos extras para evitar problemas de MIME
+    if (filepath.includes('reset-password.html') || filepath.includes('create-password.html')) {
+      // Desativar cache para garantir que sempre use a versão mais recente
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Log específico para ajudar no debug
+      console.log(`Servindo página crítica de senha: ${filepath} com Content-Type: ${res.getHeader('Content-Type')}`);
+    }
   }
 }));
 

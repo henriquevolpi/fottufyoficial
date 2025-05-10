@@ -2406,13 +2406,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // 2. Middleware específico para processar os arquivos HTML estáticos de redefinição/criação de senha
   app.get(['*/reset-password.html', '*/create-password.html'], (req: Request, res: Response, next: NextFunction) => {
-    console.log(`Servindo arquivo HTML estático: ${req.path}`);
-    // Garantir que seja processado como HTML
+    console.log(`Servindo arquivo HTML estático de redefinição de senha: ${req.path}`);
+    
+    // Definir explicitamente TODOS os cabeçalhos necessários para evitar problemas de MIME
     res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    
+    // Desativar cache para garantir que sempre use a versão mais recente
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
+    // Configurações de segurança
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Log para debug
+    console.log(`Headers para ${req.path}:`, {
+      contentType: res.getHeader('Content-Type'),
+      cacheControl: res.getHeader('Cache-Control')
+    });
+    
     next();
   });
   
-  // 3. Rota para o app React nas rotas de redefinição/criação de senha
+  // 3. Rota explícita para lidar com URLs sem ".html" que devem ser servidas como HTML estático
+  app.get(["/reset-password", "/create-password"], (req: Request, res: Response, next: NextFunction) => {
+    // Verificar se há token na query string
+    const token = req.query.token;
+    
+    // Se há token, servir o arquivo HTML estático diretamente
+    if (token) {
+      console.log(`Token encontrado na URL ${req.path}, servindo página HTML estática`);
+      
+      // Determinar qual arquivo servir
+      const htmlFile = req.path === '/reset-password' 
+        ? 'reset-password.html' 
+        : 'create-password.html';
+      
+      const htmlPath = path.resolve(
+        import.meta.dirname,
+        "..",
+        "public",
+        htmlFile
+      );
+      
+      // Configurar cabeçalhos explicitamente
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      // Servir o arquivo HTML estático
+      return res.sendFile(htmlPath);
+    }
+    
+    // Se não há token, passar para o app React normal
+    next();
+  });
+  
+  // 4. Rota para o app React nas rotas de redefinição/criação de senha
   app.get(["/reset-password", "/reset-password/*", "/create-password", "/create-password/*"], (req: Request, res: Response, next: NextFunction) => {
     // Se for uma solicitação ao arquivo HTML estático, passamos para o próximo middleware
     if (req.path.endsWith('.html')) {
