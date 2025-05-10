@@ -234,13 +234,102 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Importante: registrar middleware MIME type checker antes de servir os arquivos estáticos
+  // Este middleware garante que os arquivos sejam servidos com o tipo de conteúdo correto
+  // mesmo quando a requisição não tem extensão (rotas de SPA como /reset-password)
+  app.use((req, res, next) => {
+    // Adiciona .html como extensão implícita para rotas SPA conhecidas
+    const knownSPARoutes = [
+      '/reset-password', 
+      '/create-password', 
+      '/forgot-password', 
+      '/dashboard',
+      '/auth',
+      '/pricing',
+      '/upload'
+    ];
+    
+    // Verifica se é uma rota SPA conhecida sem extensão
+    const isKnownSPARoute = knownSPARoutes.some(route => 
+      req.path === route || req.path.startsWith(`${route}/`)
+    );
+    
+    if (isKnownSPARoute) {
+      // Para rotas SPA, garantimos que serão tratadas como HTML
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    } else if (req.path.includes('.')) {
+      // Para arquivos com extensão, definimos o tipo MIME apropriado
+      const ext = path.extname(req.path).toLowerCase();
+      
+      if (ext === '.js' || ext === '.mjs') {
+        res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+      } else if (ext === '.css') {
+        res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+      } else if (ext === '.json') {
+        res.setHeader('Content-Type', 'application/json; charset=UTF-8');
+      } else if (ext === '.html') {
+        res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      } else if (ext === '.png') {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (ext === '.jpg' || ext === '.jpeg') {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (ext === '.svg') {
+        res.setHeader('Content-Type', 'image/svg+xml');
+      }
+    }
+    
+    next();
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    // Integração com serveStatic para melhorar o suporte a rotas SPA
+    // em ambientes de produção
+    const staticMiddleware = express.static(path.resolve(import.meta.dirname, 'public'), {
+      index: false, // Não servir index.html automaticamente
+      setHeaders: (res, filepath) => {
+        // Definir cabeçalhos apropriados para cada tipo de arquivo
+        const ext = path.extname(filepath).toLowerCase();
+        
+        if (ext === '.js' || ext === '.mjs') {
+          res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+        } else if (ext === '.css') {
+          res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+        } else if (ext === '.html') {
+          res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+        }
+      }
+    });
+    
+    // Registrar middleware de arquivos estáticos
+    app.use(staticMiddleware);
+    
+    // Rota especial para lidar com HTML estáticos específicos
+    app.get(['*/reset-password.html', '*/create-password.html'], (req, res, next) => {
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      next();
+    });
+    
+    // Servir o SPA para todas as rotas não-API que não encontrarem um arquivo estático
+    app.get('*', (req, res, next) => {
+      // Pular se for uma rota de API
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      
+      // Pular se for um arquivo com extensão conhecida
+      if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        return next();
+      }
+      
+      // Servir o index.html para todas as outras rotas (SPA)
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      res.sendFile(path.resolve(import.meta.dirname, 'public', 'index.html'));
+    });
   }
 
   // Use the port provided by the environment (Railway sets this to 3000)

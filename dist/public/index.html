@@ -48,12 +48,42 @@
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <script type="module" crossorigin src="/assets/index-D0km78Gr.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-NHRcOFbM.css">
+    <title>Fottufy - Plataforma para Fotógrafos</title>
+    <!-- Tag base para garantir que todas as rotas relativas comecem da raiz -->
+    <base href="/" />
+    <!-- Script de suporte para garantir que o MIME type esteja correto -->
+    <script>
+      // Script de inicialização para garantir que a aplicação carregue corretamente
+      (function() {
+        // Verifica se o token de redefinição de senha está presente na URL ou no localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const resetToken = urlParams.get('token');
+        
+        if (resetToken) {
+          console.log("Token detectado na URL:", resetToken);
+          try {
+            // Se estamos em uma página que precisa do token, armazena-o
+            if (window.location.pathname.includes('/reset-password') || 
+                window.location.pathname.includes('/create-password')) {
+              const storageKey = window.location.pathname.includes('/reset-password') 
+                ? 'passwordResetToken' 
+                : 'passwordCreateToken';
+              localStorage.setItem(storageKey, resetToken);
+              console.log(`Token salvo no localStorage como ${storageKey}`);
+            }
+          } catch (e) {
+            console.error("Erro ao salvar token:", e);
+          }
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-8N9z4e68.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D5PDA205.css">
   </head>
+  <script src="//code.jivosite.com/widget/njKtWA4AEl" async></script>
   <body>
     <div id="root"></div>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    <script src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>
 </html>

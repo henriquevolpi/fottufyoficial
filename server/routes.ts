@@ -2387,6 +2387,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(['*.tsx', '*.jsx', '*/src/*.tsx', '*/src/*.jsx'], (req: Request, res: Response, next: NextFunction) => {
     // Configurar corretamente o Content-Type para módulos ES
     res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    // Log de baixo nível para debug
+    if (process.env.DEBUG_MIME === 'true') {
+      console.log(`[MIME] Servindo ${req.path} com Content-Type: application/javascript`);
+    }
+    next();
+  });
+  
+  // Middleware específico para outros módulos ES no desenvolvimento
+  app.get(['*.ts', '*.mjs', '*/src/*.ts', '*/src/*.mjs'], (req: Request, res: Response, next: NextFunction) => {
+    // Garantir que módulos ES sejam servidos com o tipo correto
+    res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    if (process.env.DEBUG_MIME === 'true') {
+      console.log(`[MIME] Servindo ${req.path} com Content-Type: application/javascript`);
+    }
     next();
   });
   
