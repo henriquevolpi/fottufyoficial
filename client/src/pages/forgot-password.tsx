@@ -37,8 +37,26 @@ export default function ForgotPasswordPage() {
   // Mutation para enviar o pedido de redefinição
   const forgotPasswordMutation = useMutation({
     mutationFn: async (data: ForgotPasswordFormValues) => {
-      const res = await apiRequest("POST", "/api/password/send-current", data);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/password/send-current", data);
+        
+        // Verifica se a resposta está ok, independente do formato
+        if (!res.ok) {
+          throw new Error("Falha ao processar a solicitação");
+        }
+        
+        // Tenta extrair JSON, mas não falha se a resposta não for JSON
+        try {
+          return await res.json();
+        } catch (jsonError) {
+          console.error("Erro ao processar JSON:", jsonError);
+          // Se não for JSON válido, cria um objeto de resposta simples
+          return { success: true, message: "Solicitação processada" };
+        }
+      } catch (error) {
+        console.error("Erro na requisição:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       setStatus("success");

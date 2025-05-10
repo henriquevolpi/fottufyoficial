@@ -2597,6 +2597,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * - 400 { success: false, message: "..." } se o email não existir
    */
   app.post("/api/password/send-current", async (req: Request, res: Response) => {
+    // Garantir que a resposta seja JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
       console.log("[Send Current Password] Requisição recebida");
       const { email } = req.body;
@@ -2634,7 +2637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Enviar a senha por email
         try {
-          await sendEmail({
+          const emailResult = await sendEmail({
             to: user.email,
             subject: "Sua senha de acesso - Fottufy",
             html: `
@@ -2647,6 +2650,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <p>Atenciosamente,<br>Equipe Fottufy</p>
             `
           });
+          
+          if (!emailResult.success) {
+            console.error("[Send Current Password] Falha ao enviar email:", emailResult.message);
+            return res.status(500).json({
+              success: false,
+              message: "Erro ao enviar email. Por favor, tente novamente mais tarde."
+            });
+          }
           
           console.log("[Send Current Password] Email enviado com sucesso para:", user.email);
         } catch (emailError) {
