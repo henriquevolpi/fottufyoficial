@@ -1469,28 +1469,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Project methods
-  async getProject(id: number): Promise<Project | undefined> {
+  async getProject(id: number | string): Promise<Project | undefined> {
     try {
       console.log(`DatabaseStorage: Buscando projeto ID=${id}`);
       
       // Se id for number, busca direto pelo ID
       if (typeof id === 'number') {
         const [project] = await db.select().from(projects).where(eq(projects.id, id));
-        return project;
+        if (project) {
+          console.log(`DatabaseStorage: Projeto encontrado com ID numérico: ${project.name}`);
+          return project;
+        }
       }
       
       // Se id for string e for numérico, converte para number e busca
       const numericId = parseInt(id.toString());
       if (!isNaN(numericId)) {
         const [project] = await db.select().from(projects).where(eq(projects.id, numericId));
-        if (project) return project;
+        if (project) {
+          console.log(`DatabaseStorage: Projeto encontrado com ID string (convertido): ${project.name}`);
+          return project;
+        }
       }
       
       // Se não encontrou por ID numérico, tenta por publicId
       const [project] = await db.select().from(projects).where(eq(projects.publicId, id.toString()));
       
       if (project) {
-        console.log(`DatabaseStorage: Projeto encontrado: ${project.name}`);
+        console.log(`DatabaseStorage: Projeto encontrado via publicId: ${project.name}`);
       } else {
         console.log(`DatabaseStorage: Projeto ID=${id} não encontrado`);
       }
@@ -1639,14 +1645,33 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async reopenProject(id: number): Promise<Project | undefined> {
+  async reopenProject(id: number | string): Promise<Project | undefined> {
     try {
+      // Verificar se id é string e convertê-lo para número se possível
+      let projectId = id;
+      if (typeof id === 'string') {
+        const numId = parseInt(id);
+        if (!isNaN(numId)) {
+          projectId = numId;
+        } else {
+          // Se não for possível converter para número, buscar pelo publicId
+          const project = await this.getProject(id);
+          if (project) {
+            projectId = project.id;
+          } else {
+            console.error(`Projeto não encontrado com ID=${id}`);
+            return undefined;
+          }
+        }
+      }
+      
       const [reopenedProject] = await db
         .update(projects)
         .set({ status: "reopened" })
-        .where(eq(projects.id, id))
+        .where(eq(projects.id, projectId as number))
         .returning();
       
+      console.log(`Projeto ID=${projectId} reaberto com sucesso`);
       return reopenedProject;
     } catch (error) {
       console.error("Erro ao reabrir projeto:", error);

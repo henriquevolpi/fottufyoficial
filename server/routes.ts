@@ -1601,6 +1601,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Reopen project (photographer only)
+  // Rota para atualizar um projeto (dados gerais)
+  app.patch("/api/projects/:id", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      const idParam = req.params.id;
+      const project = await storage.getProject(idParam);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Check if photographer ID matches authenticated user
+      if (project.photographerId !== req.user?.id && req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Cannot update projects of other photographers" });
+      }
+      
+      // Atualizar apenas os campos permitidos
+      const updateData = {
+        name: req.body.name,
+        clientName: req.body.clientName,
+        clientEmail: req.body.clientEmail,
+        status: req.body.status
+      };
+      
+      const updatedProject = await storage.updateProject(project.id, updateData);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Error updating project:", error);
+      res.status(500).json({ message: "Failed to update project" });
+    }
+  });
+
   app.patch("/api/projects/:id/reopen", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
       const idParam = req.params.id;
