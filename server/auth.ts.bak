@@ -355,61 +355,80 @@ export function setupAuth(app: Express) {
       req.body.email = req.body.email.toLowerCase();
     }
     
-    passport.authenticate("local", (err, user, info) => {
-      if (err) return next(err);
-      if (!user) {
-        // Evitar expor a estrutura interna de autenticação para o cliente
-        return res.status(401).json({ 
-          message: "Falha na autenticação. Verifique seu email e senha."
-        });
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log("[LOGIN] Processing login request");
+    }
+    
+    // Use standard passport authentication
+    passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
+      if (err) {
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.error("[LOGIN] Authentication error");
+        }
+        return next(err);
       }
       
-      // Define a cookie da sessão
-      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+      if (!user) {
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.log("[LOGIN] Invalid credentials");
+        }
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
       
-      // Definir o usuario nas sessões
-      req.login(user, async (err) => {
-        if (err) return next(err);
-        
-        // Atualizar o campo lastLoginAt
-        try {
-          await storage.updateUser(user.id, { lastLoginAt: new Date() });
-        } catch (updateError) {
-          // Log o erro mas continua o login (não é crucial)
-          console.error("Error updating lastLoginAt:", updateError);
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`[LOGIN] User authenticated successfully`);
+      }
+      
+      // Atualizar o campo lastLoginAt - não bloqueia o fluxo principal
+      // Criamos a Promise mas não usamos await para continuar o fluxo rapidamente
+      const updatePromise = storage.updateUser(user.id, { lastLoginAt: new Date() });
+      
+      // Login the user and establish a session imediatamente
+      req.login(user, (err) => {
+        if (err) {
+          if (process.env.DEBUG_AUTH === 'true') {
+            console.error("[LOGIN] Session creation error");
+          }
+          return next(err);
         }
         
-        // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
-        try {
-          // Informação sobre o domínio para o javascript do cliente
-          res.cookie('user_id', user.id, {
-            httpOnly: false,  // Precisa ser acessível pelo JS
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            path: '/',
-            sameSite: 'lax', // Lax permite que o cookie seja enviado em navegações de nível superior
-            secure: false     // Não exigir HTTPS em desenvolvimento
-          });
-        } catch (cookieError) {
-          // Log o erro mas continua o login (não é crucial)
-          console.error("Error setting cookie:", cookieError);
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.log(`[LOGIN] Session established`);
         }
         
-        // Retornar apenas os dados necessários por segurança
+        // Set a direct cookie with the user ID for tracking
+        res.cookie('user_id', user.id.toString(), {
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          httpOnly: false,
+          secure: false,
+          path: '/',
+          sameSite: 'lax'
+        });
+        
+        // Return user data without password
         const { password, ...userData } = user;
-        res.json(userData);
+        res.status(200).json(userData);
+        
+        // Aguardamos a atualização do timestamp sem bloquear a resposta
+        updatePromise.catch(error => {
+          if (process.env.DEBUG_AUTH === 'true') {
+            console.error("[LOGIN] Error updating last login timestamp");
+          }
+        });
       });
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res) => {
+  app.post("/api/logout", (req, res, next) => {
+    // Clear all cookies related to authentication
+    res.clearCookie('user_id');
+    res.clearCookie('studio_user_id');
+    res.clearCookie('studio_auth');
+    res.clearCookie('studio.sid');
+    
+    // Logout from passport session
     req.logout((err) => {
-      if (err) {
-        console.error("Error during logout:", err);
-        return res.status(500).json({ message: "Erro ao realizar logout" });
-      }
-      // Limpar o cookie user_id usado para backup
-      res.clearCookie('user_id');
-      res.clearCookie('studio_user_id');
+      if (err) return next(err);
       res.sendStatus(200);
     });
   });
@@ -609,5 +628,6 @@ export function setupAuth(app: Express) {
         message: "Erro ao processar a solicitação"
       });
     }
+  });
   });
 }

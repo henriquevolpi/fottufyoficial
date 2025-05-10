@@ -1449,9 +1449,18 @@ export default function Dashboard() {
             <div className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Fottufy. Todos os direitos reservados.
             </div>
-            <div className="mt-4 md:mt-0">
-              <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80 flex items-center">
-                <Settings className="h-3.5 w-3.5 mr-1" />
+            <div className="mt-4 md:mt-0 flex space-x-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-sm text-primary hover:text-primary/80 flex items-center p-0 h-auto"
+                onClick={() => setChangePasswordModalOpen(true)}
+              >
+                <Key className="h-3.5 w-3.5 mr-1" />
+                Alterar minha senha
+              </Button>
+              <Link href="/forgot-password" className="text-sm text-muted-foreground hover:text-muted-foreground/80 flex items-center">
+                <HelpCircle className="h-3.5 w-3.5 mr-1" />
                 Esqueceu sua senha?
               </Link>
             </div>
