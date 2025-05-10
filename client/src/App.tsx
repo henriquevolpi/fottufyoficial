@@ -24,6 +24,7 @@ import TestR2 from "@/pages/test-r2";
 import TestImageUpload from "@/pages/test-image-upload";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
+import SimpleResetPage from "@/pages/simple-reset";
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -87,6 +88,9 @@ function Router() {
       </Route>
       <Route path="/reset-password/:token">
         {(params) => <ResetPasswordPage token={params.token} />}
+      </Route>
+      <Route path="/simple-reset">
+        {() => <SimpleResetPage />}
       </Route>
       <Route path="/create-password">
         {() => <CreatePassword />}

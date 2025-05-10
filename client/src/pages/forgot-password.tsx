@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "wouter";
-import { Loader2, AlertCircle, Check } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Loader2, AlertCircle, Check, ArrowRight } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Separator } from "@/components/ui/separator";
 
 // Schema de validação
 const forgotPasswordSchema = z.object({
@@ -114,7 +115,21 @@ export default function ForgotPasswordPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
+        <CardFooter className="flex flex-col space-y-4">
+          <Separator />
+          
+          <div className="text-center">
+            <div className="text-sm font-medium mb-2">Prefere redefinir a senha diretamente?</div>
+            <Link href="/simple-reset">
+              <Button variant="outline" className="w-full">
+                Usar método simplificado <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+            <p className="text-xs text-muted-foreground mt-2">
+              O método simplificado permite redefinir sua senha sem precisar de um link por email.
+            </p>
+          </div>
+          
           <div className="text-sm text-center text-muted-foreground">
             Lembrou sua senha?{" "}
             <Link href="/auth" className="text-primary underline hover:text-primary/80">
