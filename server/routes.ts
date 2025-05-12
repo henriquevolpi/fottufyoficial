@@ -460,6 +460,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Atualizar a contagem de uploads do usuário
       if (uploadedFiles.length > 0) {
         await storage.updateUploadUsage(req.user.id, uploadedFiles.length);
+        
+        // Agenda a liberação de memória após terminar o upload
+        if (process.env.DEBUG_MEMORY === 'true' && typeof global.gc === 'function') {
+          console.log('[DEBUG] Upload finalizado. Agendando global.gc() para daqui 3 minutos...');
+          setTimeout(() => {
+            try {
+              global.gc();
+              console.log('[DEBUG] global.gc() executado com sucesso após 3 minutos');
+            } catch (err) {
+              console.error('[DEBUG] Erro ao executar global.gc():', err);
+            }
+          }, 3 * 60 * 1000);
+        }
       }
       
       return res.status(200).json({
