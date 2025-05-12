@@ -5,7 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
-import { testConnection, pool } from "./db";
+import { testConnection, pool, startDbHealthCheck } from "./db";
 import { storage as dbStorage } from "./storage";
 // Import necessary environment variables
 import dotenv from "dotenv";
@@ -361,6 +361,10 @@ app.use((req, res, next) => {
   
   // Função para monitorar o uso de memória
   function setupMemoryMonitor() {
+    // Iniciar o monitoramento de conexão com o banco de dados
+    // Verificar a conexão a cada 2 minutos (120000 ms)
+    const dbHealthCheckInterval = startDbHealthCheck(120000);
+    
     // Converter bytes para MB para facilitar a leitura
     const bytesToMB = (bytes: number) => Math.round(bytes / 1024 / 1024 * 100) / 100;
     
@@ -386,6 +390,12 @@ app.use((req, res, next) => {
         console.log(`Heap Total: ${bytesToMB(memoryData.heapTotal)} MB`);
         console.log(`Heap Used: ${bytesToMB(memoryData.heapUsed)} MB`);
         console.log(`External: ${bytesToMB(memoryData.external)} MB`);
+        console.log(`Heap Used/Total: ${(memoryData.heapUsed / memoryData.heapTotal * 100).toFixed(2)}%`);
+        
+        // Monitorar também estatísticas do pool de conexões do banco de dados
+        if (pool) {
+          console.log(`DB Pool: Total=${pool.totalCount}, Idle=${pool.idleCount}, Waiting=${pool.waitingCount}`);
+        }
         
         // Verificar se temos acesso aos caches inteligentes da classe MemStorage
         // Só exibe as estatísticas de cache se a storage implementada for do tipo MemStorage e DEBUG_MEMORY ativado
@@ -442,12 +452,21 @@ app.use((req, res, next) => {
     process.on('SIGINT', () => {
       clearInterval(intervalId);
       clearInterval(gcIntervalId);
+      clearInterval(dbHealthCheckInterval);
+      
+      // Fechar o pool de conexões com o banco
+      pool.end().catch(err => console.error('Error closing DB pool on SIGINT:', err));
+      
       process.exit(0);
     });
     
     process.on('SIGTERM', () => {
       clearInterval(intervalId);
       clearInterval(gcIntervalId);
+      clearInterval(dbHealthCheckInterval);
+      
+      // Fechar o pool de conexões com o banco
+      pool.end().catch(err => console.error('Error closing DB pool on SIGTERM:', err));
       process.exit(0);
     });
   }
