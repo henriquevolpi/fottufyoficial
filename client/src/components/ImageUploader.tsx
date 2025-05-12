@@ -42,26 +42,53 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         formData.append('photos', file);
       });
       
-      // Definir callbacks para acompanhar o progresso
-      // Calculamos o progresso considerando o lote atual dentro do progresso total
+      // Definir callbacks para acompanhar o progresso com modificações anti-travamento
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          // Calcular o progresso dentro deste lote (0-100)
-          const batchProgress = Math.round((event.loaded / event.total) * 100);
+          // Definir um progresso mínimo de partida - evitar parecer travado
+          let batchProgress = 15; // Começamos em 15% para feedback imediato
+
+          // Se o upload realmente começou (mais de 3%)
+          if (event.loaded > 0.03 * event.total) {
+            // Com boost para lotes grandes (mais de 30 arquivos num lote)
+            const loteBoost = compressedFiles.length > 30 ? 1.5 : 1.2;
+            batchProgress = Math.round((event.loaded / event.total) * 100 * loteBoost);
+            
+            // Limitar ao máximo de 95% por lote
+            batchProgress = Math.min(batchProgress, 95);
+          }
+
+          // Boost para arquivos grandes 
+          if (compressedFiles.length > 50 && batchProgress < 20) {
+            batchProgress = 20; // Começamos em 20% para lotes muito grandes
+          }
           
-          // Calcular o progresso global considerando os lotes anteriores e o atual
-          // Cada lote representa (100 / totalBatches)% do progresso total
+          // Cada lote representa uma parte do progresso total,
+          // mas adicionamos um peso extra ao lote atual para feedback
           const batchWeight = 100 / totalBatches;
           
-          // O progresso total é a soma do progresso dos lotes anteriores completos
-          // mais o progresso proporcional do lote atual
+          // Para muitos arquivos, aplicamos um boost inicial
+          // e garantimos que a barra sempre avance
+          const boostInicial = compressedFiles.length > 100 ? 10 : 5;
+          
+          // Calcular progresso total com boost
           const completedBatchesProgress = batchIndex * batchWeight;
           const currentBatchContribution = (batchProgress / 100) * batchWeight;
-          const totalProgress = Math.min(
-            Math.round(completedBatchesProgress + currentBatchContribution),
-            99 // Limitamos a 99% até que esteja realmente completo
+          
+          // Sempre começar com pelo menos 5% mesmo para carregamentos grandes
+          let totalProgress = Math.min(
+            Math.max(boostInicial, Math.round(completedBatchesProgress + currentBatchContribution)),
+            95 // Limitamos a 95% até que esteja realmente completo
           );
           
+          // Técnica anti-travamento: se o progresso não avançou, forçar incremento
+          // para dar feedback visual ao usuário
+          const currentPercentage = uploadPercentage;
+          if (totalProgress <= currentPercentage && event.loaded > 0) {
+            totalProgress = currentPercentage + 1;
+          }
+          
+          // Mover a barra gradualmente
           setUploadPercentage(totalProgress);
           setUploadStatus('uploading');
           

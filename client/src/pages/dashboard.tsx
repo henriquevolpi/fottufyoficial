@@ -527,50 +527,77 @@ function UploadModal({
       const result = await new Promise<any>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         
-        // Configurar o callback de progresso com mais pontos intermediários
+        // Configuração melhorada do callback de progresso com boot inicial e impulso
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
-            // Calcular percentual atual
-            const rawPercent = (event.loaded / event.total) * 100;
+            // Definir um mínimo inicial para evitar ficar em 0-5%
+            // Para uploads grandes, começamos com 5% para feedback visual imediato
+            let nextProgress = 5;
             
-            // Criar uma animação mais suave limitando a taxa de atualização
-            // Técnica 1: Não pular muito entre atualizações
-            const currentProgress = uploadProgress;
-            let nextProgress = Math.round(rawPercent);
-            
-            // Se a mudança for muito grande, suavizar
-            if (nextProgress > currentProgress + 10) {
-              nextProgress = currentProgress + 5;
-            }
-            
-            // Nunca mostrar 100% até finalizar completamente
-            if (nextProgress >= 99 && rawPercent < 100) {
-              nextProgress = 99;
-            }
-            
-            // Técnica 2: Simulação de progresso adicional durante processamento
-            if (nextProgress >= 95 && event.loaded === event.total) {
-              // Quando o upload terminar, mostrar 95% e deixar o backend processar
-              nextProgress = 95;
+            // Se o upload já começou de verdade (mais de 3% carregado)
+            if (event.loaded > 0.03 * event.total) {
+              // Calcular percentual atual com um pequeno boost para uploads grandes
+              // A fórmula abaixo faz os primeiros 30% carregados parecerem 50% na barra
+              const boost = selectedFiles.length > 50 ? 1.25 : 1;
+              const rawPercent = (event.loaded / event.total) * 100 * boost;
               
-              // Simular progresso enquanto o servidor processa
+              // Limitar o boost a 95% para garantir que não chegue a 100% antes do tempo
+              nextProgress = Math.min(Math.round(rawPercent), 95);
+            } else if (event.loaded > 0) {
+              // Se estamos no início (menos de 3%), mas já começou, forçar entre 5-15%
+              nextProgress = Math.max(5, Math.min(15, Math.round((event.loaded / event.total) * 500)));
+            }
+            
+            // Para arquivos maiores que 10MB, aumentar o impulso inicial
+            const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+            const averageFileSize = totalSize / selectedFiles.length;
+            
+            if (averageFileSize > 10 * 1024 * 1024 && nextProgress < 10) {
+              nextProgress = 10; // Começar em 10% para arquivos grandes
+            }
+            
+            // Para mais de 100 arquivos, comportamento especial
+            if (selectedFiles.length > 100) {
+              // Progredir mais rápido no início para feedback visual
+              if (event.loaded < 0.1 * event.total) {
+                nextProgress = Math.max(nextProgress, 20);
+              }
+            }
+            
+            // Manter a barra em movimento para arquivos muito grandes
+            const currentProgress = uploadProgress;
+            if (nextProgress <= currentProgress && event.loaded > event.total * 0.1) {
+              // Se parece travado mas o upload está progredindo, incrementar manualmente
+              nextProgress = currentProgress + 1;
+            }
+            
+            // Limitar a 98% até receber a resposta completa
+            nextProgress = Math.min(nextProgress, 98);
+            
+            // Quando o upload realmente terminar no XHR, começar simulação do processamento no servidor
+            if (event.loaded === event.total && nextProgress >= 90) {
+              // Simular processamento no servidor com intervalos
               const simulateProcessing = () => {
                 setUploadProgress(prev => {
-                  // Incrementar lentamente até 99%
-                  if (prev < 99) {
+                  if (prev < 98) {
                     return prev + 1;
                   }
                   return prev;
                 });
               };
               
-              // Incrementar a cada 500ms para simular o processamento do servidor
-              const processingInterval = setInterval(simulateProcessing, 500);
+              // Incrementos mais frequentes para manter a barra em movimento
+              const processingInterval = setInterval(simulateProcessing, 300);
               
-              // Limpar o intervalo quando xhr.onload for chamado
-              xhr.addEventListener('load', () => clearInterval(processingInterval));
+              // Limpar o intervalo quando a resposta for recebida
+              xhr.addEventListener('load', () => {
+                clearInterval(processingInterval);
+                // Definir como 100% quando realmente estiver completo
+                setTimeout(() => setUploadProgress(100), 500);
+              });
             }
             
+            // Atualizar o progresso
             setUploadProgress(nextProgress);
           }
         };
