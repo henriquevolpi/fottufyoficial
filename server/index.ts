@@ -9,6 +9,8 @@ import { testConnection, pool, startDbHealthCheck } from "./db";
 import { storage as dbStorage } from "./storage";
 // Import necessary environment variables
 import dotenv from "dotenv";
+// Carregar variáveis de ambiente do arquivo .env
+dotenv.config();
 
 // Definir variável de ambiente para a sessão se não estiver definida
 if (!process.env.SESSION_SECRET) {
@@ -233,6 +235,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Exibir informações sobre variáveis de ambiente para debug
+  console.log('===== CONFIGURAÇÕES DO AMBIENTE =====');
+  console.log(`[ENV] NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`[ENV] PORT: ${process.env.PORT || '5000 (padrão)'}`);
+  console.log(`[ENV] DEBUG_MEMORY: ${process.env.DEBUG_MEMORY === 'true' ? 'ATIVADO' : 'DESATIVADO'}`);
+  console.log(`[ENV] DATABASE_URL: ${process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO'}`);
+  console.log('====================================');
+  
   // We're using Cloudflare R2 for photo storage instead of local files
   console.log("Using Cloudflare R2 for storage - bucket must be created manually in Cloudflare dashboard");
 
