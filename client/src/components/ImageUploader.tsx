@@ -243,7 +243,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
             </span>
           </div>
           
-          {/* Barra de progresso para o upload */}
+          {/* Barra de progresso para o upload (versão melhorada) */}
           {(uploadStatus === 'uploading' || uploadStatus === 'completed') && (
             <div className="w-full mt-2">
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
@@ -251,21 +251,37 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
                   className={`h-full transition-all duration-500 ease-in-out ${
                     uploadStatus === 'completed' 
                       ? 'bg-green-500 animate-pulse' 
-                      : 'bg-blue-500'
+                      : 'bg-gradient-to-r from-blue-500 to-indigo-600'
                   }`}
                   style={{ width: `${uploadPercentage}%` }}
                 />
               </div>
-              <div className="text-xs text-gray-700 mt-1 text-center font-medium">
-                {uploadStatus === 'completed' 
-                  ? 'Upload finalizado!' 
-                  : `Progresso: ${uploadPercentage}%`}
+              <div className="flex justify-between items-center mt-1 px-1">
+                <div className="text-xs text-gray-600 font-medium">
+                  {uploadStatus === 'completed' 
+                    ? 'Upload finalizado!' 
+                    : uploadPercentage < 30 
+                      ? "Preparando arquivos..." 
+                      : uploadPercentage < 70 
+                        ? "Enviando para o servidor..." 
+                        : uploadPercentage < 90 
+                          ? "Processando imagens..." 
+                          : "Finalizando..."}
+                </div>
+                <div className="text-xs font-semibold">
+                  {uploadPercentage}%
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {uploadStatus === 'completed' 
-                  ? 'Upload finalizado com sucesso!' 
-                  : `Enviando... ${uploadPercentage}%`}
-              </div>
+              {uploadStatus !== 'completed' && (
+                <div className="text-xs text-gray-400 mt-1 text-center">
+                  Por favor, não feche ou atualize a página durante o upload
+                </div>
+              )}
+              {uploadStatus === 'completed' && (
+                <div className="text-xs text-green-600 mt-1 text-center font-medium">
+                  Upload finalizado com sucesso!
+                </div>
+              )}
             </div>
           )}
           

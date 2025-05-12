@@ -527,11 +527,51 @@ function UploadModal({
       const result = await new Promise<any>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         
-        // Configurar o callback de progresso
+        // Configurar o callback de progresso com mais pontos intermediários
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            setUploadProgress(percentComplete);
+            // Calcular percentual atual
+            const rawPercent = (event.loaded / event.total) * 100;
+            
+            // Criar uma animação mais suave limitando a taxa de atualização
+            // Técnica 1: Não pular muito entre atualizações
+            const currentProgress = uploadProgress;
+            let nextProgress = Math.round(rawPercent);
+            
+            // Se a mudança for muito grande, suavizar
+            if (nextProgress > currentProgress + 10) {
+              nextProgress = currentProgress + 5;
+            }
+            
+            // Nunca mostrar 100% até finalizar completamente
+            if (nextProgress >= 99 && rawPercent < 100) {
+              nextProgress = 99;
+            }
+            
+            // Técnica 2: Simulação de progresso adicional durante processamento
+            if (nextProgress >= 95 && event.loaded === event.total) {
+              // Quando o upload terminar, mostrar 95% e deixar o backend processar
+              nextProgress = 95;
+              
+              // Simular progresso enquanto o servidor processa
+              const simulateProcessing = () => {
+                setUploadProgress(prev => {
+                  // Incrementar lentamente até 99%
+                  if (prev < 99) {
+                    return prev + 1;
+                  }
+                  return prev;
+                });
+              };
+              
+              // Incrementar a cada 500ms para simular o processamento do servidor
+              const processingInterval = setInterval(simulateProcessing, 500);
+              
+              // Limpar o intervalo quando xhr.onload for chamado
+              xhr.addEventListener('load', () => clearInterval(processingInterval));
+            }
+            
+            setUploadProgress(nextProgress);
           }
         };
         
@@ -746,17 +786,38 @@ function UploadModal({
               </div>
             )}
             
-            {/* Barra de progresso de upload */}
+            {/* Barra de progresso de upload melhorada */}
             {isUploading && (
               <div className="w-full flex flex-col gap-2 mt-4">
-                <div className="h-2 bg-gray-200 rounded overflow-hidden">
+                <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                   <div
-                    className="h-full bg-primary transition-all duration-300 ease-in-out"
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300 ease-in-out"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
+                <div className="flex justify-between items-center text-xs text-gray-600 mt-1 px-1">
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Processando {thumbnails.length} fotos</span>
+                  </div>
+                  <span className="font-medium">{uploadProgress}%</span>
+                </div>
                 <div className="text-xs text-gray-500 mt-1 text-center">
-                  Enviando fotos... Caso seja acima de 100 fotos, pode demorar um pouco, mas nao feche ou atualize a pagina {uploadProgress}%
+                  {uploadProgress < 30 ? (
+                    "Preparando arquivos para upload..."
+                  ) : uploadProgress < 70 ? (
+                    "Enviando fotos para o servidor..."
+                  ) : uploadProgress < 90 ? (
+                    "Processando imagens no servidor..."
+                  ) : (
+                    "Finalizando o processamento..."
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 mt-1 text-center">
+                  Por favor, não feche ou atualize a página durante o upload
                 </div>
               </div>
             )}
