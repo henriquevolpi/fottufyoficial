@@ -32,7 +32,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
   }
 
   // Função para enviar um lote de arquivos para a API com XMLHttpRequest para acompanhar o progresso
-  async function uploadBatch(compressedFiles: File[]): Promise<any> {
+  async function uploadBatch(compressedFiles: File[], batchIndex: number, totalBatches: number): Promise<any> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
@@ -43,17 +43,35 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       });
       
       // Definir callbacks para acompanhar o progresso
+      // Calculamos o progresso considerando o lote atual dentro do progresso total
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percentage = Math.round((event.loaded / event.total) * 100);
-          setUploadPercentage(percentage);
+          // Calcular o progresso dentro deste lote (0-100)
+          const batchProgress = Math.round((event.loaded / event.total) * 100);
+          
+          // Calcular o progresso global considerando os lotes anteriores e o atual
+          // Cada lote representa (100 / totalBatches)% do progresso total
+          const batchWeight = 100 / totalBatches;
+          
+          // O progresso total é a soma do progresso dos lotes anteriores completos
+          // mais o progresso proporcional do lote atual
+          const completedBatchesProgress = batchIndex * batchWeight;
+          const currentBatchContribution = (batchProgress / 100) * batchWeight;
+          const totalProgress = Math.min(
+            Math.round(completedBatchesProgress + currentBatchContribution),
+            99 // Limitamos a 99% até que esteja realmente completo
+          );
+          
+          setUploadPercentage(totalProgress);
           setUploadStatus('uploading');
+          
+          console.log(`Lote ${batchIndex+1}/${totalBatches}: ${batchProgress}% - Progresso total: ${totalProgress}%`);
         }
       };
       
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          setUploadStatus('completed');
+          // Não definimos como 'completed' aqui, pois isso acontecerá apenas quando todos os lotes forem processados
           try {
             const response = JSON.parse(xhr.responseText);
             resolve(response);
@@ -130,8 +148,8 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         
         console.log(`Lote ${batchIndex + 1} comprimido, enviando para o servidor...`);
         
-        // Enviar o lote atual
-        const result = await uploadBatch(compressedFiles);
+        // Enviar o lote atual passando o índice e o número total de lotes
+        const result = await uploadBatch(compressedFiles, batchIndex, totalBatches);
         
         // Atualizar o contador de progresso
         const batchUploaded = result.files?.length || result.totalUploaded || batchSize;
