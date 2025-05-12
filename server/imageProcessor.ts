@@ -1,5 +1,25 @@
 import sharp, { OverlayOptions } from 'sharp';
 
+/**
+ * Função para logar informações de uso de memória
+ * @param label Identificador do ponto de monitoramento
+ * @param details Detalhes adicionais opcional como tamanho de arquivo
+ */
+function logMemory(label: string, details: string = ''): void {
+  if (process.env.DEBUG_MEMORY !== 'true') return;
+  
+  const memoryUsage = process.memoryUsage();
+  console.log(`
+=== MEMORY USAGE [${label}] ===
+${details ? `Details: ${details}\n` : ''}Heap Total: ${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB
+Heap Used: ${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB
+External: ${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB
+RSS: ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB
+Heap Used/Total: ${(memoryUsage.heapUsed / memoryUsage.heapTotal * 100).toFixed(2)}%
+================================
+  `);
+}
+
 // Constantes para processamento
 const TARGET_WIDTH = 920; // Largura alvo para o redimensionamento
 const WATERMARK_OPACITY = 0.25; // 25% de opacidade
@@ -19,22 +39,37 @@ export async function processImage(
   applyWatermark: boolean = true
 ): Promise<Buffer> {
   try {
+    // Log do início do processamento da imagem e o tamanho do buffer original
+    logMemory('processImage-start', `Starting image processing: ${mimetype}, Size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB, Watermark: ${applyWatermark}`);
+
     // Primeiro, redimensionar a imagem
     let resizedBuffer: Buffer;
     try {
+      logMemory('processImage-before-resize', `Original buffer size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
       resizedBuffer = await resizeImage(buffer);
+      logMemory('processImage-after-resize', `Resized buffer size: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
     } catch (resizeError) {
+      logMemory('processImage-resize-error', `Error resizing image: ${resizeError instanceof Error ? resizeError.message : String(resizeError)}`);
       console.error('Erro ao redimensionar imagem:', resizeError);
       // Se falhar no redimensionamento, use o buffer original
       resizedBuffer = buffer;
     }
 
     try {
+      // Log antes de criar o objeto sharp
+      logMemory('processImage-before-sharp', `Creating Sharp instance with buffer size: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
       // Obter a imagem redimensionada para processamento
       const processedImage = sharp(resizedBuffer);
       
+      // Log antes de obter metadados
+      logMemory('processImage-before-metadata', `Getting image metadata`);
+      
       // Obter metadados da imagem redimensionada para determinar dimensões
       const metadata = await processedImage.metadata();
+      
+      // Log após obter metadados
+      logMemory('processImage-after-metadata', `Image dimensions: ${metadata.width}x${metadata.height}, Format: ${metadata.format}`);
       
       if (!metadata.width || !metadata.height) {
         throw new Error('Não foi possível obter as dimensões da imagem');
@@ -45,20 +80,37 @@ export async function processImage(
       
       // Aplicar marca d'água apenas se o parâmetro applyWatermark for true
       if (applyWatermark) {
-        console.log(`Aplicando marca d'água à imagem`);
+        if (process.env.DEBUG_MEMORY === 'true') {
+          console.log(`Aplicando marca d'água à imagem`);
+        }
+        
+        // Log antes de criar a marca d'água
+        logMemory('processImage-before-watermark', `Creating watermark pattern for image ${metadata.width}x${metadata.height}`);
+        
         // Criar padrão de marca d'água repetitiva diretamente com texto
         const watermarkPattern = await createTextWatermarkPattern(
           metadata.width,
           metadata.height
         );
         
+        // Log após criar a marca d'água e antes de aplicá-la
+        logMemory('processImage-after-watermark-creation', `Watermark buffer size: ${(watermarkPattern.length / 1024 / 1024).toFixed(2)} MB`);
+        
         // Aplicar marca d'água
         finalImage = processedImage.composite([
           { input: watermarkPattern, blend: 'over' }
         ]);
+        
+        // Log após aplicar a marca d'água
+        logMemory('processImage-after-watermark-apply', `Watermark applied`);
       } else {
-        console.log(`Pulando aplicação de marca d'água conforme solicitado`);
+        if (process.env.DEBUG_MEMORY === 'true') {
+          console.log(`Pulando aplicação de marca d'água conforme solicitado`);
+        }
       }
+      
+      // Log antes de definir o formato de saída
+      logMemory('processImage-before-format', `Setting output format based on mimetype: ${mimetype}`);
       
       // Definir formato de saída baseado no mimetype original
       if (mimetype === 'image/png') {
@@ -72,14 +124,26 @@ export async function processImage(
         finalImage = finalImage.jpeg({ quality: 85 });
       }
       
+      // Log antes de converter para buffer
+      logMemory('processImage-before-toBuffer', `Converting to final buffer`);
+      
       // Converter para buffer final e retornar
-      return await finalImage.toBuffer();
+      const finalBuffer = await finalImage.toBuffer();
+      
+      // Log do buffer final
+      logMemory('processImage-complete', `Final buffer size: ${(finalBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
+      return finalBuffer;
     } catch (watermarkError) {
+      // Log do erro na aplicação da marca d'água
+      logMemory('processImage-watermark-error', `Error applying watermark: ${watermarkError instanceof Error ? watermarkError.message : String(watermarkError)}`);
       console.error('Erro ao aplicar marca d\'água:', watermarkError);
       // Se falhar na aplicação da marca d'água, retorna pelo menos a imagem redimensionada
       return resizedBuffer;
     }
   } catch (error) {
+    // Log do erro geral no processamento
+    logMemory('processImage-general-error', `General error processing image: ${error instanceof Error ? error.message : String(error)}`);
     console.error('Erro ao processar imagem:', error);
     // Falha geral - retornar buffer original em último caso
     return buffer;
@@ -92,23 +156,52 @@ export async function processImage(
  */
 async function resizeImage(buffer: Buffer): Promise<Buffer> {
   try {
+    // Log no início do redimensionamento
+    logMemory('resizeImage-start', `Starting resize operation with buffer size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
+    
     const image = sharp(buffer);
+    
+    // Log antes de obter metadados
+    logMemory('resizeImage-before-metadata', `Getting image metadata for resize decision`);
+    
     const metadata = await image.metadata();
+    
+    // Log dos metadados
+    logMemory('resizeImage-metadata', 
+      `Image metadata: ${metadata.width}x${metadata.height}, Format: ${metadata.format}, Size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
     
     // Redimensionar apenas se for maior que a largura alvo
     if (metadata.width && metadata.width > TARGET_WIDTH) {
-      return await image
+      // Log antes do redimensionamento
+      logMemory('resizeImage-resizing', 
+        `Image needs resizing from ${metadata.width}px to ${TARGET_WIDTH}px width`);
+      
+      const resizedBuffer = await image
         .resize({
           width: TARGET_WIDTH,
           fit: 'inside',
           withoutEnlargement: true
         })
         .toBuffer();
+      
+      // Log após o redimensionamento
+      logMemory('resizeImage-complete', 
+        `Resize complete: Original: ${(buffer.length / 1024 / 1024).toFixed(2)} MB → Resized: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
+      return resizedBuffer;
     }
+    
+    // Log quando não precisar redimensionar
+    logMemory('resizeImage-no-resize-needed', 
+      `No resize needed: Image width ${metadata.width}px is already ≤ ${TARGET_WIDTH}px`);
     
     // Se não precisar redimensionar, retornar o buffer original
     return buffer;
   } catch (error) {
+    // Log de erro no redimensionamento
+    logMemory('resizeImage-error', 
+      `Error during resize: ${error instanceof Error ? error.message : String(error)}`);
+    
     console.error('Erro ao redimensionar imagem:', error);
     return buffer;
   }
@@ -119,6 +212,9 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
  * Gera uma grade de textos "fottufy (não copie)" com opacidade 25%
  */
 async function createTextWatermarkPattern(width: number, height: number): Promise<Buffer> {
+  // Log no início da criação da marca d'água
+  logMemory('createWatermark-start', `Creating watermark pattern for dimensions: ${width}x${height}`);
+  
   // Garantir dimensões seguras
   const safeWidth = Math.floor(width);
   const safeHeight = Math.floor(height);
@@ -134,6 +230,9 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     // Calcular número de repetições necessárias em cada direção
     const cols = Math.ceil(safeWidth / cellWidth) + 1;
     const rows = Math.ceil(safeHeight / cellHeight) + 1;
+    
+    // Log do cálculo de grade
+    logMemory('createWatermark-grid', `Watermark grid: ${cols}x${rows} cells (${cols * rows} total text instances)`);
     
     // Criar SVG com texto repetido
     let svgContent = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg">`;
@@ -157,6 +256,9 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
         text-anchor: middle;
       }
     </style>`;
+    
+    // Log antes de criar o padrão de repetição
+    logMemory('createWatermark-before-pattern', `Building SVG text pattern with ${WATERMARK_TEXT} watermark`);
     
     // Criar um padrão de repetição do texto
     for (let row = 0; row < rows; row++) {
@@ -188,11 +290,27 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     
     svgContent += `</svg>`;
     
+    // Log do tamanho da string SVG
+    logMemory('createWatermark-svg-created', `SVG content created: ${(svgContent.length / 1024).toFixed(2)} KB`);
+    
+    // Log antes de converter para buffer
+    logMemory('createWatermark-before-sharp', `Converting SVG to buffer using Sharp`);
+    
     // Converter SVG para buffer usando Sharp
-    return await sharp(Buffer.from(svgContent))
+    const watermarkBuffer = await sharp(Buffer.from(svgContent))
       .toBuffer();
+    
+    // Log após converter para buffer
+    logMemory('createWatermark-complete', `Watermark buffer created: ${(watermarkBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+    
+    return watermarkBuffer;
   } catch (error) {
+    // Log de erro na criação da marca d'água
+    logMemory('createWatermark-error', `Error creating watermark: ${error instanceof Error ? error.message : String(error)}`);
     console.error('Erro ao criar padrão de marca d\'água de texto:', error);
+    
+    // Log antes de criar a imagem transparente de fallback
+    logMemory('createWatermark-fallback', `Creating transparent fallback image ${safeWidth}x${safeHeight}`);
     
     // Em caso de falha, criar uma imagem transparente
     return await sharp({
