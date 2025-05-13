@@ -238,9 +238,11 @@ export function setupAuth(app: Express) {
       maxAge: 30 * 24 * 60 * 60 * 1000,
       // Allow JavaScript to read the cookie for backup recovery
       httpOnly: false,
-      // Essential for cookies to work in all browsers in this environment
-      sameSite: 'lax',
-      path: '/'
+      // CRÍTICO: cookies não funcionam corretamente com 'lax' em iframes do Replit
+      sameSite: 'none',
+      path: '/',
+      // Configuração especial para garantir que o cookie funcione no Replit com SameSite=none
+      domain: process.env.REPLIT_DOMAIN ? undefined : undefined
     }
   };
 
