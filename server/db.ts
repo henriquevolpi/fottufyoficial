@@ -109,20 +109,21 @@ export function startDbHealthCheck(intervalMs: number = 60000) {
         logDbConnectionStatus('health-check-success', `Database connection healthy (Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount})`);
       } else {
         logDbConnectionStatus('health-check-failure', `Database connection failed: ${result.error}`);
-        // If we're running under the DEBUG_MEMORY flag, try to fix the pool
+        
+        // Se a conexão falhar, em vez de tentar fechar o pool (o que causa problemas),
+        // vamos apenas tentar estabelecer uma nova conexão para verificar se o problema é temporário
         if (process.env.DEBUG_MEMORY === 'true') {
-          console.log('Attempting to repair database connection pool...');
+          console.log('Detectado problema de conexão com o banco. Tentando estabelecer nova conexão...');
+          
           try {
-            // End all existing connections and create new ones
-            await pool.end();
-            // Create a new pool (will happen on next access since we export the pool variable)
-            const tempPool = new Pool(poolConfig);
-            // Test the new pool
-            const client = await tempPool.connect();
+            // Tentar obter uma nova conexão sem fechar o pool existente
+            const client = await pool.connect();
+            console.log('Nova conexão estabelecida com sucesso. O banco de dados está acessível.');
+            // Devolver a conexão ao pool imediatamente
             client.release();
-            console.log('Database connection pool successfully repaired.');
-          } catch (repairError) {
-            console.error('Failed to repair database connection pool:', repairError);
+          } catch (recoveryError) {
+            console.error('Falha ao estabelecer nova conexão:', recoveryError);
+            console.log('O problema de conexão persiste, mas o aplicativo continuará tentando reconectar.');
           }
         }
       }
