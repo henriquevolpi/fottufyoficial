@@ -2519,6 +2519,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // 3. Rota explícita para lidar com URLs sem ".html" que devem ser servidas como HTML estático
   app.get(["/reset-password", "/create-password"], (req: Request, res: Response, next: NextFunction) => {
+    // Se a resposta já foi enviada (prevenção de erro ERR_HTTP_HEADERS_SENT)
+    if (res.headersSent) {
+      console.log(`Headers já enviados para ${req.url}, ignorando handler redundante`);
+      return;
+    }
+
     // Verificar se há token na query string
     const token = req.query.token;
     
@@ -2530,48 +2536,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
      * 3. Sem token, passamos para o app React que exibirá mensagem de erro apropriada
      */
     
-    // Em ambiente de desenvolvimento, sempre passar para o React
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Ambiente de desenvolvimento: delegando ${req.path} para o React`);
+    try {
+      // Em ambiente de desenvolvimento, sempre passar para o React
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Ambiente de desenvolvimento: delegando ${req.path} para o React`);
+        
+        // Configurar cabeçalhos para garantir funcionamento adequado
+        res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+        
+        // No desenvolvimento, passar para o próximo middleware (Vite/React)
+        return next();
+      }
       
-      // Configurar cabeçalhos para garantir funcionamento adequado
-      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      // Em produção, se há token, servir o arquivo HTML estático diretamente
+      if (token) {
+        console.log(`Token encontrado na URL ${req.path}, servindo página HTML estática`);
+        
+        // Determinar qual arquivo servir
+        const htmlFile = req.path === '/reset-password' 
+          ? 'reset-password.html' 
+          : 'create-password.html';
+        
+        const htmlPath = path.resolve(
+          import.meta.dirname,
+          "..",
+          "public",
+          htmlFile
+        );
+        
+        // Configurar cabeçalhos explicitamente
+        res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        
+        // Registrar detalhes para debug
+        console.log(`Servindo arquivo HTML estático: ${htmlPath} com Content-Type: ${res.getHeader('Content-Type')}`);
+        
+        // Servir o arquivo HTML estático
+        return res.sendFile(htmlPath);
+      }
       
-      // No desenvolvimento, passar para o próximo middleware (Vite/React)
+      // Se não há token, passar para o app React normal
       return next();
+    } catch (error) {
+      // Tratamento de erros para evitar que erros não tratados quebrem o fluxo
+      console.error(`Erro no processamento da rota ${req.path}:`, error);
+      if (!res.headersSent) {
+        return res.status(500).send("Erro interno do servidor");
+      }
     }
-    
-    // Em produção, se há token, servir o arquivo HTML estático diretamente
-    if (token) {
-      console.log(`Token encontrado na URL ${req.path}, servindo página HTML estática`);
-      
-      // Determinar qual arquivo servir
-      const htmlFile = req.path === '/reset-password' 
-        ? 'reset-password.html' 
-        : 'create-password.html';
-      
-      const htmlPath = path.resolve(
-        import.meta.dirname,
-        "..",
-        "public",
-        htmlFile
-      );
-      
-      // Configurar cabeçalhos explicitamente
-      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      
-      // Registrar detalhes para debug
-      console.log(`Servindo arquivo HTML estático: ${htmlPath} com Content-Type: ${res.getHeader('Content-Type')}`);
-      
-      // Servir o arquivo HTML estático
-      return res.sendFile(htmlPath);
-    }
-    
-    // Se não há token, passar para o app React normal
-    next();
   });
   
   // 4. Rota para o app React nas rotas de redefinição/criação de senha
@@ -2580,6 +2594,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.path.endsWith('.html')) {
       console.log(`Redirecionando para arquivo HTML estático: ${req.path}`);
       return next();
+    }
+    
+    // Se a resposta já foi enviada (prevenção de erro ERR_HTTP_HEADERS_SENT)
+    if (res.headersSent) {
+      console.log(`Headers já enviados para ${req.url}, ignorando handler redundante`);
+      return;
     }
     
     const clientHtmlPath = path.resolve(
@@ -2591,9 +2611,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     console.log(`Servindo app React para rota de senha: ${req.url}`);
     
-    // Retorna o HTML principal para o React com o Content-Type correto
-    res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-    res.sendFile(clientHtmlPath);
+    try {
+      // Retorna o HTML principal para o React com o Content-Type correto
+      res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      return res.sendFile(clientHtmlPath);
+    } catch (error) {
+      if (!res.headersSent) {
+        console.error(`Erro ao servir HTML para ${req.url}:`, error);
+        return res.status(500).send("Erro interno do servidor");
+      }
+    }
   });
   
   /**

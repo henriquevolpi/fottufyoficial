@@ -253,8 +253,15 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Verificar se os headers já foram enviados para evitar o erro 'ERR_HTTP_HEADERS_SENT'
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    } else {
+      console.warn("Headers já enviados, não foi possível enviar resposta de erro para:", message);
+    }
+    
+    // Registrar o erro, mas não lançar exceção para evitar falhas na aplicação
+    console.error("Erro capturado pelo middleware global:", err);
   });
 
   // Importante: registrar middleware MIME type checker antes de servir os arquivos estáticos
