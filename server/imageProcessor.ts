@@ -26,9 +26,16 @@ const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 const WATERMARK_TEXT = 'fottufy (não copie)'; // Texto para a marca d'água
 const WATERMARK_FONT_SIZE = 36; // Tamanho da fonte em pixels
 
+// Cache para a marca d'água - evita recriar para imagens de tamanho semelhante
+const watermarkCache = new Map<string, Buffer>();
+
+// Desativar o cache interno do Sharp para evitar acúmulo de memória
+sharp.cache(false);
+
 /**
  * Função principal para processar a imagem
  * Redimensiona para 920px de largura e aplica marca d'água com texto repetido
+ * Versão otimizada com melhor gerenciamento de memória
  * @param buffer Buffer da imagem original
  * @param mimetype Tipo MIME da imagem
  * @param applyWatermark Flag que indica se deve aplicar marca d'água (padrão: true)
@@ -38,6 +45,9 @@ export async function processImage(
   mimetype: string,
   applyWatermark: boolean = true
 ): Promise<Buffer> {
+  // Desativar o cache do Sharp para esta operação específica
+  sharp.cache(false);
+  
   try {
     // Log do início do processamento da imagem e o tamanho do buffer original
     logMemory('processImage-start', `Starting image processing: ${mimetype}, Size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB, Watermark: ${applyWatermark}`);
@@ -47,6 +57,13 @@ export async function processImage(
     try {
       logMemory('processImage-before-resize', `Original buffer size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
       resizedBuffer = await resizeImage(buffer);
+      
+      // Liberando referência ao buffer original o mais cedo possível
+      if (resizedBuffer !== buffer) {
+        // Se o buffer foi realmente redimensionado, podemos liberar o original
+        buffer = null as any; // Permitir coleta de lixo do buffer original
+      }
+      
       logMemory('processImage-after-resize', `Resized buffer size: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
     } catch (resizeError) {
       logMemory('processImage-resize-error', `Error resizing image: ${resizeError instanceof Error ? resizeError.message : String(resizeError)}`);

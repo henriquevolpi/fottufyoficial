@@ -70,12 +70,16 @@ interface StreamUploadOptions {
 
 /**
  * Faz streaming direto de um arquivo para o R2 sem processamento
+ * Versão otimizada com melhor gerenciamento de memória
  */
 export async function streamDirectToR2(
   filePath: string, 
   fileName: string, 
   contentType: string
 ): Promise<{ url: string, key: string }> {
+  // Variável para armazenar o stream para que possamos fechá-lo em caso de erro
+  let fileStream: fs.ReadStream | null = null;
+  
   try {
     // Log de memória no início do upload
     logMemory('streamDirectToR2-start', `File: ${fileName}, Type: ${contentType}`);
@@ -89,8 +93,19 @@ export async function streamDirectToR2(
       console.error(`Erro ao obter tamanho do arquivo ${filePath}:`, statError);
     }
     
-    // Criar stream do arquivo
-    const fileStream = fs.createReadStream(filePath);
+    // Criar stream do arquivo com melhor tratamento de erros
+    fileStream = fs.createReadStream(filePath);
+    
+    // Adicionar tratamento de erros ao stream
+    fileStream.on('error', (err) => {
+      console.error(`Erro no stream de leitura para ${fileName}:`, err);
+      if (fileStream && !fileStream.destroyed) {
+        fileStream.destroy();
+      }
+    });
+    
+    // Log antes de iniciar o upload
+    logMemory('streamDirectToR2-before-upload', `File: ${fileName}, Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
     
     // Preparar comando de upload
     const uploadCommand = new PutObjectCommand({
@@ -100,9 +115,6 @@ export async function streamDirectToR2(
       ContentType: contentType
     });
     
-    // Log antes de iniciar o upload
-    logMemory('streamDirectToR2-before-upload', `File: ${fileName}, Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
-    
     // Fazer upload usando streaming
     await r2Client.send(uploadCommand);
     
@@ -110,7 +122,6 @@ export async function streamDirectToR2(
     logMemory('streamDirectToR2-after-upload', `File: ${fileName} uploaded successfully`);
     
     // Gerar URL pública de acordo com a configuração do R2
-    // Esta parte permanece consistente com a implementação original
     let url;
     if (process.env.R2_PUBLIC_URL) {
       // Se houver uma URL pública configurada (como um domínio personalizado)
@@ -125,12 +136,37 @@ export async function streamDirectToR2(
     // Log em caso de erro
     logMemory('streamDirectToR2-error', `Error uploading ${fileName}: ${error instanceof Error ? error.message : String(error)}`);
     console.error(`Erro ao fazer streaming para R2: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // Garantir que o stream seja fechado em caso de erro
+    if (fileStream && !fileStream.destroyed) {
+      fileStream.destroy();
+    }
+    
     throw error;
+  } finally {
+    // Garantir limpeza do stream no bloco finally para assegurar que sempre será executado
+    if (fileStream && !fileStream.destroyed) {
+      fileStream.destroy();
+      fileStream = null; // Permitir coleta de lixo
+    }
+    
+    // Sugerir garbage collection se DEBUG_MEMORY estiver ativado
+    if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+      try {
+        setTimeout(() => {
+          global.gc && global.gc();
+          logMemory('streamDirectToR2-gc', `Garbage collection sugerida após upload de ${fileName}`);
+        }, 100);
+      } catch (gcError) {
+        console.error('Erro ao sugerir garbage collection:', gcError);
+      }
+    }
   }
 }
 
 /**
  * Processa uma imagem e faz upload para o R2 usando streaming
+ * Versão otimizada com melhor gerenciamento de memória
  */
 export async function processAndStreamToR2(
   filePath: string,
@@ -138,6 +174,10 @@ export async function processAndStreamToR2(
   contentType: string,
   applyWatermark: boolean = true
 ): Promise<{ url: string, key: string }> {
+  let fileBuffer: Buffer | null = null;
+  let processedBuffer: Buffer | null = null; 
+  let processedFilePath: string | null = null;
+  
   try {
     // Log de memória no início do processamento
     logMemory('processAndStreamToR2-start', `File: ${fileName}, Type: ${contentType}`);
@@ -167,8 +207,8 @@ export async function processAndStreamToR2(
     // Log antes de ler o arquivo para memória
     logMemory('processAndStreamToR2-before-read', `Reading file into memory: ${fileName}`);
     
-    // Ler o arquivo e processar a imagem (isso ainda usa memória, mas é inevitável para o processamento)
-    const fileBuffer = await fs.readFile(filePath);
+    // Ler o arquivo e processar a imagem - armazenando referência para liberar mais tarde
+    fileBuffer = await fs.readFile(filePath);
     
     // Log após ler o arquivo para memória
     logMemory('processAndStreamToR2-after-read', `File buffer size: ${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB`);
@@ -176,18 +216,29 @@ export async function processAndStreamToR2(
     // Log antes do processamento da imagem
     logMemory('processAndStreamToR2-before-process', `Processing image: ${fileName}`);
     
-    const processedBuffer = await processImage(fileBuffer, contentType, applyWatermark);
+    // Processar a imagem e armazenar em um buffer separado
+    processedBuffer = await processImage(fileBuffer, contentType, applyWatermark);
+    
+    // Liberar o buffer original assim que tivermos o buffer processado
+    fileBuffer = null; // Permitir que o garbage collector libere esse buffer
     
     // Log após processamento da imagem
-    logMemory('processAndStreamToR2-after-process', `Processed buffer size: ${(processedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+    if (processedBuffer) {
+      logMemory('processAndStreamToR2-after-process', `Processed buffer size: ${(processedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+    }
     
     // Criar um novo caminho temporário para o arquivo processado
-    const processedFilePath = path.join(TMP_DIR, `processed-${randomUUID()}`);
+    processedFilePath = path.join(TMP_DIR, `processed-${randomUUID()}`);
     
     // Log antes de escrever o arquivo processado
     logMemory('processAndStreamToR2-before-write', `Writing processed file: ${processedFilePath}`);
     
-    await fs.writeFile(processedFilePath, processedBuffer);
+    // Escrever o buffer processado no arquivo
+    if (processedBuffer) {
+      await fs.writeFile(processedFilePath, processedBuffer);
+      // Liberar o buffer processado após escrever no arquivo
+      processedBuffer = null; // Permitir que o garbage collector libere esse buffer
+    }
     
     // Log após escrever o arquivo processado
     logMemory('processAndStreamToR2-after-write', `Processed file written to disk`);
@@ -205,11 +256,14 @@ export async function processAndStreamToR2(
       return result;
     } finally {
       // Limpar o arquivo processado
-      try {
-        await fs.unlink(processedFilePath);
-        logMemory('processAndStreamToR2-cleanup', `Deleted processed temporary file: ${processedFilePath}`);
-      } catch (cleanupError) {
-        console.error(`Erro ao limpar arquivo processado: ${cleanupError}`);
+      if (processedFilePath) {
+        try {
+          await fs.unlink(processedFilePath);
+          logMemory('processAndStreamToR2-cleanup', `Deleted processed temporary file: ${processedFilePath}`);
+          processedFilePath = null; // Limpar referência
+        } catch (cleanupError) {
+          console.error(`Erro ao limpar arquivo processado: ${cleanupError}`);
+        }
       }
     }
   } catch (processingError) {
@@ -220,11 +274,28 @@ export async function processAndStreamToR2(
     // Em caso de erro no processamento, tenta fazer o upload do arquivo original
     logMemory('processAndStreamToR2-fallback', `Falling back to direct upload for: ${fileName}`);
     return streamDirectToR2(filePath, fileName, contentType);
+  } finally {
+    // Garantir liberação completa de memória
+    fileBuffer = null;
+    processedBuffer = null;
+    
+    // Sugerir coleta de lixo em ambiente de DEBUG
+    if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+      try {
+        setTimeout(() => {
+          global.gc && global.gc();
+          logMemory('processAndStreamToR2-gc', `Garbage collection sugerida após processamento de ${fileName}`);
+        }, 100);
+      } catch (gcError) {
+        console.error('Erro ao sugerir garbage collection:', gcError);
+      }
+    }
   }
 }
 
 /**
  * Middleware para lidar com uploads via streaming
+ * Versão otimizada com melhor gerenciamento de memória
  */
 export function streamUploadMiddleware(options: StreamUploadOptions = {}) {
   const { applyWatermark = true, maxFileSize = 1000 * 1024 * 1024, fileTypes } = options;
@@ -271,6 +342,14 @@ export function streamUploadMiddleware(options: StreamUploadOptions = {}) {
         // Log de início do processamento do arquivo
         logMemory('streamUploadMiddleware-file-start', `Processing file ${fileCount}: ${filename} (${mimeType})`);
         
+        // Adicionar tratamento de erro ao stream
+        fileStream.on('error', (err) => {
+          console.error(`Erro no stream de leitura para ${filename}:`, err);
+          if (!fileStream.destroyed) {
+            fileStream.destroy();
+          }
+        });
+        
         // Verificar tipo de arquivo se houver restrição
         if (fileTypes && !fileTypes.includes(mimeType)) {
           logMemory('streamUploadMiddleware-file-skip', `Skipping file ${filename}: invalid type ${mimeType}`);
@@ -289,6 +368,14 @@ export function streamUploadMiddleware(options: StreamUploadOptions = {}) {
           // Criar um write stream para salvar o arquivo temporariamente
           const writeStream = fs.createWriteStream(tmpFilePath);
           
+          // Adicionar tratamento de erro também ao writeStream
+          writeStream.on('error', (err) => {
+            console.error(`Erro no stream de escrita para ${tmpFilePath}:`, err);
+            if (!writeStream.destroyed) {
+              writeStream.destroy();
+            }
+          });
+          
           // Usar pipeline para garantir que os streams sejam limpos corretamente
           await pipeline(fileStream, writeStream);
           
@@ -303,7 +390,11 @@ export function streamUploadMiddleware(options: StreamUploadOptions = {}) {
           logMemory('streamUploadMiddleware-file-stats', 
             `File ${fileCount}: ${filename}, Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB, Total so far: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
           
-          // Adicionar informações do arquivo ao req.files
+          // Adicionar informações do arquivo ao req.files - garantir que req.files existe
+          if (!req.files) {
+            req.files = [];
+          }
+          
           req.files.push({
             fieldname,
             originalname: filename,
@@ -324,7 +415,27 @@ export function streamUploadMiddleware(options: StreamUploadOptions = {}) {
         // Log de conclusão do upload
         logMemory('streamUploadMiddleware-finish', 
           `Upload complete: ${fileCount} files, Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+        
+        // Sugerir garbage collection após completar o upload
+        if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+          try {
+            setTimeout(() => {
+              global.gc && global.gc();
+              logMemory('streamUploadMiddleware-gc', `Garbage collection sugerida após upload completo`);
+            }, 100);
+          } catch (gcError) {
+            console.error('Erro ao sugerir garbage collection:', gcError);
+          }
+        }
+        
         next();
+      });
+      
+      // Adicionar tratamento de erro global ao busboy
+      bb.on('error', (err) => {
+        console.error(`Erro no processador busboy:`, err);
+        logMemory('streamUploadMiddleware-busboy-error', `Busboy error: ${err instanceof Error ? err.message : String(err)}`);
+        next(err);
       });
       
       // Iniciar o processamento
@@ -338,12 +449,13 @@ export function streamUploadMiddleware(options: StreamUploadOptions = {}) {
 
 /**
  * Limpar arquivos temporários após o processamento da requisição
+ * Versão otimizada com melhor gerenciamento de memória
  */
 export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res: Response, next: NextFunction) {
   // Log no início da função
   logMemory('cleanupTempFiles-start', `Request URL: ${req.url}`);
   
-  if (req.files) {
+  if (req.files && req.files.length > 0) {
     logMemory('cleanupTempFiles-files', `Number of files to track for cleanup: ${req.files.length}`);
   }
   
@@ -351,19 +463,24 @@ export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res:
   const originalEnd = res.end;
   
   // Sobrescrever o método end
-  res.end = function(...args: any[]) {
+  res.end = function(chunk?: any, encoding?: BufferEncoding, callback?: () => void): any {
     // Log antes da limpeza
     logMemory('cleanupTempFiles-before-cleanup', `Response ended, cleaning up temporary files`);
     
+    // Converter argumentos variáveis para o formato esperado pela função original
+    const args: [any?, BufferEncoding?, (() => void)?] = [chunk, encoding, callback];
+    
     // Executar a limpeza assíncrona
     if (req.files && req.files.length > 0) {
-      const filePaths = req.files.map(file => file.path);
       const totalSize = req.files.reduce((total, file) => total + file.size, 0);
       
       logMemory('cleanupTempFiles-details', 
         `Cleaning up ${req.files.length} files, Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
       
-      Promise.all(req.files.map(file => {
+      // Criar cópia dos caminhos para evitar problemas se req.files for modificado
+      const filesToClean = [...req.files];
+      
+      Promise.all(filesToClean.map(file => {
         return fs.unlink(file.path)
           .then(() => {
             if (process.env.DEBUG_MEMORY === 'true') {
@@ -377,11 +494,26 @@ export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res:
       }))
       .then(() => {
         logMemory('cleanupTempFiles-complete', `All temporary files cleaned up successfully`);
+        
+        // Sugerir garbage collection após limpeza
+        if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+          try {
+            setTimeout(() => {
+              global.gc && global.gc();
+              logMemory('cleanupTempFiles-gc', `Garbage collection sugerida após limpeza de arquivos`);
+            }, 100);
+          } catch (gcError) {
+            console.error('Erro ao sugerir garbage collection:', gcError);
+          }
+        }
       })
       .catch(err => {
         logMemory('cleanupTempFiles-global-error', `Error during cleanup: ${err instanceof Error ? err.message : String(err)}`);
         console.error('Erro ao limpar arquivos temporários:', err);
       });
+      
+      // Limpar a referência aos arquivos no request para ajudar o GC
+      req.files = [];
     } else {
       logMemory('cleanupTempFiles-no-files', `No files to clean up`);
     }
@@ -389,7 +521,7 @@ export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res:
     // Log final após a limpeza
     logMemory('cleanupTempFiles-end', `Response ended, temporary files cleanup initiated`);
     
-    // Chamar o método original
+    // Chamar o método original com os argumentos corretos
     return originalEnd.apply(this, args);
   };
   
