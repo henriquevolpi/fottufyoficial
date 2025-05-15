@@ -76,8 +76,12 @@ export async function processImage(
       // Log antes de criar o objeto sharp
       logMemory('processImage-before-sharp', `Creating Sharp instance with buffer size: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
       
-      // Obter a imagem redimensionada para processamento
-      const processedImage = sharp(resizedBuffer);
+      // Obter a imagem redimensionada para processamento usando o recurso sequencial
+      // Isso evita que o objeto Sharp mantenha referências desnecessárias em memória
+      const processedImage = sharp(resizedBuffer, { 
+        sequentialRead: true, // Leitura sequencial para economizar memória
+        limitInputPixels: 50000000 // Limita o tamanho das imagens processadas (proteção)
+      });
       
       // Log antes de obter metadados
       logMemory('processImage-before-metadata', `Getting image metadata`);
@@ -104,13 +108,37 @@ export async function processImage(
         // Log antes de criar a marca d'água
         logMemory('processImage-before-watermark', `Creating watermark pattern for image ${metadata.width}x${metadata.height}`);
         
-        // Criar padrão de marca d'água repetitiva diretamente com texto
-        const watermarkPattern = await createTextWatermarkPattern(
-          metadata.width,
-          metadata.height
-        );
+        // Usar a dimensão arredondada para a chave de cache (evitar cache infinito)
+        const watermarkCacheKey = `${Math.ceil(metadata.width/100)*100}x${Math.ceil(metadata.height/100)*100}`;
         
-        // Log após criar a marca d'água e antes de aplicá-la
+        // Verificar se já temos uma marca d'água em cache para essas dimensões
+        let watermarkPattern: Buffer;
+        if (watermarkCache.has(watermarkCacheKey)) {
+          watermarkPattern = watermarkCache.get(watermarkCacheKey)!;
+          logMemory('processImage-watermark-from-cache', `Retrieved watermark from cache for ${watermarkCacheKey}`);
+        } else {
+          // Criar padrão de marca d'água repetitiva diretamente com texto
+          watermarkPattern = await createTextWatermarkPattern(
+            metadata.width ?? 1000,
+            metadata.height ?? 800
+          );
+          
+          // Armazenar no cache para reutilização
+          watermarkCache.set(watermarkCacheKey, watermarkPattern);
+          
+          // Limitar o tamanho do cache para evitar crescimento excessivo
+          if (watermarkCache.size > 10) {
+            // Remover a primeira entrada se o cache ficar muito grande
+            const keysIterator = watermarkCache.keys();
+            const firstKey = keysIterator.next().value;
+            if (firstKey) {
+              watermarkCache.delete(firstKey);
+              logMemory('processImage-watermark-cache-cleanup', `Removed oldest watermark from cache: ${firstKey}`);
+            }
+          }
+        }
+        
+        // Log após criar/obter a marca d'água e antes de aplicá-la
         logMemory('processImage-after-watermark-creation', `Watermark buffer size: ${(watermarkPattern.length / 1024 / 1024).toFixed(2)} MB`);
         
         // Aplicar marca d'água
@@ -129,22 +157,22 @@ export async function processImage(
       // Log antes de definir o formato de saída
       logMemory('processImage-before-format', `Setting output format based on mimetype: ${mimetype}`);
       
-      // Definir formato de saída baseado no mimetype original
+      // Definir formato de saída baseado no mimetype original com configurações otimizadas
       if (mimetype === 'image/png') {
-        finalImage = finalImage.png();
+        finalImage = finalImage.png({ compressionLevel: 6 }); // Equilíbrio entre tamanho e performance
       } else if (mimetype === 'image/webp') {
-        finalImage = finalImage.webp();
+        finalImage = finalImage.webp({ quality: 80 }); // Boa compressão para webp
       } else if (mimetype === 'image/gif') {
         finalImage = finalImage.gif();
       } else {
         // Padrão para JPEG com boa qualidade
-        finalImage = finalImage.jpeg({ quality: 85 });
+        finalImage = finalImage.jpeg({ quality: 80, mozjpeg: true }); // mozjpeg para melhor compressão
       }
       
       // Log antes de converter para buffer
       logMemory('processImage-before-toBuffer', `Converting to final buffer`);
       
-      // Converter para buffer final e retornar
+      // Converter para buffer final e liberar recursos do Sharp
       const finalBuffer = await finalImage.toBuffer();
       
       // Log do buffer final
@@ -169,6 +197,7 @@ export async function processImage(
 
 /**
  * Função auxiliar para redimensionar a imagem para 920px de largura
+ * Versão otimizada com melhor gerenciamento de memória
  * Mantém a proporção original e só redimensiona se for maior que o alvo
  */
 async function resizeImage(buffer: Buffer): Promise<Buffer> {
@@ -176,7 +205,14 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
     // Log no início do redimensionamento
     logMemory('resizeImage-start', `Starting resize operation with buffer size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
     
-    const image = sharp(buffer);
+    // Desativar o cache na instância do sharp
+    sharp.cache(false);
+    
+    // Criar instância do sharp com configurações otimizadas para economia de memória
+    const image = sharp(buffer, { 
+      sequentialRead: true,
+      limitInputPixels: 50000000 // Limita entradas muito grandes para evitar ataques de alocação de memória
+    });
     
     // Log antes de obter metadados
     logMemory('resizeImage-before-metadata', `Getting image metadata for resize decision`);
@@ -193,17 +229,31 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
       logMemory('resizeImage-resizing', 
         `Image needs resizing from ${metadata.width}px to ${TARGET_WIDTH}px width`);
       
+      // Configurar operação de redimensionamento com opções para melhor desempenho
       const resizedBuffer = await image
         .resize({
           width: TARGET_WIDTH,
           fit: 'inside',
-          withoutEnlargement: true
+          withoutEnlargement: true,
+          fastShrinkOnLoad: true // Usa algoritmo mais rápido e eficiente para redução
         })
-        .toBuffer();
+        .toBuffer({ resolveWithObject: false }); // Não precisamos do objeto adicional, apenas do buffer
       
       // Log após o redimensionamento
       logMemory('resizeImage-complete', 
         `Resize complete: Original: ${(buffer.length / 1024 / 1024).toFixed(2)} MB → Resized: ${(resizedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Sugerir coleta de lixo em modo debug
+      if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+        try {
+          setTimeout(() => {
+            global.gc && global.gc();
+            logMemory('resizeImage-gc', `Garbage collection sugerida após redimensionamento`);
+          }, 100);
+        } catch (gcError) {
+          console.error('Erro ao sugerir garbage collection:', gcError);
+        }
+      }
       
       return resizedBuffer;
     }
@@ -221,41 +271,59 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
     
     console.error('Erro ao redimensionar imagem:', error);
     return buffer;
+  } finally {
+    // Liberar a instância do Sharp para ajudar o GC
+    sharp.cache(false);
   }
 }
 
 /**
  * Cria um padrão de marca d'água com texto repetido
+ * Versão otimizada com melhor gerenciamento de memória
  * Gera uma grade de textos "fottufy (não copie)" com opacidade 25%
  */
 async function createTextWatermarkPattern(width: number, height: number): Promise<Buffer> {
   // Log no início da criação da marca d'água
   logMemory('createWatermark-start', `Creating watermark pattern for dimensions: ${width}x${height}`);
   
-  // Garantir dimensões seguras
-  const safeWidth = Math.floor(width);
-  const safeHeight = Math.floor(height);
+  // Garantir dimensões seguras e limitadas
+  const safeWidth = Math.min(Math.floor(width), 5000); // Limita tamanho máximo
+  const safeHeight = Math.min(Math.floor(height), 5000);
+  
+  // Verificar se temos essa dimensão em cache
+  const cacheKey = `${Math.ceil(safeWidth/100)*100}x${Math.ceil(safeHeight/100)*100}`;
+  
+  if (watermarkCache.has(cacheKey)) {
+    const cachedBuffer = watermarkCache.get(cacheKey)!;
+    logMemory('createWatermark-from-cache', `Retrieved watermark from cache for dimensions ${cacheKey}`);
+    return cachedBuffer;
+  }
   
   try {
-    // Criar uma imagem SVG com texto repetido
-    // Definimos uma grade de texto com rotação para melhor cobertura e visibilidade
+    // Desativar o cache para esta operação
+    sharp.cache(false);
     
-    // Tamanho de cada célula da grade, ajustado para maior espaçamento
-    const cellWidth = 300; // Distância horizontal entre repetições do texto
-    const cellHeight = 150; // Distância vertical entre repetições do texto
+    // Criar uma imagem SVG com texto repetido otimizado 
+    // Reduzir o número de instâncias para minimizar o tamanho do SVG
     
-    // Calcular número de repetições necessárias em cada direção
-    const cols = Math.ceil(safeWidth / cellWidth) + 1;
-    const rows = Math.ceil(safeHeight / cellHeight) + 1;
+    // Aumentar espaçamento para reduzir número de repetições em grandes imagens
+    // Ajuste dinâmico: imagens maiores usam células maiores para manter tamanho SVG razoável
+    const scaleFactor = Math.max(1, Math.min(safeWidth, safeHeight) / 1000); // Fator de escala baseado no tamanho
+    const cellWidth = 300 * scaleFactor; // Distância horizontal entre repetições do texto
+    const cellHeight = 150 * scaleFactor; // Distância vertical entre repetições do texto
+    
+    // Calcular número de repetições necessárias em cada direção, com limite máximo
+    const maxCells = 100; // Limite máximo de células para evitar SVGs muito grandes
+    const cols = Math.min(Math.ceil(safeWidth / cellWidth) + 1, maxCells);
+    const rows = Math.min(Math.ceil(safeHeight / cellHeight) + 1, maxCells);
     
     // Log do cálculo de grade
     logMemory('createWatermark-grid', `Watermark grid: ${cols}x${rows} cells (${cols * rows} total text instances)`);
     
     // Criar SVG com texto repetido
-    let svgContent = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg">`;
-    
-    // Definir dois estilos para melhor contraste em fundos diferentes
-    svgContent += `<style>
+    // Usando template strings de forma eficiente
+    const svgHeader = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg">`;
+    const svgStyles = `<style>
       .watermark-dark { 
         font-family: Arial, sans-serif; 
         font-size: ${WATERMARK_FONT_SIZE}px; 
@@ -277,9 +345,17 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     // Log antes de criar o padrão de repetição
     logMemory('createWatermark-before-pattern', `Building SVG text pattern with ${WATERMARK_TEXT} watermark`);
     
-    // Criar um padrão de repetição do texto
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
+    // Construir a string SVG usando concatenação eficiente
+    let svgContent = svgHeader + svgStyles;
+    
+    // Reduzir o total de elementos gerados para imagens muito grandes
+    // Usar uma abordagem de passo para "pular" algumas células em imagens grandes
+    const colStep = Math.max(1, Math.floor(cols / 40)); // Limitar a ~40 colunas máximas
+    const rowStep = Math.max(1, Math.floor(rows / 40)); // Limitar a ~40 linhas máximas
+    
+    // Criar um padrão de repetição do texto otimizado
+    for (let row = 0; row < rows; row += rowStep) {
+      for (let col = 0; col < cols; col += colStep) {
         // Centro de cada célula da grade
         const centerX = col * cellWidth + cellWidth / 2;
         const centerY = row * cellHeight + cellHeight / 2;
@@ -294,9 +370,8 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
           y="${centerY}" 
           transform="rotate(${rotation}, ${centerX}, ${centerY})">${WATERMARK_TEXT}</text>`;
         
-        // Posição ligeiramente deslocada para o texto branco (para fundos escuros)
-        // Criamos versões em cores alternadas para garantir visibilidade em qualquer fundo
-        if ((row + col) % 4 === 0) {
+        // Reduzir o número de elementos brancos para metade dos elementos pretos
+        if ((row + col) % 8 === 0) {
           svgContent += `<text class="watermark-light" 
             x="${centerX + 120}" 
             y="${centerY + 60}" 
@@ -313,12 +388,28 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     // Log antes de converter para buffer
     logMemory('createWatermark-before-sharp', `Converting SVG to buffer using Sharp`);
     
-    // Converter SVG para buffer usando Sharp
-    const watermarkBuffer = await sharp(Buffer.from(svgContent))
-      .toBuffer();
+    // Converter SVG para buffer usando Sharp com opções para economizar memória
+    const watermarkBuffer = await sharp(Buffer.from(svgContent), {
+      limitInputPixels: 50000000,
+      sequentialRead: true
+    }).toBuffer();
     
     // Log após converter para buffer
     logMemory('createWatermark-complete', `Watermark buffer created: ${(watermarkBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+    
+    // Armazenar no cache para reutilização
+    watermarkCache.set(cacheKey, watermarkBuffer);
+    
+    // Limitar o tamanho do cache - adicionar esta verificação para segurança
+    if (watermarkCache.size > 10) {
+      // Remover a primeira entrada (mais antiga) se o cache ficar muito grande
+      const keysIterator = watermarkCache.keys();
+      const firstKey = keysIterator.next().value;
+      if (firstKey && firstKey !== cacheKey) {
+        watermarkCache.delete(firstKey);
+        logMemory('createWatermark-cache-cleanup', `Removed oldest watermark from cache: ${firstKey}`);
+      }
+    }
     
     return watermarkBuffer;
   } catch (error) {
@@ -329,14 +420,35 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     // Log antes de criar a imagem transparente de fallback
     logMemory('createWatermark-fallback', `Creating transparent fallback image ${safeWidth}x${safeHeight}`);
     
-    // Em caso de falha, criar uma imagem transparente
-    return await sharp({
-      create: {
-        width: safeWidth,
-        height: safeHeight,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
+    // Em caso de falha, criar uma imagem transparente simplificada
+    try {
+      return await sharp({
+        create: {
+          width: safeWidth,
+          height: safeHeight,
+          channels: 4,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        }
+      }).toBuffer();
+    } catch (fallbackError) {
+      // Se até o fallback falhar, crie um buffer mínimo para não quebrar o fluxo
+      console.error('Erro ao criar imagem transparente de fallback:', fallbackError);
+      return Buffer.alloc(100); // Buffer mínimo
+    }
+  } finally {
+    // Liberar recursos do Sharp
+    sharp.cache(false);
+    
+    // Sugerir coleta de lixo após operação pesada
+    if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+      try {
+        setTimeout(() => {
+          global.gc && global.gc();
+          logMemory('createWatermark-gc', `Garbage collection sugerida após criação de marca d'água`);
+        }, 100);
+      } catch (gcError) {
+        console.error('Erro ao sugerir garbage collection:', gcError);
       }
-    }).toBuffer();
+    }
   }
 }

@@ -462,13 +462,10 @@ export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res:
   // Armazenar o método original end
   const originalEnd = res.end;
   
-  // Sobrescrever o método end
-  res.end = function(chunk?: any, encoding?: BufferEncoding, callback?: () => void): any {
+  // Substituir por uma implementação simplificada para evitar problemas de tipagem
+  res.end = function(this: any) {
     // Log antes da limpeza
     logMemory('cleanupTempFiles-before-cleanup', `Response ended, cleaning up temporary files`);
-    
-    // Converter argumentos variáveis para o formato esperado pela função original
-    const args: [any?, BufferEncoding?, (() => void)?] = [chunk, encoding, callback];
     
     // Executar a limpeza assíncrona
     if (req.files && req.files.length > 0) {
@@ -480,37 +477,40 @@ export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res:
       // Criar cópia dos caminhos para evitar problemas se req.files for modificado
       const filesToClean = [...req.files];
       
-      Promise.all(filesToClean.map(file => {
-        return fs.unlink(file.path)
-          .then(() => {
-            if (process.env.DEBUG_MEMORY === 'true') {
-              console.log(`Arquivo temporário removido: ${file.path}`);
+      // Iniciar a limpeza de arquivos em background
+      setTimeout(() => {
+        Promise.all(filesToClean.map(file => {
+          return fs.unlink(file.path)
+            .then(() => {
+              if (process.env.DEBUG_MEMORY === 'true') {
+                console.log(`Arquivo temporário removido: ${file.path}`);
+              }
+            })
+            .catch(err => {
+              logMemory('cleanupTempFiles-error', `Error removing file ${file.path}: ${err instanceof Error ? err.message : String(err)}`);
+              console.error(`Erro ao remover arquivo temporário ${file.path}:`, err);
+            });
+        }))
+        .then(() => {
+          logMemory('cleanupTempFiles-complete', `All temporary files cleaned up successfully`);
+          
+          // Sugerir garbage collection após limpeza
+          if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
+            try {
+              setTimeout(() => {
+                global.gc && global.gc();
+                logMemory('cleanupTempFiles-gc', `Garbage collection sugerida após limpeza de arquivos`);
+              }, 100);
+            } catch (gcError) {
+              console.error('Erro ao sugerir garbage collection:', gcError);
             }
-          })
-          .catch(err => {
-            logMemory('cleanupTempFiles-error', `Error removing file ${file.path}: ${err instanceof Error ? err.message : String(err)}`);
-            console.error(`Erro ao remover arquivo temporário ${file.path}:`, err);
-          });
-      }))
-      .then(() => {
-        logMemory('cleanupTempFiles-complete', `All temporary files cleaned up successfully`);
-        
-        // Sugerir garbage collection após limpeza
-        if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
-          try {
-            setTimeout(() => {
-              global.gc && global.gc();
-              logMemory('cleanupTempFiles-gc', `Garbage collection sugerida após limpeza de arquivos`);
-            }, 100);
-          } catch (gcError) {
-            console.error('Erro ao sugerir garbage collection:', gcError);
           }
-        }
-      })
-      .catch(err => {
-        logMemory('cleanupTempFiles-global-error', `Error during cleanup: ${err instanceof Error ? err.message : String(err)}`);
-        console.error('Erro ao limpar arquivos temporários:', err);
-      });
+        })
+        .catch(err => {
+          logMemory('cleanupTempFiles-global-error', `Error during cleanup: ${err instanceof Error ? err.message : String(err)}`);
+          console.error('Erro ao limpar arquivos temporários:', err);
+        });
+      }, 0);
       
       // Limpar a referência aos arquivos no request para ajudar o GC
       req.files = [];
@@ -521,8 +521,8 @@ export function cleanupTempFiles(req: Request & { files?: UploadedFile[] }, res:
     // Log final após a limpeza
     logMemory('cleanupTempFiles-end', `Response ended, temporary files cleanup initiated`);
     
-    // Chamar o método original com os argumentos corretos
-    return originalEnd.apply(this, args);
+    // Chamar o método original preservando o contexto e argumentos
+    return originalEnd.apply(this, arguments as any);
   };
   
   next();
