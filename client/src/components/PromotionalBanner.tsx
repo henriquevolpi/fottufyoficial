@@ -48,7 +48,7 @@ export default function PromotionalBanner() {
           <Zap className="h-8 w-8 mr-3 mb-2 md:mb-0 animate-pulse" />
           <div className="text-center md:text-left">
             <h3 className="text-xl font-bold mb-1">
-              🚨 50% de desconto hoje! A partir de R$14,90 - Planos promocionais disponíveis por tempo limitado!
+              🚨 Adquira seu Plano a partir de R$19,90 - Planos promocionais disponíveis por tempo limitado!
             </h3>
             <p className="text-sm text-white/80">
               Aproveite e garanta mais espaço para suas fotos antes que essa oferta acabe.
