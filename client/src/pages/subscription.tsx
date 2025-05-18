@@ -2,8 +2,8 @@ import React from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, Link } from "wouter";
 import { Loader2, ArrowLeft } from "lucide-react";
-import SubscriptionPlans from "@/components/ui/subscription-plans";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SubscriptionPage() {
   const { user, isLoading } = useAuth();
@@ -20,6 +20,27 @@ export default function SubscriptionPage() {
     return <Redirect to="/auth" />;
   }
   
+  const plans = [
+    {
+      name: "Plano Básico",
+      price: "R$19,90/mês",
+      description: "Para quem está com um fluxo médio de clientes",
+      url: "https://pay.hotmart.com/K99608926Q?off=z0pxaesy&checkoutMode=6"
+    },
+    {
+      name: "Plano Fotógrafo",
+      price: "R$29,90/mês",
+      description: "Para profissionais que atendem clientes com frequência",
+      url: "https://pay.hotmart.com/K99608926Q?off=tpfhcllk&checkoutMode=6"
+    },
+    {
+      name: "Plano Estúdio",
+      price: "R$49,90/mês",
+      description: "Ideal para estúdios ou equipes com maior volume de projetos",
+      url: "https://pay.hotmart.com/K99608926Q?off=xtuh4ji0&checkoutMode=6"
+    }
+  ];
+  
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
@@ -30,7 +51,38 @@ export default function SubscriptionPage() {
           </Button>
         </Link>
       </div>
-      <SubscriptionPlans />
+      
+      <div className="space-y-6">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight">Planos e Assinaturas</h2>
+          <p className="text-muted-foreground">
+            Escolha o plano que melhor atende às suas necessidades.
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((plan, index) => (
+            <Card key={index} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-xl">{plan.name}</CardTitle>
+                <CardDescription className="text-3xl font-bold mt-2">
+                  {plan.price}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-muted-foreground">{plan.description}</p>
+              </CardContent>
+              <CardFooter>
+                <a href={plan.url} target="_blank" rel="noopener noreferrer" className="w-full">
+                  <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white">
+                    Assinar Agora
+                  </Button>
+                </a>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
