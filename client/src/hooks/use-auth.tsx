@@ -91,27 +91,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterData) => {
+      // Usar a mesma função que o login, garantindo que credentials: "include" seja usado
       const res = await apiRequest("POST", "/api/register", credentials);
+      console.log("Resposta do registro:", res.status, res.statusText);
+      
+      // Verificar se temos cookies de sessão recebidos
+      const cookies = document.cookie;
+      console.log("Cookies após registro:", cookies);
+      
       return await res.json();
     },
     onSuccess: async (data: any) => {
-      // If data is wrapped in a user object, extract it
+      // Extrair dados do usuário completos que agora são enviados do servidor
       const userData = data.user || data;
+      console.log("Dados do usuário recebidos após registro:", userData);
       
-      // Primeiro salve os dados básicos do usuário
+      // Atualizar o cache com os dados completos do usuário
       queryClient.setQueryData(["/api/user"], userData);
       
-      // Agora faça uma nova requisição para obter dados atualizados
+      // Ainda fazer uma requisição para confirmar que a sessão foi estabelecida corretamente
       try {
+        console.log("Verificando sessão após registro...");
         const freshUserResponse = await apiRequest("GET", "/api/user");
+        console.log("Resposta da verificação de sessão:", freshUserResponse.status);
+        
         if (freshUserResponse.ok) {
           const freshUserData = await freshUserResponse.json();
-          // Atualize com os dados mais recentes
+          console.log("Sessão verificada com sucesso, dados atualizados:", freshUserData);
           queryClient.setQueryData(["/api/user"], freshUserData);
+        } else {
+          console.error("Sessão não estabelecida corretamente após registro");
         }
       } catch (error) {
-        console.log("Erro ao obter dados atualizados do usuário:", error);
-        // Já temos os dados básicos salvos, então continuamos
+        console.error("Erro ao verificar sessão após registro:", error);
+        // Continuar mesmo com erro, pois os dados básicos já foram salvos
       }
       
       // Invalidate e refetch imediatamente as consultas relacionadas

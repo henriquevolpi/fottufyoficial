@@ -324,6 +324,11 @@ export function setupAuth(app: Express) {
         sendWelcomeEmail(userData.name, userData.email).catch(() => {})
       ]);
       
+      // Define a cookie da sessão primeiro, igual ao login
+      if (req.session) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias (igual ao login)
+      }
+      
       // Establish session by logging in the user
       req.login(user, (err) => {
         if (err) {
@@ -335,13 +340,32 @@ export function setupAuth(app: Express) {
         
         if (process.env.DEBUG_AUTH === 'true') {
           console.log(`Registration successful for ID: ${user.id}`);
+          console.log(`Session ID: ${req.sessionID}`);
         }
         
-        // Return only id and email as requested
-        res.status(201).json({
-          id: user.id,
-          email: user.email
-        });
+        // Definir o cookie de backup (igual ao login)
+        try {
+          res.cookie('user_id', user.id, {
+            httpOnly: false,  // Precisa ser acessível pelo JS
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: '/',
+            sameSite: 'lax',
+            secure: false
+          });
+        } catch (cookieError) {
+          console.error("Error setting cookie after registration:", cookieError);
+        }
+        
+        // Importante: Retornar o objeto de usuário COMPLETO (exceto senha) igual ao fluxo de login
+        // Isso garante que o frontend receba os mesmos dados que no login manual
+        const { password, ...completeUserData } = user;
+        
+        // Log adicional para debug
+        if (process.env.DEBUG_AUTH === 'true') {
+          console.log(`Sending complete user data after registration: ID=${user.id}`);
+        }
+        
+        res.status(201).json(completeUserData);
       });
     } catch (error) {
       if (process.env.DEBUG_AUTH === 'true') {

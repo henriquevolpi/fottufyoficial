@@ -38,6 +38,9 @@ export async function apiRequest(
       headers: options.headers
     });
     
+    // Log existing cookies para debug
+    console.log('Cookies antes da requisição:', document.cookie);
+    
     const res = await fetch(url, options);
     
     // Log the response including cookies
