@@ -13,7 +13,7 @@
         // Verifica se o token de redefinição de senha está presente na URL ou no localStorage
         const urlParams = new URLSearchParams(window.location.search);
         const resetToken = urlParams.get('token');
-        
+
         if (resetToken) {
           console.log("Token detectado na URL:", resetToken);
           try {
@@ -33,11 +33,35 @@
       })();
     </script>
   </head>
-  <script src="//code.jivosite.com/widget/njKtWA4AEl" async></script>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script src="https://replit.com/public/js/replit-dev-banner.js"></script>
+
+    <!-- Botão flutuante do WhatsApp -->
+    <a
+      href="https://wa.me/5583998185978?text=Olá,%20quero%20saber%20mais%20sobre%20a%20plataforma!"
+      style="
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        background-color: #25d366;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      "
+      target="_blank"
+      rel="noopener"
+      title="Fale conosco no WhatsApp"
+    >
+      <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp" width="34" height="34" style="filter: invert(1);" />
+    </a>
+
   </body>
 </html>

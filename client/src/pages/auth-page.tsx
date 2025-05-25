@@ -339,7 +339,7 @@ export default function AuthPage() {
       <div className="hidden md:flex bg-gradient-to-r from-primary to-primary/80 text-white p-12 flex-col justify-center">
         <div className="max-w-lg">
           <h2 className="text-4xl font-bold mb-6">
-            Gerenciamento simplificado para fotógrafos profissionais
+            Seleção de fotos com qualidade para fotógrafos profissionais
           </h2>
           <p className="text-lg mb-8">
             Com o StudioFlow, você pode gerenciar projetos fotográficos, compartilhar galerias com clientes
