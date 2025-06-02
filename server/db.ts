@@ -2,41 +2,24 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// For local Replit database
-const replicateLocalConfig: PoolConfig = {
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  host: process.env.PGHOST,
-  port: parseInt(process.env.PGPORT || '5432'),
-  database: process.env.PGDATABASE,
-  // Configuration para Replit - SSL é necessário mesmo localmente
+// Configuração exclusiva para Neon usando DATABASE_URL
+// Isso garante que não usaremos o PostgreSQL do Replit
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. This project uses Neon database exclusively."
+  );
+}
+
+// Configuração otimizada para Neon
+const poolConfig: PoolConfig = {
+  connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
-  max: 30, // ✅ Aumentado de 10 para 30 conexões simultâneas
+  max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000,
 };
-
-// For Supabase or other external PostgreSQL providers (Render deployment)
-const externalDbConfig: PoolConfig = {
-  user: process.env.DB_USER || process.env.PGUSER,
-  password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
-  host: process.env.DB_HOST || process.env.PGHOST,
-  port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432'),
-  database: process.env.DB_NAME || process.env.PGDATABASE,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 30, // ✅ Também aqui para produção (Render, Supabase, etc.)
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-};
-
-// Force using Replit's local PostgreSQL for now
-// We'll change this to check for DB_HOST when ready to use Supabase
-const useLocalConfig = true; // !process.env.DB_HOST;
-const poolConfig = useLocalConfig ? replicateLocalConfig : externalDbConfig;
 
 // Log database connection status
 function logDbConnectionStatus(status: string, details: string = ''): void {
@@ -57,15 +40,8 @@ Configuration: ${JSON.stringify({
   }
 }
 
-// Create the database connection pool
-export const pool = new Pool({
-  ...poolConfig,
-  // Add error handlers for the pool
-  // These help identify connection issues before they cause application failures
-  max: 20, // ✅ Reduced from 30 to 20 to decrease connection overhead
-  idleTimeoutMillis: 60000, // ✅ Increased from 30s to 60s to reduce connection cycling
-  connectionTimeoutMillis: 10000, // ✅ Increased from 5s to 10s to allow more time for connections
-});
+// Create the database connection pool using only Neon
+export const pool = new Pool(poolConfig);
 
 // Add event listeners to the pool for better error handling and debugging
 pool.on('connect', (client) => {
@@ -144,14 +120,14 @@ export async function testConnection() {
     return { 
       connected: true, 
       timestamp: result.rows[0].now,
-      using: useLocalConfig ? 'Replit Database' : 'External Database (Supabase/Render)'
+      using: 'Neon Database'
     };
   } catch (error: any) {
     console.error('Database connection error:', error);
     return { 
       connected: false, 
       error: error.message,
-      using: useLocalConfig ? 'Replit Database' : 'External Database (Supabase/Render)'
+      using: 'Neon Database'
     };
   }
 }
