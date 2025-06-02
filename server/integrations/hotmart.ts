@@ -64,7 +64,7 @@ interface HotmartWebhookPayload {
 const HOTMART_OFFER_TO_PLAN_MAP: Record<string, string> = {
   // Mapeamento conforme especificado
   "ro76q5uz": "basic_v2",
-  "z0pxaesy": "basic_fottufy",
+  "z0pxaesy": "basic_v2",  // Corrigido: Plano Básico deve mapear para basic_v2
   "tpfhcllk": "standard",
   "hjb8gqn7": "standard",
   "xtuh4ji0": "professional"
