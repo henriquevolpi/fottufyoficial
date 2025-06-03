@@ -35,6 +35,11 @@ export const users = pgTable("users", {
   pendingDowngradeReason: text("pending_downgrade_reason"), // Motivo do downgrade pendente (canceled, refunded, etc)
   originalPlanBeforeDowngrade: text("original_plan_before_downgrade"), // Plano original antes do downgrade
   
+  // Campos para controle de ativação manual pelo ADM
+  manualActivationDate: timestamp("manual_activation_date"), // Data quando o plano foi ativado manualmente pelo ADM
+  manualActivationBy: text("manual_activation_by"), // Email do administrador que ativou manualmente
+  isManualActivation: boolean("is_manual_activation").default(false), // Flag para indicar se é ativação manual
+  
   // Campo para rastrear o último login do usuário
   lastLoginAt: timestamp("last_login_at"),
 });

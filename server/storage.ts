@@ -7,7 +7,7 @@ import {
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { db } from "./db";
-import { eq, and, desc, asc, count, inArray, sql } from "drizzle-orm";
+import { eq, and, desc, asc, count, inArray, sql, lt, ne, gte, isNull, or } from "drizzle-orm";
 
 // Memory storage implementation
 import session from "express-session";
@@ -1837,6 +1837,98 @@ export class DatabaseStorage implements IStorage {
    * Processa todos os downgrades que venceram, convertendo para plano gratuito
    * @returns Número de usuários processados
    */
+  // ==================== CONTROLE MANUAL DE PLANOS (ADM) ====================
+  
+  // Método para ativar plano manualmente pelo ADM (expira em 34 dias)
+  async activateManualPlan(userId: number, planType: string, adminEmail: string): Promise<void> {
+    const activationDate = new Date();
+    
+    await db.update(users)
+      .set({
+        planType,
+        subscriptionStatus: 'active',
+        subscriptionStartDate: activationDate,
+        manualActivationDate: activationDate,
+        manualActivationBy: adminEmail,
+        isManualActivation: true,
+        // Limpar campos de downgrade se existirem
+        pendingDowngradeDate: null,
+        pendingDowngradeReason: null,
+        originalPlanBeforeDowngrade: null,
+        // Configurar limites do plano
+        uploadLimit: SUBSCRIPTION_PLANS[planType as keyof typeof SUBSCRIPTION_PLANS]?.uploadLimit || 1000,
+        lastEvent: {
+          type: 'manual_activation',
+          timestamp: activationDate.toISOString()
+        }
+      })
+      .where(eq(users.id, userId));
+      
+    console.log(`[ADM] Plano ${planType} ativado manualmente para usuário ${userId} por ${adminEmail} - expira em 34 dias`);
+  }
+  
+  // Método para processar planos manuais expirados (executa automaticamente a cada hora)
+  async processExpiredManualActivations(): Promise<number> {
+    const now = new Date();
+    const thirtyFourDaysAgo = new Date(now.getTime() - (34 * 24 * 60 * 60 * 1000));
+    
+    // Buscar usuários com ativação manual expirada (34 dias)
+    const expiredUsers = await db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.isManualActivation, true),
+          lt(users.manualActivationDate, thirtyFourDaysAgo),
+          ne(users.planType, 'free')
+        )
+      );
+    
+    let processedCount = 0;
+    
+    for (const user of expiredUsers) {
+      // Verificar se não houve pagamento via Hotmart nos últimos 34 dias
+      // Se subscription_id existe, significa que houve pagamento e o plano deve continuar
+      if (!user.subscription_id) {
+        await db.update(users)
+          .set({
+            planType: 'free',
+            subscriptionStatus: 'cancelled',
+            uploadLimit: 1000,
+            isManualActivation: false,
+            manualActivationDate: null,
+            manualActivationBy: null,
+            lastEvent: {
+              type: 'manual_activation_expired',
+              timestamp: now.toISOString()
+            }
+          })
+          .where(eq(users.id, user.id));
+          
+        console.log(`[ADM] Usuário ${user.email} convertido para plano gratuito - ativação manual expirada após 34 dias`);
+        processedCount++;
+      } else {
+        // Se tem subscription_id, significa que pagou via Hotmart - remover flags manuais
+        await db.update(users)
+          .set({
+            isManualActivation: false,
+            manualActivationDate: null,
+            manualActivationBy: null,
+            lastEvent: {
+              type: 'manual_activation_converted_to_paid',
+              timestamp: now.toISOString()
+            }
+          })
+          .where(eq(users.id, user.id));
+          
+        console.log(`[ADM] Usuário ${user.email} convertido para plano pago via Hotmart - removendo controle manual`);
+      }
+    }
+    
+    return processedCount;
+  }
+
+  // ==================== SISTEMA DE DOWNGRADE AUTOMÁTICO ====================
+
   async processExpiredDowngrades(): Promise<number> {
     try {
       const expiredUsers = await this.getUsersWithExpiredDowngrades();

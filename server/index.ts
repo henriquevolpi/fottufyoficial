@@ -399,13 +399,33 @@ app.use((req, res, next) => {
       }
     };
     
-    // Executar verificação inicial após 30 segundos do startup
+    // ==================== SISTEMA DE CONTROLE MANUAL ADM (34 DIAS) ====================
+    // Agendador para processar ativações manuais expiradas a cada hora
+    const processExpiredManualActivations = async () => {
+      try {
+        console.log('[ADM] Verificando ativações manuais expiradas (34 dias)...');
+        const processedCount = await dbStorage.processExpiredManualActivations();
+        
+        if (processedCount > 0) {
+          console.log(`[ADM] ${processedCount} usuários com ativação manual expirada processados`);
+        } else {
+          console.log('[ADM] Nenhuma ativação manual expirada encontrada');
+        }
+      } catch (error) {
+        console.error('[ADM] Erro ao processar ativações manuais expiradas:', error);
+      }
+    };
+    
+    // Executar verificações iniciais após 30 segundos do startup
     setTimeout(processExpiredDowngrades, 30000);
+    setTimeout(processExpiredManualActivations, 45000); // 15 segundos depois do primeiro
     
     // Configurar para executar a cada hora (3600000 ms)
     const downgradeIntervalId = setInterval(processExpiredDowngrades, 3600000);
+    const manualActivationIntervalId = setInterval(processExpiredManualActivations, 3600000);
     
     console.log('[DOWNGRADE] Sistema automático de downgrade iniciado - verificação a cada hora');
+    console.log('[ADM] Sistema de controle manual ADM iniciado - verificação a cada hora (34 dias)');
     // ====================================================================
     
     // Converter bytes para MB para facilitar a leitura
