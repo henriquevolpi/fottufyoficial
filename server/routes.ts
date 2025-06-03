@@ -966,6 +966,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to set plan for user" });
     }
   });
+
+  // Rota exclusiva para ativação manual de planos pelo ADM (expira em 34 dias)
+  app.post("/api/admin/activate-manual-plan", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { email, planType } = req.body;
+      const adminEmail = req.user?.email;
+      
+      if (!email || !planType) {
+        return res.status(400).json({ message: "Email and plan type are required" });
+      }
+      
+      if (!adminEmail) {
+        return res.status(401).json({ message: "Admin email not found" });
+      }
+      
+      // Validar se o plano é válido
+      const validPlans = ['basic_v2', 'photographer_v2', 'studio_v2'];
+      if (!validPlans.includes(planType)) {
+        return res.status(400).json({ message: "Invalid plan type. Valid plans: basic_v2, photographer_v2, studio_v2" });
+      }
+      
+      // Encontrar usuário por email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Ativar plano manual com expiração de 34 dias
+      await storage.activateManualPlan(user.id, planType, adminEmail);
+      
+      res.json({ 
+        success: true,
+        message: `Plan ${planType} manually activated for user ${email}`,
+        expirationNote: "This plan will expire in 34 days unless payment is made via Hotmart",
+        activatedBy: adminEmail,
+        activationDate: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error activating manual plan:", error);
+      res.status(500).json({ message: "Failed to activate manual plan" });
+    }
+  });
   
   // Toggle user status (active/suspended)
   app.post("/api/admin/toggle-user", authenticate, requireAdmin, async (req: Request, res: Response) => {
