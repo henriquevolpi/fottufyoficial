@@ -279,8 +279,9 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 // Tabela session - IMPORTANTE: Mantém formato exato do banco Neon para evitar data loss
+// Esta definição corresponde EXATAMENTE ao que existe no banco para prevenir alterações
 export const session = pgTable("session", {
-  sid: varchar("sid").primaryKey(),
-  sess: json("sess").notNull(),
-  expire: timestamp("expire", { precision: 6 }).notNull(),
+  sid: text("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
 });
