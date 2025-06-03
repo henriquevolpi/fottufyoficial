@@ -786,15 +786,25 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
       case 'purchase.canceled':
       case 'subscription.canceled':
         if (user) {
-          console.log(`Hotmart: Desativando plano para usuário: ${email} (evento: ${event})`);
-          // Atualizar para plano gratuito e desativar subscrição
-          await storage.updateUserSubscription(user.id, 'free');
+          console.log(`[DOWNGRADE] Agendando downgrade com tolerância de 3 dias para usuário: ${email} (evento: ${event})`);
+          
+          // Armazenar o plano atual antes do downgrade
+          const currentPlan = user.planType || 'free';
+          
+          // Agendar downgrade com 3 dias de tolerância (em vez de fazer downgrade imediato)
+          await storage.schedulePendingDowngrade(user.id, event, currentPlan);
+          
+          // Atualizar apenas o status da assinatura para indicar problema
           await storage.updateUser(user.id, {
-            subscriptionStatus: 'inactive',
-            // Opcionalmente, pode deixar o usuário inativo também
-            // status: 'inactive' 
+            subscriptionStatus: 'pending_cancellation', // Status especial para indicar que está em período de tolerância
+            lastEvent: {
+              type: event,
+              timestamp: new Date().toISOString(),
+            },
           });
-          return { success: true, message: 'Plano desativado' };
+          
+          console.log(`[DOWNGRADE] Usuário ${email} tem 3 dias para regularizar o pagamento antes do downgrade automático`);
+          return { success: true, message: 'Downgrade agendado para 3 dias - período de tolerância ativado' };
         } else {
           console.log(`Hotmart: Usuário não encontrado para o email ${email}, nada a fazer`);
           return { success: false, message: 'Usuário não encontrado' };

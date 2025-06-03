@@ -382,6 +382,32 @@ app.use((req, res, next) => {
     // Verificar a conexão a cada 2 minutos (120000 ms)
     const dbHealthCheckInterval = startDbHealthCheck(120000);
     
+    // ==================== SISTEMA AUTOMÁTICO DE DOWNGRADE ====================
+    // Agendador para processar downgrades expirados a cada hora
+    const processExpiredDowngrades = async () => {
+      try {
+        console.log('[DOWNGRADE] Verificando downgrades expirados...');
+        const processedCount = await dbStorage.processExpiredDowngrades();
+        
+        if (processedCount > 0) {
+          console.log(`[DOWNGRADE] ${processedCount} usuários convertidos para plano gratuito`);
+        } else {
+          console.log('[DOWNGRADE] Nenhum downgrade expirado encontrado');
+        }
+      } catch (error) {
+        console.error('[DOWNGRADE] Erro ao processar downgrades expirados:', error);
+      }
+    };
+    
+    // Executar verificação inicial após 30 segundos do startup
+    setTimeout(processExpiredDowngrades, 30000);
+    
+    // Configurar para executar a cada hora (3600000 ms)
+    const downgradeIntervalId = setInterval(processExpiredDowngrades, 3600000);
+    
+    console.log('[DOWNGRADE] Sistema automático de downgrade iniciado - verificação a cada hora');
+    // ====================================================================
+    
     // Converter bytes para MB para facilitar a leitura
     const bytesToMB = (bytes: number) => Math.round(bytes / 1024 / 1024 * 100) / 100;
     
@@ -470,6 +496,7 @@ app.use((req, res, next) => {
       clearInterval(intervalId);
       clearInterval(gcIntervalId);
       clearInterval(dbHealthCheckInterval);
+      clearInterval(downgradeIntervalId);
       
       // Fechar o pool de conexões com o banco
       pool.end().catch(err => console.error('Error closing DB pool on SIGINT:', err));
@@ -481,6 +508,7 @@ app.use((req, res, next) => {
       clearInterval(intervalId);
       clearInterval(gcIntervalId);
       clearInterval(dbHealthCheckInterval);
+      clearInterval(downgradeIntervalId);
       
       // Fechar o pool de conexões com o banco
       pool.end().catch(err => console.error('Error closing DB pool on SIGTERM:', err));
