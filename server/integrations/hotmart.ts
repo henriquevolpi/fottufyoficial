@@ -703,6 +703,13 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
         if (user) {
           // Usuário existente - ativar o plano
           console.log(`Hotmart: Ativando plano ${planType} para usuário existente: ${email}`);
+          
+          // IMPORTANTE: Cancelar qualquer downgrade pendente (pagamento regularizado)
+          if (user.pendingDowngradeDate) {
+            console.log(`[DOWNGRADE] Cancelando downgrade pendente para usuário ${email} - pagamento regularizado`);
+            await storage.cancelPendingDowngrade(user.id);
+          }
+          
           // Verificar se planType é válido (não é null)
           if (planType) {
             await storage.updateUserSubscription(user.id, planType);

@@ -30,6 +30,11 @@ export const users = pgTable("users", {
     timestamp: string;
   } | null>(),
   
+  // Campos para controle de downgrade automático
+  pendingDowngradeDate: timestamp("pending_downgrade_date"), // Data quando o downgrade deve ocorrer (evento + 3 dias)
+  pendingDowngradeReason: text("pending_downgrade_reason"), // Motivo do downgrade pendente (canceled, refunded, etc)
+  originalPlanBeforeDowngrade: text("original_plan_before_downgrade"), // Plano original antes do downgrade
+  
   // Campo para rastrear o último login do usuário
   lastLoginAt: timestamp("last_login_at"),
 });

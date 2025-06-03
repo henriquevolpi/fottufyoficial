@@ -311,6 +311,12 @@ export interface IStorage {
   updateUserSubscription(userId: number, planType: string): Promise<User | undefined>;
   updateStripeInfo(userId: number, customerId: string, subscriptionId: string): Promise<User | undefined>;
   
+  // Automatic downgrade control methods
+  schedulePendingDowngrade(userId: number, reason: string, originalPlan: string): Promise<User | undefined>;
+  cancelPendingDowngrade(userId: number): Promise<User | undefined>;
+  getUsersWithExpiredDowngrades(): Promise<User[]>;
+  processExpiredDowngrades(): Promise<number>;
+  
   // Upload management methods
   checkUploadLimit(userId: number, count: number): Promise<boolean>;
   updateUploadUsage(userId: number, addCount: number): Promise<User | undefined>;
@@ -964,6 +970,28 @@ export class MemStorage implements IStorage {
     }
     
     return deleted;
+  }
+
+  // ==================== Métodos de Controle Automático de Downgrade (MemStorage) ====================
+  
+  async schedulePendingDowngrade(userId: number, reason: string, originalPlan: string): Promise<User | undefined> {
+    console.log(`MemStorage: schedulePendingDowngrade não implementado para usuário ID=${userId}`);
+    return undefined;
+  }
+
+  async cancelPendingDowngrade(userId: number): Promise<User | undefined> {
+    console.log(`MemStorage: cancelPendingDowngrade não implementado para usuário ID=${userId}`);
+    return undefined;
+  }
+
+  async getUsersWithExpiredDowngrades(): Promise<User[]> {
+    console.log(`MemStorage: getUsersWithExpiredDowngrades não implementado`);
+    return [];
+  }
+
+  async processExpiredDowngrades(): Promise<number> {
+    console.log(`MemStorage: processExpiredDowngrades não implementado`);
+    return 0;
   }
 }
 
@@ -1709,6 +1737,144 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao excluir projeto:", error);
       return false;
+    }
+  }
+
+  // ==================== Métodos de Controle Automático de Downgrade ====================
+  
+  /**
+   * Agenda um downgrade pendente para um usuário com 3 dias de tolerância
+   * @param userId ID do usuário
+   * @param reason Motivo do downgrade (canceled, refunded, etc.)
+   * @param originalPlan Plano original antes do downgrade
+   */
+  async schedulePendingDowngrade(userId: number, reason: string, originalPlan: string): Promise<User | undefined> {
+    try {
+      // Calcular data do downgrade (3 dias a partir de agora)
+      const downgradeDate = new Date();
+      downgradeDate.setDate(downgradeDate.getDate() + 3);
+      
+      console.log(`[DOWNGRADE] Agendando downgrade para usuário ID=${userId}, motivo=${reason}, data=${downgradeDate.toISOString()}`);
+      
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          pendingDowngradeDate: downgradeDate,
+          pendingDowngradeReason: reason,
+          originalPlanBeforeDowngrade: originalPlan,
+          lastEvent: {
+            type: `pending_downgrade_${reason}`,
+            timestamp: new Date().toISOString(),
+          },
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      console.log(`[DOWNGRADE] Downgrade agendado com sucesso para usuário ID=${userId}`);
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao agendar downgrade:", error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Cancela um downgrade pendente (quando pagamento é regularizado)
+   * @param userId ID do usuário
+   */
+  async cancelPendingDowngrade(userId: number): Promise<User | undefined> {
+    try {
+      console.log(`[DOWNGRADE] Cancelando downgrade pendente para usuário ID=${userId}`);
+      
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          pendingDowngradeDate: null,
+          pendingDowngradeReason: null,
+          originalPlanBeforeDowngrade: null,
+          lastEvent: {
+            type: 'downgrade_cancelled',
+            timestamp: new Date().toISOString(),
+          },
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      console.log(`[DOWNGRADE] Downgrade cancelado com sucesso para usuário ID=${userId}`);
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao cancelar downgrade:", error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Busca usuários com downgrades que já venceram
+   */
+  async getUsersWithExpiredDowngrades(): Promise<User[]> {
+    try {
+      const now = new Date();
+      
+      const expiredUsers = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            sql`pending_downgrade_date IS NOT NULL`,
+            sql`pending_downgrade_date <= ${now}`
+          )
+        );
+      
+      console.log(`[DOWNGRADE] Encontrados ${expiredUsers.length} usuários com downgrades expirados`);
+      return expiredUsers;
+    } catch (error) {
+      console.error("Erro ao buscar usuários com downgrades expirados:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Processa todos os downgrades que venceram, convertendo para plano gratuito
+   * @returns Número de usuários processados
+   */
+  async processExpiredDowngrades(): Promise<number> {
+    try {
+      const expiredUsers = await this.getUsersWithExpiredDowngrades();
+      let processedCount = 0;
+      
+      for (const user of expiredUsers) {
+        console.log(`[DOWNGRADE] Processando downgrade para usuário ID=${user.id}, email=${user.email}`);
+        
+        // Converter para plano gratuito
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            planType: "free",
+            uploadLimit: SUBSCRIPTION_PLANS.FREE.uploadLimit,
+            subscriptionStatus: "inactive",
+            subscriptionEndDate: new Date(),
+            pendingDowngradeDate: null,
+            pendingDowngradeReason: null,
+            originalPlanBeforeDowngrade: null,
+            lastEvent: {
+              type: 'downgrade_executed',
+              timestamp: new Date().toISOString(),
+            },
+          })
+          .where(eq(users.id, user.id))
+          .returning();
+        
+        if (updatedUser) {
+          console.log(`[DOWNGRADE] Usuário ID=${user.id} convertido para plano gratuito por motivo: ${user.pendingDowngradeReason}`);
+          processedCount++;
+        }
+      }
+      
+      console.log(`[DOWNGRADE] Processamento concluído: ${processedCount} usuários convertidos para plano gratuito`);
+      return processedCount;
+    } catch (error) {
+      console.error("Erro ao processar downgrades expirados:", error);
+      return 0;
     }
   }
 }
