@@ -36,11 +36,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  BarChart,
   CalendarIcon,
   CheckCircleIcon,
   CircleSlashIcon,
   Clock,
   FilterIcon,
+  KeyIcon,
   Loader2,
   PencilIcon,
   PlusIcon,
@@ -48,7 +50,6 @@ import {
   Trash2Icon,
   UsersIcon,
   XCircleIcon,
-  BarChart
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -586,6 +587,19 @@ export default function Admin() {
                                   <Button 
                                     variant="outline" 
                                     size="sm"
+                                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                    onClick={() => {
+                                      setResetPasswordUser(user);
+                                      setNewPassword("");
+                                      setResetPasswordDialogOpen(true);
+                                    }}
+                                  >
+                                    <KeyIcon className="h-4 w-4 mr-1" />
+                                    Reset Password
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
                                     className="text-red-600 border-red-200 hover:bg-red-50"
                                     onClick={() => handleDeleteUser(user)}
                                   >
@@ -1017,6 +1031,53 @@ export default function Admin() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset User Password</DialogTitle>
+            <DialogDescription>
+              Reset password for {resetPasswordUser?.name} ({resetPasswordUser?.email})
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min. 6 characters)"
+              />
+              <p className="text-xs text-gray-500">
+                The user will be able to login immediately with this new password.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setResetPasswordDialogOpen(false);
+                setNewPassword("");
+                setResetPasswordUser(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleResetPassword}
+              disabled={!newPassword || newPassword.length < 6}
+            >
+              Reset Password
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
