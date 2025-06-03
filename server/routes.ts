@@ -1008,6 +1008,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to activate manual plan" });
     }
   });
+
+  // Rota exclusiva para redefinir senha de cliente pelo ADM
+  app.post("/api/admin/reset-user-password", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { email, newPassword } = req.body;
+      const adminEmail = req.user?.email;
+      
+      if (!email || !newPassword) {
+        return res.status(400).json({ message: "Email and new password are required" });
+      }
+      
+      if (!adminEmail) {
+        return res.status(401).json({ message: "Admin email not found" });
+      }
+      
+      // Validar força da senha
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+      
+      // Encontrar usuário por email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Redefinir senha do usuário
+      await storage.resetUserPasswordByAdmin(user.id, newPassword, adminEmail);
+      
+      res.json({ 
+        success: true,
+        message: `Password successfully reset for user ${email}`,
+        resetBy: adminEmail,
+        resetDate: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error resetting user password:", error);
+      res.status(500).json({ message: "Failed to reset user password" });
+    }
+  });
   
   // Toggle user status (active/suspended)
   app.post("/api/admin/toggle-user", authenticate, requireAdmin, async (req: Request, res: Response) => {

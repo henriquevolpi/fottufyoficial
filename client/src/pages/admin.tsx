@@ -68,6 +68,7 @@ export default function Admin() {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmDialogAction, setConfirmDialogAction] = useState<{type: string, callback: () => void} | null>(null);
   const [confirmDialogMessage, setConfirmDialogMessage] = useState("");
@@ -93,6 +94,10 @@ export default function Admin() {
     status: "active",
     planType: "free"
   });
+
+  // Reset Password Form
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   
   // API Queries
   const { 
@@ -254,6 +259,38 @@ export default function Admin() {
     }
   };
   
+  // Handle resetting user password
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) return;
+    
+    try {
+      const response = await apiRequest("POST", "/api/admin/reset-user-password", {
+        email: resetPasswordUser.email,
+        newPassword: newPassword
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to reset password");
+      }
+      
+      toast({
+        title: "Password Reset",
+        description: `Password has been reset for ${resetPasswordUser.name}.`
+      });
+      
+      setResetPasswordDialogOpen(false);
+      setNewPassword("");
+      setResetPasswordUser(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reset password",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Handle deleting a user
   const handleDeleteUser = (user: User) => {
     setEditingUser(user);

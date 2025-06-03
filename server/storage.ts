@@ -1839,6 +1839,25 @@ export class DatabaseStorage implements IStorage {
    */
   // ==================== CONTROLE MANUAL DE PLANOS (ADM) ====================
   
+  // Método para redefinir senha de usuário pelo ADM
+  async resetUserPasswordByAdmin(userId: number, newPassword: string, adminEmail: string): Promise<void> {
+    // Hash da nova senha usando a mesma função do auth.ts
+    const { hashPassword } = await import('./auth');
+    const hashedPassword = await hashPassword(newPassword);
+    
+    await db.update(users)
+      .set({
+        password: hashedPassword,
+        lastEvent: {
+          type: 'password_reset_by_admin',
+          timestamp: new Date().toISOString()
+        }
+      })
+      .where(eq(users.id, userId));
+      
+    console.log(`[ADM] Senha redefinida para usuário ID=${userId} por ${adminEmail}`);
+  }
+  
   // Método para ativar plano manualmente pelo ADM (expira em 34 dias)
   async activateManualPlan(userId: number, planType: string, adminEmail: string): Promise<void> {
     const activationDate = new Date();
