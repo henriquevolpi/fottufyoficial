@@ -1405,7 +1405,7 @@ export default function Dashboard() {
         
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="text-xl font-bold text-gray-900">Meus projetos</h2>
+            <h2 className="text-xl font-bold text-gray-900">Meus projetos📸</h2>
             
             <div className="flex items-center w-full sm:w-auto gap-2">
               <div className="relative flex-1 sm:w-64">
