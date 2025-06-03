@@ -278,10 +278,7 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
-// Tabela session - IMPORTANTE: Mantém formato exato do banco Neon para evitar data loss
-// Esta definição corresponde EXATAMENTE ao que existe no banco para prevenir alterações
-export const session = pgTable("session", {
-  sid: text("sid").primaryKey(),
-  sess: jsonb("sess").notNull(),
-  expire: timestamp("expire").notNull(),
-});
+// NOTA: Tabela session removida do schema Drizzle para evitar conflitos
+// A tabela session é gerenciada pelo connect-pg-simple e não deve ser alterada pelo Drizzle
+// Formato atual no banco: sid (varchar), sess (json), expire (timestamp)
+// Esta abordagem previne tentativas de alteração da tabela session pelo Drizzle
