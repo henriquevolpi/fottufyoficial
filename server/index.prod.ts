@@ -215,7 +215,7 @@ async function startServer() {
     setInterval(async () => {
       try {
         console.log('[DOWNGRADE] Verificando downgrades expirados...');
-        const expiredUsers = await dbStorage.checkAndProcessExpiredDowngrades();
+        const expiredUsers = await dbStorage.processExpiredDowngrades();
         console.log(`[DOWNGRADE] Processamento concluído: ${expiredUsers} usuários convertidos para plano gratuito`);
         
         if (expiredUsers === 0) {
@@ -230,7 +230,7 @@ async function startServer() {
     setInterval(async () => {
       try {
         console.log('[ADM] Verificando ativações manuais expiradas (34 dias)...');
-        const expiredUsers = await dbStorage.checkAndProcessExpiredManualActivations();
+        const expiredUsers = await dbStorage.processExpiredManualActivations();
         
         if (expiredUsers === 0) {
           console.log('[ADM] Nenhuma ativação manual expirada encontrada');
