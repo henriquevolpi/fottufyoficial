@@ -16,7 +16,8 @@ npx esbuild server/index.prod.ts --platform=node --packages=external --bundle --
 echo "✅ Build completo!"
 echo "📁 Arquivos gerados:"
 echo "   - dist/index.prod.js (servidor sem Vite)"
-echo "   - dist/ (frontend build)"
+echo "   - dist/public/ (frontend build)"
+echo "   - dist/public/index.html (SPA principal)"
 
 echo ""
 echo "🚢 Para fazer deploy no Railway:"

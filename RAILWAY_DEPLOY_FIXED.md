@@ -40,10 +40,10 @@ CMD ["node", "dist/index.prod.js"]
 ## File Structure Now
 ```
 dist/
-├── index.html        # Frontend SPA
 ├── index.prod.js     # Backend (NO VITE IMPORTS)
-├── assets/          # Frontend assets
-└── public/          # Static files
+└── public/          # Frontend build output
+    ├── index.html    # Frontend SPA
+    └── assets/       # CSS, JS, images
 ```
 
 ## Deploy Commands

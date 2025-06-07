@@ -138,7 +138,7 @@ async function startServer() {
   });
 
   // Production-only static file serving
-  const distPath = path.resolve(process.cwd(), 'dist');
+  const distPath = path.resolve(process.cwd(), 'dist/public');
   const staticMiddleware = express.static(distPath, {
     index: false, // Don't serve index.html automatically
     setHeaders: (res, filepath) => {
@@ -178,7 +178,7 @@ async function startServer() {
     
     // Serve index.html for all other routes (SPA)
     res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-    res.sendFile(path.resolve(process.cwd(), 'dist', 'index.html'));
+    res.sendFile(path.resolve(process.cwd(), 'dist/public', 'index.html'));
   });
 
   // Use the port provided by the environment (Railway sets this to 3000)
