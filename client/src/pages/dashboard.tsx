@@ -525,7 +525,6 @@ function UploadModal({
     clientName: z.string().min(3, "Client name is required"),
     clientEmail: z.string().email("Invalid email").optional().or(z.literal("")),
     data: z.string().min(1, "Date is required"),
-    applyWatermark: z.boolean().default(true),
   });
   
   const form = useForm<z.infer<typeof uploadSchema>>({
@@ -535,7 +534,6 @@ function UploadModal({
       clientName: "",
       clientEmail: "",
       data: new Date().toISOString().split('T')[0],
-      applyWatermark: true,
     },
   });
   
@@ -575,7 +573,7 @@ function UploadModal({
       formData.append('clientName', data.clientName);
       formData.append('clientEmail', data.clientEmail || '');
       formData.append('data', data.data);
-      formData.append('applyWatermark', data.applyWatermark.toString());
+
       
       // Add photographer ID from the user context
       if (user && user.id) {
@@ -798,29 +796,7 @@ function UploadModal({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="applyWatermark"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mt-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Aplicar marca d'água nas imagens
-                    </FormLabel>
-                    <p className="text-sm text-muted-foreground">
-                      Adiciona uma marca d'água "fottufy (não copie)" nas imagens para proteger seu trabalho
-                    </p>
-                  </div>
-                </FormItem>
-              )}
-            />
-            
+
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">
                 Fotos do Projeto (jpeg, png, webp, até 3mb cada)
