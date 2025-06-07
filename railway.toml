@@ -2,6 +2,9 @@
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
+[build.buildArgs]
+VITE_STRIPE_PUBLIC_KEY = "${{VITE_STRIPE_PUBLIC_KEY}}"
+
 [deploy]
 startCommand = "node dist/index.prod.js"
 healthcheckPath = "/"

@@ -31,6 +31,11 @@ COPY . .
 # Build stage
 FROM base AS build
 RUN npm ci
+
+# Build arguments for Vite environment variables
+ARG VITE_STRIPE_PUBLIC_KEY
+ENV VITE_STRIPE_PUBLIC_KEY=$VITE_STRIPE_PUBLIC_KEY
+
 RUN npx vite build
 RUN npx esbuild server/index.prod.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
