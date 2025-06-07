@@ -28,7 +28,7 @@ RUN npm ci --only=production && npm cache clean --force
 # Copiar código fonte
 COPY . .
 
-# Build da aplicação frontend
+# Build stage
 FROM base AS build
 RUN npm ci
 RUN npm run build
@@ -53,18 +53,20 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copiar dependências de produção
+# Copiar package.json e instalar apenas dependências de produção
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Copiar aplicação compilada
+# Copiar aplicação compilada do estágio de build
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
 COPY --from=build /app/shared ./shared
-COPY --from=build /app/public ./public
 COPY --from=build /app/migrations ./migrations
 COPY --from=build /app/drizzle.config.ts ./
 COPY --from=build /app/tsconfig.json ./
+
+# Criar diretório uploads
+RUN mkdir -p uploads
 
 # Criar usuário não-root para segurança
 RUN addgroup -g 1001 -S nodejs
