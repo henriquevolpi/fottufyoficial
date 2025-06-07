@@ -28,16 +28,10 @@ RUN npm ci --only=production && npm cache clean --force
 # Copiar código fonte
 COPY . .
 
-# Build stage
+# Build da aplicação frontend
 FROM base AS build
 RUN npm ci
-
-# Build arguments for Vite environment variables
-ARG VITE_STRIPE_PUBLIC_KEY
-ENV VITE_STRIPE_PUBLIC_KEY=$VITE_STRIPE_PUBLIC_KEY
-
-RUN npx vite build
-RUN npx esbuild server/index.prod.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+RUN npm run build
 
 # Imagem final de produção
 FROM node:18-alpine AS production
@@ -59,20 +53,18 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copiar package.json e instalar apenas dependências de produção
+# Copiar dependências de produção
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Copiar aplicação compilada do estágio de build
+# Copiar aplicação compilada
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
 COPY --from=build /app/shared ./shared
+COPY --from=build /app/public ./public
 COPY --from=build /app/migrations ./migrations
 COPY --from=build /app/drizzle.config.ts ./
 COPY --from=build /app/tsconfig.json ./
-
-# Criar diretório uploads
-RUN mkdir -p uploads
 
 # Criar usuário não-root para segurança
 RUN addgroup -g 1001 -S nodejs
@@ -87,5 +79,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Comando de inicialização usando arquivo sem Vite
-CMD ["node", "dist/index.prod.js"]
+# Comando de inicialização
+CMD ["npm", "start"]

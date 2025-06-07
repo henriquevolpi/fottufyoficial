@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -226,7 +227,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 119) + "…";
       }
 
-      console.log(logLine);
+      log(logLine);
     }
   });
 
@@ -310,18 +311,18 @@ app.use((req, res, next) => {
     next();
   });
 
-  // Setup Vite only in development, serve static files in production
-  if (process.env.NODE_ENV === "development") {
-    // Import Vite functions only in development
-    const { setupVite } = await import("./vite");
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // Serve static files from dist directory in production
-    const distPath = path.resolve(process.cwd(), 'dist');
-    const staticMiddleware = express.static(distPath, {
-      index: false, // Don't serve index.html automatically
+    // Integração com serveStatic para melhorar o suporte a rotas SPA
+    // em ambientes de produção
+    const staticMiddleware = express.static(path.resolve(import.meta.dirname, 'public'), {
+      index: false, // Não servir index.html automaticamente
       setHeaders: (res, filepath) => {
-        // Set appropriate headers for each file type
+        // Definir cabeçalhos apropriados para cada tipo de arquivo
         const ext = path.extname(filepath).toLowerCase();
         
         if (ext === '.js' || ext === '.mjs') {
@@ -334,7 +335,7 @@ app.use((req, res, next) => {
       }
     });
     
-    // Register static files middleware
+    // Registrar middleware de arquivos estáticos
     app.use(staticMiddleware);
     
     // Rota especial para lidar com HTML estáticos específicos
@@ -355,9 +356,9 @@ app.use((req, res, next) => {
         return next();
       }
       
-      // Serve index.html for all other routes (SPA)
+      // Servir o index.html para todas as outras rotas (SPA)
       res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-      res.sendFile(path.resolve(process.cwd(), 'dist', 'index.html'));
+      res.sendFile(path.resolve(import.meta.dirname, 'public', 'index.html'));
     });
   }
 
@@ -369,7 +370,7 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    console.log(`serving on port ${port} (NODE_ENV: ${process.env.NODE_ENV})`);
+    log(`serving on port ${port} (NODE_ENV: ${process.env.NODE_ENV})`);
     
     // Inicializar o monitor de uso de memória
     setupMemoryMonitor();

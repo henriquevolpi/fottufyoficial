@@ -2,11 +2,8 @@
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
-[build.buildArgs]
-VITE_STRIPE_PUBLIC_KEY = "${{VITE_STRIPE_PUBLIC_KEY}}"
-
 [deploy]
-startCommand = "node dist/index.prod.js"
+startCommand = "npm start"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
