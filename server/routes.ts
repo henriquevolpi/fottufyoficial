@@ -235,6 +235,9 @@ const requireActiveUser = (req: Request, res: Response, next: Function) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
+  // Setup authentication first (this registers /api/login, /api/register, etc.)
+  setupAuth(app);
+  
   // Inicializar Stripe
   if (!process.env.STRIPE_SECRET_KEY) {
     console.warn('Chave secreta do Stripe não encontrada. As funcionalidades de pagamento não funcionarão corretamente.');
