@@ -1425,8 +1425,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use fields from FormData format or fallback to JSON format
       const name = projectName || req.body.nome || req.body.name;
       
-      // Parse watermark setting (convert string "true"/"false" to boolean)
-      const shouldApplyWatermark = applyWatermark === "false" ? false : true;
+      // Desativar marca d'água no backend durante upload
+      const shouldApplyWatermark = false;
       
       console.log("Project data (raw):", { projectName, clientName, clientEmail, photographerId });
       console.log("Project data (processed):", { name, clientName, clientEmail, photographerId });
@@ -1811,8 +1811,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const idParam = req.params.id;
       const { applyWatermark } = req.body;
       
-      // Parse watermark setting (convert string "true"/"false" to boolean)
-      const shouldApplyWatermark = applyWatermark === "false" ? false : true;
+      // Desativar marca d'água no backend durante upload de fotos adicionais
+      const shouldApplyWatermark = false;
       
       // Verificar se o projeto existe
       const project = await storage.getProject(idParam);
