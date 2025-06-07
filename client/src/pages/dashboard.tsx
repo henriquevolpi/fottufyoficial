@@ -733,7 +733,7 @@ function UploadModal({
           <DialogDescription className="text-sm mt-1">
             Preencha os detalhes do projeto e faça upload das fotos.
             <p className="bg-yellow-200 text-black font-semibold inline px-1 rounded-sm">
-              Envie fotos de 3mb ou menos, para evitar erros no Upload
+              Envie fotos de 2MB ou menos, para evitar erros no Upload
             </p>
           </DialogDescription>
         </DialogHeader>
