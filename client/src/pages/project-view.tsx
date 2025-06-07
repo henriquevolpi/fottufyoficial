@@ -667,24 +667,29 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 {/* Debug info - will show in development only */}
                 {/* Removed ID display */}
                 
-                <div 
+                <WatermarkOverlay 
+                  enabled={project.showWatermark !== false} 
                   className="absolute inset-0 w-full h-full cursor-zoom-in group"
-                  onClick={(e) => openImageModal(photo.url, index, e)}
                 >
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200">
-                    <Maximize className="h-6 w-6 text-white" />
+                  <div 
+                    className="w-full h-full"
+                    onClick={(e) => openImageModal(photo.url, index, e)}
+                  >
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200 z-20">
+                      <Maximize className="h-6 w-6 text-white" />
+                    </div>
+                    <img
+                      src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
+                      alt="Photo"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.jpg';
+                      }}
+                      title="Clique para ampliar"
+                    />
                   </div>
-                  <img
-                    src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
-                    alt="Photo"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder.jpg';
-                    }}
-                    title="Clique para ampliar"
-                  />
-                </div>
+                </WatermarkOverlay>
                 
                 {/* Selection indicator */}
                 {selectedPhotos.has(photo.id) && (

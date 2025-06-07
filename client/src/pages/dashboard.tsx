@@ -23,7 +23,9 @@ import {
   CreditCard,
   Settings,
   Key,
-  HelpCircle
+  HelpCircle,
+  Shield,
+  ShieldOff
 } from "lucide-react";
 import { 
   Tabs, 
@@ -200,6 +202,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
   const [showSelectionsModal, setShowSelectionsModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isTogglingWatermark, setIsTogglingWatermark] = useState(false);
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -262,6 +265,38 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       setShowDeleteConfirm(false);
     }
   };
+
+  const handleToggleWatermark = async () => {
+    try {
+      setIsTogglingWatermark(true);
+      
+      const newWatermarkValue = !project.showWatermark;
+      
+      await apiRequest('PATCH', `/api/projects/${project.id}/watermark`, {
+        showWatermark: newWatermarkValue
+      });
+      
+      // Update local state
+      project.showWatermark = newWatermarkValue;
+      
+      toast({
+        title: "Marca d'água atualizada",
+        description: `Marca d'água ${newWatermarkValue ? 'ativada' : 'desativada'} para este projeto.`,
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+    } catch (error) {
+      console.error('Error toggling watermark:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar a configuração da marca d'água.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTogglingWatermark(false);
+    }
+  };
   
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -317,6 +352,35 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               <FileText className="h-3 w-3 ml-1" />
             </Button>
           )}
+          
+          {/* Watermark toggle button */}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className={`text-xs ${project.showWatermark !== false 
+              ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' 
+              : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
+            }`}
+            onClick={handleToggleWatermark}
+            disabled={isTogglingWatermark}
+            title={`Marca d'água ${project.showWatermark !== false ? 'ativada' : 'desativada'}`}
+          >
+            {isTogglingWatermark ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ...
+              </>
+            ) : (
+              <>
+                {project.showWatermark !== false ? (
+                  <Shield className="h-3 w-3 mr-1" />
+                ) : (
+                  <ShieldOff className="h-3 w-3 mr-1" />
+                )}
+                Marca d'água
+              </>
+            )}
+          </Button>
         </div>
         
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">

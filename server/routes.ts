@@ -1770,6 +1770,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to reopen project" });
     }
   });
+
+  // Update project watermark setting
+  app.patch("/api/projects/:id/watermark", authenticate, requireActiveUser, async (req: Request, res: Response) => {
+    try {
+      const idParam = req.params.id;
+      const { showWatermark } = req.body;
+      
+      if (typeof showWatermark !== 'boolean') {
+        return res.status(400).json({ message: "showWatermark must be a boolean" });
+      }
+      
+      const project = await storage.getProject(idParam);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Check if photographer ID matches authenticated user
+      if (project.photographerId !== req.user?.id && req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Cannot modify projects of other photographers" });
+      }
+      
+      const updatedProject = await storage.updateProjectWatermark(project.id, showWatermark);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Error updating project watermark:", error);
+      res.status(500).json({ message: "Failed to update project watermark" });
+    }
+  });
   
   // Adicionar novas fotos a um projeto existente
   app.post("/api/projects/:id/photos", authenticate, requireActiveUser, r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
