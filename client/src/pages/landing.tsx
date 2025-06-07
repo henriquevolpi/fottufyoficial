@@ -9,11 +9,9 @@ export default function LandingPage() {
       <div className="max-w-4xl w-full text-center">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img 
-            src="/fottufy logo.png" 
-            alt="Fottufy Logo" 
-            className="h-16 md:h-20"
-          />
+          <h1 className="text-4xl md:text-5xl font-bold text-blue-600">
+            Fottufy
+          </h1>
         </div>
         
         {/* Heading */}
