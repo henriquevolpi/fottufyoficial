@@ -113,7 +113,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
     
     // Mapeie o formato do servidor (name, clientName) para o formato do frontend (nome, cliente)
-    return {
+    const result = {
       id: project.id,
       nome: project.name || project.nome,
       cliente: project.clientName || project.cliente,
@@ -123,19 +123,23 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       fotos: project.photos ? project.photos.length : project.fotos,
       selecionadas: project.selectedPhotos ? project.selectedPhotos.length : project.selecionadas,
       fotografoId: project.photographerId || project.fotografoId,
-      photos: project.photos ? project.photos.map((p: any) => {
-        // Removemos os logs de depuração detalhados de cada foto para reduzir consumo de memória
-        return {
-          id: p.id,
-          url: ensureValidImageUrl(p.url),
-          filename: p.filename || 'photo.jpg',
-          originalName: p.originalName || p.filename || 'photo.jpg',
-          selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
-        };
-      }) : [],
+      photos: project.photos ? project.photos.map((p: any) => ({
+        id: p.id,
+        url: ensureValidImageUrl(p.url),
+        filename: p.filename || 'photo.jpg',
+        originalName: p.originalName || p.filename || 'photo.jpg',
+        selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
+      })) : [],
       finalizado: project.status === "reviewed" || project.finalizado,
       showWatermark: project.showWatermark
     };
+    
+    console.log('🔍 WATERMARK DEBUG - Projeto adaptado:', {
+      originalShowWatermark: project.showWatermark,
+      adaptedShowWatermark: result.showWatermark
+    });
+    
+    return result;
   };
 
   // Função para carregar dados do projeto - Definida fora do useEffect para poder ser reutilizada
