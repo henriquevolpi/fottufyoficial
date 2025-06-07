@@ -43,7 +43,7 @@ sharp.cache(false);
 export async function processImage(
   buffer: Buffer, 
   mimetype: string,
-  applyWatermark: boolean = true
+  applyWatermark: boolean = false // DESATIVADO: marca d'água movida para frontend
 ): Promise<Buffer> {
   // Desativar o cache do Sharp para esta operação específica
   sharp.cache(false);

@@ -138,6 +138,7 @@ export const projects = pgTable("projects", {
     originalName?: string;
   }[]>(),
   selectedPhotos: jsonb("selected_photos").default([]).$type<string[]>(),
+  showWatermark: boolean("show_watermark").default(true), // Frontend watermark control
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -156,6 +157,7 @@ export const newProjects = pgTable("new_projects", {
   userId: integer("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description"),
+  showWatermark: boolean("show_watermark").default(true), // Frontend watermark control
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

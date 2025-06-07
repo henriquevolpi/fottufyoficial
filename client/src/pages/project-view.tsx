@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getPhotoUrl, getImageUrl } from "@/lib/imageUtils";
+import { WatermarkOverlay } from "@/components/WatermarkOverlay";
 import { 
   Check, 
   Loader2, 
@@ -52,6 +53,7 @@ interface Project {
   fotografoId: number;
   photos: Photo[];
   finalizado?: boolean;
+  showWatermark?: boolean; // Controle da marca d'água frontend
 }
 
 export default function ProjectView({ params }: { params?: { id: string } }) {
