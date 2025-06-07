@@ -111,6 +111,11 @@ async function startServer() {
   await initializeDatabase();
   
   const app = express();
+  
+  // Add JSON and URL-encoded body parsing middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  
   const server = await registerRoutes(app);
 
   // Custom MIME type handler

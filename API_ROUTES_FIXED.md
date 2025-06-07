@@ -1,38 +1,44 @@
-# API Routes 404 Error - FIXED
+# API Routes Authentication Error - FIXED
 
-## Problem
-All API routes (`/api/login`, `/api/register`, etc.) were returning 404 with HTML error page:
-```
-Cannot POST /api/login
-```
+## Problem 1: 404 Routes (RESOLVED)
+All API routes (`/api/login`, `/api/register`, etc.) were returning 404 with HTML error page.
 
-## Root Cause
-The `setupAuth(app)` function was never called in `registerRoutes()`, so authentication routes were not being registered in production.
+**Root Cause**: `setupAuth(app)` function was never called in `registerRoutes()`.
 
-## Solution Applied
-Added `setupAuth(app)` call to the beginning of `registerRoutes()` function:
+**Solution**: Added `setupAuth(app)` call to the beginning of `registerRoutes()` function.
+
+## Problem 2: req.body undefined (RESOLVED)
+Authentication routes were returning 401/500 errors with "Cannot destructure property 'email' of 'req.body' as it is undefined".
+
+**Root Cause**: Express JSON parsing middleware was missing in production server.
+
+**Solution**: Added express middleware before route registration in `server/index.prod.ts`:
 
 ```typescript
-export async function registerRoutes(app: Express): Promise<Server> {
-  const httpServer = createServer(app);
+async function startServer() {
+  await initializeDatabase();
   
-  // Setup authentication first (this registers /api/login, /api/register, etc.)
-  setupAuth(app);
+  const app = express();
   
-  // ... rest of the routes
+  // Add JSON and URL-encoded body parsing middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  
+  const server = await registerRoutes(app);
+  // ...
 }
 ```
 
 ## Verification
-Tested production server - `/api/login` now responds with proper JSON:
-```json
-{"message":"Falha na autenticação. Verifique seu email e senha."}
-```
+Tested production server:
+- **Login**: `{"message":"Falha na autenticação. Verifique seu email e senha."}`
+- **Register**: Successfully creates users and returns complete user data
 
-## Status: FIXED ✅
+## Status: FULLY FIXED ✅
 - API routes properly registered
-- Authentication endpoints working
+- Request body parsing working correctly
+- Authentication endpoints fully functional
 - Production server rebuilt and tested
 - Ready for Railway deployment
 
-The login and all other API routes will now work correctly in production.
+All authentication routes now work correctly in production.
