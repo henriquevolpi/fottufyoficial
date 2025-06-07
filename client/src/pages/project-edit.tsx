@@ -62,10 +62,29 @@ export default function ProjectEdit() {
       return;
     }
     
-    // Gerar URLs de preview para as imagens
-    const newUrls = imageFiles.map(file => URL.createObjectURL(file));
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
     
-    setNewPhotos(prev => [...prev, ...imageFiles]);
+    // Verificar arquivos acima de 2MB
+    const oversizedFiles = imageFiles.filter(file => file.size > MAX_FILE_SIZE);
+    const validFiles = imageFiles.filter(file => file.size <= MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
+      toast({
+        title: "Arquivos muito grandes",
+        description: `Envie apenas fotos abaixo de 2MB. Arquivos rejeitados: ${fileNames}`,
+        variant: "destructive",
+      });
+      
+      if (validFiles.length === 0) {
+        return;
+      }
+    }
+    
+    // Gerar URLs de preview para as imagens válidas
+    const newUrls = validFiles.map(file => URL.createObjectURL(file));
+    
+    setNewPhotos(prev => [...prev, ...validFiles]);
     setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
   }, [toast]);
   

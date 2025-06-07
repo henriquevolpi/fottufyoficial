@@ -541,11 +541,30 @@ function UploadModal({
     if (!event.target.files || event.target.files.length === 0) return;
     
     const newFiles = Array.from(event.target.files);
-    setSelectedFiles((prev) => [...prev, ...newFiles]);
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    
+    // Verificar arquivos acima de 2MB
+    const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
+    const validFiles = newFiles.filter(file => file.size <= MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
+      toast({
+        title: "Arquivos muito grandes",
+        description: `Envie apenas fotos abaixo de 2MB. Arquivos rejeitados: ${fileNames}`,
+        variant: "destructive",
+      });
+      
+      if (validFiles.length === 0) {
+        return;
+      }
+    }
+    
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
     
     // Não geramos mais thumbnails, apenas registramos a quantidade de arquivos
     // para manter a contagem correta e permitir a remoção de arquivos
-    setThumbnails(prev => [...prev, ...Array(newFiles.length).fill("placeholder")]);
+    setThumbnails(prev => [...prev, ...Array(validFiles.length).fill("placeholder")]);
   };
   
   const removeFile = (index: number) => {
