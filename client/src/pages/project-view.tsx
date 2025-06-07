@@ -83,6 +83,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const adaptProject = (project: any): Project => {
     // Log para depuração
     console.log('Adaptando projeto:', project.id, 'com', project.photos?.length || 0, 'fotos');
+    console.log('[PROJECT-VIEW] showWatermark do projeto:', project.showWatermark);
     
     // Helpers para garantir URLs corretas
     const ensureValidImageUrl = (url: string): string => {

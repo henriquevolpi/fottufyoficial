@@ -270,11 +270,18 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
     try {
       setIsTogglingWatermark(true);
       
-      const newWatermarkValue = !project.showWatermark;
+      const currentWatermark = project.showWatermark;
+      const newWatermarkValue = currentWatermark === false ? true : false;
       
-      await apiRequest('PATCH', `/api/projects/${project.id}/watermark`, {
+      console.log(`[FRONTEND] Alternando marca d'água do projeto ${project.id}:`);
+      console.log(`[FRONTEND] Valor atual: ${currentWatermark}`);
+      console.log(`[FRONTEND] Novo valor: ${newWatermarkValue}`);
+      
+      const response = await apiRequest('PATCH', `/api/projects/${project.id}/watermark`, {
         showWatermark: newWatermarkValue
       });
+      
+      console.log(`[FRONTEND] Resposta da API:`, response);
       
       // Update local state
       project.showWatermark = newWatermarkValue;

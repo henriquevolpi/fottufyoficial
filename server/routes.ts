@@ -1777,6 +1777,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const idParam = req.params.id;
       const { showWatermark } = req.body;
       
+      console.log(`[WATERMARK] Atualizando marca d'água do projeto ${idParam} para: ${showWatermark}`);
+      
       if (typeof showWatermark !== 'boolean') {
         return res.status(400).json({ message: "showWatermark must be a boolean" });
       }
@@ -1786,6 +1788,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
+      
+      console.log(`[WATERMARK] Projeto encontrado: ${project.name}, atual showWatermark: ${project.showWatermark}`);
       
       // Check if photographer ID matches authenticated user
       if (project.photographerId !== req.user?.id && req.user?.role !== "admin") {
@@ -1797,6 +1801,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedProject) {
         return res.status(404).json({ message: "Project not found" });
       }
+      
+      console.log(`[WATERMARK] Projeto atualizado: showWatermark = ${updatedProject.showWatermark}`);
       
       res.json(updatedProject);
     } catch (error) {
