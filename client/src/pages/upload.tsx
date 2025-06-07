@@ -54,10 +54,29 @@ export default function UploadPage() {
     const files = event.target.files;
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
-      setSelectedFiles(fileArray);
+      const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+      
+      // Verificar arquivos acima de 2MB
+      const oversizedFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE);
+      const validFiles = fileArray.filter(file => file.size <= MAX_FILE_SIZE);
+      
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => f.name).join(', ');
+        toast({
+          title: "Arquivos muito grandes",
+          description: `Envie apenas fotos abaixo de 2MB. Arquivos rejeitados: ${fileNames}`,
+          variant: "destructive",
+        });
+        
+        if (validFiles.length === 0) {
+          return;
+        }
+      }
+      
+      setSelectedFiles(validFiles);
       
       // Create thumbnails for preview only
-      const newThumbnails = fileArray.map(file => URL.createObjectURL(file));
+      const newThumbnails = validFiles.map(file => URL.createObjectURL(file));
       setThumbnails(prev => [...prev, ...newThumbnails]);
     }
   };
@@ -82,13 +101,32 @@ export default function UploadPage() {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
-      setSelectedFiles(prev => [...prev, ...fileArray]);
+      const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+      
+      // Verificar arquivos acima de 2MB
+      const oversizedFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE);
+      const validFiles = fileArray.filter(file => file.size <= MAX_FILE_SIZE);
+      
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => f.name).join(', ');
+        toast({
+          title: "Arquivos muito grandes",
+          description: `Envie apenas fotos abaixo de 2MB. Arquivos rejeitados: ${fileNames}`,
+          variant: "destructive",
+        });
+        
+        if (validFiles.length === 0) {
+          return;
+        }
+      }
+      
+      setSelectedFiles(prev => [...prev, ...validFiles]);
       
       // Create thumbnails for preview only
-      const newThumbnails = fileArray.map(file => URL.createObjectURL(file));
+      const newThumbnails = validFiles.map(file => URL.createObjectURL(file));
       setThumbnails(prev => [...prev, ...newThumbnails]);
     }
-  }, []);
+  }, [toast]);
 
   const onSubmit = async (values: UploadFormValues) => {
     if (selectedFiles.length === 0) {

@@ -270,18 +270,11 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
     try {
       setIsTogglingWatermark(true);
       
-      const currentWatermark = project.showWatermark;
-      const newWatermarkValue = currentWatermark === false ? true : false;
+      const newWatermarkValue = !project.showWatermark;
       
-      console.log(`[FRONTEND] Alternando marca d'água do projeto ${project.id}:`);
-      console.log(`[FRONTEND] Valor atual: ${currentWatermark}`);
-      console.log(`[FRONTEND] Novo valor: ${newWatermarkValue}`);
-      
-      const response = await apiRequest('PATCH', `/api/projects/${project.id}/watermark`, {
+      await apiRequest('PATCH', `/api/projects/${project.id}/watermark`, {
         showWatermark: newWatermarkValue
       });
-      
-      console.log(`[FRONTEND] Resposta da API:`, response);
       
       // Update local state
       project.showWatermark = newWatermarkValue;
@@ -740,7 +733,7 @@ function UploadModal({
           <DialogDescription className="text-sm mt-1">
             Preencha os detalhes do projeto e faça upload das fotos.
             <p className="bg-yellow-200 text-black font-semibold inline px-1 rounded-sm">
-              Envie fotos de 2MB ou menos, para evitar erros no Upload
+              Envie fotos de 2mb ou menos, para evitar erros no Upload
             </p>
           </DialogDescription>
         </DialogHeader>

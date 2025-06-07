@@ -139,38 +139,58 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
     const files = event.target.files
     if (!files || files.length === 0) return
 
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    const filesArray = Array.from(files);
+    
+    // Verificar arquivos acima de 2MB
+    const oversizedFiles = filesArray.filter(file => file.size > MAX_FILE_SIZE);
+    const validFiles = filesArray.filter(file => file.size <= MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
+      toast({
+        title: "Arquivos muito grandes",
+        description: `Envie apenas fotos abaixo de 2MB. Arquivos rejeitados: ${fileNames}`,
+        variant: "destructive",
+      });
+      
+      if (validFiles.length === 0) {
+        return;
+      }
+    }
+
     setLoading(true)
-    setUploadProgress({ current: 0, total: files.length })
+    setUploadProgress({ current: 0, total: validFiles.length })
     setUploadPercentage(0)
     setUploadStatus('idle')
 
     try {
       // Se houver apenas um arquivo, mostrar preview
-      if (files.length === 1) {
-        const previewFile = await processFile(files[0])
+      if (validFiles.length === 1) {
+        const previewFile = await processFile(validFiles[0])
         const previewUrl = URL.createObjectURL(previewFile)
         setPreview(previewUrl)
       }
 
-      // Processar todos os arquivos
+      // Processar todos os arquivos válidos
       let totalUploaded = 0;
-      let totalBatches = Math.ceil(files.length / BATCH_SIZE);
-      console.log(`Iniciando upload de ${files.length} arquivos em ${totalBatches} lotes de até ${BATCH_SIZE} fotos cada.`);
+      let totalBatches = Math.ceil(validFiles.length / BATCH_SIZE);
+      console.log(`Iniciando upload de ${validFiles.length} arquivos em ${totalBatches} lotes de até ${BATCH_SIZE} fotos cada.`);
 
       // Dividir arquivos em lotes e processar cada lote
       for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
         // Calcular o intervalo do lote atual
         const startIndex = batchIndex * BATCH_SIZE;
-        const endIndex = Math.min((batchIndex + 1) * BATCH_SIZE, files.length);
+        const endIndex = Math.min((batchIndex + 1) * BATCH_SIZE, validFiles.length);
         const batchSize = endIndex - startIndex;
         
         console.log(`Processando lote ${batchIndex + 1}/${totalBatches} (${batchSize} arquivos)`);
         
-        // Converter o FileList para um array para podermos fazer slice
-        const filesArray = Array.from(files).slice(startIndex, endIndex);
+        // Usar apenas os arquivos válidos (já filtrados)
+        const batchFiles = validFiles.slice(startIndex, endIndex);
         
         // Comprimir todos os arquivos do lote atual em paralelo
-        const compressPromises = filesArray.map(file => processFile(file));
+        const compressPromises = batchFiles.map(file => processFile(file));
         const compressedFiles = await Promise.all(compressPromises);
         
         console.log(`Lote ${batchIndex + 1} comprimido, enviando para o servidor...`);
@@ -255,7 +275,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
             className="sr-only"
           />
         </label>
-        <p className="text-xs text-gray-500">Formatos aceitos: JPG, PNG, GIF • Sem limite de tamanho • Você pode selecionar vários arquivos</p>
+        <p className="text-xs text-gray-500">Formatos aceitos: JPG, PNG, GIF • Máximo 2MB por foto • Você pode selecionar vários arquivos</p>
       </div>
       
       {loading && (

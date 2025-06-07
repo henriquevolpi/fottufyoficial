@@ -269,8 +269,26 @@ export default function UploadModal({
   };
 
   const addFiles = (newFiles: File[]) => {
-    // Não há mais verificação de tamanho máximo - todos os arquivos são aceitos
-    const validFiles: File[] = newFiles;
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB em bytes
+    
+    // Verificar arquivos acima de 2MB
+    const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
+    const validFiles = newFiles.filter(file => file.size <= MAX_FILE_SIZE);
+    
+    // Se há arquivos muito grandes, mostrar aviso e bloquear
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
+      toast({
+        title: "Arquivos muito grandes",
+        description: `Envie apenas fotos abaixo de 2MB. Arquivos rejeitados: ${fileNames}`,
+        variant: "destructive",
+      });
+      
+      // Se todos os arquivos são muito grandes, não adicionar nenhum
+      if (validFiles.length === 0) {
+        return;
+      }
+    }
 
     // Continuar apenas com os arquivos válidos
     const combinedFiles = [...files, ...validFiles];

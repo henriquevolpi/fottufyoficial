@@ -49,7 +49,7 @@ User model:
 
 Project model:
 - id, name, clientName, clientEmail, photographerId
-- status: pending | reviewed | reopened | archived
+- status: pending | revisado | reopened | archived
 - photos: [{ id, url, filename }]
 - selectedPhotos: [photoId]
 - createdAt

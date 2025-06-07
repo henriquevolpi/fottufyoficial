@@ -900,7 +900,7 @@ export class MemStorage implements IStorage {
     const updatedProject = {
       ...projectToUpdate,
       selectedPhotos,
-      status: "reviewed" // This is the critical change - using "reviewed" not "completed"
+      status: "reviewed" // This is the critical change - using "revisado" not "completed"
     };
     
     // Step 3: Update the photos to mark selected ones
