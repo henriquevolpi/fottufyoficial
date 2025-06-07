@@ -100,7 +100,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Basic Plan */}
             <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-              <div className="text-2xl font-bold mb-2 text-blue-600">📷 R$14,90</div>
+              <div className="text-2xl font-bold mb-2 text-blue-600">📷 R$19,90</div>
               <div className="text-lg text-gray-500 mb-6">por 6.000 imagens</div>
               
               <ul className="space-y-3 mb-8">
