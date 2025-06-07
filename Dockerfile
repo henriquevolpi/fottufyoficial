@@ -31,7 +31,8 @@ COPY . .
 # Build stage
 FROM base AS build
 RUN npm ci
-RUN npm run build
+RUN npx vite build
+RUN npx esbuild server/index.prod.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Imagem final de produção
 FROM node:18-alpine AS production
@@ -81,5 +82,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Comando de inicialização
-CMD ["npm", "start"]
+# Comando de inicialização usando arquivo sem Vite
+CMD ["node", "dist/index.prod.js"]
