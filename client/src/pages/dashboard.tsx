@@ -523,7 +523,7 @@ function UploadModal({
   const uploadSchema = z.object({
     projectName: z.string().min(3, "Project name is required"),
     clientName: z.string().min(3, "Client name is required"),
-    clientEmail: z.string().email("Invalid email"),
+    clientEmail: z.string().email("Invalid email").optional().or(z.literal("")),
     data: z.string().min(1, "Date is required"),
     applyWatermark: z.boolean().default(true),
   });
@@ -573,7 +573,7 @@ function UploadModal({
       const formData = new FormData();
       formData.append('projectName', data.projectName);
       formData.append('clientName', data.clientName);
-      formData.append('clientEmail', data.clientEmail);
+      formData.append('clientEmail', data.clientEmail || '');
       formData.append('data', data.data);
       formData.append('applyWatermark', data.applyWatermark.toString());
       
@@ -775,9 +775,9 @@ function UploadModal({
               name="clientEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email do Cliente</FormLabel>
+                  <FormLabel>Email do Cliente (opcional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="cliente@exemplo.com" {...field} />
+                    <Input placeholder="cliente@exemplo.com (opcional)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
