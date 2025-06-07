@@ -133,7 +133,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
         };
       }) : [],
-      finalizado: project.status === "reviewed" || project.finalizado
+      finalizado: project.status === "reviewed" || project.finalizado,
+      showWatermark: project.showWatermark
     };
   };
 
@@ -168,6 +169,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       
       const projectData = await response.json();
       console.log('Projeto carregado da API:', projectData);
+      console.log('🔍 WATERMARK DEBUG - Valor showWatermark da API:', projectData.showWatermark);
       
       // Log detalhado para debug
       if (projectData.photos) {
@@ -669,7 +671,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 {/* Removed ID display */}
                 
                 <WatermarkOverlay 
-                  enabled={project.showWatermark !== false} 
+                  enabled={project.showWatermark === true} 
                   className="absolute inset-0 w-full h-full cursor-zoom-in group"
                 >
                   <div 
@@ -812,7 +814,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {project.photos[currentPhotoIndex] && (
                 <WatermarkOverlay 
-                  enabled={project.showWatermark !== false} 
+                  enabled={project.showWatermark === true} 
                   className="relative w-full h-full flex items-center justify-center"
                 >
                   <img
