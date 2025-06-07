@@ -810,19 +810,24 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             {/* Container da Imagem */}
             <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
               {project.photos[currentPhotoIndex] && (
-                <img
-                  src={
-                    project.photos[currentPhotoIndex].url && 
-                    !project.photos[currentPhotoIndex].url.includes('project-photos') 
-                      ? project.photos[currentPhotoIndex].url 
-                      : `https://cdn.fottufy.com/${project.photos[currentPhotoIndex].filename}`
-                  }
-                  alt="Photo"
-                  className="max-h-full max-w-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.jpg';
-                  }}
-                />
+                <WatermarkOverlay 
+                  enabled={project.showWatermark !== false} 
+                  className="relative w-full h-full flex items-center justify-center"
+                >
+                  <img
+                    src={
+                      project.photos[currentPhotoIndex].url && 
+                      !project.photos[currentPhotoIndex].url.includes('project-photos') 
+                        ? project.photos[currentPhotoIndex].url 
+                        : `https://cdn.fottufy.com/${project.photos[currentPhotoIndex].filename}`
+                    }
+                    alt="Photo"
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder.jpg';
+                    }}
+                  />
+                </WatermarkOverlay>
               )}
             </div>
             
