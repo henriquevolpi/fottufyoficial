@@ -964,7 +964,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           {project.photos.length > 1 && (
             <button
               onClick={goToPrevPhoto}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black z-20"
               aria-label="Foto anterior"
             >
               <ChevronLeft className="h-8 w-8" />
@@ -975,7 +975,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           {project.photos.length > 1 && (
             <button
               onClick={goToNextPhoto}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black"
+              className="absolute right-12 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black z-20"
               aria-label="Próxima foto"
             >
               <ChevronRight className="h-8 w-8" />
