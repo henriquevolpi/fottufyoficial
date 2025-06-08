@@ -822,10 +822,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     size="sm"
                     variant="secondary"
                     className="w-full text-xs"
-                    onClick={() => {
-                      currentPhotoId = photo.id;
-                      handleSubmitComment(photo.id);
-                    }}
+                    onClick={() => handleSubmitComment(photo.id)}
                     disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim() || !clientName?.trim()}
                   >
                     {createCommentMutation.isPending ? (
