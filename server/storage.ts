@@ -900,7 +900,7 @@ export class MemStorage implements IStorage {
     const updatedProject = {
       ...projectToUpdate,
       selectedPhotos,
-      status: "reviewed" // This is the critical change - using "revisado" not "completed"
+      status: "Completed" // Changed from "reviewed" to "Completed" for photographer dashboard
     };
     
     // Step 3: Update the photos to mark selected ones
@@ -1657,7 +1657,7 @@ export class DatabaseStorage implements IStorage {
         .update(projects)
         .set({
           selectedPhotos,
-          status: "reviewed", // Atualiza o status para revisado
+          status: "Completed", // Atualiza o status para Completed
         })
         .where(eq(projects.id, id))
         .returning();

@@ -35,8 +35,8 @@ export default function ProjectView() {
     if (project?.selectedPhotos && project.selectedPhotos.length > 0) {
       setSelectedPhotos(project.selectedPhotos);
       
-      // If the project has status 'reviewed', it's already finalized
-      if (project.status === 'reviewed') {
+      // If the project has status 'Completed', it's already finalized
+      if (project.status === 'Completed') {
         setIsFinalized(true);
       }
     }
