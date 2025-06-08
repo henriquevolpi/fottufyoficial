@@ -2099,26 +2099,15 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      // Get comments for these specific photos
+      // Get comments for these specific photos - without join since there's a type mismatch
       const comments = await db
-        .select({
-          id: photoComments.id,
-          photoId: photoComments.photoId,
-          clientName: photoComments.clientName,
-          comment: photoComments.comment,
-          isViewed: photoComments.isViewed,
-          createdAt: photoComments.createdAt,
-          photoUrl: photos.url,
-          photoFilename: photos.filename,
-          photoOriginalName: photos.originalName,
-        })
+        .select()
         .from(photoComments)
-        .innerJoin(photos, eq(photoComments.photoId, photos.id))
         .where(inArray(photoComments.photoId, photoIds))
         .orderBy(desc(photoComments.createdAt));
       
       console.log(`DatabaseStorage: Encontrados ${comments.length} comentários para projeto ID=${projectId} (${photoIds.length} fotos)`);
-      return comments as any; // Type assertion for the joined result
+      return comments;
     } catch (error) {
       console.error("Erro ao buscar comentários do projeto:", error);
       return [];

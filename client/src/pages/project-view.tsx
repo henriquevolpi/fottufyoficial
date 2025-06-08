@@ -87,23 +87,35 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   
   // Estados para comentários
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
+  const [photoComments, setPhotoComments] = useState<Record<string, any[]>>({});
   
   const queryClient = useQueryClient();
+
+  // Carrega comentários existentes quando o projeto é carregado
+  useEffect(() => {
+    if (project?.photos) {
+      project.photos.forEach(photo => {
+        loadPhotoComments(photo.id);
+      });
+    }
+  }, [project?.id]);
 
   // Mutation para criar comentário
   const createCommentMutation = useMutation({
     mutationFn: async (commentData: InsertPhotoComment & { photoIdForClear: string }) => {
       const { photoIdForClear, ...actualCommentData } = commentData;
       const response = await apiRequest("POST", "/api/photo-comments", actualCommentData);
-      return { result: await response.json(), photoIdForClear };
+      return { result: await response.json(), photoIdForClear, photoId: actualCommentData.photoId };
     },
     onSuccess: (data) => {
       toast({
-        title: "Comentário enviado",
+        title: "Comentário enviado!",
         description: "Seu comentário foi enviado com sucesso para o fotógrafo.",
       });
       // Limpar o campo de comentário da foto específica
       setCommentTexts(prev => ({ ...prev, [data.photoIdForClear]: "" }));
+      // Recarregar comentários da foto
+      loadPhotoComments(data.photoId);
     },
     onError: (error) => {
       toast({
@@ -114,6 +126,20 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       console.error("Erro ao enviar comentário:", error);
     },
   });
+
+  // Função para carregar comentários de uma foto específica
+  const loadPhotoComments = async (photoId: string) => {
+    try {
+      const response = await apiRequest("GET", `/api/photos/${photoId}/comments`);
+      const comments = await response.json();
+      setPhotoComments(prev => ({
+        ...prev,
+        [photoId]: comments
+      }));
+    } catch (error) {
+      console.error("Erro ao carregar comentários da foto:", error);
+    }
+  };
 
   // Função para enviar comentário
   const handleSubmitComment = (photoId: string) => {
@@ -818,6 +844,32 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       "Enviar Comentário"
                     )}
                   </Button>
+
+                  {/* Existing Comments Display */}
+                  {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
+                    <div className="border-t mt-3 pt-3 space-y-2">
+                      <div className="text-xs font-medium text-gray-600">
+                        Comentários anteriores ({photoComments[photo.id].length}):
+                      </div>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {photoComments[photo.id].map((comment, idx) => (
+                          <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium text-gray-700">
+                                {comment.clientName || "Cliente"}
+                              </span>
+                              <span className="text-gray-400 text-xs">
+                                {new Date(comment.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-xs leading-relaxed">
+                              {comment.comment}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
