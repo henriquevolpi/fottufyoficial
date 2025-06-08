@@ -7,6 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getPhotoUrl, getImageUrl } from "@/lib/imageUtils";
 import { WatermarkOverlay } from "@/components/WatermarkOverlay";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import type { PhotoComment, InsertPhotoComment } from "@shared/schema";
 import { 
   Check, 
   Loader2, 
@@ -78,6 +84,57 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>("");
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
+  
+  // Estados para comentários
+  const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
+  const [clientName, setClientName] = useState("");
+  
+  const queryClient = useQueryClient();
+
+  // Mutation para criar comentário
+  const createCommentMutation = useMutation({
+    mutationFn: async (commentData: InsertPhotoComment & { photoIdForClear: string }) => {
+      const { photoIdForClear, ...actualCommentData } = commentData;
+      const response = await apiRequest("POST", "/api/photo-comments", actualCommentData);
+      return { result: await response.json(), photoIdForClear };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Comentário enviado",
+        description: "Seu comentário foi enviado com sucesso para o fotógrafo.",
+      });
+      // Limpar o campo de comentário da foto específica
+      setCommentTexts(prev => ({ ...prev, [data.photoIdForClear]: "" }));
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao enviar comentário",
+        description: "Não foi possível enviar seu comentário. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error("Erro ao enviar comentário:", error);
+    },
+  });
+
+  // Função para enviar comentário
+  const handleSubmitComment = (photoId: string) => {
+    const commentText = commentTexts[photoId];
+    if (!commentText?.trim() || !clientName?.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha seu nome e o comentário.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCommentMutation.mutate({
+      photoId,
+      clientName: clientName.trim(),
+      comment: commentText.trim(),
+      photoIdForClear: photoId, // Para saber qual campo limpar
+    });
+  };
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
@@ -710,21 +767,77 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   {photo.originalName || photo.filename}
                 </div>
               </div>
-              <CardContent className="p-3 text-center">
-                <Button 
-                  variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
-                  size="sm"
-                  className="w-full"
-                  disabled={isFinalized}
-                >
-                  {selectedPhotos.has(photo.id) ? (
-                    <>
-                      <Check className="mr-1 h-4 w-4" /> Selected
-                    </>
-                  ) : (
-                    "Selecionar"
+              <CardContent className="p-3 space-y-3">
+                <div className="text-center">
+                  <Button 
+                    variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
+                    size="sm"
+                    className="w-full"
+                    disabled={isFinalized}
+                  >
+                    {selectedPhotos.has(photo.id) ? (
+                      <>
+                        <Check className="mr-1 h-4 w-4" /> Selected
+                      </>
+                    ) : (
+                      "Selecionar"
+                    )}
+                  </Button>
+                </div>
+
+                {/* Comment Section */}
+                <div className="border-t pt-3 space-y-2">
+                  <div className="text-sm font-medium text-left">Comentário para esta foto:</div>
+                  
+                  {/* Client Name Input - only show once */}
+                  {!clientName && (
+                    <div>
+                      <Label htmlFor={`client-name-${photo.id}`} className="text-xs">Seu nome:</Label>
+                      <Input
+                        id={`client-name-${photo.id}`}
+                        placeholder="Digite seu nome"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        className="text-xs h-8"
+                      />
+                    </div>
                   )}
-                </Button>
+
+                  {/* Comment Text Area */}
+                  <div>
+                    <Textarea
+                      placeholder="Digite seu comentário sobre esta foto..."
+                      value={commentTexts[photo.id] || ""}
+                      onChange={(e) => setCommentTexts(prev => ({ 
+                        ...prev, 
+                        [photo.id]: e.target.value 
+                      }))}
+                      className="text-xs min-h-[60px] resize-none"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Submit Comment Button */}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      currentPhotoId = photo.id;
+                      handleSubmitComment(photo.id);
+                    }}
+                    disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim() || !clientName?.trim()}
+                  >
+                    {createCommentMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      "Enviar Comentário"
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

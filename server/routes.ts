@@ -2073,7 +2073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Acesso negado" });
       }
       
-      const comments = await storage.getProjectPhotoComments(project.publicId);
+      const comments = await storage.getProjectPhotoComments(project.id.toString());
       res.json(comments);
     } catch (error) {
       console.error("Erro ao buscar comentários do projeto:", error);
