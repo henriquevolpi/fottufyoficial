@@ -769,7 +769,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <img
                       src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
                       alt="Photo"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover ml-[0px] mr-[0px] pl-[2px] pr-[2px] mt-[0px] mb-[0px] pt-[0px] pb-[0px]"
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = '/placeholder.jpg';
