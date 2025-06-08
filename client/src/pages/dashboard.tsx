@@ -1826,29 +1826,6 @@ export default function Dashboard() {
             >
               Fechar
             </Button>
-            {comments.length > 0 && (
-              <Button 
-                onClick={() => {
-                  const unviewedComments = comments
-                    .filter(c => !c.isViewed)
-                    .map(c => c.id);
-                  
-                  if (unviewedComments.length > 0) {
-                    markCommentsAsViewedMutation.mutate(unviewedComments);
-                  }
-                }}
-                disabled={markCommentsAsViewedMutation.isPending}
-              >
-                {markCommentsAsViewedMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Marcando...
-                  </>
-                ) : (
-                  "Marcar como Visto"
-                )}
-              </Button>
-            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

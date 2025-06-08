@@ -325,35 +325,7 @@ export default function ProjectView() {
                           {photoComments.length} comentário{photoComments.length !== 1 ? 's' : ''}
                         </p>
                         
-                        {/* Mark as viewed button - only show if there are unviewed comments */}
-                        {photoComments.some((c: any) => !c.isViewed) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs"
-                            onClick={() => {
-                              const unviewedIds = photoComments
-                                .filter((c: any) => !c.isViewed)
-                                .map((c: any) => c.id);
-                              if (unviewedIds.length > 0) {
-                                markCommentsAsViewedMutation.mutate(unviewedIds);
-                              }
-                            }}
-                            disabled={markCommentsAsViewedMutation.isPending}
-                          >
-                            {markCommentsAsViewedMutation.isPending ? (
-                              <>
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Marcando...
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-3 w-3 mr-1" />
-                                Marcar como visto
-                              </>
-                            )}
-                          </Button>
-                        )}
+
                       </div>
                     </div>
                     
