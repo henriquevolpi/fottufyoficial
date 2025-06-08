@@ -18,13 +18,15 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeftCircle, Loader2, Save, Upload, X, ImagePlus, MessageSquare, Eye, EyeOff } from "lucide-react";
 import { ImageUploader } from "@/components/ImageUploader";
-import { Project } from "@shared/schema";
+import { Project, PhotoComment } from "@shared/schema";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useDropzone } from "react-dropzone";
 import { nanoid } from "nanoid";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 // Esquema para validação do formulário
 const projectEditSchema = z.object({
@@ -41,12 +43,30 @@ export default function ProjectEdit() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
+
+  // Query to fetch project comments
+  const { data: comments = [], isLoading: commentsLoading } = useQuery<PhotoComment[]>({
+    queryKey: [`/api/projects/${id}/comments`],
+    enabled: !!project && activeTab === "comments"
+  });
+
+  // Mutation to mark comments as viewed
+  const markCommentsAsViewedMutation = useMutation({
+    mutationFn: async (commentIds: string[]) => {
+      return await apiRequest("POST", "/api/comments/mark-viewed", { commentIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${id}/comments`] });
+    }
+  });
   
   // Função para lidar com os arquivos selecionados via drag-n-drop
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -497,12 +517,28 @@ export default function ProjectEdit() {
         <h1 className="text-2xl font-bold">Editar Projeto</h1>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações do Projeto</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="details">Detalhes do Projeto</TabsTrigger>
+          <TabsTrigger value="photos">Adicionar Fotos</TabsTrigger>
+          <TabsTrigger value="comments" className="relative">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Comentários
+            {comments.length > 0 && (
+              <Badge variant="secondary" className="ml-2 h-5 min-w-5 text-xs">
+                {comments.filter(c => !c.isViewed).length || comments.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="details" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações do Projeto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
@@ -623,11 +659,12 @@ export default function ProjectEdit() {
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
-      
-      {/* Seção para adicionar novas fotos */}
-      <Card className="mt-6">
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="photos" className="mt-6">
+          <Card>
         <CardHeader>
           <CardTitle>Adicionar Novas Fotos</CardTitle>
         </CardHeader>
@@ -701,8 +738,151 @@ export default function ProjectEdit() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="comments" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Comentários do Projeto
+                {comments.length > 0 && (
+                  <Badge variant="outline">{comments.length} comentários</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {commentsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Carregando comentários...</span>
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">Nenhum comentário ainda</p>
+                  <p>Os comentários dos clientes aparecerão aqui quando forem enviados.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Group comments by photo */}
+                  {Object.entries(
+                    comments.reduce((acc, comment) => {
+                      if (!acc[comment.photoId]) {
+                        acc[comment.photoId] = [];
+                      }
+                      acc[comment.photoId].push(comment);
+                      return acc;
+                    }, {} as Record<string, PhotoComment[]>)
+                  ).map(([photoId, photoComments]) => {
+                    const photo = project?.photos?.find(p => p.id === photoId);
+                    return (
+                      <div key={photoId} className="border rounded-lg p-4">
+                        <div className="flex items-start gap-4 mb-3">
+                          {photo && (
+                            <div className="flex-shrink-0">
+                              <img
+                                src={photo.url}
+                                alt={photo.filename || 'Foto'}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm text-muted-foreground">
+                              {photo?.filename || photo?.originalName || 'Foto sem nome'}
+                            </h4>
+                            <p className="text-xs text-muted-foreground">
+                              {photoComments.length} comentário{photoComments.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          {photoComments.some(c => !c.isViewed) && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                const unviewedIds = photoComments
+                                  .filter(c => !c.isViewed)
+                                  .map(c => c.id);
+                                if (unviewedIds.length > 0) {
+                                  markCommentsAsViewedMutation.mutate(unviewedIds);
+                                }
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Marcar como visto
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-3 ml-20">
+                          {photoComments.map((comment) => (
+                            <div
+                              key={comment.id}
+                              className={`p-3 rounded-lg ${
+                                !comment.isViewed 
+                                  ? 'bg-blue-50 border border-blue-200' 
+                                  : 'bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">
+                                    {comment.clientName}
+                                  </span>
+                                  {!comment.isViewed && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Novo
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                                </span>
+                              </div>
+                              <p className="text-sm">{comment.comment}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {comments.some(c => !c.isViewed) && (
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => {
+                          const unviewedIds = comments
+                            .filter(c => !c.isViewed)
+                            .map(c => c.id);
+                          if (unviewedIds.length > 0) {
+                            markCommentsAsViewedMutation.mutate(unviewedIds);
+                          }
+                        }}
+                        disabled={markCommentsAsViewedMutation.isPending}
+                      >
+                        {markCommentsAsViewedMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Marcando...
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="h-4 w-4 mr-2" />
+                            Marcar todos como vistos
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
