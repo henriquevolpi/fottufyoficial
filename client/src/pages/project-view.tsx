@@ -722,7 +722,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </div>
         </div>
       </header>
-      
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isFinalized && finalizationSuccess ? (
@@ -811,7 +810,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 </div>
 
                 {/* Comment Section */}
-                <div className="border-t pt-3 space-y-2">
+                <div className="border-t space-y-2 text-[15px] text-left ml-[0px] mr-[0px] pl-[0px] pr-[0px] pt-[2px] pb-[2px] mt-[10px] mb-[10px]">
                   <div className="text-sm font-medium text-left">Comentário para esta foto:</div>
                   {/* Comment Text Area */}
                   <div>
@@ -876,7 +875,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           ))}
         </div>
       </main>
-      
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
@@ -918,7 +916,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modal para visualização da imagem em tamanho completo */}
       <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
         <DialogContent className="max-w-screen-lg w-full p-1 bg-black/90 border-gray-800">
