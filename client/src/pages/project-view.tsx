@@ -605,7 +605,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 <ArrowLeftCircle className="h-6 w-6" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{project.nome}</h1>
+                <h1 className="font-bold text-gray-900 text-[27px]">{project.nome}</h1>
                 <p className="text-gray-600 text-[15px]">Cliente: {project.cliente}</p>
               </div>
             </div>
