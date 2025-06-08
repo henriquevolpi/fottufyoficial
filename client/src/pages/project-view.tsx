@@ -25,7 +25,8 @@ import {
   X,
   Maximize,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -88,6 +89,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Estados para comentários
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
   const [photoComments, setPhotoComments] = useState<Record<string, any[]>>({});
+  const [expandedCommentPhoto, setExpandedCommentPhoto] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -99,6 +101,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       });
     }
   }, [project?.id]);
+
+  // Função para alternar visualização dos comentários
+  const toggleCommentSection = (photoId: string) => {
+    if (expandedCommentPhoto === photoId) {
+      setExpandedCommentPhoto(null);
+    } else {
+      setExpandedCommentPhoto(photoId);
+      // Carrega comentários quando expande a seção
+      loadPhotoComments(photoId);
+    }
+  };
 
   // Mutation para criar comentário
   const createCommentMutation = useMutation({
@@ -809,64 +822,81 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   </Button>
                 </div>
 
-                {/* Comment Section */}
-                <div className="border-t space-y-2 text-[15px] text-left ml-[0px] mr-[0px] pl-[0px] pr-[0px] pt-[2px] pb-[2px] mt-[10px] mb-[10px]">
-                  <div className="font-medium text-[13px] text-left">Comentário para esta foto:</div>
-                  {/* Comment Text Area */}
-                  <div>
-                    <Textarea
-                      placeholder="Digite seu comentário sobre esta foto..."
-                      value={commentTexts[photo.id] || ""}
-                      onChange={(e) => setCommentTexts(prev => ({ 
-                        ...prev, 
-                        [photo.id]: e.target.value 
-                      }))}
-                      className="text-xs min-h-[60px] resize-none"
-                      rows={2}
-                    />
-                  </div>
-
-                  {/* Submit Comment Button */}
+                {/* Comment Button */}
+                <div className="border-t pt-3">
                   <Button
+                    variant="ghost"
                     size="sm"
-                    variant="secondary"
-                    className="w-full text-xs"
-                    onClick={() => handleSubmitComment(photo.id)}
-                    disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim()}
+                    className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    onClick={() => toggleCommentSection(photo.id)}
                   >
-                    {createCommentMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      "Enviar Comentário"
-                    )}
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    {photoComments[photo.id] && photoComments[photo.id].length > 0 
+                      ? `Comentários (${photoComments[photo.id].length})`
+                      : "Comentar"
+                    }
                   </Button>
-
-                  {/* Existing Comments Display */}
-                  {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
-                    <div className="border-t mt-3 pt-3 space-y-2">
-                      <div className="text-xs font-medium text-gray-600">
-                        Comentários anteriores ({photoComments[photo.id].length}):
-                      </div>
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {photoComments[photo.id].map((comment, idx) => (
-                          <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
-                            <div className="flex justify-end mb-1">
-                              <span className="text-gray-400 text-xs">
-                                {new Date(comment.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-gray-600 text-xs leading-relaxed ml-[0px] mr-[0px] pl-[0px] pr-[0px] mt-[-6px] mb-[-6px]">
-                              {comment.comment}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
+
+                {/* Expanded Comment Section */}
+                {expandedCommentPhoto === photo.id && (
+                  <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2">
+                    {/* Comment Text Area */}
+                    <div>
+                      <Textarea
+                        placeholder="Digite seu comentário sobre esta foto..."
+                        value={commentTexts[photo.id] || ""}
+                        onChange={(e) => setCommentTexts(prev => ({ 
+                          ...prev, 
+                          [photo.id]: e.target.value 
+                        }))}
+                        className="text-xs min-h-[60px] resize-none"
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Submit Comment Button */}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-full text-xs"
+                      onClick={() => handleSubmitComment(photo.id)}
+                      disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim()}
+                    >
+                      {createCommentMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        "Enviar Comentário"
+                      )}
+                    </Button>
+
+                    {/* Existing Comments Display */}
+                    {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
+                      <div className="border-t mt-3 pt-3 space-y-2">
+                        <div className="text-xs font-medium text-gray-600">
+                          Comentários anteriores ({photoComments[photo.id].length}):
+                        </div>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {photoComments[photo.id].map((comment, idx) => (
+                            <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
+                              <div className="flex justify-end mb-1">
+                                <span className="text-gray-400 text-xs">
+                                  {new Date(comment.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 text-xs leading-relaxed">
+                                {comment.comment}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

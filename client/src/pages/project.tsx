@@ -135,7 +135,7 @@ export default function ProjectView() {
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-[18px] font-bold"
               onClick={() => setShowCommentsModal(true)}
             >
               Comentários
