@@ -66,7 +66,7 @@ const HOTMART_OFFER_TO_PLAN_MAP: Record<string, string> = {
   "ro76q5uz": "basic_v2",
   "z0pxaesy": "basic_v2",  // Corrigido: Plano Básico deve mapear para basic_v2
   "tpfhcllk": "standard",
-  "hjb8gqn7": "standard",
+  "hjb8gqn7": "standard_v2",  // Corrigido: Plano R$29,90 deve mapear para standard_v2 (15.000 fotos)
   "xtuh4ji0": "professional"
 };
 
