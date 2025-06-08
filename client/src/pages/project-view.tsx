@@ -811,7 +811,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
 
                 {/* Comment Section */}
                 <div className="border-t space-y-2 text-[15px] text-left ml-[0px] mr-[0px] pl-[0px] pr-[0px] pt-[2px] pb-[2px] mt-[10px] mb-[10px]">
-                  <div className="text-sm font-medium text-left">Comentário para esta foto:</div>
+                  <div className="font-medium text-[13px] text-left">Comentário para esta foto:</div>
                   {/* Comment Text Area */}
                   <div>
                     <Textarea
