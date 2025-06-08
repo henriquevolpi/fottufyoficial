@@ -2085,6 +2085,21 @@ export class DatabaseStorage implements IStorage {
 
   async getProjectPhotoComments(projectId: string): Promise<PhotoComment[]> {
     try {
+      // First get the project to find its photos
+      const project = await this.getProject(parseInt(projectId));
+      if (!project || !project.photos) {
+        console.log(`DatabaseStorage: Projeto ${projectId} não encontrado ou sem fotos`);
+        return [];
+      }
+
+      // Get photo IDs from the project
+      const photoIds = project.photos.map(photo => photo.id);
+      if (photoIds.length === 0) {
+        console.log(`DatabaseStorage: Nenhuma foto encontrada para projeto ID=${projectId}`);
+        return [];
+      }
+
+      // Get comments for these specific photos
       const comments = await db
         .select({
           id: photoComments.id,
@@ -2099,10 +2114,10 @@ export class DatabaseStorage implements IStorage {
         })
         .from(photoComments)
         .innerJoin(photos, eq(photoComments.photoId, photos.id))
-        .where(eq(photos.projectId, projectId))
+        .where(inArray(photoComments.photoId, photoIds))
         .orderBy(desc(photoComments.createdAt));
       
-      console.log(`DatabaseStorage: Encontrados ${comments.length} comentários para projeto ID=${projectId}`);
+      console.log(`DatabaseStorage: Encontrados ${comments.length} comentários para projeto ID=${projectId} (${photoIds.length} fotos)`);
       return comments as any; // Type assertion for the joined result
     } catch (error) {
       console.error("Erro ao buscar comentários do projeto:", error);

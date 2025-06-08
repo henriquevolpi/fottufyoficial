@@ -2020,7 +2020,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== Photo Comment Routes ====================
   
-  // Create a comment on a photo (for clients)
+  // Create a comment on a photo (for clients) - New endpoint format
+  app.post("/api/photo-comments", async (req: Request, res: Response) => {
+    try {
+      const { photoId, clientName, comment } = req.body;
+      
+      if (!photoId || !clientName || !comment) {
+        return res.status(400).json({ message: "ID da foto, nome do cliente e comentário são obrigatórios" });
+      }
+      
+      // Validate the comment data
+      const commentData = insertPhotoCommentSchema.parse({
+        photoId,
+        clientName: clientName.trim(),
+        comment: comment.trim()
+      });
+      
+      const newComment = await storage.createPhotoComment(commentData);
+      res.json(newComment);
+    } catch (error) {
+      console.error("Erro ao criar comentário:", error);
+      res.status(500).json({ message: "Falha ao criar comentário" });
+    }
+  });
+
+  // Create a comment on a photo (for clients) - Legacy endpoint
   app.post("/api/photos/:photoId/comments", async (req: Request, res: Response) => {
     try {
       const { photoId } = req.params;
