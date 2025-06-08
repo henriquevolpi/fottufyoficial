@@ -606,7 +606,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{project.nome}</h1>
-                <p className="text-gray-600">Cliente: {project.cliente}</p>
+                <p className="text-gray-600 text-[15px]">Cliente: {project.cliente}</p>
               </div>
             </div>
             
