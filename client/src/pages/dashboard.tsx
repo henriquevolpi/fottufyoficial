@@ -491,11 +491,10 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
-            {/* Handle both old and new API response formats */}
+          <div className="max-h-60 overflow-y-auto my-4 border rounded-md bg-gray-50">
             {(() => {
               if (!modalProject?.photos || modalProject.photos.length === 0) {
-                return <p className="text-gray-500 col-span-full text-center">Nenhuma foto encontrada</p>;
+                return <p className="text-gray-500 text-center p-4">Nenhuma foto encontrada</p>;
               }
               
               // Get selected photos - check multiple possible ways the data might be structured
@@ -520,21 +519,25 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               }
               
               if (selectedPhotos.length === 0) {
-                return <p className="text-gray-500 col-span-full text-center">Nenhuma foto selecionada pelo cliente</p>;
+                return <p className="text-gray-500 text-center p-4">Nenhuma foto selecionada pelo cliente</p>;
               }
               
-              return selectedPhotos.map((photo: any) => (
-                <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
-                  <img 
-                    src={photo.url} 
-                    alt={photo.filename || photo.originalName || 'Foto'}
-                    className="w-full h-full object-cover" 
-                  />
-                  <div className="absolute bottom-2 left-2 right-2 bg-black/50 text-white text-xs p-2 rounded truncate">
-                    {photo.filename || photo.originalName || 'Sem nome'}
-                  </div>
+              return (
+                <div className="space-y-2 p-4">
+                  {selectedPhotos.map((photo: any, index: number) => (
+                    <div key={photo.id} className="flex items-center p-2 bg-white rounded border">
+                      <div className="flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full mr-3 text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-mono text-gray-800">
+                          {photo.originalName || photo.filename || 'Arquivo sem nome'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ));
+              );
             })()}
           </div>
           
