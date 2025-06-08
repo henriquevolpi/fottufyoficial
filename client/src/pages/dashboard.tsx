@@ -197,7 +197,7 @@ const PROJETOS_EXEMPLO = [
 ];
 
 // Component for project cards
-function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: number) => void }) {
+function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDelete?: (id: number) => void, onViewComments?: (id: string) => void }) {
   // Note: We're using parameter renaming (projeto: project) to transition from Portuguese to English
   // while maintaining backward compatibility
   const [, setLocation] = useLocation();
@@ -1640,6 +1640,7 @@ export default function Dashboard() {
                       key={project.id} 
                       project={project} 
                       onDelete={handleDeleteProject}
+                      onViewComments={handleViewComments}
                     />
                   ))}
                 </div>
@@ -1688,6 +1689,7 @@ export default function Dashboard() {
                         key={project.id} 
                         project={project} 
                         onDelete={handleDeleteProject}
+                        onViewComments={handleViewComments}
                       />
                     ))}
                   </div>
@@ -1736,6 +1738,104 @@ export default function Dashboard() {
         open={changePasswordModalOpen}
         onClose={() => setChangePasswordModalOpen(false)}
       />
+
+      {/* Comments Modal */}
+      <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Comentários do Projeto</DialogTitle>
+            <DialogDescription>
+              Visualize e gerencie comentários dos clientes nas fotos
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto">
+            {commentsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Carregando comentários...</span>
+              </div>
+            ) : comments.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageCircle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum comentário ainda</h3>
+                <p className="text-gray-500">
+                  Os comentários dos clientes aparecerão aqui quando eles interagirem com as fotos.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <MessageCircle className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Cliente</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                      {!comment.viewedByPhotographer && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                          Novo
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-700 bg-white p-3 rounded border">
+                        {comment.content}
+                      </p>
+                    </div>
+
+                    {comment.photoId && (
+                      <div className="text-xs text-gray-500">
+                        Comentário na foto: {comment.photoId}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setCommentsModalOpen(false)}
+            >
+              Fechar
+            </Button>
+            {comments.length > 0 && (
+              <Button 
+                onClick={() => {
+                  const unviewedComments = comments
+                    .filter(c => !c.viewedByPhotographer)
+                    .map(c => c.id);
+                  
+                  if (unviewedComments.length > 0) {
+                    markCommentsAsViewedMutation.mutate(unviewedComments);
+                  }
+                }}
+                disabled={markCommentsAsViewedMutation.isPending}
+              >
+                {markCommentsAsViewedMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Marcando...
+                  </>
+                ) : (
+                  "Marcar como Visto"
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
