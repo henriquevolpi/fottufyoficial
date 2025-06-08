@@ -187,16 +187,41 @@ export const photos = pgTable("photos", {
 });
 
 // Relations for the photos table
-export const photosRelations = relations(photos, ({ one }) => ({
+export const photosRelations = relations(photos, ({ one, many }) => ({
   project: one(newProjects, {
     fields: [photos.projectId],
     references: [newProjects.id],
   }),
+  comments: many(photoComments),
 }));
 
 export const insertPhotoSchema = createInsertSchema(photos).omit({
   id: true,
   createdAt: true,
+});
+
+// Photo Comments table
+export const photoComments = pgTable("photo_comments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  photoId: uuid("photo_id").notNull().references(() => photos.id, { onDelete: "cascade" }),
+  clientName: text("client_name").notNull(), // Nome do cliente que comentou
+  comment: text("comment").notNull(), // O comentário em si
+  isViewed: boolean("is_viewed").default(false), // Se o fotógrafo já viu o comentário
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Relations for the photo comments table
+export const photoCommentsRelations = relations(photoComments, ({ one }) => ({
+  photo: one(photos, {
+    fields: [photoComments.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const insertPhotoCommentSchema = createInsertSchema(photoComments).omit({
+  id: true,
+  createdAt: true,
+  isViewed: true,
 });
 
 // Types
@@ -211,6 +236,9 @@ export type InsertNewProject = z.infer<typeof insertNewProjectSchema>;
 
 export type Photo = typeof photos.$inferSelect;
 export type InsertPhoto = z.infer<typeof insertPhotoSchema>;
+
+export type PhotoComment = typeof photoComments.$inferSelect;
+export type InsertPhotoComment = z.infer<typeof insertPhotoCommentSchema>;
 
 export type OldPhoto = {
   id: string;

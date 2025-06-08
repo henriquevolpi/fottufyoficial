@@ -1,9 +1,9 @@
 import { 
   users, type User, type InsertUser, 
   projects, type Project, type InsertProject,
-  photos, 
+  photos, photoComments,
   type WebhookPayload, type SubscriptionWebhookPayload, 
-  type Photo, SUBSCRIPTION_PLANS 
+  type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { db } from "./db";
