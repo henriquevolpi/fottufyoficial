@@ -222,6 +222,8 @@ export const insertPhotoCommentSchema = createInsertSchema(photoComments).omit({
   id: true,
   createdAt: true,
   isViewed: true,
+}).extend({
+  photoId: z.string().min(1), // Accept any non-empty string for photo ID
 });
 
 // Types

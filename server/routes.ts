@@ -2025,6 +2025,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { photoId, clientName, comment } = req.body;
       
+      console.log("Dados recebidos para comentário:", { photoId, clientName, comment });
+      
       if (!photoId || !clientName || !comment) {
         return res.status(400).json({ message: "ID da foto, nome do cliente e comentário são obrigatórios" });
       }
@@ -2036,11 +2038,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comment: comment.trim()
       });
       
+      console.log("Dados validados do comentário:", commentData);
+      
       const newComment = await storage.createPhotoComment(commentData);
+      console.log("Comentário criado com sucesso:", newComment);
       res.json(newComment);
     } catch (error) {
-      console.error("Erro ao criar comentário:", error);
-      res.status(500).json({ message: "Falha ao criar comentário" });
+      console.error("Erro detalhado ao criar comentário:", error);
+      if (error instanceof Error) {
+        res.status(500).json({ message: "Falha ao criar comentário", error: error.message });
+      } else {
+        res.status(500).json({ message: "Falha ao criar comentário" });
+      }
     }
   });
 
