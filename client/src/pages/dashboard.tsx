@@ -235,8 +235,20 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
     setLocation(`/project/${project.id}/edit`);
   };
   
-  const handleViewSelections = () => {
-    setShowSelectionsModal(true);
+  const handleViewSelections = async () => {
+    try {
+      // Fetch the complete project data with photos
+      const response = await fetch(`/api/projects/${project.id}`);
+      if (response.ok) {
+        const projectData = await response.json();
+        // Update the local project state with fresh data
+        Object.assign(project, projectData);
+      }
+      setShowSelectionsModal(true);
+    } catch (error) {
+      console.error('Error fetching project details:', error);
+      setShowSelectionsModal(true); // Still open modal even if fetch fails
+    }
   };
   
   const handleDeleteProject = async () => {
@@ -478,18 +490,49 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
             {/* Handle both old and new API response formats */}
-            {project.photos && project.photos.filter((photo: any) => photo.selected).map((photo: any) => (
-              <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
-                <img 
-                  src={photo.url} 
-                  alt={photo.filename}
-                  className="w-full h-full object-cover" 
-                />
-                <div className="absolute bottom-2 left-2 right-2 bg-black/50 text-white text-xs p-2 rounded truncate">
-                  {photo.filename}
+            {(() => {
+              if (!project.photos || project.photos.length === 0) {
+                return <p className="text-gray-500 col-span-full text-center">Nenhuma foto encontrada</p>;
+              }
+              
+              // Get selected photos - check multiple possible ways the data might be structured
+              let selectedPhotos = [];
+              
+              // Method 1: Filter by photo.selected property
+              selectedPhotos = project.photos.filter((photo: any) => photo.selected === true);
+              
+              // Method 2: If no selected photos found but we have selectedPhotos array, use that
+              if (selectedPhotos.length === 0 && project.selectedPhotos && project.selectedPhotos.length > 0) {
+                selectedPhotos = project.photos.filter((photo: any) => 
+                  project.selectedPhotos.includes(photo.id)
+                );
+              }
+              
+              // Method 3: If still no results, check for selected photos by status
+              if (selectedPhotos.length === 0 && project.status === 'completed') {
+                // For completed projects, all photos with selected=true or selected=1
+                selectedPhotos = project.photos.filter((photo: any) => 
+                  photo.selected === true || photo.selected === 1 || photo.selected === "1"
+                );
+              }
+              
+              if (selectedPhotos.length === 0) {
+                return <p className="text-gray-500 col-span-full text-center">Nenhuma foto selecionada pelo cliente</p>;
+              }
+              
+              return selectedPhotos.map((photo: any) => (
+                <div key={photo.id} className="relative rounded-md overflow-hidden aspect-square">
+                  <img 
+                    src={photo.url} 
+                    alt={photo.filename || photo.originalName || 'Foto'}
+                    className="w-full h-full object-cover" 
+                  />
+                  <div className="absolute bottom-2 left-2 right-2 bg-black/50 text-white text-xs p-2 rounded truncate">
+                    {photo.filename || photo.originalName || 'Sem nome'}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
           
           <DialogFooter className="mt-4">
