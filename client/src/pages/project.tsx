@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PhotoCard from "@/components/photo-card";
 import { Project } from "@shared/schema";
-import { Check, Edit, ArrowLeftCircle, FileText } from "lucide-react";
+import { Check, Edit, ArrowLeftCircle, FileText, MessageCircle, Eye, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +25,30 @@ export default function ProjectView() {
   const [isFinalized, setIsFinalized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSelectedFilenamesDialog, setShowSelectedFilenamesDialog] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: [`/api/projects/${id}`],
+  });
+
+  // Comments query and mutations
+  const { data: commentsData = [], isLoading: commentsLoading } = useQuery({
+    queryKey: [`/api/projects/${id}/comments`],
+    enabled: showCommentsModal && !!id,
+  });
+
+  const markCommentsAsViewedMutation = useMutation({
+    mutationFn: async (commentIds: string[]) => {
+      const response = await apiRequest("POST", "/api/comments/mark-viewed", { commentIds });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${id}/comments`] });
+      toast({
+        title: "Comentários marcados como visualizados",
+        description: "Os comentários foram atualizados com sucesso.",
+      });
+    },
   });
 
   // Initialize selected photos from project data if available
@@ -108,14 +130,27 @@ export default function ProjectView() {
             Voltar para Dashboard
           </Button>
           
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation(`/project/${id}/edit`)}
-          >
-            <Edit className="h-4 w-4" />
-            Editar Galeria
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Comments button */}
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+              onClick={() => setShowCommentsModal(true)}
+            >
+              Comentários
+              <MessageCircle className="h-3 w-3 ml-1" />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setLocation(`/project/${id}/edit`)}
+            >
+              <Edit className="h-4 w-4" />
+              Editar Galeria
+            </Button>
+          </div>
         </div>
         
         <div className="text-center mb-12">
@@ -228,6 +263,146 @@ export default function ProjectView() {
             <Button 
               onClick={() => setShowSelectedFilenamesDialog(false)}
             >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enhanced Comments Modal with Photo Thumbnails */}
+      <Dialog open={showCommentsModal} onOpenChange={setShowCommentsModal}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Comentários do Projeto - {project?.name}</DialogTitle>
+            <DialogDescription className="text-sm mt-1">
+              Comentários dos clientes organizados por foto com miniaturas para referência visual.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto my-4">
+            {commentsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Carregando comentários...</span>
+              </div>
+            ) : commentsData.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Nenhum comentário ainda</p>
+                <p>Os comentários dos clientes aparecerão aqui quando forem enviados.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Group comments by photo */}
+                {Object.entries(
+                  commentsData.reduce((acc: Record<string, any[]>, comment: any) => {
+                    if (!acc[comment.photoId]) {
+                      acc[comment.photoId] = [];
+                    }
+                    acc[comment.photoId].push(comment);
+                    return acc;
+                  }, {})
+                ).map(([photoId, photoComments]: [string, any[]]) => (
+                  <div key={photoId} className="border rounded-lg p-4 bg-white shadow-sm">
+                    <div className="flex items-start gap-4 mb-4">
+                      {/* Photo thumbnail */}
+                      {photoComments[0]?.photoUrl && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={photoComments[0].photoUrl}
+                            alt={photoComments[0].photoOriginalName || photoComments[0].photoFilename || 'Foto'}
+                            className="w-20 h-20 object-cover rounded border"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Photo info and actions */}
+                      <div className="flex-1">
+                        <h4 className="font-medium text-base text-gray-900 mb-1">
+                          {photoComments[0]?.photoOriginalName || photoComments[0]?.photoFilename || 'Foto sem nome'}
+                        </h4>
+                        <p className="text-sm text-gray-500 mb-2">
+                          {photoComments.length} comentário{photoComments.length !== 1 ? 's' : ''}
+                        </p>
+                        
+                        {/* Mark as viewed button - only show if there are unviewed comments */}
+                        {photoComments.some((c: any) => !c.isViewed) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                            onClick={() => {
+                              const unviewedIds = photoComments
+                                .filter((c: any) => !c.isViewed)
+                                .map((c: any) => c.id);
+                              if (unviewedIds.length > 0) {
+                                markCommentsAsViewedMutation.mutate(unviewedIds);
+                              }
+                            }}
+                            disabled={markCommentsAsViewedMutation.isPending}
+                          >
+                            {markCommentsAsViewedMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Marcando...
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3 w-3 mr-1" />
+                                Marcar como visto
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Comments list */}
+                    <div className="space-y-3">
+                      {photoComments.map((comment: any) => (
+                        <div
+                          key={comment.id}
+                          className={`p-4 rounded-lg border ${
+                            !comment.isViewed 
+                              ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                              : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm text-gray-900">
+                                {comment.clientName || "Cliente"}
+                              </span>
+                              {!comment.isViewed && (
+                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                  Novo
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(comment.createdAt).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {comment.comment}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="mt-6">
+            <Button onClick={() => setShowCommentsModal(false)} className="w-full sm:w-auto">
               Fechar
             </Button>
           </DialogFooter>
