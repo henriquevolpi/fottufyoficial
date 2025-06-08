@@ -203,6 +203,7 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isTogglingWatermark, setIsTogglingWatermark] = useState(false);
+  const [modalProject, setModalProject] = useState(project);
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -241,12 +242,14 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       const response = await fetch(`/api/projects/${project.id}`);
       if (response.ok) {
         const projectData = await response.json();
-        // Update the local project state with fresh data
-        Object.assign(project, projectData);
+        setModalProject(projectData);
+      } else {
+        setModalProject(project);
       }
       setShowSelectionsModal(true);
     } catch (error) {
       console.error('Error fetching project details:', error);
+      setModalProject(project);
       setShowSelectionsModal(true); // Still open modal even if fetch fails
     }
   };
@@ -482,16 +485,16 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg">Fotos Selecionadas - {project?.name || project?.nome || 'Sem título'}</DialogTitle>
+            <DialogTitle className="text-lg">Fotos Selecionadas - {modalProject?.name || modalProject?.nome || 'Sem título'}</DialogTitle>
             <DialogDescription className="text-sm mt-1">
-              O cliente selecionou {project?.selectedPhotos?.length || project?.selecionadas || 0} de {project?.photos?.length || project?.fotos || 0} fotos.
+              O cliente selecionou {modalProject?.selectedPhotos?.length || modalProject?.selecionadas || 0} de {modalProject?.photos?.length || modalProject?.fotos || 0} fotos.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-4">
             {/* Handle both old and new API response formats */}
             {(() => {
-              if (!project.photos || project.photos.length === 0) {
+              if (!modalProject?.photos || modalProject.photos.length === 0) {
                 return <p className="text-gray-500 col-span-full text-center">Nenhuma foto encontrada</p>;
               }
               
@@ -499,19 +502,19 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               let selectedPhotos = [];
               
               // Method 1: Filter by photo.selected property
-              selectedPhotos = project.photos.filter((photo: any) => photo.selected === true);
+              selectedPhotos = modalProject.photos.filter((photo: any) => photo.selected === true);
               
               // Method 2: If no selected photos found but we have selectedPhotos array, use that
-              if (selectedPhotos.length === 0 && project.selectedPhotos && project.selectedPhotos.length > 0) {
-                selectedPhotos = project.photos.filter((photo: any) => 
-                  project.selectedPhotos.includes(photo.id)
+              if (selectedPhotos.length === 0 && modalProject.selectedPhotos && modalProject.selectedPhotos.length > 0) {
+                selectedPhotos = modalProject.photos.filter((photo: any) => 
+                  modalProject.selectedPhotos.includes(photo.id)
                 );
               }
               
               // Method 3: If still no results, check for selected photos by status
-              if (selectedPhotos.length === 0 && project.status === 'completed') {
+              if (selectedPhotos.length === 0 && modalProject.status === 'completed') {
                 // For completed projects, all photos with selected=true or selected=1
-                selectedPhotos = project.photos.filter((photo: any) => 
+                selectedPhotos = modalProject.photos.filter((photo: any) => 
                   photo.selected === true || photo.selected === 1 || photo.selected === "1"
                 );
               }
