@@ -25,7 +25,9 @@ import {
   Key,
   HelpCircle,
   Shield,
-  ShieldOff
+  ShieldOff,
+  MessageSquare,
+  Eye
 } from "lucide-react";
 import { 
   Tabs, 

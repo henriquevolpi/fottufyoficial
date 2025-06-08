@@ -25,7 +25,6 @@ export default function ProjectView() {
   const [isFinalized, setIsFinalized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSelectedFilenamesDialog, setShowSelectedFilenamesDialog] = useState(false);
-
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: [`/api/projects/${id}`],
   });
@@ -147,6 +146,7 @@ export default function ProjectView() {
                 Ver fotos selecionadas
               </Button>
             )}
+
           </div>
         </div>
         
