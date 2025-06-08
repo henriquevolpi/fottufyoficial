@@ -852,7 +852,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       </div>
                       <div className="space-y-2 max-h-32 overflow-y-auto">
                         {photoComments[photo.id].map((comment, idx) => (
-                          <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs">
+                          <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-medium text-gray-700">
                                 {comment.clientName || "Cliente"}
