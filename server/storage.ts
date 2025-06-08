@@ -1010,6 +1010,35 @@ export class MemStorage implements IStorage {
     console.log(`MemStorage: processExpiredDowngrades não implementado`);
     return 0;
   }
+
+  // Photo comment methods (placeholder implementations for MemStorage)
+  async createPhotoComment(comment: InsertPhotoComment): Promise<PhotoComment> {
+    // In memory storage - not implemented, return placeholder
+    const newComment: PhotoComment = {
+      id: `comment_${Date.now()}`,
+      photoId: comment.photoId,
+      clientName: comment.clientName,
+      comment: comment.comment,
+      createdAt: new Date(),
+      isViewed: false
+    };
+    return newComment;
+  }
+
+  async getPhotoComments(photoId: string): Promise<PhotoComment[]> {
+    // In memory storage - not implemented, return empty array
+    return [];
+  }
+
+  async getProjectPhotoComments(projectId: string): Promise<PhotoComment[]> {
+    // In memory storage - not implemented, return empty array
+    return [];
+  }
+
+  async markCommentsAsViewed(commentIds: string[]): Promise<void> {
+    // In memory storage - not implemented, no action needed
+    return;
+  }
 }
 
 // Implementação do armazenamento em PostgreSQL
