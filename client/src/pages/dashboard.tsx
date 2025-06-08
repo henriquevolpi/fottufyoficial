@@ -27,6 +27,7 @@ import {
   Shield,
   ShieldOff,
   MessageSquare,
+  MessageCircle,
   Eye
 } from "lucide-react";
 import { 
@@ -43,9 +44,10 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { PhotoComment } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -402,6 +404,20 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
                 Marca d'água
               </>
             )}
+          </Button>
+          
+          {/* Comments button */}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewComments?.(project.id);
+            }}
+          >
+            Comentários
+            <MessageCircle className="h-3 w-3 ml-1" />
           </Button>
         </div>
         
@@ -1167,6 +1183,31 @@ export default function Dashboard() {
   // State for modals
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Query for project comments
+  const { data: comments = [], isLoading: commentsLoading } = useQuery<PhotoComment[]>({
+    queryKey: [`/api/projects/${selectedProjectId}/comments`],
+    enabled: !!selectedProjectId && commentsModalOpen,
+  });
+
+  // Mutation to mark comments as viewed
+  const markCommentsAsViewedMutation = useMutation({
+    mutationFn: async (commentIds: string[]) => {
+      const response = await apiRequest("POST", "/api/comments/mark-viewed", { commentIds });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProjectId}/comments`] });
+    },
+  });
+
+  // Handler to open comments modal
+  const handleViewComments = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setCommentsModalOpen(true);
+  };
   
   // Carregar projetos
   useEffect(() => {
