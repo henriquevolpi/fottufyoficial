@@ -491,10 +491,10 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
             </DialogDescription>
           </DialogHeader>
           
-          <div className="max-h-60 overflow-y-auto my-4 border rounded-md bg-gray-50">
+          <div className="max-h-60 overflow-y-auto my-4 border rounded-md bg-gray-50 p-4">
             {(() => {
               if (!modalProject?.photos || modalProject.photos.length === 0) {
-                return <p className="text-gray-500 text-center p-4">Nenhuma foto encontrada</p>;
+                return <p className="text-gray-500 text-center">Nenhuma foto encontrada</p>;
               }
               
               // Get selected photos - check multiple possible ways the data might be structured
@@ -519,21 +519,14 @@ function ProjectCard({ project, onDelete }: { project: any, onDelete?: (id: numb
               }
               
               if (selectedPhotos.length === 0) {
-                return <p className="text-gray-500 text-center p-4">Nenhuma foto selecionada pelo cliente</p>;
+                return <p className="text-gray-500 text-center">Nenhuma foto selecionada pelo cliente</p>;
               }
               
               return (
-                <div className="space-y-2 p-4">
-                  {selectedPhotos.map((photo: any, index: number) => (
-                    <div key={photo.id} className="flex items-center p-2 bg-white rounded border">
-                      <div className="flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full mr-3 text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-mono text-gray-800">
-                          {photo.originalName || photo.filename || 'Arquivo sem nome'}
-                        </span>
-                      </div>
+                <div className="space-y-1">
+                  {selectedPhotos.map((photo: any) => (
+                    <div key={photo.id} className="text-sm font-mono text-gray-800 select-all">
+                      {photo.originalName || photo.filename || 'Arquivo sem nome'}
                     </div>
                   ))}
                 </div>
