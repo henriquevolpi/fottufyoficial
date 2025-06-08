@@ -853,15 +853,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       <div className="space-y-2 max-h-32 overflow-y-auto">
                         {photoComments[photo.id].map((comment, idx) => (
                           <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-gray-700">
-                                {comment.clientName || "Cliente"}
-                              </span>
+                            <div className="flex justify-end mb-1">
                               <span className="text-gray-400 text-xs">
                                 {new Date(comment.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <p className="text-gray-600 text-xs leading-relaxed">
+                            <p className="text-gray-600 text-xs leading-relaxed ml-[0px] mr-[0px] pl-[0px] pr-[0px] mt-[-6px] mb-[-6px]">
                               {comment.comment}
                             </p>
                           </div>
