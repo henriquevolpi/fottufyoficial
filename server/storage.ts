@@ -334,6 +334,12 @@ export interface IStorage {
   updateProjectWatermark(id: number, showWatermark: boolean): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
   
+  // Photo comment methods
+  createPhotoComment(comment: InsertPhotoComment): Promise<PhotoComment>;
+  getPhotoComments(photoId: string): Promise<PhotoComment[]>;
+  getProjectPhotoComments(projectId: string): Promise<PhotoComment[]>;
+  markCommentsAsViewed(commentIds: string[]): Promise<void>;
+  
   // Session store
   sessionStore: any;
 }
@@ -2013,6 +2019,81 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao processar downgrades expirados:", error);
       return 0;
+    }
+  }
+
+  // ==================== Photo Comment Methods ====================
+  
+  async createPhotoComment(comment: InsertPhotoComment): Promise<PhotoComment> {
+    try {
+      const [newComment] = await db
+        .insert(photoComments)
+        .values(comment)
+        .returning();
+      
+      console.log(`DatabaseStorage: Comentário criado para foto ID=${comment.photoId}`);
+      return newComment;
+    } catch (error) {
+      console.error("Erro ao criar comentário da foto:", error);
+      throw error;
+    }
+  }
+
+  async getPhotoComments(photoId: string): Promise<PhotoComment[]> {
+    try {
+      const comments = await db
+        .select()
+        .from(photoComments)
+        .where(eq(photoComments.photoId, photoId))
+        .orderBy(desc(photoComments.createdAt));
+      
+      return comments;
+    } catch (error) {
+      console.error("Erro ao buscar comentários da foto:", error);
+      return [];
+    }
+  }
+
+  async getProjectPhotoComments(projectId: string): Promise<PhotoComment[]> {
+    try {
+      const comments = await db
+        .select({
+          id: photoComments.id,
+          photoId: photoComments.photoId,
+          clientName: photoComments.clientName,
+          comment: photoComments.comment,
+          isViewed: photoComments.isViewed,
+          createdAt: photoComments.createdAt,
+          photoUrl: photos.url,
+          photoFilename: photos.filename,
+          photoOriginalName: photos.originalName,
+        })
+        .from(photoComments)
+        .innerJoin(photos, eq(photoComments.photoId, photos.id))
+        .where(eq(photos.projectId, projectId))
+        .orderBy(desc(photoComments.createdAt));
+      
+      console.log(`DatabaseStorage: Encontrados ${comments.length} comentários para projeto ID=${projectId}`);
+      return comments as any; // Type assertion for the joined result
+    } catch (error) {
+      console.error("Erro ao buscar comentários do projeto:", error);
+      return [];
+    }
+  }
+
+  async markCommentsAsViewed(commentIds: string[]): Promise<void> {
+    try {
+      if (commentIds.length === 0) return;
+      
+      await db
+        .update(photoComments)
+        .set({ isViewed: true })
+        .where(inArray(photoComments.id, commentIds));
+      
+      console.log(`DatabaseStorage: ${commentIds.length} comentários marcados como visualizados`);
+    } catch (error) {
+      console.error("Erro ao marcar comentários como visualizados:", error);
+      throw error;
     }
   }
 }

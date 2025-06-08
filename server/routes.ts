@@ -13,6 +13,7 @@ import {
   photos,
   insertNewProjectSchema,
   insertPhotoSchema,
+  insertPhotoCommentSchema,
   users
 } from "@shared/schema";
 import path from "path";
@@ -2014,6 +2015,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao excluir projeto:", error);
       res.status(500).json({ message: "Falha ao excluir projeto" });
+    }
+  });
+  
+  // ==================== Photo Comment Routes ====================
+  
+  // Create a comment on a photo (for clients)
+  app.post("/api/photos/:photoId/comments", async (req: Request, res: Response) => {
+    try {
+      const { photoId } = req.params;
+      const { clientName, comment } = req.body;
+      
+      if (!clientName || !comment) {
+        return res.status(400).json({ message: "Nome do cliente e comentário são obrigatórios" });
+      }
+      
+      // Validate the comment data
+      const commentData = insertPhotoCommentSchema.parse({
+        photoId,
+        clientName: clientName.trim(),
+        comment: comment.trim()
+      });
+      
+      const newComment = await storage.createPhotoComment(commentData);
+      res.json(newComment);
+    } catch (error) {
+      console.error("Erro ao criar comentário:", error);
+      res.status(500).json({ message: "Falha ao criar comentário" });
+    }
+  });
+  
+  // Get comments for a photo
+  app.get("/api/photos/:photoId/comments", async (req: Request, res: Response) => {
+    try {
+      const { photoId } = req.params;
+      const comments = await storage.getPhotoComments(photoId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Erro ao buscar comentários:", error);
+      res.status(500).json({ message: "Falha ao buscar comentários" });
+    }
+  });
+  
+  // Get all comments for a project (for photographers only)
+  app.get("/api/projects/:projectId/comments", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      
+      // First, verify that the user has access to this project
+      const project = await storage.getProject(parseInt(projectId));
+      if (!project) {
+        return res.status(404).json({ message: "Projeto não encontrado" });
+      }
+      
+      // Check if the user is the owner of the project or an admin
+      if (req.user?.role !== "admin" && project.photographerId !== req.user?.id) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      
+      const comments = await storage.getProjectPhotoComments(project.publicId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Erro ao buscar comentários do projeto:", error);
+      res.status(500).json({ message: "Falha ao buscar comentários do projeto" });
+    }
+  });
+  
+  // Mark comments as viewed (for photographers only)
+  app.post("/api/comments/mark-viewed", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { commentIds } = req.body;
+      
+      if (!Array.isArray(commentIds)) {
+        return res.status(400).json({ message: "IDs dos comentários devem ser um array" });
+      }
+      
+      await storage.markCommentsAsViewed(commentIds);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erro ao marcar comentários como visualizados:", error);
+      res.status(500).json({ message: "Falha ao marcar comentários como visualizados" });
     }
   });
   

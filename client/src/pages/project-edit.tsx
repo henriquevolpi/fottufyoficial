@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftCircle, Loader2, Save, Upload, X, ImagePlus } from "lucide-react";
+import { ArrowLeftCircle, Loader2, Save, Upload, X, ImagePlus, MessageSquare, Eye, EyeOff } from "lucide-react";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Project } from "@shared/schema";
 import { z } from "zod";
