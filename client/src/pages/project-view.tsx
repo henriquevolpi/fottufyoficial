@@ -87,7 +87,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   
   // Estados para comentários
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
-  const [clientName, setClientName] = useState("");
   
   const queryClient = useQueryClient();
 
@@ -119,10 +118,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Função para enviar comentário
   const handleSubmitComment = (photoId: string) => {
     const commentText = commentTexts[photoId];
-    if (!commentText?.trim() || !clientName?.trim()) {
+    if (!commentText?.trim()) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha seu nome e o comentário.",
+        title: "Campo obrigatório",
+        description: "Por favor, digite seu comentário.",
         variant: "destructive",
       });
       return;
@@ -130,7 +129,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
 
     createCommentMutation.mutate({
       photoId,
-      clientName: clientName.trim(),
+      clientName: "Cliente",
       comment: commentText.trim(),
       photoIdForClear: photoId, // Para saber qual campo limpar
     });
@@ -788,21 +787,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 {/* Comment Section */}
                 <div className="border-t pt-3 space-y-2">
                   <div className="text-sm font-medium text-left">Comentário para esta foto:</div>
-                  
-                  {/* Client Name Input - only show once */}
-                  {!clientName && (
-                    <div>
-                      <Label htmlFor={`client-name-${photo.id}`} className="text-xs">Seu nome:</Label>
-                      <Input
-                        id={`client-name-${photo.id}`}
-                        placeholder="Digite seu nome"
-                        value={clientName}
-                        onChange={(e) => setClientName(e.target.value)}
-                        className="text-xs h-8"
-                      />
-                    </div>
-                  )}
-
                   {/* Comment Text Area */}
                   <div>
                     <Textarea
@@ -823,7 +807,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     variant="secondary"
                     className="w-full text-xs"
                     onClick={() => handleSubmitComment(photo.id)}
-                    disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim() || !clientName?.trim()}
+                    disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim()}
                   >
                     {createCommentMutation.isPending ? (
                       <>
