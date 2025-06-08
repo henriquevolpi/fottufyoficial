@@ -1767,7 +1767,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {comments.map((comment) => (
                   <div key={comment.id} className="border rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                           <MessageCircle className="h-4 w-4 text-purple-600" />
@@ -1779,22 +1779,38 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </div>
-                      {!comment.viewedByPhotographer && (
+                      {!comment.isViewed && (
                         <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                           Novo
                         </span>
                       )}
                     </div>
                     
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-700 bg-white p-3 rounded border">
-                        {comment.content}
-                      </p>
-                    </div>
+                    {comment.photoId && comment.photoUrl && (
+                      <div className="flex items-start space-x-3 mb-3 p-3 bg-white rounded border">
+                        <div className="flex-shrink-0">
+                          <img 
+                            src={comment.photoUrl} 
+                            alt={comment.photoOriginalName || comment.photoFilename || 'Foto'} 
+                            className="w-16 h-16 object-cover rounded border"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {comment.photoOriginalName || comment.photoFilename || 'Arquivo sem nome'}
+                          </p>
+                          <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+                            "{comment.comment}"
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
-                    {comment.photoId && (
-                      <div className="text-xs text-gray-500">
-                        Comentário na foto: {comment.photoId}
+                    {!comment.photoId && (
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-700 bg-white p-3 rounded border">
+                          {comment.comment}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1814,7 +1830,7 @@ export default function Dashboard() {
               <Button 
                 onClick={() => {
                   const unviewedComments = comments
-                    .filter(c => !c.viewedByPhotographer)
+                    .filter(c => !c.isViewed)
                     .map(c => c.id);
                   
                   if (unviewedComments.length > 0) {
