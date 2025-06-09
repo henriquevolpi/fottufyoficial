@@ -117,7 +117,7 @@ export default function AuthPage() {
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-primary">Fottufy</h1>
             <p className="text-muted-foreground mt-2">
-              Plataforma de Gerenciamento para fotógrafos profissionais
+              Plataforma de seleção para fotógrafos profissionais
             </p>
           </div>
 
@@ -342,7 +342,7 @@ export default function AuthPage() {
             Seleção de fotos com qualidade para fotógrafos profissionais
           </h2>
           <p className="text-lg mb-8">
-            Com o StudioFlow, você pode gerenciar projetos fotográficos, compartilhar galerias com clientes
+            Com a Fottufy, você pode gerenciar projetos fotográficos, compartilhar galerias com clientes
             e receber seleções de fotos de forma rápida e intuitiva.
           </p>
           <div className="space-y-4">

@@ -323,7 +323,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
   };
   
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden hover:shadow-[0_4px_15px_0_rgba(30,58,138,0.70)] transition-shadow">
       <CardHeader className="p-4">
         <div className="flex justify-between items-start">
           <div>
@@ -1522,7 +1522,10 @@ export default function Dashboard() {
       <header className="bg-white border-b">
         <div className="container mx-auto py-4 px-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Fottufy</h1>
+            <h1 className="text-2xl font-bold">
+              <span className="text-blue-600">Fottu</span>
+              <span className="text-gray-900">fy</span>
+            </h1>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
               <Button 
@@ -1561,7 +1564,21 @@ export default function Dashboard() {
             className="w-full h-auto object-cover" 
           />
         </div>
-        
+
+        {/* Aviso de novidades */}
+        <div className="mt-6 mb-4 px-4 py-3 bg-green-50 border-l-4 border-green-600 rounded-md shadow flex items-start gap-3">
+          <svg className="w-6 h-6 text-green-600 mt-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+          </svg>
+          <div>
+            <p className="font-semibold text-green-700 mb-1">Novidade na Fottufy!</p>
+            <p className="text-sm text-green-900">
+              Agora o cliente pode <span className="font-semibold">comentar em cada foto</span> do ensaio e deixar observações diretamente no projeto.
+              Experimente enviar um projeto novo e veja como funciona!
+            </p>
+          </div>
+        </div>
+
         {/* Promotional Banner - only shown for free users */}
         {user?.planType === 'free' && <PromotionalBanner />}
         
