@@ -345,7 +345,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
       <CardHeader className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
+            <CardTitle className="tracking-tight font-bold text-[24px]">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
             <CardDescription className="text-sm mt-1">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
           </div>
           <Badge className={getStatusColor(status)}>
@@ -371,15 +371,18 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2 justify-between">
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {/* Delete project button */}
-          <Button
-            variant="ghost"
+          {/* Comments button - moved to first position */}
+          <Button 
+            variant="ghost" 
             size="sm"
-            className="text-xs text-red-500 bg-red-50 hover:bg-red-100 rounded-full px-4 py-2 font-medium transition-colors"
-            onClick={() => setShowDeleteConfirm(true)}
+            className="text-xs text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-full px-4 py-2 font-medium transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewComments?.(project.id);
+            }}
           >
-            <X className="h-3 w-3 mr-1" />
-            Excluir
+            <MessageCircle className="h-3 w-3 mr-1" />
+            Comentários
           </Button>
           
           {/* View selections button - available for projects with selections */}
@@ -424,18 +427,15 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             )}
           </Button>
           
-          {/* Comments button */}
-          <Button 
-            variant="ghost" 
+          {/* Delete project button - moved to last position and made smaller */}
+          <Button
+            variant="ghost"
             size="sm"
-            className="text-xs text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-full px-4 py-2 font-medium transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewComments?.(project.id);
-            }}
+            className="text-xs text-red-500 bg-red-50 hover:bg-red-100 rounded-full px-2 py-1 font-medium transition-colors"
+            onClick={() => setShowDeleteConfirm(true)}
           >
-            <MessageCircle className="h-3 w-3 mr-1" />
-            Comentários
+            <X className="h-3 w-3 mr-1" />
+            Excluir
           </Button>
         </div>
         
