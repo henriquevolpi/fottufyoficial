@@ -787,6 +787,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       onError={(e) => {
                         e.currentTarget.src = '/placeholder.jpg';
                       }}
+                      onContextMenu={e => e.preventDefault()}
                       title="Clique para ampliar"
                     />
                   </div>
@@ -1003,6 +1004,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder.jpg';
                     }}
+                    onContextMenu={e => e.preventDefault()}
                   />
                 </WatermarkOverlay>
               )}
