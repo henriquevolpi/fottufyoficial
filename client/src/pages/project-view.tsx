@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getPhotoUrl, getImageUrl } from "@/lib/imageUtils";
+import { CopyNamesButton } from "@/components/copy-names-button";
 import { WatermarkOverlay } from "@/components/WatermarkOverlay";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

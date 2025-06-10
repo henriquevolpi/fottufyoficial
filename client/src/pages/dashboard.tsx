@@ -47,6 +47,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { CopyNamesButton } from "@/components/copy-names-button";
 import { PhotoComment } from "@shared/schema";
 import {
   Form,
@@ -383,15 +384,24 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           
           {/* View selections button - available for projects with selections */}
           {(project.selectedPhotos?.length > 0 || project.selecionadas > 0) && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-              onClick={handleViewSelections}
-            >
-              Ver Seleções
-              <FileText className="h-3 w-3 ml-1" />
-            </Button>
+            <>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                onClick={handleViewSelections}
+              >
+                Ver Seleções
+                <FileText className="h-3 w-3 ml-1" />
+              </Button>
+              
+              <CopyNamesButton
+                selectedPhotos={project.selectedPhotos || []}
+                size="sm"
+                variant="ghost"
+                className="text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+              />
+            </>
           )}
           
           {/* Watermark toggle button */}
@@ -563,7 +573,37 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             })()}
           </div>
           
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
+            {(() => {
+              // Get selected photos for the copy button
+              let selectedPhotos = [];
+              
+              if (modalProject?.photos) {
+                selectedPhotos = modalProject.photos.filter((photo: any) => photo.selected === true);
+                
+                if (selectedPhotos.length === 0 && modalProject.selectedPhotos && modalProject.selectedPhotos.length > 0) {
+                  selectedPhotos = modalProject.photos.filter((photo: any) => 
+                    modalProject.selectedPhotos.some((sp: any) => sp.id === photo.id)
+                  );
+                }
+                
+                if (selectedPhotos.length === 0 && modalProject.status === 'completed') {
+                  selectedPhotos = modalProject.photos.filter((photo: any) => 
+                    photo.selected === true || photo.selected === 1 || photo.selected === "1"
+                  );
+                }
+              }
+
+              return selectedPhotos.length > 0 ? (
+                <CopyNamesButton
+                  selectedPhotos={selectedPhotos}
+                  size="default"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                />
+              ) : null;
+            })()}
+            
             <Button onClick={() => setShowSelectionsModal(false)} className="w-full sm:w-auto">
               Fechar
             </Button>
@@ -820,7 +860,7 @@ function UploadModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-auto">
         <DialogHeader>
-          <DialogTitle>Criar Novo Projeto</DialogTitle>
+          <DialogTitle>Criar Novo Projeto📸 </DialogTitle>
           <DialogDescription className="text-sm mt-1">
             
             <p className="bg-yellow-200 text-black font-semibold inline px- rounded-sm">
@@ -836,7 +876,7 @@ function UploadModal({
               name="projectName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Projeto</FormLabel>
+                  <FormLabel>Nome da Galeria</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: Casamento de João e Maria" {...field} />
                   </FormControl>
