@@ -324,7 +324,7 @@ export default function UploadModal({
 
   return (
     <Dialog open={open} onOpenChange={isSubmitting ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto backdrop-blur-sm bg-white/95 shadow-2xl border-0">
         <DialogHeader className="sticky top-0 z-10 bg-white pb-4">
           <DialogTitle>New Project</DialogTitle>
           <DialogDescription>
