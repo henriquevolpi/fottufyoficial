@@ -238,11 +238,11 @@ export function setupAuth(app: Express) {
       maxAge: 30 * 24 * 60 * 60 * 1000,
       // Allow JavaScript to read the cookie for backup recovery
       httpOnly: false,
-      // CRÍTICO: cookies não funcionam corretamente com 'lax' em iframes do Replit
-      sameSite: 'none',
+      // Para Replit, usar 'lax' funciona melhor que 'none'
+      sameSite: 'lax',
       path: '/',
-      // Configuração especial para garantir que o cookie funcione no Replit com SameSite=none
-      domain: process.env.REPLIT_DOMAIN ? undefined : undefined
+      // No domain restriction for better compatibility
+      domain: undefined
     }
   };
 
@@ -350,7 +350,8 @@ export function setupAuth(app: Express) {
             maxAge: 30 * 24 * 60 * 60 * 1000,
             path: '/',
             sameSite: 'lax',
-            secure: false
+            secure: false,
+            domain: undefined
           });
         } catch (cookieError) {
           console.error("Error setting cookie after registration:", cookieError);
@@ -412,8 +413,10 @@ export function setupAuth(app: Express) {
             httpOnly: false,  // Precisa ser acessível pelo JS
             maxAge: 30 * 24 * 60 * 60 * 1000,
             path: '/',
-            sameSite: 'lax', // Lax permite que o cookie seja enviado em navegações de nível superior
-            secure: false     // Não exigir HTTPS em desenvolvimento
+            sameSite: 'lax',
+            secure: false,
+            // Força o cookie a ser definido mesmo em contextos de iframe
+            domain: undefined
           });
         } catch (cookieError) {
           // Log o erro mas continua o login (não é crucial)
