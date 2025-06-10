@@ -7,6 +7,7 @@ import { Project } from "@shared/schema";
 import { Check, Edit, ArrowLeftCircle, FileText, MessageCircle, Eye, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { CopyNamesButton } from "@/components/copy-names-button";
 import {
   Dialog,
   DialogContent,
@@ -259,9 +260,19 @@ export default function ProjectView() {
               )}
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            {/* Apenas mostrar o botão se há fotos selecionadas */}
+            {selectedPhotos.length > 0 && (
+              <CopyNamesButton
+                selectedPhotos={project.photos.filter(photo => selectedPhotos.includes(photo.id))}
+                size="default"
+                variant="outline"
+                className="w-full sm:w-auto"
+              />
+            )}
             <Button 
               onClick={() => setShowSelectedFilenamesDialog(false)}
+              className="w-full sm:w-auto"
             >
               Fechar
             </Button>

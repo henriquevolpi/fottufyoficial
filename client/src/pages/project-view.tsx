@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getPhotoUrl, getImageUrl } from "@/lib/imageUtils";
-import { CopyNamesButton } from "@/components/copy-names-button";
 import { WatermarkOverlay } from "@/components/WatermarkOverlay";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -663,16 +662,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                             ))}
                           </div>
                         </div>
-                        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                          <CopyNamesButton
-                            selectedPhotos={project.photos.filter(photo => selectedPhotos.has(photo.id))}
-                            size="default"
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                          />
+                        <DialogFooter>
                           <Button 
                             onClick={() => setShowSelectedFilenamesDialog(false)}
-                            className="w-full sm:w-auto"
                           >
                             Fechar
                           </Button>
@@ -726,16 +718,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                               ))}
                             </div>
                           </div>
-                          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                            <CopyNamesButton
-                              selectedPhotos={project.photos.filter(photo => selectedPhotos.has(photo.id))}
-                              size="default"
-                              variant="outline"
-                              className="w-full sm:w-auto"
-                            />
+                          <DialogFooter>
                             <Button 
                               onClick={() => setShowSelectedFilenamesDialog(false)}
-                              className="w-full sm:w-auto"
                             >
                               Fechar
                             </Button>
