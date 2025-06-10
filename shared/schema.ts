@@ -130,7 +130,7 @@ export const projects = pgTable("projects", {
   clientName: text("client_name").notNull(),
   clientEmail: text("client_email").notNull(),
   photographerId: integer("photographer_id").notNull().references(() => users.id),
-  status: text("status").notNull().default("pending"), // pending | reviewed | reopened | archived
+  status: text("status").notNull().default("pendente"), // pendente | revisado | finalizado | arquivado
   photos: jsonb("photos").default([]).$type<{
     id: string;
     url: string;

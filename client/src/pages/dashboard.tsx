@@ -1480,9 +1480,9 @@ export default function Dashboard() {
   // Function to convert the current tab to a status filter
   const getStatusFilter = (tab: string) => {
     switch (tab) {
-      case "pending": return "pending";
-      case "reviewed": return "reviewed";
-      case "completed": return "completed";
+      case "pending": return "pendente";
+      case "reviewed": return "revisado";
+      case "completed": return "finalizado";
       default: return "";
     }
   };
@@ -1522,10 +1522,18 @@ export default function Dashboard() {
       <header className="bg-white border-b">
         <div className="container mx-auto py-4 px-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-2xl font-bold">
-              <span className="text-blue-600">Fottu</span>
-              <span className="text-gray-900">fy</span>
-            </h1>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-2xl font-bold m-0 p-0">
+                <span className="text-blue-600">Fottu</span>
+                <span className="text-gray-900">fy</span>
+              </h1>
+              <img
+                src="/fottufinho.webp"
+                alt="Fottufinho Mascote"
+                className="h-7 w-7 rounded-full"
+                style={{marginTop: '-2px'}}
+              />
+            </div>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
               <Button 
@@ -1607,10 +1615,10 @@ export default function Dashboard() {
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
             <TabsList className="mb-6 flex w-full overflow-x-auto scrollbar-none">
-              <TabsTrigger value="all" className="flex-shrink-0">All</TabsTrigger>
-              <TabsTrigger value="pending" className="flex-shrink-0">Pending</TabsTrigger>
-              <TabsTrigger value="reviewed" className="flex-shrink-0">Reviewed</TabsTrigger>
-              <TabsTrigger value="completed" className="flex-shrink-0">Completed</TabsTrigger>
+              <TabsTrigger value="all" className="flex-shrink-0">Todos</TabsTrigger>
+              <TabsTrigger value="pending" className="flex-shrink-0">Pendentes</TabsTrigger>
+              <TabsTrigger value="reviewed" className="flex-shrink-0">Revisados</TabsTrigger>
+              <TabsTrigger value="completed" className="flex-shrink-0">Finalizados</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-0">

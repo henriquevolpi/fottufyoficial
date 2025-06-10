@@ -935,7 +935,7 @@ export class MemStorage implements IStorage {
     const project = this.projects.get(id);
     if (!project) return undefined;
 
-    const updatedProject = { ...project, status: "archived" };
+    const updatedProject = { ...project, status: "arquivado" };
     this.projects.set(id, updatedProject);
     
     return updatedProject;
@@ -945,7 +945,7 @@ export class MemStorage implements IStorage {
     const project = this.projects.get(id);
     if (!project) return undefined;
 
-    const updatedProject = { ...project, status: "reopened" };
+    const updatedProject = { ...project, status: "pendente" };
     this.projects.set(id, updatedProject);
     
     return updatedProject;

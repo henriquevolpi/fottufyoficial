@@ -115,6 +115,12 @@ export default function AuthPage() {
       <div className="flex flex-col justify-center items-center p-6 bg-background">
         <div className="max-w-md w-full">
           <div className="text-center mb-6">
+            <img 
+              src="/fottufinho.webp"   // ajuste o caminho se precisar
+              alt="Mascote Fottufinho"
+              className="w-16 h-16 mx-auto mb-1"
+              draggable={false}
+            />
             <h1 className="text-3xl font-bold text-primary">Fottufy</h1>
             <p className="text-muted-foreground mt-2">
               Plataforma de seleção para fotógrafos profissionais
