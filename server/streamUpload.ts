@@ -41,7 +41,7 @@ const TMP_DIR = path.join(process.cwd(), 'tmp');
 // Inicializar diretório temporário
 fs.ensureDirSync(TMP_DIR);
 
-// Limpeza periódica dos arquivos temporários (a cada 1 hora)
+// Limpeza periódica dos arquivos temporários (a cada 15 minutos)
 setInterval(() => {
   try {
     fs.emptyDirSync(TMP_DIR);
@@ -51,7 +51,7 @@ setInterval(() => {
   } catch (error) {
     console.error('Erro ao limpar diretório temporário:', error);
   }
-}, 3600000);
+}, 900000);
 
 interface UploadedFile {
   fieldname: string;
