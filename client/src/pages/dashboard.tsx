@@ -384,24 +384,15 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           
           {/* View selections button - available for projects with selections */}
           {(project.selectedPhotos?.length > 0 || project.selecionadas > 0) && (
-            <>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-                onClick={handleViewSelections}
-              >
-                Ver Seleções
-                <FileText className="h-3 w-3 ml-1" />
-              </Button>
-              
-              <CopyNamesButton
-                selectedPhotos={project.selectedPhotos || []}
-                size="sm"
-                variant="ghost"
-                className="text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-              />
-            </>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+              onClick={handleViewSelections}
+            >
+              Ver Seleções
+              <FileText className="h-3 w-3 ml-1" />
+            </Button>
           )}
           
           {/* Watermark toggle button */}
