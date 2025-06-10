@@ -375,11 +375,11 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="text-xs text-red-500 bg-red-50 hover:bg-red-100 rounded-full px-4 py-2 font-medium transition-colors"
             onClick={() => setShowDeleteConfirm(true)}
           >
+            <X className="h-3 w-3 mr-1" />
             Excluir
-            <X className="h-3 w-3 ml-1" />
           </Button>
           
           {/* View selections button - available for projects with selections */}
@@ -387,11 +387,11 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+              className="text-xs text-green-600 bg-green-50 hover:bg-green-100 rounded-full px-4 py-2 font-medium transition-colors"
               onClick={handleViewSelections}
             >
+              <FileText className="h-3 w-3 mr-1" />
               Ver Seleções
-              <FileText className="h-3 w-3 ml-1" />
             </Button>
           )}
           
@@ -399,9 +399,9 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button 
             variant="ghost" 
             size="sm"
-            className={`text-xs ${project.showWatermark !== false 
-              ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' 
-              : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
+            className={`text-xs rounded-full px-4 py-2 font-medium transition-colors ${project.showWatermark !== false 
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
+              : 'text-gray-500 bg-gray-50 hover:bg-gray-100'
             }`}
             onClick={handleToggleWatermark}
             disabled={isTogglingWatermark}
@@ -428,14 +428,14 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button 
             variant="ghost" 
             size="sm"
-            className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+            className="text-xs text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-full px-4 py-2 font-medium transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onViewComments?.(project.id);
             }}
           >
+            <MessageCircle className="h-3 w-3 mr-1" />
             Comentários
-            <MessageCircle className="h-3 w-3 ml-1" />
           </Button>
         </div>
         
