@@ -218,7 +218,24 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
       case "finalizado": return "bg-green-100 text-green-800";
       case "completed": return "bg-green-100 text-green-800";
       case "Completed": return "bg-green-100 text-green-800";
+      case "arquivado": return "bg-gray-100 text-gray-800";
+      case "archived": return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+  
+  const getStatusDisplayName = (status: string) => {
+    switch (status) {
+      case "pendente": return "Pendente";
+      case "pending": return "Pendente";
+      case "revisado": return "Revisado";
+      case "reviewed": return "Revisado";
+      case "finalizado": return "Finalizado";
+      case "completed": return "Finalizado";
+      case "Completed": return "Finalizado";
+      case "arquivado": return "Arquivado";
+      case "archived": return "Arquivado";
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
     }
   };
   
@@ -331,7 +348,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             <CardDescription className="text-sm mt-1">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
           </div>
           <Badge className={getStatusColor(status)}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {getStatusDisplayName(status)}
           </Badge>
         </div>
       </CardHeader>
