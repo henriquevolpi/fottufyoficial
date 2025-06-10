@@ -1050,7 +1050,8 @@ export class DatabaseStorage implements IStorage {
       pool,
       createTableIfMissing: true,
       tableName: 'session',
-      schemaName: 'public'
+      schemaName: 'public',
+      ttl: 7 * 24 * 60 * 60 * 1000 // 7 dias em milissegundos (604800000 ms)
     });
     
     // Criar usuário admin inicial se não existir
