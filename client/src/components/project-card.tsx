@@ -151,7 +151,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           Copy Link
         </Button>
         
-        {project.status === 'reviewed' || project.status === 'archived' ? (
+        {project.status === 'revisado' || project.status === 'arquivado' ? (
           <Button 
             variant="secondary"
             size="sm"

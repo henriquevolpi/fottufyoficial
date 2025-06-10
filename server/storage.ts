@@ -1668,7 +1668,7 @@ export class DatabaseStorage implements IStorage {
           .set({ 
             photos: updatedPhotos,
             // Não atualizar selectedPhotos, que será definido apenas na finalização
-            status: project.status === "pending" && selectedPhotoIds.length > 0 ? "reviewed" : project.status
+            status: project.status === "pendente" && selectedPhotoIds.length > 0 ? "revisado" : project.status
           })
           .where(eq(projects.id, id))
           .returning();
@@ -1693,7 +1693,7 @@ export class DatabaseStorage implements IStorage {
         .update(projects)
         .set({
           selectedPhotos,
-          status: "Completed", // Atualiza o status para Completed
+          status: "finalizado", // Atualiza o status para finalizado
         })
         .where(eq(projects.id, id))
         .returning();
@@ -1709,7 +1709,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [archivedProject] = await db
         .update(projects)
-        .set({ status: "archived" })
+        .set({ status: "arquivado" })
         .where(eq(projects.id, id))
         .returning();
       
@@ -1742,7 +1742,7 @@ export class DatabaseStorage implements IStorage {
       
       const [reopenedProject] = await db
         .update(projects)
-        .set({ status: "reopened" })
+        .set({ status: "pendente" })
         .where(eq(projects.id, projectId as number))
         .returning();
       
