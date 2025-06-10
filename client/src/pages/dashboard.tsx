@@ -369,9 +369,10 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2 justify-between">
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {/* Comments button - moved to first position */}
+      <CardFooter className="p-4 pt-0">
+        {/* Main action buttons - top row */}
+        <div className="flex flex-wrap gap-2 w-full mb-2">
+          {/* Comments button */}
           <Button 
             variant="ghost" 
             size="sm"
@@ -426,52 +427,53 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
               </>
             )}
           </Button>
-          
-          {/* Delete project button - moved to last position and made smaller */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-red-500 bg-red-50 hover:bg-red-100 rounded-full px-2 py-1 font-medium transition-colors"
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            <X className="h-3 w-3 mr-1" />
-            Excluir
-          </Button>
         </div>
         
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="text-xs flex-grow sm:flex-grow-0"
-            onClick={() => setLocation(`/project/${project.id}`)}
-          >
-            Ver Detalhes
-            <ArrowUpRight className="h-3 w-3 ml-1" />
-          </Button>
-          
+        {/* Bottom row with delete button on left and other actions on right */}
+        <div className="flex justify-between items-center w-full">
+          {/* Delete button - bottom left */}
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-blue-600 flex-grow sm:flex-grow-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Copy link for the client
-              const clientUrl = `${window.location.origin}/project-view/${project.id}`;
-              console.log("Copying client link:", clientUrl);
-              navigator.clipboard.writeText(clientUrl);
-              toast({
-                title: "Link copiado",
-                description: "Link do cliente copiado para a área de transferência.",
-              });
-            }}
+            className="text-[10px] text-red-500 bg-red-50 hover:bg-red-100 rounded-full px-2 py-1 font-normal transition-colors"
+            onClick={() => setShowDeleteConfirm(true)}
           >
-            Link do Cliente
-            <LinkIcon className="h-3 w-3 ml-1" />
+            <X className="h-2 w-2 mr-1" />
+            Excluir
           </Button>
           
-
-
+          {/* Right side buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs"
+              onClick={() => setLocation(`/project/${project.id}`)}
+            >
+              Ver Detalhes
+              <ArrowUpRight className="h-3 w-3 ml-1" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-blue-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Copy link for the client
+                const clientUrl = `${window.location.origin}/project-view/${project.id}`;
+                console.log("Copying client link:", clientUrl);
+                navigator.clipboard.writeText(clientUrl);
+                toast({
+                  title: "Link copiado",
+                  description: "Link do cliente copiado para a área de transferência.",
+                });
+              }}
+            >
+              Link do Cliente
+              <LinkIcon className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
         </div>
       </CardFooter>
       
