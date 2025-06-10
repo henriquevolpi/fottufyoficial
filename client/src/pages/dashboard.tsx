@@ -365,7 +365,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           </div>
           <div className="flex items-center text-sm">
             <FileText className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project?.selectedPhotos?.length || project?.selecionadas || 0} selected</span>
+            <span>{project?.selectedPhotos?.length || project?.selecionadas || 0} selecionadas</span>
           </div>
         </div>
       </CardContent>
@@ -430,12 +430,12 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           {/* Delete project button - moved to last position and made smaller */}
           <Button
             variant="ghost"
-            size="sm"
-            className="text-xs text-red-500 bg-red-50 hover:bg-red-100 rounded-full px-2 py-1 font-medium transition-colors"
+            size="icon"
+            className="text-red-500 bg-red-50 hover:bg-red-100 rounded-full p-1 transition-colors"
             onClick={() => setShowDeleteConfirm(true)}
+            aria-label="Excluir"
           >
-            <X className="h-3 w-3 mr-1" />
-            Excluir
+            <X className="h-3 w-3" />
           </Button>
         </div>
         
