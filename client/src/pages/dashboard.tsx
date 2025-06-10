@@ -470,17 +470,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           </Button>
           
 
-          
-          {(status === "pendente" || status === "revisado") && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 flex-grow sm:flex-grow-0"
-              onClick={handleEditGallery}
-            >
-              Editar Galeria
-            </Button>
-          )}
+
         </div>
       </CardFooter>
       
