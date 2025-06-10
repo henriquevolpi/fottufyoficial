@@ -52,45 +52,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If data is wrapped in a user object, extract it
       const userData = data.user || data;
       
+      // Detectar se estamos no preview do Replit
+      const isReplitPreview = window.location.hostname.includes('replit.dev') || 
+                              window.location.hostname.includes('repl.co') ||
+                              window.parent !== window;
+      
       // Primeiro salve os dados básicos do usuário
       queryClient.setQueryData(["/api/user"], userData);
       
-      // Detectar se estamos no preview do Replit para evitar loops
-      const isReplitPreview = window.location.hostname.includes('replit.dev') || 
-                              window.location.hostname.includes('repl.co') ||
-                              window.parent !== window; // iframe detection
-      
-      // Agora faça uma nova requisição para obter dados atualizados (apenas se não for Replit preview)
-      if (!isReplitPreview) {
-        try {
-          const freshUserResponse = await apiRequest("GET", "/api/user");
-          if (freshUserResponse.ok) {
-            const freshUserData = await freshUserResponse.json();
-            // Atualize com os dados mais recentes
-            queryClient.setQueryData(["/api/user"], freshUserData);
-          }
-        } catch (error) {
-          console.log("Erro ao obter dados atualizados do usuário:", error);
-          // Já temos os dados básicos salvos, então continuamos
-        }
-      }
-      
-      // Invalidate queries de forma mais controlada para evitar loops no Replit
+      // Para Replit, forçar um recarregamento da página após login bem-sucedido
       if (isReplitPreview) {
-        // No Replit, apenas invalidar sem aguardar para evitar loops
+        toast({
+          title: "Login realizado com sucesso",
+          description: `Bem-vindo(a), ${userData.name}!`,
+        });
+        
+        // Pequeno delay e então recarregar a página para garantir que a sessão seja reconhecida
         setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-        }, 100);
-      } else {
-        // Em outros navegadores, usar o comportamento normal
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
-          queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
-          queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
-        ]);
+          window.location.reload();
+        }, 1000);
+        return;
       }
+      
+      // Comportamento normal para outros navegadores
+      try {
+        const freshUserResponse = await apiRequest("GET", "/api/user");
+        if (freshUserResponse.ok) {
+          const freshUserData = await freshUserResponse.json();
+          queryClient.setQueryData(["/api/user"], freshUserData);
+        }
+      } catch (error) {
+        console.log("Erro ao obter dados atualizados do usuário:", error);
+      }
+      
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
+      ]);
       
       toast({
         title: "Login realizado com sucesso",

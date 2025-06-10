@@ -15,6 +15,11 @@ export async function apiRequest(
   console.log(`Fazendo requisição ${method} para ${url}`, data ? data : '');
   
   try {
+    // Detectar se estamos no preview do Replit
+    const isReplitPreview = window.location.hostname.includes('replit.dev') || 
+                            window.location.hostname.includes('repl.co') ||
+                            window.parent !== window;
+    
     // CRITICAL FIX: Enhanced request options with stronger credentials and headers
     const options: RequestInit = {
       method,
@@ -26,6 +31,11 @@ export async function apiRequest(
         "Accept": "application/json",
         // Only add Content-Type when sending data
         ...(data ? { "Content-Type": "application/json" } : {}),
+        // Para Replit, adicionar headers específicos
+        ...(isReplitPreview ? {
+          "X-Replit-Preview": "true",
+          "Pragma": "no-cache"
+        } : {}),
       },
       body: data ? JSON.stringify(data) : undefined,
     };
