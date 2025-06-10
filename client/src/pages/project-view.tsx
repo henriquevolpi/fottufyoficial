@@ -663,9 +663,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                             ))}
                           </div>
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                          <CopyNamesButton
+                            selectedPhotos={project.photos.filter(photo => selectedPhotos.has(photo.id))}
+                            size="default"
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                          />
                           <Button 
                             onClick={() => setShowSelectedFilenamesDialog(false)}
+                            className="w-full sm:w-auto"
                           >
                             Fechar
                           </Button>
@@ -719,9 +726,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                               ))}
                             </div>
                           </div>
-                          <DialogFooter>
+                          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                            <CopyNamesButton
+                              selectedPhotos={project.photos.filter(photo => selectedPhotos.has(photo.id))}
+                              size="default"
+                              variant="outline"
+                              className="w-full sm:w-auto"
+                            />
                             <Button 
                               onClick={() => setShowSelectedFilenamesDialog(false)}
+                              className="w-full sm:w-auto"
                             >
                               Fechar
                             </Button>
