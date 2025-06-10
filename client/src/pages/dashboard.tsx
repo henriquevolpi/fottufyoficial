@@ -365,7 +365,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           </div>
           <div className="flex items-center text-sm">
             <FileText className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project?.selectedPhotos?.length || project?.selecionadas || 0} selecionadas</span>
+            <span>{project?.selectedPhotos?.length || project?.selecionadas || 0} selected</span>
           </div>
         </div>
       </CardContent>
