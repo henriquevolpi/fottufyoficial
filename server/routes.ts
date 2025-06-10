@@ -1225,6 +1225,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user details including plan info
       const user = await storage.getUser(userId);
       
+      // Calculate REAL current photo count from all active projects (não arquivados)
+      const activeUserProjects = userProjects.filter(project => project.status !== "arquivado");
+      const realCurrentPhotoCount = activeUserProjects.reduce((total, project) => {
+        const photoCount = project.photos ? project.photos.length : 0;
+        return total + photoCount;
+      }, 0);
+      
       // Prepare response
       const stats = {
         activeProjects,
@@ -1233,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         planInfo: {
           name: user?.planType || 'basic',
           uploadLimit: user?.uploadLimit || 1000,
-          usedUploads: user?.usedUploads || 0
+          usedUploads: realCurrentPhotoCount // Use real current count instead of stored value
         }
       };
       
