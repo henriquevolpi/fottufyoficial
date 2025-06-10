@@ -822,9 +822,9 @@ function UploadModal({
         <DialogHeader>
           <DialogTitle>Criar Novo Projeto</DialogTitle>
           <DialogDescription className="text-sm mt-1">
-            Preencha os detalhes do projeto e faça upload das fotos.
-            <p className="bg-yellow-200 text-black font-semibold inline px-1 rounded-sm">
-              Envie fotos de 2mb ou menos, para evitar erros no Upload
+            
+            <p className="bg-yellow-200 text-black font-semibold inline px- rounded-sm">
+              Aceitamos fotos apenas abaixo de 2mb cada, para conforto dos clientes ❤️
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -859,19 +859,7 @@ function UploadModal({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="clientEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email do Cliente (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="cliente@exemplo.com (opcional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             
             <FormField
               control={form.control}
