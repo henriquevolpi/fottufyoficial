@@ -55,25 +55,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Primeiro salve os dados básicos do usuário
       queryClient.setQueryData(["/api/user"], userData);
       
-      // Agora faça uma nova requisição para obter dados atualizados
-      try {
-        const freshUserResponse = await apiRequest("GET", "/api/user");
-        if (freshUserResponse.ok) {
-          const freshUserData = await freshUserResponse.json();
-          // Atualize com os dados mais recentes
-          queryClient.setQueryData(["/api/user"], freshUserData);
+      // Detectar se estamos no preview do Replit para evitar loops
+      const isReplitPreview = window.location.hostname.includes('replit.dev') || 
+                              window.location.hostname.includes('repl.co') ||
+                              window.parent !== window; // iframe detection
+      
+      // Agora faça uma nova requisição para obter dados atualizados (apenas se não for Replit preview)
+      if (!isReplitPreview) {
+        try {
+          const freshUserResponse = await apiRequest("GET", "/api/user");
+          if (freshUserResponse.ok) {
+            const freshUserData = await freshUserResponse.json();
+            // Atualize com os dados mais recentes
+            queryClient.setQueryData(["/api/user"], freshUserData);
+          }
+        } catch (error) {
+          console.log("Erro ao obter dados atualizados do usuário:", error);
+          // Já temos os dados básicos salvos, então continuamos
         }
-      } catch (error) {
-        console.log("Erro ao obter dados atualizados do usuário:", error);
-        // Já temos os dados básicos salvos, então continuamos
       }
       
-      // Invalidate e refetch imediatamente as consultas relacionadas
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
-      ]);
+      // Invalidate queries de forma mais controlada para evitar loops no Replit
+      if (isReplitPreview) {
+        // No Replit, apenas invalidar sem aguardar para evitar loops
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+        }, 100);
+      } else {
+        // Em outros navegadores, usar o comportamento normal
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
+          queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
+          queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
+        ]);
+      }
       
       toast({
         title: "Login realizado com sucesso",
@@ -109,30 +126,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Atualizar o cache com os dados completos do usuário
       queryClient.setQueryData(["/api/user"], userData);
       
-      // Ainda fazer uma requisição para confirmar que a sessão foi estabelecida corretamente
-      try {
-        console.log("Verificando sessão após registro...");
-        const freshUserResponse = await apiRequest("GET", "/api/user");
-        console.log("Resposta da verificação de sessão:", freshUserResponse.status);
-        
-        if (freshUserResponse.ok) {
-          const freshUserData = await freshUserResponse.json();
-          console.log("Sessão verificada com sucesso, dados atualizados:", freshUserData);
-          queryClient.setQueryData(["/api/user"], freshUserData);
-        } else {
-          console.error("Sessão não estabelecida corretamente após registro");
+      // Detectar se estamos no preview do Replit para evitar loops
+      const isReplitPreview = window.location.hostname.includes('replit.dev') || 
+                              window.location.hostname.includes('repl.co') ||
+                              window.parent !== window; // iframe detection
+      
+      // Ainda fazer uma requisição para confirmar que a sessão foi estabelecida corretamente (apenas se não for Replit preview)
+      if (!isReplitPreview) {
+        try {
+          console.log("Verificando sessão após registro...");
+          const freshUserResponse = await apiRequest("GET", "/api/user");
+          console.log("Resposta da verificação de sessão:", freshUserResponse.status);
+          
+          if (freshUserResponse.ok) {
+            const freshUserData = await freshUserResponse.json();
+            console.log("Sessão verificada com sucesso, dados atualizados:", freshUserData);
+            queryClient.setQueryData(["/api/user"], freshUserData);
+          } else {
+            console.error("Sessão não estabelecida corretamente após registro");
+          }
+        } catch (error) {
+          console.error("Erro ao verificar sessão após registro:", error);
+          // Continuar mesmo com erro, pois os dados básicos já foram salvos
         }
-      } catch (error) {
-        console.error("Erro ao verificar sessão após registro:", error);
-        // Continuar mesmo com erro, pois os dados básicos já foram salvos
       }
       
-      // Invalidate e refetch imediatamente as consultas relacionadas
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
-      ]);
+      // Invalidate queries de forma mais controlada para evitar loops no Replit
+      if (isReplitPreview) {
+        // No Replit, apenas invalidar sem aguardar para evitar loops
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+        }, 100);
+      } else {
+        // Em outros navegadores, usar o comportamento normal
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] }),
+          queryClient.invalidateQueries({ queryKey: ["/api/subscription/plans"] }),
+          queryClient.invalidateQueries({ queryKey: ["/api/projects"] })
+        ]);
+      }
       
       toast({
         title: "Registro realizado com sucesso",
