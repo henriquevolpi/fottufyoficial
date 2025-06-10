@@ -26,11 +26,79 @@ const WATERMARK_OPACITY = 0.25; // 25% de opacidade
 const WATERMARK_TEXT = 'fottufy (não copie)'; // Texto para a marca d'água
 const WATERMARK_FONT_SIZE = 36; // Tamanho da fonte em pixels
 
-// Cache para a marca d'água - evita recriar para imagens de tamanho semelhante
+// Cache otimizado para a marca d'água com limite de 5 itens
+// Rastreia uso e remove automaticamente itens menos usados
 const watermarkCache = new Map<string, Buffer>();
+const watermarkUsageTracker = new Map<string, { count: number, lastUsed: number }>();
+const MAX_WATERMARK_CACHE_SIZE = 5;
 
 // Desativar o cache interno do Sharp para evitar acúmulo de memória
 sharp.cache(false);
+
+/**
+ * Gerencia o cache de watermark com limite de tamanho
+ * Remove o item menos usado quando excede o limite
+ */
+function manageWatermarkCache(key: string, buffer?: Buffer): Buffer | undefined {
+  const now = Date.now();
+  
+  if (buffer) {
+    // Adicionando novo item ao cache
+    
+    // Se o cache está cheio, remover o item menos usado
+    if (watermarkCache.size >= MAX_WATERMARK_CACHE_SIZE) {
+      let leastUsedKey: string | null = null;
+      let lowestScore = Infinity;
+      
+      // Encontrar o item com menor score (menos usado + mais antigo)
+      watermarkUsageTracker.forEach((usage, cacheKey) => {
+        // Score baseado em: uso frequente (peso 3) + recência (peso 1)
+        const score = (usage.count * 3) + (now - usage.lastUsed) / 1000000;
+        
+        if (score < lowestScore) {
+          lowestScore = score;
+          leastUsedKey = cacheKey;
+        }
+      });
+      
+      // Remover o item menos usado
+      if (leastUsedKey) {
+        watermarkCache.delete(leastUsedKey);
+        watermarkUsageTracker.delete(leastUsedKey);
+        
+        if (process.env.DEBUG_MEMORY === 'true') {
+          console.log(`[CACHE] Watermark cache: removido item menos usado '${leastUsedKey}' (tamanho atual: ${watermarkCache.size}/${MAX_WATERMARK_CACHE_SIZE})`);
+        }
+      }
+    }
+    
+    // Adicionar o novo item
+    watermarkCache.set(key, buffer);
+    watermarkUsageTracker.set(key, { count: 1, lastUsed: now });
+    
+    if (process.env.DEBUG_MEMORY === 'true') {
+      console.log(`[CACHE] Watermark cache: adicionado '${key}' (tamanho: ${watermarkCache.size}/${MAX_WATERMARK_CACHE_SIZE})`);
+    }
+    
+    return buffer;
+  } else {
+    // Recuperando item do cache
+    const cachedBuffer = watermarkCache.get(key);
+    
+    if (cachedBuffer && watermarkUsageTracker.has(key)) {
+      // Atualizar estatísticas de uso
+      const usage = watermarkUsageTracker.get(key)!;
+      usage.count++;
+      usage.lastUsed = now;
+      
+      if (process.env.DEBUG_MEMORY === 'true') {
+        console.log(`[CACHE] Watermark cache: recuperado '${key}' (uso: ${usage.count}x)`);
+      }
+    }
+    
+    return cachedBuffer;
+  }
+}
 
 /**
  * Função principal para processar a imagem
@@ -111,10 +179,10 @@ export async function processImage(
         // Usar a dimensão arredondada para a chave de cache (evitar cache infinito)
         const watermarkCacheKey = `${Math.ceil(metadata.width/100)*100}x${Math.ceil(metadata.height/100)*100}`;
         
-        // Verificar se já temos uma marca d'água em cache para essas dimensões
-        let watermarkPattern: Buffer;
-        if (watermarkCache.has(watermarkCacheKey)) {
-          watermarkPattern = watermarkCache.get(watermarkCacheKey)!;
+        // Verificar se já temos uma marca d'água em cache para essas dimensões usando o novo sistema
+        let watermarkPattern: Buffer | undefined = manageWatermarkCache(watermarkCacheKey);
+        
+        if (watermarkPattern) {
           logMemory('processImage-watermark-from-cache', `Retrieved watermark from cache for ${watermarkCacheKey}`);
         } else {
           // Criar padrão de marca d'água repetitiva diretamente com texto
@@ -123,19 +191,8 @@ export async function processImage(
             metadata.height ?? 800
           );
           
-          // Armazenar no cache para reutilização
-          watermarkCache.set(watermarkCacheKey, watermarkPattern);
-          
-          // Limitar o tamanho do cache para evitar crescimento excessivo
-          if (watermarkCache.size > 10) {
-            // Remover a primeira entrada se o cache ficar muito grande
-            const keysIterator = watermarkCache.keys();
-            const firstKey = keysIterator.next().value;
-            if (firstKey) {
-              watermarkCache.delete(firstKey);
-              logMemory('processImage-watermark-cache-cleanup', `Removed oldest watermark from cache: ${firstKey}`);
-            }
-          }
+          // Armazenar no cache usando o novo sistema otimizado
+          manageWatermarkCache(watermarkCacheKey, watermarkPattern);
         }
         
         // Log após criar/obter a marca d'água e antes de aplicá-la
