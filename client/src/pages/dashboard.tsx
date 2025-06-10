@@ -859,7 +859,19 @@ function UploadModal({
               )}
             />
             
-
+            <FormField
+              control={form.control}
+              name="clientEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email do Cliente (opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="cliente@exemplo.com (opcional)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
@@ -878,7 +890,7 @@ function UploadModal({
 
             <div className="mt-4">
               <label className="block text-sm font-medium mb-2">
-                Fotos do Projeto (jpeg, png, webp, até 3mb cada)
+                Fotos do Projeto (jpeg, png, webp, até 2mb cada)
               </label>
               <div className="border border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition relative">
                 <input
