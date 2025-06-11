@@ -48,6 +48,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { CopyNamesButton } from "@/components/copy-names-button";
+import { compressMultipleImages } from "@/lib/imageCompression";
 import { PhotoComment } from "@shared/schema";
 import {
   Form,
@@ -689,6 +690,28 @@ function UploadModal({
       setIsUploading(true);
       setUploadProgress(0);
       
+      // ETAPA 1: Redimensionar imagens no front-end antes do upload
+      console.log(`[Frontend Dashboard] Iniciando redimensionamento de ${selectedFiles.length} imagens antes do upload`);
+      
+      setUploadProgress(5); // 5% - iniciando processamento
+      
+      const compressedFiles = await compressMultipleImages(
+        selectedFiles,
+        {
+          maxWidthOrHeight: 900, // Largura máxima 900px (padrão do sistema)
+          quality: 0.8, // Qualidade 80%
+          useWebWorker: true,
+        },
+        (processed, total) => {
+          // Atualizar progresso da compressão (5% a 25%)
+          const compressionProgress = 5 + (processed / total) * 20;
+          setUploadProgress(Math.round(compressionProgress));
+        }
+      );
+
+      console.log(`[Frontend Dashboard] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
+      setUploadProgress(25); // 25% - compressão concluída
+      
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('projectName', data.projectName);
@@ -702,8 +725,8 @@ function UploadModal({
         formData.append('photographerId', user.id.toString());
       }
       
-      // Append each file to FormData
-      selectedFiles.forEach((file) => {
+      // Append compressed files to FormData
+      compressedFiles.forEach((file) => {
         formData.append('photos', file);
       });
       
@@ -714,37 +737,37 @@ function UploadModal({
         // Configuração melhorada do callback de progresso com boot inicial e impulso
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
-            // Definir um mínimo inicial para evitar ficar em 0-5%
-            // Para uploads grandes, começamos com 5% para feedback visual imediato
-            let nextProgress = 5;
+            // Começar a partir de 25% já que a compressão foi concluída
+            // Para uploads grandes, começamos com 25% para feedback visual imediato
+            let nextProgress = 25;
             
             // Se o upload já começou de verdade (mais de 3% carregado)
             if (event.loaded > 0.03 * event.total) {
               // Calcular percentual atual com um pequeno boost para uploads grandes
-              // A fórmula abaixo faz os primeiros 30% carregados parecerem 50% na barra
-              const boost = selectedFiles.length > 50 ? 1.25 : 1;
-              const rawPercent = (event.loaded / event.total) * 100 * boost;
+              // A fórmula abaixo mapeia o progresso real de upload para 25%-95%
+              const boost = compressedFiles.length > 50 ? 1.25 : 1;
+              const rawPercent = 25 + ((event.loaded / event.total) * 70 * boost);
               
               // Limitar o boost a 95% para garantir que não chegue a 100% antes do tempo
               nextProgress = Math.min(Math.round(rawPercent), 95);
             } else if (event.loaded > 0) {
-              // Se estamos no início (menos de 3%), mas já começou, forçar entre 5-15%
-              nextProgress = Math.max(5, Math.min(15, Math.round((event.loaded / event.total) * 500)));
+              // Se estamos no início (menos de 3%), mas já começou, forçar entre 25-35%
+              nextProgress = Math.max(25, Math.min(35, Math.round(25 + (event.loaded / event.total) * 300)));
             }
             
             // Para arquivos maiores que 10MB, aumentar o impulso inicial
-            const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
-            const averageFileSize = totalSize / selectedFiles.length;
+            const totalSize = compressedFiles.reduce((acc, file) => acc + file.size, 0);
+            const averageFileSize = totalSize / compressedFiles.length;
             
             if (averageFileSize > 10 * 1024 * 1024 && nextProgress < 10) {
               nextProgress = 10; // Começar em 10% para arquivos grandes
             }
             
             // Para mais de 100 arquivos, comportamento especial
-            if (selectedFiles.length > 100) {
+            if (compressedFiles.length > 100) {
               // Progredir mais rápido no início para feedback visual
               if (event.loaded < 0.1 * event.total) {
-                nextProgress = Math.max(nextProgress, 20);
+                nextProgress = Math.max(nextProgress, 30);
               }
             }
             
@@ -824,7 +847,7 @@ function UploadModal({
       // Show success notification
       toast({
         title: "Projeto criado com sucesso",
-        description: `O projeto "${data.projectName}" foi criado com ${selectedFiles.length} fotos.`,
+        description: `O projeto "${data.projectName}" foi criado com ${compressedFiles.length} fotos redimensionadas.`,
       });
       
       // Call onUpload callback with the properly formatted project
