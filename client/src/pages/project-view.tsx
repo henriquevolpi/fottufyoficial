@@ -443,7 +443,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
 
   // Componente virtualizado para renderizar uma célula da grid
   const PhotoCell = useCallback(({ columnIndex, rowIndex, style, data }: any) => {
-    if (!data?.photos) return null;
+    if (!data?.photos || !project) return null;
     
     const index = rowIndex * data.columnCount + columnIndex;
     const photo = data.photos[index];
