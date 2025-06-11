@@ -97,31 +97,29 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   
   const queryClient = useQueryClient();
 
-  // Configurações da grid virtual - ajustadas para responsividade
-  const GAP = 16;
-  
-  // Calcular dimensões baseadas no container e breakpoints do Tailwind
+  // Configurações da grid virtual
+  const ITEM_WIDTH = 320; // largura do card incluindo gap
+  const ITEM_HEIGHT = 480; // altura do card incluindo conteúdo e comentários
+  const GAP = 16; // gap entre os items
+
+  // Calcular quantas colunas cabem na tela
+  const getColumnCount = useCallback((containerWidth: number) => {
+    if (containerWidth < 640) return 1; // sm
+    if (containerWidth < 1024) return 2; // lg
+    if (containerWidth < 1280) return 3; // xl
+    return 4; // xl+
+  }, []);
+
+  // Calcular dimensões da grid
   const gridConfig = useMemo(() => {
-    if (!project?.photos || !gridDimensions.width) {
-      return { columnCount: 4, rowCount: 0, itemWidth: 300, itemHeight: 480 };
-    }
+    if (!project?.photos) return { columnCount: 4, rowCount: 0 };
     
-    const containerWidth = gridDimensions.width;
-    let columnCount = 4; // padrão xl
-    
-    if (containerWidth < 640) columnCount = 1; // sm
-    else if (containerWidth < 1024) columnCount = 2; // lg  
-    else if (containerWidth < 1280) columnCount = 3; // xl
-    
-    // Calcular largura dos itens baseado no espaço disponível
-    const availableWidth = containerWidth - (GAP * (columnCount + 1));
-    const itemWidth = Math.floor(availableWidth / columnCount);
-    const itemHeight = 480; // altura fixa para cards
-    
+    const containerWidth = gridDimensions.width || 1200;
+    const columnCount = getColumnCount(containerWidth);
     const rowCount = Math.ceil(project.photos.length / columnCount);
     
-    return { columnCount, rowCount, itemWidth, itemHeight };
-  }, [project?.photos?.length, gridDimensions.width]);
+    return { columnCount, rowCount };
+  }, [project?.photos?.length, gridDimensions.width, getColumnCount]);
 
   // Carrega comentários existentes quando o projeto é carregado
   useEffect(() => {
@@ -365,26 +363,24 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Effect para detectar redimensionamento da janela e atualizar dimensões da grid
   useEffect(() => {
     const updateGridDimensions = () => {
-      // Usar toda a largura da viewport disponível
-      const viewportWidth = window.innerWidth;
-      const availableWidth = Math.max(viewportWidth - 64, 800); // margem mínima de 32px cada lado
-      
-      setGridDimensions({
-        width: availableWidth,
-        height: window.innerHeight - 200 // altura suficiente para scroll
-      });
+      const container = document.querySelector('[data-virtualized-grid-container]');
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        setGridDimensions({
+          width: rect.width,
+          height: Math.min(window.innerHeight - 200, 800) // altura máxima da grid
+        });
+      }
     };
 
-    // Atualizar dimensões imediatamente e após um delay para garantir que o DOM esteja pronto
-    updateGridDimensions();
-    const timeoutId = setTimeout(updateGridDimensions, 50);
+    // Atualizar dimensões na primeira renderização
+    setTimeout(updateGridDimensions, 100);
 
     // Adicionar listener para redimensionamento
     window.addEventListener('resize', updateGridDimensions);
     
     return () => {
       window.removeEventListener('resize', updateGridDimensions);
-      clearTimeout(timeoutId);
     };
   }, [project?.photos?.length]);
   
@@ -445,16 +441,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     setCurrentPhotoIndex(prevIndex);
   };
 
-  // Componente virtualizado otimizado - remove dependências desnecessárias
+  // Componente virtualizado para renderizar uma célula da grid
   const PhotoCell = useCallback(({ columnIndex, rowIndex, style, data }: any) => {
+    if (!data?.photos) return null;
+    
     const index = rowIndex * data.columnCount + columnIndex;
-    const photo = data.photos?.[index];
+    const photo = data.photos[index];
     
     if (!photo) return null;
-
-    const isSelected = selectedPhotos.has(photo.id);
-    const isExpanded = expandedCommentPhoto === photo.id;
-    const commentsCount = photoComments[photo.id]?.length || 0;
 
     return (
       <div style={{
@@ -464,12 +458,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         <Card
           className={`overflow-hidden group cursor-pointer transition h-full ${
             isFinalized ? 'opacity-80' : 'hover:shadow-md'
-          } ${isSelected ? 'ring-2 ring-primary' : ''}`}
+          } ${selectedPhotos.has(photo.id) ? 'ring-2 ring-primary' : ''}`}
           onClick={() => togglePhotoSelection(photo.id)}
         >
           <div className="relative h-64">
             <WatermarkOverlay 
-              enabled={data.showWatermark === true} 
+              enabled={project.showWatermark === true} 
               className="absolute inset-0 w-full h-full cursor-zoom-in group"
             >
               <div 
@@ -494,7 +488,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             </WatermarkOverlay>
             
             {/* Selection indicator */}
-            {isSelected && (
+            {selectedPhotos.has(photo.id) && (
               <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
                 <Check className="h-5 w-5" />
               </div>
@@ -508,12 +502,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           <CardContent className="p-3 space-y-3">
             <div className="text-center">
               <Button 
-                variant={isSelected ? "default" : "outline"}
+                variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
                 size="sm"
                 className="w-full"
                 disabled={isFinalized}
               >
-                {isSelected ? (
+                {selectedPhotos.has(photo.id) ? (
                   <>
                     <Check className="mr-1 h-4 w-4" /> Selected
                   </>
@@ -532,15 +526,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 onClick={() => toggleCommentSection(photo.id)}
               >
                 <MessageCircle className="mr-2 h-4 w-4" />
-                {commentsCount > 0 
-                  ? `Comentários (${commentsCount})`
+                {photoComments[photo.id] && photoComments[photo.id].length > 0 
+                  ? `Comentários (${photoComments[photo.id].length})`
                   : "Comentar"
                 }
               </Button>
             </div>
 
             {/* Expanded Comment Section */}
-            {isExpanded && (
+            {expandedCommentPhoto === photo.id && (
               <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2">
                 {/* Comment Text Area */}
                 <div>
@@ -575,10 +569,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 </Button>
 
                 {/* Existing Comments Display */}
-                {commentsCount > 0 && (
+                {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
                   <div className="border-t mt-3 pt-3 space-y-2">
                     <div className="text-xs font-medium text-gray-600">
-                      Comentários anteriores ({commentsCount}):
+                      Comentários anteriores ({photoComments[photo.id].length}):
                     </div>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
                       {photoComments[photo.id].map((comment, idx) => (
@@ -603,6 +597,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       </div>
     );
   }, [
+    project, 
+    gridConfig.columnCount, 
     selectedPhotos, 
     isFinalized, 
     photoComments, 
@@ -612,8 +608,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     togglePhotoSelection,
     openImageModal,
     toggleCommentSection,
-    handleSubmitComment,
-    GAP
+    handleSubmitComment
   ]);
   
   // Salvar seleções atuais sem finalizar
@@ -833,7 +828,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="w-full px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center">
               <Button
@@ -963,7 +958,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         </div>
       </header>
       {/* Main content */}
-      <main className="w-full px-8 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isFinalized && finalizationSuccess ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
@@ -982,29 +977,37 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </div>
         ) : null}
         
-        {/* Grid virtualizada que ocupa toda a largura disponível */}
-        {gridDimensions.width > 0 && gridConfig.rowCount > 0 ? (
-          <Grid
-            columnCount={gridConfig.columnCount}
-            columnWidth={gridConfig.itemWidth}
-            height={gridDimensions.height}
-            rowCount={gridConfig.rowCount}
-            rowHeight={gridConfig.itemHeight}
-            width={gridDimensions.width}
-            itemData={{
-              photos: project.photos,
-              columnCount: gridConfig.columnCount,
-              showWatermark: project.showWatermark
-            }}
-          >
-            {PhotoCell}
-          </Grid>
-        ) : (
-          // Fallback loading state while grid dimensions are being calculated
-          <div className="flex items-center justify-center min-h-96">
-            <Loader2 className="h-8 w-8 animate-spin text-border" />
-          </div>
-        )}
+        {/* Container para a grid virtualizada */}
+        <div 
+          data-virtualized-grid-container
+          className="w-full"
+          style={{ 
+            height: gridDimensions.height || 800,
+            minHeight: 400
+          }}
+        >
+          {gridDimensions.width > 0 && gridConfig.rowCount > 0 ? (
+            <Grid
+              columnCount={gridConfig.columnCount}
+              columnWidth={ITEM_WIDTH}
+              height={gridDimensions.height || 800}
+              rowCount={gridConfig.rowCount}
+              rowHeight={ITEM_HEIGHT}
+              width={gridDimensions.width}
+              itemData={{
+                photos: project.photos,
+                columnCount: gridConfig.columnCount
+              }}
+            >
+              {PhotoCell}
+            </Grid>
+          ) : (
+            // Fallback loading state while grid dimensions are being calculated
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-8 w-8 animate-spin text-border" />
+            </div>
+          )}
+        </div>
       </main>
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
