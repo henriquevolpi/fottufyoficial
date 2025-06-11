@@ -35,6 +35,32 @@ const MAX_WATERMARK_CACHE_SIZE = 5;
 // Desativar o cache interno do Sharp para evitar acúmulo de memória
 sharp.cache(false);
 
+// Função para forçar garbage collection se disponível
+function forceGarbageCollection(): void {
+  if (global.gc) {
+    try {
+      global.gc();
+      if (process.env.DEBUG_MEMORY === 'true') {
+        console.log('[GC] Garbage collection executado manualmente');
+      }
+    } catch (error) {
+      console.warn('[GC] Erro ao executar garbage collection:', error);
+    }
+  }
+}
+
+// Timer para limpeza automática de cache de watermark a cada 5 minutos
+setInterval(() => {
+  if (watermarkCache.size > 0) {
+    watermarkCache.clear();
+    watermarkUsageTracker.clear();
+    if (process.env.DEBUG_MEMORY === 'true') {
+      console.log('[CACHE] Cache de watermark limpo automaticamente');
+    }
+    forceGarbageCollection();
+  }
+}, 5 * 60 * 1000); // 5 minutos
+
 /**
  * Gerencia o cache de watermark com limite de tamanho
  * Remove o item menos usado quando excede o limite
@@ -235,6 +261,24 @@ export async function processImage(
       // Log do buffer final
       logMemory('processImage-complete', `Final buffer size: ${(finalBuffer.length / 1024 / 1024).toFixed(2)} MB`);
       
+      // Liberar explicitamente recursos e buffers intermediários
+      try {
+        if (processedImage && typeof processedImage.destroy === 'function') {
+          processedImage.destroy();
+        }
+        if (finalImage && typeof finalImage.destroy === 'function') {
+          finalImage.destroy();
+        }
+      } catch (destroyError) {
+        // Ignorar erros de destruição
+      }
+      
+      // Limpar cache do Sharp após processamento
+      sharp.cache(false);
+      
+      // Limpar referências de buffers intermediários
+      resizedBuffer = null as any;
+      
       return finalBuffer;
     } catch (watermarkError) {
       // Log do erro na aplicação da marca d'água
@@ -312,12 +356,30 @@ async function resizeImage(buffer: Buffer): Promise<Buffer> {
         }
       }
       
+      // Liberar recursos do Sharp explicitamente após redimensionamento
+      try {
+        if (image && typeof image.destroy === 'function') {
+          image.destroy();
+        }
+      } catch (destroyError) {
+        // Ignorar erros de destruição
+      }
+      
       return resizedBuffer;
     }
     
     // Log quando não precisar redimensionar
     logMemory('resizeImage-no-resize-needed', 
       `No resize needed: Image width ${metadata.width}px is already ≤ ${TARGET_WIDTH}px`);
+    
+    // Liberar recursos do Sharp mesmo quando não redimensiona
+    try {
+      if (image && typeof image.destroy === 'function') {
+        image.destroy();
+      }
+    } catch (destroyError) {
+      // Ignorar erros de destruição
+    }
     
     // Se não precisar redimensionar, retornar o buffer original
     return buffer;
@@ -453,6 +515,12 @@ async function createTextWatermarkPattern(width: number, height: number): Promis
     
     // Log após converter para buffer
     logMemory('createWatermark-complete', `Watermark buffer created: ${(watermarkBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+    
+    // Limpar cache do Sharp após criação da watermark
+    sharp.cache(false);
+    
+    // Limpar variáveis SVG da memória
+    svgContent = null as any;
     
     // Armazenar no cache para reutilização
     watermarkCache.set(cacheKey, watermarkBuffer);

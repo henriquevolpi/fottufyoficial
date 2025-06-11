@@ -210,6 +210,10 @@ export async function downloadAndUploadToR2(
       applyWatermark
     );
     
+    // Liberar buffers da memória após upload
+    buffer = null as any;
+    processedBuffer = null as any;
+    
     return result;
   } catch (error) {
     console.error(`Error downloading and uploading image from ${sourceUrl}:`, error);

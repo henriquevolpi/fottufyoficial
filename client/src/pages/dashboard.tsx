@@ -1192,8 +1192,9 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         <CardFooter>
           <Button 
             variant="outline" 
-            size="sm" 
-            className="w-full"
+            size="md" 
+            className="text-xs bg-cyan-500 text-white hover:bg-green-600 rounded-full px-4 py-2 font-medium transition-colors min-w-[88px]"
+            onClick={() => setShowDeleteConfirm(true)}
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />

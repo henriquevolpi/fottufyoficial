@@ -1604,6 +1604,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Fotos processadas: ${processedPhotos.length}`);
       
+      // Forçar garbage collection após processamento de lote grande de fotos
+      if (processedPhotos.length >= 5) {
+        try {
+          if (global.gc) {
+            global.gc();
+            console.log(`[GC] Garbage collection executado após processamento de ${processedPhotos.length} fotos`);
+          }
+        } catch (gcError) {
+          console.warn('[GC] Erro ao executar garbage collection:', gcError);
+        }
+      }
+      
       // Verificar o limite de uploads do usuário
       const photoCount = processedPhotos.length;
       
