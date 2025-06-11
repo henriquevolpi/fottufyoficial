@@ -365,16 +365,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   // Effect para detectar redimensionamento da janela e atualizar dimensões da grid
   useEffect(() => {
     const updateGridDimensions = () => {
-      // Usar a largura do container pai diretamente
-      const mainContainer = document.querySelector('main');
-      if (mainContainer) {
-        const rect = mainContainer.getBoundingClientRect();
-        const availableWidth = rect.width - 32; // padding lateral
-        setGridDimensions({
-          width: availableWidth,
-          height: window.innerHeight - 300 // altura dinâmica baseada na viewport
-        });
-      }
+      // Usar toda a largura da viewport disponível
+      const viewportWidth = window.innerWidth;
+      const availableWidth = Math.max(viewportWidth - 64, 800); // margem mínima de 32px cada lado
+      
+      setGridDimensions({
+        width: availableWidth,
+        height: window.innerHeight - 200 // altura suficiente para scroll
+      });
     };
 
     // Atualizar dimensões imediatamente e após um delay para garantir que o DOM esteja pronto
@@ -835,7 +833,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center">
               <Button
@@ -965,7 +963,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         </div>
       </header>
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="w-full px-8 py-6">
         {isFinalized && finalizationSuccess ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
