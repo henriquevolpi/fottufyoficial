@@ -41,13 +41,20 @@ export async function compressImage(
     });
 
     // Comprimir/redimensionar a imagem
-    const compressedFile = await imageCompression(file, compressionOptions);
+    const compressedBlob = await imageCompression(file, compressionOptions);
+
+    // Criar um novo File object preservando o nome original e tipo
+    const compressedFile = new File([compressedBlob], file.name, {
+      type: file.type,
+      lastModified: Date.now(),
+    });
 
     // Log do resultado
     console.log(`[Frontend] Imagem processada: ${file.name}`, {
       tamanhoOriginal: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       tamanhoFinal: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
       reducao: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`,
+      nomePreservado: compressedFile.name,
     });
 
     return compressedFile;
