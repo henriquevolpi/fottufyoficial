@@ -22,6 +22,7 @@ import AdminLayout from "@/components/layout/admin-layout";
 import PricingPage from "@/pages/pricing";
 import TestR2 from "@/pages/test-r2";
 import TestImageUpload from "@/pages/test-image-upload";
+import TestCompression from "@/pages/test-compression";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import SimpleResetPage from "@/pages/simple-reset";
@@ -122,6 +123,9 @@ function Router() {
       </Route>
       <Route path="/test-image-upload">
         {() => <TestImageUpload />}
+      </Route>
+      <Route path="/test-compression">
+        {() => <TestCompression />}
       </Route>
       <Route path="/home">
         {() => <LandingPage />}

@@ -31,7 +31,7 @@ export default function TestCompression() {
     console.log('[Test] Starting compression test...');
 
     try {
-      const compressed = await compressMultipleImages(
+      const compressedResults = await compressMultipleImages(
         selectedFiles,
         {
           maxWidthOrHeight: 900,
@@ -44,13 +44,13 @@ export default function TestCompression() {
         }
       );
 
-      setCompressedFiles(compressed);
+      setCompressedFiles(compressedResults);
       
       // Calculate compression stats
       const stats = selectedFiles.map((original, index) => {
-        const compressed = compressed[index];
+        const compressedFile = compressedResults[index];
         const originalSize = original.size;
-        const compressedSize = compressed?.size || 0;
+        const compressedSize = compressedFile?.size || 0;
         const reduction = ((originalSize - compressedSize) / originalSize) * 100;
         
         return {
