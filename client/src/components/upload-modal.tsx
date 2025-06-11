@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image } from "lucide-react";
+import { compressMultipleImages, isImageFile } from "@/lib/imageCompression";
 import {
   Dialog,
   DialogContent,
@@ -102,7 +103,31 @@ export default function UploadModal({
     setIsSubmitting(true);
 
     try {
-      // Create FormData for sending files
+      // ETAPA 1: Redimensionar imagens no front-end antes do upload
+      console.log(`[Frontend] Iniciando redimensionamento de ${files.length} imagens antes do upload`);
+      
+      setUploadStatus("uploading");
+      setUploadPercentage(10); // 10% - iniciando processamento
+
+      // Redimensionar todas as imagens com progresso
+      const compressedFiles = await compressMultipleImages(
+        files,
+        {
+          maxWidthOrHeight: 900, // Largura máxima 900px (padrão do sistema)
+          quality: 0.8, // Qualidade 80%
+          useWebWorker: true,
+        },
+        (processed, total) => {
+          // Atualizar progresso do redimensionamento (10% a 40%)
+          const compressionProgress = 10 + ((processed / total) * 30);
+          setUploadPercentage(Math.round(compressionProgress));
+        }
+      );
+
+      console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
+      setUploadPercentage(40); // 40% - redimensionamento concluído
+
+      // ETAPA 2: Preparar FormData com imagens redimensionadas
       const formData = new FormData();
 
       // Add project data with names matching the server API fields
@@ -113,19 +138,19 @@ export default function UploadModal({
       formData.append("notes", values.observacoes || "");
       formData.append("photographerId", "1"); // Using default ID
 
-      // Add photos to FormData - server expects 'photos' field name for multer
-      files.forEach((file) => {
+      // Add compressed photos to FormData - server expects 'photos' field name for multer
+      compressedFiles.forEach((file) => {
         // Each file with the same field name 'photos' for multer array handling
         formData.append("photos", file);
       });
 
       // Add total count of photos
-      formData.append("photoCount", files.length.toString());
+      formData.append("photoCount", compressedFiles.length.toString());
 
       // Use a fallback approach for browsers that don't support FormData properly
       // Create JSON photosData as a backup - sem usar os previews visuais
       const photoDataJson = JSON.stringify(
-        files.map((file) => ({
+        compressedFiles.map((file) => ({
           // Não enviamos URLs de preview, apenas o nome do arquivo que é suficiente
           // para o servidor processar o upload corretamente
           url: "", // Campo vazio, o servidor usará os arquivos enviados diretamente
@@ -134,20 +159,20 @@ export default function UploadModal({
       );
       formData.append("photosData", photoDataJson);
 
-      // Reset upload status
-      setUploadStatus("uploading");
-      setUploadPercentage(0);
+      // ETAPA 3: Enviar para o servidor (progresso 40% a 100%)
+      console.log(`[Frontend] Enviando ${compressedFiles.length} imagens redimensionadas para o servidor`);
 
       // Send data to API endpoint using XMLHttpRequest for upload progress tracking
       const newProject = await new Promise<ProjectResponse>(
         (resolve, reject) => {
           const xhr = new XMLHttpRequest();
 
-          // Track upload progress
+          // Track upload progress (40% a 100%)
           xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
-              const percentage = Math.round((event.loaded / event.total) * 100);
-              setUploadPercentage(percentage);
+              const uploadProgress = (event.loaded / event.total) * 60; // 60% do progresso restante
+              const totalProgress = 40 + uploadProgress; // 40% já foi usado na compressão
+              setUploadPercentage(Math.round(totalProgress));
             }
           };
 

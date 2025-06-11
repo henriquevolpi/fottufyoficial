@@ -27,6 +27,7 @@ import { useDropzone } from "react-dropzone";
 import { nanoid } from "nanoid";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { compressMultipleImages } from "@/lib/imageCompression";
 
 // Esquema para validação do formulário
 const projectEditSchema = z.object({
@@ -134,9 +135,24 @@ export default function ProjectEdit() {
     try {
       setIsUploading(true);
       
+      // ETAPA 1: Redimensionar imagens no front-end antes do upload
+      console.log(`[Frontend] Iniciando redimensionamento de ${newPhotos.length} imagens para o projeto ${project.id}`);
+      
+      // Redimensionar todas as imagens
+      const compressedFiles = await compressMultipleImages(
+        newPhotos,
+        {
+          maxWidthOrHeight: 900, // Largura máxima 900px (padrão do sistema)
+          quality: 0.8, // Qualidade 80%
+          useWebWorker: true,
+        }
+      );
+
+      console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
+      
       // Processar as fotos para upload (converter para URL base64 para simplificar)
       const processedPhotos = await Promise.all(
-        newPhotos.map(async (file) => {
+        compressedFiles.map(async (file) => {
           // Gerar um ID único para a foto
           const photoId = nanoid();
           
@@ -160,13 +176,13 @@ export default function ProjectEdit() {
       
       // Primeiro tentar usar a API
       try {
-        console.log(`Enviando ${processedPhotos.length} fotos para o projeto ${project.id}`);
+        console.log(`[Frontend] Enviando ${processedPhotos.length} fotos redimensionadas para o projeto ${project.id}`);
         
         // Criar FormData para upload de arquivos
         const formData = new FormData();
         
-        // Adicionar os arquivos originais ao FormData
-        newPhotos.forEach((file, index) => {
+        // Adicionar os arquivos comprimidos ao FormData
+        compressedFiles.forEach((file, index) => {
           formData.append('photos', file);
         });
         
