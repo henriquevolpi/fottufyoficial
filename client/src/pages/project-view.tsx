@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { FixedSizeGrid as Grid } from "react-window";
 import type { PhotoComment, InsertPhotoComment } from "@shared/schema";
 import { 
   Check, 
@@ -92,34 +91,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [photoComments, setPhotoComments] = useState<Record<string, any[]>>({});
   const [expandedCommentPhoto, setExpandedCommentPhoto] = useState<string | null>(null);
   
-  // Estados para virtualização da galeria
-  const [gridDimensions, setGridDimensions] = useState({ width: 0, height: 0 });
-  
   const queryClient = useQueryClient();
-
-  // Configurações da grid virtual
-  const ITEM_WIDTH = 320; // largura do card incluindo gap
-  const ITEM_HEIGHT = 480; // altura do card incluindo conteúdo e comentários
-  const GAP = 16; // gap entre os items
-
-  // Calcular quantas colunas cabem na tela
-  const getColumnCount = useCallback((containerWidth: number) => {
-    if (containerWidth < 640) return 1; // sm
-    if (containerWidth < 1024) return 2; // lg
-    if (containerWidth < 1280) return 3; // xl
-    return 4; // xl+
-  }, []);
-
-  // Calcular dimensões da grid
-  const gridConfig = useMemo(() => {
-    if (!project?.photos) return { columnCount: 4, rowCount: 0 };
-    
-    const containerWidth = gridDimensions.width || 1200;
-    const columnCount = getColumnCount(containerWidth);
-    const rowCount = Math.ceil(project.photos.length / columnCount);
-    
-    return { columnCount, rowCount };
-  }, [project?.photos?.length, gridDimensions.width, getColumnCount]);
 
   // Carrega comentários existentes quando o projeto é carregado
   useEffect(() => {
@@ -359,30 +331,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   useEffect(() => {
     loadProject();
   }, [projectId, toast, user]);
-
-  // Effect para detectar redimensionamento da janela e atualizar dimensões da grid
-  useEffect(() => {
-    const updateGridDimensions = () => {
-      const container = document.querySelector('[data-virtualized-grid-container]');
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        setGridDimensions({
-          width: rect.width,
-          height: Math.min(window.innerHeight - 200, 800) // altura máxima da grid
-        });
-      }
-    };
-
-    // Atualizar dimensões na primeira renderização
-    setTimeout(updateGridDimensions, 100);
-
-    // Adicionar listener para redimensionamento
-    window.addEventListener('resize', updateGridDimensions);
-    
-    return () => {
-      window.removeEventListener('resize', updateGridDimensions);
-    };
-  }, [project?.photos?.length]);
   
   // Alternar seleção de foto
   const togglePhotoSelection = (photoId: string) => {
@@ -440,176 +388,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     setCurrentImageUrl(prevPhoto.url);
     setCurrentPhotoIndex(prevIndex);
   };
-
-  // Componente virtualizado para renderizar uma célula da grid
-  const PhotoCell = useCallback(({ columnIndex, rowIndex, style, data }: any) => {
-    if (!data?.photos) return null;
-    
-    const index = rowIndex * data.columnCount + columnIndex;
-    const photo = data.photos[index];
-    
-    if (!photo) return null;
-
-    return (
-      <div style={{
-        ...style,
-        padding: GAP / 2,
-      }}>
-        <Card
-          className={`overflow-hidden group cursor-pointer transition h-full ${
-            isFinalized ? 'opacity-80' : 'hover:shadow-md'
-          } ${selectedPhotos.has(photo.id) ? 'ring-2 ring-primary' : ''}`}
-          onClick={() => togglePhotoSelection(photo.id)}
-        >
-          <div className="relative h-64">
-            <WatermarkOverlay 
-              enabled={project.showWatermark === true} 
-              className="absolute inset-0 w-full h-full cursor-zoom-in group"
-            >
-              <div 
-                className="w-full h-full"
-                onClick={(e) => openImageModal(photo.url, index, e)}
-              >
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200 z-20">
-                  <Maximize className="h-6 w-6 text-white" />
-                </div>
-                <img
-                  src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
-                  alt="Photo"
-                  className="w-full h-full object-cover ml-[0px] mr-[0px] pl-[2px] pr-[2px] mt-[0px] mb-[0px] pt-[0px] pb-[0px]"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.jpg';
-                  }}
-                  onContextMenu={e => e.preventDefault()}
-                  title="Clique para ampliar"
-                />
-              </div>
-            </WatermarkOverlay>
-            
-            {/* Selection indicator */}
-            {selectedPhotos.has(photo.id) && (
-              <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
-                <Check className="h-5 w-5" />
-              </div>
-            )}
-            
-            {/* Filename - mostrar nome original se disponível */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-sm truncate">
-              {photo.originalName || photo.filename}
-            </div>
-          </div>
-          <CardContent className="p-3 space-y-3">
-            <div className="text-center">
-              <Button 
-                variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
-                size="sm"
-                className="w-full"
-                disabled={isFinalized}
-              >
-                {selectedPhotos.has(photo.id) ? (
-                  <>
-                    <Check className="mr-1 h-4 w-4" /> Selected
-                  </>
-                ) : (
-                  "Selecionar"
-                )}
-              </Button>
-            </div>
-
-            {/* Comment Button */}
-            <div className="border-t pt-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                onClick={() => toggleCommentSection(photo.id)}
-              >
-                <MessageCircle className="mr-2 h-4 w-4" />
-                {photoComments[photo.id] && photoComments[photo.id].length > 0 
-                  ? `Comentários (${photoComments[photo.id].length})`
-                  : "Comentar"
-                }
-              </Button>
-            </div>
-
-            {/* Expanded Comment Section */}
-            {expandedCommentPhoto === photo.id && (
-              <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2">
-                {/* Comment Text Area */}
-                <div>
-                  <Textarea
-                    placeholder="Digite seu comentário sobre esta foto..."
-                    value={commentTexts[photo.id] || ""}
-                    onChange={(e) => setCommentTexts(prev => ({ 
-                      ...prev, 
-                      [photo.id]: e.target.value 
-                    }))}
-                    className="text-xs min-h-[60px] resize-none"
-                    rows={2}
-                  />
-                </div>
-
-                {/* Submit Comment Button */}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-full text-xs"
-                  onClick={() => handleSubmitComment(photo.id)}
-                  disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim()}
-                >
-                  {createCommentMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    "Enviar Comentário"
-                  )}
-                </Button>
-
-                {/* Existing Comments Display */}
-                {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
-                  <div className="border-t mt-3 pt-3 space-y-2">
-                    <div className="text-xs font-medium text-gray-600">
-                      Comentários anteriores ({photoComments[photo.id].length}):
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {photoComments[photo.id].map((comment, idx) => (
-                        <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
-                          <div className="flex justify-end mb-1">
-                            <span className="text-gray-400 text-xs">
-                              {new Date(comment.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-gray-600 text-xs leading-relaxed">
-                            {comment.comment}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }, [
-    project, 
-    gridConfig.columnCount, 
-    selectedPhotos, 
-    isFinalized, 
-    photoComments, 
-    expandedCommentPhoto, 
-    commentTexts, 
-    createCommentMutation.isPending,
-    togglePhotoSelection,
-    openImageModal,
-    toggleCommentSection,
-    handleSubmitComment
-  ]);
   
   // Salvar seleções atuais sem finalizar
   const saveSelections = async () => {
@@ -977,36 +755,152 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </div>
         ) : null}
         
-        {/* Container para a grid virtualizada */}
-        <div 
-          data-virtualized-grid-container
-          className="w-full"
-          style={{ 
-            height: gridDimensions.height || 800,
-            minHeight: 400
-          }}
-        >
-          {gridDimensions.width > 0 && gridConfig.rowCount > 0 ? (
-            <Grid
-              columnCount={gridConfig.columnCount}
-              columnWidth={ITEM_WIDTH}
-              height={gridDimensions.height || 800}
-              rowCount={gridConfig.rowCount}
-              rowHeight={ITEM_HEIGHT}
-              width={gridDimensions.width}
-              itemData={{
-                photos: project.photos,
-                columnCount: gridConfig.columnCount
-              }}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {project.photos.map((photo, index) => (
+            <Card
+              key={photo.id}
+              className={`overflow-hidden group cursor-pointer transition ${
+                isFinalized ? 'opacity-80' : 'hover:shadow-md'
+              } ${selectedPhotos.has(photo.id) ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => togglePhotoSelection(photo.id)}
             >
-              {PhotoCell}
-            </Grid>
-          ) : (
-            // Fallback loading state while grid dimensions are being calculated
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-border" />
-            </div>
-          )}
+              <div className="relative h-64">
+                {/* Debug info - will show in development only */}
+                {/* Removed ID display */}
+                
+                <WatermarkOverlay 
+                  enabled={project.showWatermark === true} 
+                  className="absolute inset-0 w-full h-full cursor-zoom-in group"
+                >
+                  <div 
+                    className="w-full h-full"
+                    onClick={(e) => openImageModal(photo.url, index, e)}
+                  >
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200 z-20">
+                      <Maximize className="h-6 w-6 text-white" />
+                    </div>
+                    <img
+                      src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
+                      alt="Photo"
+                      className="w-full h-full object-cover ml-[0px] mr-[0px] pl-[2px] pr-[2px] mt-[0px] mb-[0px] pt-[0px] pb-[0px]"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.jpg';
+                      }}
+                      onContextMenu={e => e.preventDefault()}
+                      title="Clique para ampliar"
+                    />
+                  </div>
+                </WatermarkOverlay>
+                
+                {/* Selection indicator */}
+                {selectedPhotos.has(photo.id) && (
+                  <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
+                    <Check className="h-5 w-5" />
+                  </div>
+                )}
+                
+                {/* Filename - mostrar nome original se disponível */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-sm truncate">
+                  {photo.originalName || photo.filename}
+                </div>
+              </div>
+              <CardContent className="p-3 space-y-3">
+                <div className="text-center">
+                  <Button 
+                    variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
+                    size="sm"
+                    className="w-full"
+                    disabled={isFinalized}
+                  >
+                    {selectedPhotos.has(photo.id) ? (
+                      <>
+                        <Check className="mr-1 h-4 w-4" /> Selected
+                      </>
+                    ) : (
+                      "Selecionar"
+                    )}
+                  </Button>
+                </div>
+
+                {/* Comment Button */}
+                <div className="border-t pt-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    onClick={() => toggleCommentSection(photo.id)}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    {photoComments[photo.id] && photoComments[photo.id].length > 0 
+                      ? `Comentários (${photoComments[photo.id].length})`
+                      : "Comentar"
+                    }
+                  </Button>
+                </div>
+
+                {/* Expanded Comment Section */}
+                {expandedCommentPhoto === photo.id && (
+                  <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2">
+                    {/* Comment Text Area */}
+                    <div>
+                      <Textarea
+                        placeholder="Digite seu comentário sobre esta foto..."
+                        value={commentTexts[photo.id] || ""}
+                        onChange={(e) => setCommentTexts(prev => ({ 
+                          ...prev, 
+                          [photo.id]: e.target.value 
+                        }))}
+                        className="text-xs min-h-[60px] resize-none"
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Submit Comment Button */}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-full text-xs"
+                      onClick={() => handleSubmitComment(photo.id)}
+                      disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim()}
+                    >
+                      {createCommentMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        "Enviar Comentário"
+                      )}
+                    </Button>
+
+                    {/* Existing Comments Display */}
+                    {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
+                      <div className="border-t mt-3 pt-3 space-y-2">
+                        <div className="text-xs font-medium text-gray-600">
+                          Comentários anteriores ({photoComments[photo.id].length}):
+                        </div>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {photoComments[photo.id].map((comment, idx) => (
+                            <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
+                              <div className="flex justify-end mb-1">
+                                <span className="text-gray-400 text-xs">
+                                  {new Date(comment.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 text-xs leading-relaxed">
+                                {comment.comment}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </main>
       {/* Confirmation Dialog */}
