@@ -185,7 +185,7 @@ export async function downloadAndUploadToR2(
     
     // Convert the response to a buffer
     const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let buffer = Buffer.from(arrayBuffer);
     
     // Processar a imagem somente se for um tipo de imagem suportado
     let processedBuffer = buffer;
@@ -211,8 +211,12 @@ export async function downloadAndUploadToR2(
     );
     
     // Liberar buffers da memória após upload
-    buffer = null as any;
-    processedBuffer = null as any;
+    try {
+      buffer = null as any;
+      processedBuffer = null as any;
+    } catch (e) {
+      // Ignorar erros de limpeza
+    }
     
     return result;
   } catch (error) {

@@ -12,6 +12,18 @@ import dotenv from "dotenv";
 // Carregar variáveis de ambiente do arquivo .env
 dotenv.config();
 
+// Habilitar garbage collection manual se não estiver disponível
+if (!global.gc) {
+  try {
+    // Tentar habilitar garbage collection
+    require('v8').setFlagsFromString('--expose_gc');
+    global.gc = require('vm').runInNewContext('gc');
+    console.log('[GC] Garbage collection manual habilitado');
+  } catch (e) {
+    console.warn('[GC] Não foi possível habilitar garbage collection manual');
+  }
+}
+
 // Definir variável de ambiente para a sessão se não estiver definida
 if (!process.env.SESSION_SECRET) {
   process.env.SESSION_SECRET = "studio-foto-session-secret-key-2023";
