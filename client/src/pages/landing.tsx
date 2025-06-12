@@ -7,9 +7,10 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center p-4">
       <div className="max-w-4xl w-full text-center">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-blue-600 mt-[10px] mb-[10px]">
+          <h1
+            className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-800 via-blue-500 to-blue-300 bg-clip-text text-transparent mt-[10px] mb-[10px]"
+          >
             Fottufy
           </h1>
         </div>

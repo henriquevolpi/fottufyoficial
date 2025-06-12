@@ -609,16 +609,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mr-4"
-                onClick={() => window.history.back()}
-              >
-                <ArrowLeftCircle className="h-6 w-6" />
-              </Button>
               <div>
-                <h1 className="font-bold text-gray-900 text-[27px]">{project.nome}</h1>
+                <h1 className="font-extrabold text-[27px] bg-gradient-to-r from-blue-800 to-blue-300 bg-clip-text text-transparent">
+                  {project.nome}
+                </h1>
                 <p className="text-gray-600 text-[15px]">Cliente: {project.cliente}</p>
               </div>
             </div>
@@ -701,7 +695,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
                           <DialogHeader>
-                            <DialogTitle>Fotos Selecionadas</DialogTitle>
+                            <DialogTitle
+                              className="font-extrabold text-[27px] bg-gradient-to-r from-pink-600 via-pink-400 to-pink-300 bg-clip-text text-transparent"
+                            >
+                              Fotos Selecionadas
+                            </DialogTitle>
                             <DialogDescription>
                               Lista de arquivos selecionados neste projeto.
                             </DialogDescription>
@@ -815,7 +813,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   >
                     {selectedPhotos.has(photo.id) ? (
                       <>
-                        <Check className="mr-1 h-4 w-4" /> Selected
+                        <Check className="mr-1 h-4 w-4" /> Selecionado
                       </>
                     ) : (
                       "Selecionar"
@@ -907,16 +905,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Finalize Selection</DialogTitle>
+            <DialogTitle>Finalizar Seleção</DialogTitle>
             <DialogDescription>
-              Are you sure you want to finalize your photo selection?
-              After finalizing, you won't be able to change the selected photos.
+              Tem certeza que deseja finalizar sua seleção de fotos?
+              Após finalizar, você não poderá mais alterar as fotos selecionadas.
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4">
             <p className="font-medium">
-              You have selected {selectedPhotos.size} of {project.photos.length} available photos.
+              Você selecionou {selectedPhotos.size} de {project.photos.length} fotos disponíveis.
             </p>
           </div>
           
@@ -926,7 +924,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               onClick={() => setShowConfirmDialog(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button 
               onClick={finalizeSelection}
@@ -935,10 +933,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Finalizing...
+                  Finalizando...
                 </>
               ) : (
-                "Yes, finalize selection"
+                "Sim, finalizar seleção"
               )}
             </Button>
           </DialogFooter>
@@ -1029,7 +1027,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 >
                   {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
                     <>
-                      <Check className="mr-2 h-5 w-5" /> Selected
+                      <Check className="mr-2 h-5 w-5" /> Selecionado
                     </>
                   ) : (
                     "Selecionar"
