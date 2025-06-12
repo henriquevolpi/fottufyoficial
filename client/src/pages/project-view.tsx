@@ -677,6 +677,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Button 
                       size="sm"
                       onClick={() => setShowConfirmDialog(true)}
+                      className="bg-gradient-to-r from-pink-700 via-pink-500 to-fuchsia-400 text-white font-semibold border-none shadow hover:brightness-110 transition-colors"
                     >
                       Finalizar Seleção
                     </Button>
@@ -805,10 +806,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               </div>
               <CardContent className="p-3 space-y-3">
                 <div className="text-center">
-                  <Button 
+                  <Button
                     variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
                     size="sm"
-                    className="w-full"
+                    className={
+                      `w-full transition-colors` +
+                      (selectedPhotos.has(photo.id)
+                        ? " bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 text-white font-semibold border-none shadow"
+                        : "")
+                    }
                     disabled={isFinalized}
                   >
                     {selectedPhotos.has(photo.id) ? (
