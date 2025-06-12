@@ -874,7 +874,11 @@ function UploadModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-auto">
         <DialogHeader>
-          <DialogTitle>Criar Novo Projeto📸 </DialogTitle>
+          <DialogTitle>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400 font-bold text-2xl">
+              Criar Novo Projeto
+            </span>
+          </DialogTitle>
           <DialogDescription className="text-sm mt-1">
             
             <p className="bg-yellow-200 text-black font-semibold inline px- rounded-sm">
@@ -1193,8 +1197,8 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
       {/* Upload usage card */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center">
-            <CreditCard className="h-5 w-5 mr-2 text-purple-500" />
+          <CardTitle className="text-1xl flex items-center font-bold">
+            <CreditCard className="h-6 w-6 mr-3 text-purple-500" />
             Plano: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
           </CardTitle>
         </CardHeader>
@@ -1212,16 +1216,16 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               : `${planInfo.percentageUsed}% do limite de uploads utilizado`}
           </p>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="pl-4 pb-4 pt-4 bg-transparent flex items-center">
           <Button 
-            variant="outline" 
-            size="md" 
-            className="text-xs bg-cyan-500 text-white hover:bg-green-600 rounded-full px-4 py-2 font-medium transition-colors min-w-[88px]"
-            onClick={() => setShowDeleteConfirm(true)}
+            size="md"
+            className="text-base font-semibold px-5 py-2 rounded-full flex items-center
+              bg-gradient-to-r from-blue-800 via-blue-500 to-cyan-400
+              text-white shadow border-0 hover:brightness-110 transition-all duration-150"
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />
-            ✅Ver Planos de Assinatura
+            Ver Planos de Assinatura
           </Button>
         </CardFooter>
       </Card>
@@ -1598,11 +1602,23 @@ export default function Dashboard() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
-              <Button 
+              <Button
                 onClick={() => setUploadModalOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full sm:w-auto"
+                className={`
+                  w-full sm:w-auto
+                  flex items-center justify-center
+                  bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400
+                  text-white font-bold
+                  rounded-full shadow-md
+                  px-6 py-2
+                  transition-all duration-200
+                  hover:from-rose-700 hover:via-pink-600 hover:to-rose-500
+                  hover:scale-[1.04]
+                  focus:outline-none focus:ring-2 focus:ring-rose-400
+                  text-base
+                `}
               >
-                <PlusCircle className="h-4 w-4 mr-2" />
+                <PlusCircle className="h-5 w-5 mr-2" />
                 Novo Projeto
               </Button>
               
@@ -1636,14 +1652,16 @@ export default function Dashboard() {
         </div>
 
         {/* Aviso de novidades */}
-        <div className="mt-6 mb-4 px-4 py-3 bg-green-50 border-l-4 border-green-600 rounded-md shadow flex items-start gap-3">
-          <svg className="w-6 h-6 text-green-600 mt-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="mt-6 mb-4 px-5 py-4 bg-gray-50 rounded-xl shadow flex items-start gap-4">
+          <svg className="w-6 h-6 text-blue-500 mt-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
           </svg>
           <div>
-            <p className="font-semibold text-green-700 mb-1">Novidade na Fottufy!</p>
-            <p className="text-sm text-green-900">
-              Agora o cliente pode <span className="font-semibold">comentar em cada foto</span> do ensaio e deixar observações diretamente no projeto.
+            <p className="font-semibold mb-1 text-lg bg-gradient-to-r from-blue-900 via-blue-500 to-blue-400 bg-clip-text text-transparent">
+              Novidade na Fottufy!
+            </p>
+            <p className="text-base bg-gradient-to-r from-blue-700 via-blue-400 to-blue-800 bg-clip-text text-transparent">
+              Agora o cliente pode <span className="font-semibold">comentar em cada foto</span> do ensaio e deixar observações diretamente no projeto.<br />
               Experimente enviar um projeto novo e veja como funciona!
             </p>
           </div>
@@ -1656,7 +1674,9 @@ export default function Dashboard() {
         
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="text-xl font-bold text-gray-900">Meus projetos📸</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-900 via-blue-600 to-blue-300 bg-clip-text text-transparent">
+              Meus projetos
+            </h2>
             
             <div className="flex items-center w-full sm:w-auto gap-2">
               <div className="relative flex-1 sm:w-64">
@@ -1676,11 +1696,11 @@ export default function Dashboard() {
           </div>
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="mb-6 flex w-full overflow-x-auto scrollbar-none">
-              <TabsTrigger value="all" className="flex-shrink-0">Todos</TabsTrigger>
-              <TabsTrigger value="pending" className="flex-shrink-0">Pendentes</TabsTrigger>
-              <TabsTrigger value="reviewed" className="flex-shrink-0">Revisados</TabsTrigger>
-              <TabsTrigger value="completed" className="flex-shrink-0">Finalizados</TabsTrigger>
+            <TabsList className="mb-6 flex w-full scrollbar-none bg-transparent text-lg">
+                <TabsTrigger value="all" className="flex-shrink-0 text-lg">Todos</TabsTrigger>
+                <TabsTrigger value="pending" className="flex-shrink-0 text-lg">Pendentes</TabsTrigger>
+                <TabsTrigger value="reviewed" className="flex-shrink-0 text-lg">Revisados</TabsTrigger>
+                <TabsTrigger value="completed" className="flex-shrink-0 text-lg">Finalizados</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
