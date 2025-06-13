@@ -28,7 +28,8 @@ import {
   ShieldOff,
   MessageSquare,
   MessageCircle,
-  Eye
+  Eye,
+  Check
 } from "lucide-react";
 import { 
   Tabs, 
@@ -454,12 +455,14 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-blue-600 flex-grow sm:flex-grow-0"
+            className={`
+              text-xs text-white font-bold shadow-sm flex-grow sm:flex-grow-0 rounded-md transition-colors
+              bg-gradient-to-r from-[#2563eb] to-[#93c5fd]
+              hover:from-[#3b82f6] hover:to-[#60a5fa]
+            `}
             onClick={(e) => {
               e.stopPropagation();
-              // Copy link for the client
               const clientUrl = `${window.location.origin}/project-view/${project.id}`;
-              console.log("Copying client link:", clientUrl);
               navigator.clipboard.writeText(clientUrl);
               toast({
                 title: "Link copiado",
@@ -468,7 +471,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             }}
           >
             Link do Cliente
-            <LinkIcon className="h-3 w-3 ml-1" />
+            <LinkIcon className="h-3 w-3 ml-1 text-white" />
           </Button>
           
 
@@ -1219,9 +1222,10 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         <CardFooter className="pl-4 pb-4 pt-4 bg-transparent flex items-center">
           <Button 
             size="md"
-            className="text-base font-semibold px-5 py-2 rounded-full flex items-center
-              bg-gradient-to-r from-blue-800 via-blue-500 to-cyan-400
-              text-white shadow border-0 hover:brightness-110 transition-all duration-150"
+            className="text-base font-normal px-7 py-2 rounded-full flex items-center
+              bg-white border-2 border-blue-600 text-blue-600
+              hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700
+              shadow-none transition-all duration-150"
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />
@@ -1702,6 +1706,17 @@ export default function Dashboard() {
                 <TabsTrigger value="reviewed" className="flex-shrink-0 text-lg">Revisados</TabsTrigger>
                 <TabsTrigger value="completed" className="flex-shrink-0 text-lg">Finalizados</TabsTrigger>
             </TabsList>
+            
+            {/* Duplicate Novo Projeto button centered below tabs */}
+            <div className="flex justify-center mb-6">
+              <Button 
+                onClick={() => setUploadModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Novo Projeto
+              </Button>
+            </div>
             
             <TabsContent value="all" className="mt-0">
               {isLoading ? (

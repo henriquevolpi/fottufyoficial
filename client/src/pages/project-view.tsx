@@ -610,7 +610,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center">
               <div>
-                <h1 className="font-extrabold text-[27px] bg-gradient-to-r from-blue-800 to-blue-300 bg-clip-text text-transparent">
+                <h1 className="font-extrabold text-[39px] bg-gradient-to-r from-blue-800 to-blue-300 bg-clip-text text-transparent">
                   {project.nome}
                 </h1>
                 <p className="text-gray-600 text-[15px]">Cliente: {project.cliente}</p>

@@ -155,7 +155,9 @@ export default function ProjectView() {
         </div>
         
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+          <h1
+            className="text-4xl font-bold bg-gradient-to-r from-[#173370] via-[#2563eb] via-60% to-[#a6cbfa] bg-clip-text text-transparent"
+          >
             {project.name}
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
