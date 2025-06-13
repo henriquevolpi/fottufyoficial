@@ -519,8 +519,12 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
       <Dialog open={showSelectionsModal} onOpenChange={setShowSelectionsModal}>
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg">Fotos Selecionadas - {modalProject?.name || modalProject?.nome || 'Sem título'}</DialogTitle>
-            <DialogDescription className="text-sm mt-1">
+              <DialogTitle
+                className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent"
+              >
+                Fotos Selecionadas - {modalProject?.name || modalProject?.nome || 'Sem título'}
+              </DialogTitle>
+              <DialogDescription className="text-base mt-1">
               O cliente selecionou {modalProject?.selectedPhotos?.length || modalProject?.selecionadas || 0} de {modalProject?.photos?.length || modalProject?.fotos || 0} fotos.
             </DialogDescription>
           </DialogHeader>
@@ -1709,11 +1713,23 @@ export default function Dashboard() {
             
             {/* Duplicate Novo Projeto button centered below tabs */}
             <div className="flex justify-center mb-6">
-              <Button 
+              <Button
                 onClick={() => setUploadModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+                className={`
+                  w-full sm:w-auto
+                  flex items-center justify-center
+                  bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400
+                  text-white font-bold
+                  rounded-full shadow-md
+                  px-6 py-2
+                  transition-all duration-200
+                  hover:from-rose-700 hover:via-pink-600 hover:to-rose-500
+                  hover:scale-[1.04]
+                  focus:outline-none focus:ring-2 focus:ring-rose-400
+                  text-base
+                `}
               >
-                <PlusCircle className="h-4 w-4 mr-2" />
+                <PlusCircle className="h-5 w-5 mr-2" />
                 Novo Projeto
               </Button>
             </div>
@@ -1750,10 +1766,7 @@ export default function Dashboard() {
                       : "Start by creating your first photo project"
                     }
                   </p>
-                  <Button onClick={() => setUploadModalOpen(true)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Criar novo projeto
-                  </Button>
+
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1862,11 +1875,15 @@ export default function Dashboard() {
       />
 
       {/* Comments Modal */}
-      <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Comentários do Projeto</DialogTitle>
-            <DialogDescription>
+              <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                  <DialogHeader>
+                    <DialogTitle
+                      className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent"
+                    >
+                      Comentários do Projeto
+                    </DialogTitle>
+                    <DialogDescription className="text-base mt-1">
               Visualize e gerencie comentários dos clientes nas fotos
             </DialogDescription>
           </DialogHeader>
