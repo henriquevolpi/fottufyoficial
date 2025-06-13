@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import imageCompression from 'browser-image-compression';
 
 // Maximum image dimensions and size
-const MAX_WIDTH_HEIGHT = 2048;
+const MAX_WIDTH_HEIGHT = 970;
 const MAX_SIZE_MB = 5;
 
 /**
@@ -14,6 +14,7 @@ export async function compressImage(file: File): Promise<File> {
       maxWidthOrHeight: MAX_WIDTH_HEIGHT,
       maxSizeMB: MAX_SIZE_MB,
       useWebWorker: true,
+      quality: 0.9,
     };
 
     return await imageCompression(file, options);

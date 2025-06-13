@@ -24,9 +24,10 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
   // Função para processar um arquivo e comprimí-lo
   async function processFile(file: File) {
     const options = {
-      maxWidthOrHeight: 1080, // ⬅️ Aumentado o limite de redimensionamento
+      maxWidthOrHeight: 970, // Largura máxima padronizada
       maxSizeMB: 5, // ⬅️ Aumentado o limite de tamanho após compressão para 5MB
       useWebWorker: true,
+      quality: 0.9, // Qualidade padronizada
     }
     return await imageCompression(file, options)
   }

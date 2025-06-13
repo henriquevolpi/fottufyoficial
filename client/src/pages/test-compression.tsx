@@ -34,8 +34,8 @@ export default function TestCompression() {
       const compressedResults = await compressMultipleImages(
         selectedFiles,
         {
-          maxWidthOrHeight: 900,
-          quality: 0.8,
+          maxWidthOrHeight: 970,
+          quality: 0.9,
           useWebWorker: true,
         },
         (processed, total) => {

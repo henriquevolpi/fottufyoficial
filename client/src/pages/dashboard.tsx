@@ -705,8 +705,8 @@ function UploadModal({
       const compressedFiles = await compressMultipleImages(
         selectedFiles,
         {
-          maxWidthOrHeight: 900, // Largura máxima 900px (padrão do sistema)
-          quality: 0.8, // Qualidade 80%
+          maxWidthOrHeight: 970, // Largura máxima padronizada
+          quality: 0.9, // Qualidade padronizada
           useWebWorker: true,
         },
         (processed, total) => {

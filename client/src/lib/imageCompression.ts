@@ -10,11 +10,11 @@ import imageCompression from 'browser-image-compression';
  * Baseadas no padrão atual do sistema (920px -> ajustado para 900px, qualidade 80%)
  */
 const DEFAULT_COMPRESSION_OPTIONS = {
-  maxWidthOrHeight: 900, // Largura máxima em pixels
+  maxWidthOrHeight: 970, // Largura máxima em pixels
   useWebWorker: true, // Usar web worker para não bloquear a UI
-  quality: 0.8, // Qualidade 80% (equivalente ao backend)
+  quality: 0.9, // Qualidade 90%
   fileType: undefined as string | undefined, // Manter o tipo original do arquivo
-  initialQuality: 0.8, // Qualidade inicial
+  initialQuality: 0.9, // Qualidade inicial
 };
 
 /**
