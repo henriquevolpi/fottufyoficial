@@ -2,17 +2,13 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// Configuração exclusiva para Neon usando DATABASE_URL
-// Isso garante que não usaremos o PostgreSQL do Replit
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. This project uses Neon database exclusively."
-  );
-}
+// Configuração exclusiva para seu banco Neon correto
+// Forçando uso do banco ep-small-resonance para evitar conflitos
+const FORCED_DATABASE_URL = "postgresql://neondb_owner:npg_wqC0LP7yRHlT@ep-small-resonance-a45diqst-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
 // Configuração otimizada para Neon
 const poolConfig: PoolConfig = {
-  connectionString: process.env.DATABASE_URL,
+  connectionString: FORCED_DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
