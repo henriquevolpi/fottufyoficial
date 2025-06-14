@@ -286,7 +286,11 @@ export default function ProjectView() {
       <Dialog open={showCommentsModal} onOpenChange={setShowCommentsModal}>
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg">Comentários do Projeto - {project?.name}</DialogTitle>
+            <DialogTitle
+                className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent"
+              >
+              Comentários do Projeto - {project?.name}
+            </DialogTitle>
             <DialogDescription className="text-sm mt-1">
               Comentários dos clientes organizados por foto com miniaturas para referência visual.
             </DialogDescription>
