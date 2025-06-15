@@ -5,7 +5,7 @@ import {
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
-import { enhanceUserWithComputedProps, calculateUploadLimit } from "./utils/userUtils";
+import { enhanceUserWithComputedProps } from "./utils/userUtils";
 import { nanoid } from "nanoid";
 import { db } from "./db";
 import { eq, and, desc, asc, count, inArray, sql, lt, ne, gte, isNull, or } from "drizzle-orm";
@@ -648,7 +648,8 @@ export class MemStorage implements IStorage {
     }
     
     // Calculate dynamic upload limit based on user's plan
-    const uploadLimit = calculateUploadLimit(user);
+    const enhancedUser = enhanceUserWithComputedProps(user);
+    const uploadLimit = enhancedUser.uploadLimit;
     
     // If user has unlimited plan (uploadLimit < 0), always return true
     if (uploadLimit < 0) {

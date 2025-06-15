@@ -9,6 +9,7 @@ import { User as SelectUser, users } from "@shared/schema";
 import { sendEmail } from "./utils/sendEmail";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { enhanceUserWithComputedProps } from "./utils/userUtils";
 
 declare global {
   namespace Express {
@@ -398,12 +399,12 @@ export function setupAuth(app: Express) {
       req.login(user, async (err) => {
         if (err) return next(err);
         
-        // Atualizar o campo lastLoginAt
+        // Atualizar timestamp de login (temporariamente desabilitado - campo não existe no schema migrado)
         try {
-          await storage.updateUser(user.id, { lastLoginAt: new Date() });
+          // await storage.updateUser(user.id, { lastLoginAt: new Date() });
+          console.log(`[LOGIN] User ${user.id} logged in successfully`);
         } catch (updateError) {
-          // Log o erro mas continua o login (não é crucial)
-          console.error("Error updating lastLoginAt:", updateError);
+          console.error("Error updating login timestamp:", updateError);
         }
         
         // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
@@ -458,8 +459,19 @@ export function setupAuth(app: Express) {
         console.log(`[USER] User authenticated via session`);
       }
       
-      // Return user data without password - enviando apenas os dados necessários
-      const { password, ...userData } = req.user;
+      // Apply enhanceUserWithComputedProps to get real plan data and limits
+      const enhancedUser = enhanceUserWithComputedProps(req.user);
+      const { password, ...userData } = enhancedUser;
+      
+      console.log('[USER-API] Returning enhanced user data:', {
+        id: userData.id,
+        name: userData.name,
+        planType: userData.planType,
+        uploadLimit: userData.uploadLimit,
+        status: userData.status,
+        maxProjects: userData.maxProjects
+      });
+      
       return res.json(userData);
     }
     
@@ -490,11 +502,11 @@ export function setupAuth(app: Express) {
                 console.log(`[USER] Loaded user from cookie`);
               }
               
-              // Atualizar o campo lastLoginAt
-              storage.updateUser(user.id, { lastLoginAt: new Date() })
+              // Atualizar timestamp de login (temporariamente desabilitado - campo não existe no schema migrado)
+              Promise.resolve(user)
                 .then(updatedUser => {
                   if (process.env.DEBUG_AUTH === 'true') {
-                    console.log(`[USER] Last login timestamp updated`);
+                    console.log(`[USER] User data loaded from cookie`);
                   }
                   
                   // Se o updateUser retornar um usuário atualizado, usamos ele, caso contrário mantém o original
