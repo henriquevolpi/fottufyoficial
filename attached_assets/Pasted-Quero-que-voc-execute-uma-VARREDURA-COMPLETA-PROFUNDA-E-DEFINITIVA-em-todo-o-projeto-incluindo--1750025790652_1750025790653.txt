@@ -1,0 +1,51 @@
+Quero que você execute uma VARREDURA COMPLETA, PROFUNDA E DEFINITIVA em todo o projeto, incluindo:
+
+✅ Banco de dados:  
+- Verificar tabela por tabela, coluna por coluna, registro por registro, comparação completa entre Neon e Render.  
+- Corrigir todos os dados, relações, foreign keys, vínculos e integridade.  
+- Garantir que usuários, projetos, fotos, comentários, sessões, senhas, planos e uploads estejam 100% funcionando.  
+
+✅ Dados dos planos:  
+- Todos os dados relacionados aos planos dos usuários precisam estar corretos.  
+- Isso inclui: `subscription_plan`, `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_start_date`, `subscription_end_date`, `max_projects`, `max_photos_per_project`, `used_uploads` e qualquer outra variável ou coluna que controle os planos e limitações.  
+
+✅ Lógicas de negócio:  
+- Verificar se todas as regras estão funcionando:  
+   - Limitação de uploads por plano.  
+   - Limite de projetos.  
+   - Cálculo correto de uploads utilizados (`used_uploads`).  
+   - Exibição correta de planos no painel admin e dashboard do usuário.  
+   - Controle de vencimento de planos (`subscription_end_date`).  
+
+✅ Integrações:  
+- Stripe (pagamentos, planos, subscriptions, webhooks).  
+- Upload de fotos (Cloudflare R2 ou qualquer outro sistema ativo).  
+- Reset de senha.  
+- Webhooks de automação (como Resend, n8n, etc.).  
+
+✅ Backend e API:  
+- Verificar se todas as rotas estão funcionando.  
+- Se a autenticação funciona corretamente.  
+- Se as regras de acesso estão corretas (o que cada plano pode ou não fazer).  
+- Se os cálculos de estatísticas, contagem de uploads e limites estão certos.  
+
+✅ Frontend:  
+- Verificar se tudo exibe corretamente.  
+- Planos separados no painel admin como antes (Free, Basic, Basic V2, Premium, etc.).  
+- Fotos dos projetos carregando corretamente.  
+- Quantidade de uploads correta na barra de progresso.  
+- Comentários das fotos aparecendo normalmente.  
+
+⚠️ **EXTREMAMENTE IMPORTANTE:**  
+- Isso não é uma simples correção de bug.  
+- Isso é uma auditoria completa e profunda de todo o projeto, desde banco de dados até integrações e lógica de negócio.  
+- Tudo precisa ser adaptado corretamente para o Render, mantendo 100% a funcionalidade que existia no Neon, sem perda de dados, sem quebra de funcionalidades e sem alterar nenhuma lógica que já existia.  
+
+✅ Entregue um relatório final detalhado contendo:  
+- Dados exatos de quantos usuários existem, separados por plano.  
+- Quantidade de projetos, fotos, comentários, uploads realizados.  
+- Verificação completa das integrações (Stripe, R2, reset de senha, webhooks).  
+- Quais dados foram recuperados, corrigidos ou sincronizados.  
+- Confirmação de que todas as funcionalidades estão 100% operacionais e consistentes.
+
+⚠️ **Não aceito perda de dados, quebra de lógica ou falhas nas integrações. Esse processo precisa ser executado com o mais alto nível de cuidado, precisão e responsabilidade.**
