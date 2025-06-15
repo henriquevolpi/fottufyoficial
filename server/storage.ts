@@ -648,8 +648,18 @@ export class MemStorage implements IStorage {
     // Aplicar enhancement para obter limites corretos
     const enhancedUser = enhanceUserWithComputedProps(user);
     
+    console.log(`[UPLOAD-LIMIT] User ${userId} (${user.email}): plan=${user.plan}, role=${user.role}, isActive=${user.isActive}`);
+    console.log(`[UPLOAD-LIMIT] Enhanced user: planType=${enhancedUser.planType}, uploadLimit=${enhancedUser.uploadLimit}`);
+    
+    // Admin users have unlimited uploads
+    if (user.role === 'admin') {
+      console.log(`[UPLOAD-LIMIT] Admin user - allowing upload`);
+      return true;
+    }
+    
     // Check if subscription is active
     if (user.isActive !== true) {
+      console.log(`[UPLOAD-LIMIT] User not active - denying upload`);
       return false;
     }
     
@@ -658,6 +668,7 @@ export class MemStorage implements IStorage {
     
     // If user has unlimited plan (uploadLimit < 0), always return true
     if (uploadLimit < 0) {
+      console.log(`[UPLOAD-LIMIT] Unlimited plan - allowing upload`);
       return true;
     }
     
