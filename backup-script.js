@@ -132,10 +132,6 @@ function generateInsertSQL(tableName, data, structure) {
   sql += `-- Total de registros: ${data.length}\n`;
   sql += `-- Data do backup: ${new Date().toISOString()}\n\n`;
   
-  // Desabilitar triggers e constraints temporariamente
-  sql += `-- Desabilitar triggers\n`;
-  sql += `ALTER TABLE "${tableName}" DISABLE TRIGGER ALL;\n\n`;
-  
   // Gerar INSERTs em lotes de 100 registros
   const batchSize = 100;
   for (let i = 0; i < data.length; i += batchSize) {
@@ -161,10 +157,6 @@ function generateInsertSQL(tableName, data, structure) {
     sql += values.join(',\n');
     sql += ';\n\n';
   }
-  
-  // Reabilitar triggers
-  sql += `-- Reabilitar triggers\n`;
-  sql += `ALTER TABLE "${tableName}" ENABLE TRIGGER ALL;\n\n`;
   
   return sql;
 }

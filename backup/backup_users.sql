@@ -1,9 +1,6 @@
 -- Backup da tabela: users
 -- Total de registros: 199
--- Data do backup: 2025-06-15T20:45:55.009Z
-
--- Desabilitar triggers
-ALTER TABLE "users" DISABLE TRIGGER ALL;
+-- Data do backup: 2025-06-15T20:54:53.246Z
 
 INSERT INTO "users" ("id", "name", "email", "password", "role", "status", "created_at", "plan_type", "upload_limit", "used_uploads", "subscription_start_date", "subscription_end_date", "subscription_status", "stripe_customer_id", "stripe_subscription_id", "subscription_id", "last_event", "phone", "last_login_at", "pending_downgrade_date", "pending_downgrade_reason", "original_plan_before_downgrade", "manual_activation_date", "manual_activation_by", "is_manual_activation") VALUES
 (189, 'VINICIUS BAHIA FERNANDES AMORIM', 'viniciusbahiafa@gmail.com', '$2b$10$FpPM4Bu5kieiiCSLQnWJYO/QqepySyCZscjFLWPsaOxRPm9rJ8ra6', 'photographer', 'active', '2025-06-01T20:49:34.749Z', 'free', 10, 0, NULL, NULL, 'inactive', NULL, NULL, NULL, NULL, '+5563984790957', '2025-06-01T20:49:36.452Z', NULL, NULL, NULL, NULL, NULL, false),
@@ -201,13 +198,10 @@ INSERT INTO "users" ("id", "name", "email", "password", "role", "status", "creat
 (175, 'JOÃO TINOCO', 'joaotinoco01@gmail.com', '$2b$10$t/F8HesPrOkwzYRyKdX/we0WN.qDyL0F0nGK.wv1QkRziTDShdSo2', 'photographer', 'active', '2025-05-24T01:19:13.540Z', 'basic_v2', 6000, 0, '2025-05-29T15:09:54.283Z', '2025-06-28T15:09:54.283Z', 'active', NULL, NULL, 'HP2151708014', NULL, '+5521967749883', '2025-05-24T20:05:03.015Z', NULL, NULL, NULL, NULL, NULL, false),
 (5, 'tes', 'nata@hotmail.com', '$2b$10$Q0YwwkdUdjrLyxGVdAuM0eSROpWam7yHsFDAnc0I6e4YdnWmrofn2', 'photographer', 'active', '2025-04-24T00:08:24.810Z', 'professional', 100000, 104, '2025-06-07T03:47:41.932Z', '2025-07-07T03:47:41.932Z', 'active', NULL, NULL, NULL, NULL, '00000000000', '2025-06-14T03:20:59.829Z', NULL, NULL, NULL, NULL, NULL, false),
 (222, 'JORGE Luiz de Souza ', 'seubilly2@gmail.com', '$2b$10$.bqmRYzxeGMez7wYcEFPNuxyebhG8SWTn3SCjz8M.R3A0H1bLzks2', 'photographer', 'active', '2025-06-14T18:52:31.287Z', 'standard', 50000, 0, '2025-06-14T18:52:31.344Z', '2025-07-14T18:52:31.344Z', 'active', NULL, NULL, 'HP0914351371', NULL, '', '2025-06-14T18:56:10.082Z', NULL, NULL, NULL, NULL, NULL, false),
+(46, 'Isabel Silva ', 'belnayss251@gmail.com', '$2b$10$xm8IzJGNZx3GzkHH3JThBOxZo1esavUeHMqWOLYOrsdJLQgCUCGyi', 'photographer', 'active', '2025-04-30T23:41:26.781Z', 'basic_v2', 6000, 1477, '2025-05-05T01:54:23.493Z', '2025-06-04T01:54:23.493Z', 'active', NULL, NULL, NULL, NULL, '+5583988154112', '2025-06-15T20:48:09.029Z', NULL, NULL, NULL, NULL, NULL, false),
 (1, 'Admin', 'admin@studio.com', 'admin123', 'admin', 'active', '2025-04-23T20:50:38.475Z', 'professional', 0, 0, NULL, NULL, 'inactive', NULL, NULL, NULL, NULL, '00000000000', '2025-06-14T04:24:15.563Z', NULL, NULL, NULL, NULL, NULL, false),
 (224, 'GILIANE NUNES SILVA', 'ggiliane7@gmail.com', '$2b$10$fNzW.tfhIOHjNT89.hVBXOj1E3oc2rzbFerl5yCjQrS0Q49tSibhK', 'photographer', 'active', '2025-06-15T14:58:49.719Z', 'free', 10, 0, NULL, NULL, 'inactive', NULL, NULL, NULL, NULL, '+5599988577792', NULL, NULL, NULL, NULL, NULL, NULL, false),
 (130, 'ALINE DA SILVA RIBEIRO MATA', 'alineribeiromata@gmail.com', '$2b$10$/zAQ/TOYxwrmkrZ6eqBQEudNCrNOPHWGc9aXfGBF4gN1xaVfS0DEO', 'photographer', 'active', '2025-05-09T22:54:41.978Z', 'free', 10, 64, '2025-06-13T12:01:33.562Z', '2025-07-13T12:01:33.562Z', 'active', NULL, NULL, NULL, NULL, '+5522999459914', '2025-06-15T15:12:50.936Z', NULL, NULL, NULL, NULL, NULL, false),
 (225, 'BERDEAN CANTANHEDE ARAUJO', 'berdeanaraujo1999@gmail.com', '$2b$10$UW8pzTvZcvCf7c/hZChBzOFnfXDJysJ6cymid9Z3Jvu/UIwhGzQ1u', 'photographer', 'active', '2025-06-15T19:24:40.285Z', 'free', 10, 0, NULL, NULL, 'inactive', NULL, NULL, NULL, NULL, '+5598985250020', NULL, NULL, NULL, NULL, NULL, NULL, false),
-(223, 'Aston', 'astonmelo14@icloud.com', '$2b$10$cf58JO97M2lvakpRUsTQ8u.kloCkNuPBfy6I7a2VkloESMt.r/dc6', 'photographer', 'active', '2025-06-15T02:43:42.186Z', 'basic_v2', 6000, 3, '2025-06-15T02:46:47.986Z', '2025-07-15T02:46:47.986Z', 'active', NULL, NULL, 'HP3829887114', NULL, '+5597984249185', NULL, NULL, NULL, NULL, NULL, NULL, false),
-(46, 'Isabel Silva ', 'belnayss251@gmail.com', '$2b$10$xm8IzJGNZx3GzkHH3JThBOxZo1esavUeHMqWOLYOrsdJLQgCUCGyi', 'photographer', 'active', '2025-04-30T23:41:26.781Z', 'basic_v2', 6000, 1477, '2025-05-05T01:54:23.493Z', '2025-06-04T01:54:23.493Z', 'active', NULL, NULL, NULL, NULL, '+5583988154112', '2025-06-15T20:43:16.298Z', NULL, NULL, NULL, NULL, NULL, false);
-
--- Reabilitar triggers
-ALTER TABLE "users" ENABLE TRIGGER ALL;
+(223, 'Aston', 'astonmelo14@icloud.com', '$2b$10$cf58JO97M2lvakpRUsTQ8u.kloCkNuPBfy6I7a2VkloESMt.r/dc6', 'photographer', 'active', '2025-06-15T02:43:42.186Z', 'basic_v2', 6000, 3, '2025-06-15T02:46:47.986Z', '2025-07-15T02:46:47.986Z', 'active', NULL, NULL, 'HP3829887114', NULL, '+5597984249185', NULL, NULL, NULL, NULL, NULL, NULL, false);
 

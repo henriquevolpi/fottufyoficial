@@ -1,9 +1,6 @@
 -- Backup da tabela: photo_comments
 -- Total de registros: 22
--- Data do backup: 2025-06-15T20:45:53.417Z
-
--- Desabilitar triggers
-ALTER TABLE "photo_comments" DISABLE TRIGGER ALL;
+-- Data do backup: 2025-06-15T20:54:51.290Z
 
 INSERT INTO "photo_comments" ("id", "photo_id", "client_name", "comment", "is_viewed", "created_at") VALUES
 ('211ccb32-04cb-4b83-9835-a4a9b94ab464', 'j-kpQQpqG4RKHuUn5bMML', 'Maria Santos', 'Foto maravilhosa! A iluminação ficou perfeita.', false, '2025-06-08T02:19:14.156Z'),
@@ -28,7 +25,4 @@ INSERT INTO "photo_comments" ("id", "photo_id", "client_name", "comment", "is_vi
 ('864d60c3-1889-4524-8b5d-f0b580f36673', 'bZ4bh2KesFhfeH7tOErwp', 'Cliente', 'teste', false, '2025-06-12T15:33:49.790Z'),
 ('fb283aac-ddf2-4baa-8d86-58f55062cee7', 'Mt4SFihbx0YM2zUt_8dep', 'Cliente', '1234', false, '2025-06-12T15:34:34.394Z'),
 ('b9a3b9ba-8261-4905-828a-c2a1b84a5495', 'kXgOmcSJ5tB607DwdN4pJ', 'Cliente', 'TESTENEON', false, '2025-06-14T04:22:57.177Z');
-
--- Reabilitar triggers
-ALTER TABLE "photo_comments" ENABLE TRIGGER ALL;
 

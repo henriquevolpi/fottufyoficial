@@ -1,9 +1,6 @@
 -- Backup da tabela: password_reset_tokens
 -- Total de registros: 27
--- Data do backup: 2025-06-15T20:45:53.325Z
-
--- Desabilitar triggers
-ALTER TABLE "password_reset_tokens" DISABLE TRIGGER ALL;
+-- Data do backup: 2025-06-15T20:54:51.190Z
 
 INSERT INTO "password_reset_tokens" ("id", "user_id", "token", "created_at", "expires_at", "used") VALUES
 (1, 1, '53cba05b-66a6-4be4-b0d1-8e09ba64a863', '2025-05-09T22:10:03.481Z', '2025-05-09T23:10:03.454Z', true),
@@ -33,7 +30,4 @@ INSERT INTO "password_reset_tokens" ("id", "user_id", "token", "created_at", "ex
 (25, 117, '56121543-01fb-478f-a8eb-d078829a7d86', '2025-05-10T01:17:56.508Z', '2025-05-10T02:17:56.473Z', false),
 (26, 117, '83c0be96-e2c5-4148-931f-66649719ee14', '2025-05-10T01:19:20.825Z', '2025-05-10T02:19:20.789Z', false),
 (27, 117, 'd7767514-21a8-4a6d-893d-e6ca63765b44', '2025-05-10T01:28:05.278Z', '2025-05-10T02:28:05.244Z', false);
-
--- Reabilitar triggers
-ALTER TABLE "password_reset_tokens" ENABLE TRIGGER ALL;
 
