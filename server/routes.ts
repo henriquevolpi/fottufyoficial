@@ -325,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar se o usuário possui limite disponível
       const uploadCount = req.files.length;
-      const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
+      const canUpload = await checkUserUploadLimit(req.user, uploadCount, storage);
       
       if (!canUpload) {
         return res.status(403).json({ 
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar se o usuário possui limite disponível
       const uploadCount = req.files.length;
-      const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
+      const canUpload = await checkUserUploadLimit(req.user, uploadCount, storage);
       
       if (!canUpload) {
         return res.status(403).json({ 
@@ -1704,11 +1704,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Verificar o limite de uploads do usuário (se não for admin)
+      // Verificar o limite de uploads do usuário 
       const photoCount = processedPhotos.length;
       
-      if (req.user && req.user.role !== "admin") {
-        const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
+      if (req.user) {
+        const hasUploadLimit = await checkUserUploadLimit(req.user, photoCount, storage);
         
         if (!hasUploadLimit) {
           return res.status(403).json({ 
@@ -2040,9 +2040,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No photos provided" });
       }
       
-      // Verificar o limite de upload do usuário (se não for admin)
-      if (req.user && req.user.role !== "admin") {
-        const canUpload = await storage.checkUploadLimit(req.user.id, photoCount);
+      // Verificar o limite de upload do usuário
+      if (req.user) {
+        const canUpload = await checkUserUploadLimit(req.user, photoCount, storage);
         if (!canUpload) {
           return res.status(403).json({ 
             message: "Upload limit exceeded", 
@@ -2051,8 +2051,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Atualizar o uso de upload
-        await storage.updateUploadUsage(req.user.id, photoCount);
+        // Atualizar o uso de upload (se não for admin)
+        if (req.user.role !== "admin") {
+          await storage.updateUploadUsage(req.user.id, photoCount);
+        }
       }
       
       // Atualizar o projeto com as novas fotos
