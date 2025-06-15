@@ -1,0 +1,80 @@
+{
+  "tableName": "photos",
+  "timestamp": "2025-06-15T20:45:53.487Z",
+  "recordCount": 0,
+  "structure": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "project_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "url",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "selected",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "original_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "filename",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "photos_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id"
+      }
+    ]
+  },
+  "data": []
+}

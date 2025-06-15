@@ -1,0 +1,80 @@
+{
+  "tableName": "new_projects",
+  "timestamp": "2025-06-15T20:45:53.233Z",
+  "recordCount": 1,
+  "structure": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      },
+      {
+        "column_name": "show_watermark",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "true",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "new_projects_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id"
+      }
+    ]
+  },
+  "data": [
+    {
+      "id": "28b099a2-1c9f-4ac7-baec-aad330ffbfde",
+      "user_id": 1,
+      "title": "Projeto de Teste",
+      "description": "Descrição do projeto",
+      "created_at": "2025-04-23T23:48:16.849Z",
+      "show_watermark": true
+    }
+  ]
+}
