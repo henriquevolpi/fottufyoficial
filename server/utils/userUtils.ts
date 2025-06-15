@@ -30,13 +30,34 @@ export function getPlanType(user: Partial<User>): string {
 
 /**
  * Enhance user object with computed properties
+ * Maps PostgreSQL column names to expected frontend format
  */
 export function enhanceUserWithComputedProps(user: any): User {
-  return {
+  // Map PostgreSQL column names to camelCase
+  const mappedUser = {
     ...user,
-    uploadLimit: calculateUploadLimit(user),
-    planType: getPlanType(user),
-    status: user.isActive ? 'active' : 'inactive',
-    subscription_id: user.stripeSubscriptionId || null,
+    // Map snake_case to camelCase for compatibility
+    isActive: user.is_active ?? user.isActive,
+    maxProjects: user.max_projects ?? user.maxProjects,
+    maxPhotosPerProject: user.max_photos_per_project ?? user.maxPhotosPerProject,
+    usedUploads: user.used_uploads ?? user.usedUploads,
+    subscriptionPlan: user.subscription_plan ?? user.subscriptionPlan,
+    subscriptionStatus: user.subscription_status ?? user.subscriptionStatus,
+    subscriptionStartDate: user.subscription_start_date ?? user.subscriptionStartDate,
+    subscriptionEndDate: user.subscription_end_date ?? user.subscriptionEndDate,
+    stripeCustomerId: user.stripe_customer_id ?? user.stripeCustomerId,
+    stripeSubscriptionId: user.stripe_subscription_id ?? user.stripeSubscriptionId,
+    createdAt: user.created_at ?? user.createdAt,
+    updatedAt: user.updated_at ?? user.updatedAt,
+    planExpiresAt: user.plan_expires_at ?? user.planExpiresAt,
+    lastLoginAt: user.last_login_at ?? user.lastLoginAt,
+  };
+
+  return {
+    ...mappedUser,
+    uploadLimit: calculateUploadLimit(mappedUser),
+    planType: getPlanType(mappedUser),
+    status: mappedUser.isActive ? 'active' : 'inactive',
+    subscription_id: mappedUser.stripeSubscriptionId || null,
   };
 }

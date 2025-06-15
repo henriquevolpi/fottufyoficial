@@ -864,7 +864,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
       
+      console.log('[ADMIN-API] Fetching users for admin panel...');
       let users = await storage.getUsers();
+      console.log(`[ADMIN-API] Found ${users.length} users from database`);
+      
+      // Log sample user for debugging
+      if (users.length > 0) {
+        const sampleUser = users[0];
+        console.log('[ADMIN-API] Sample user data:', {
+          id: sampleUser.id,
+          name: sampleUser.name,
+          email: sampleUser.email,
+          planType: sampleUser.planType,
+          uploadLimit: sampleUser.uploadLimit,
+          status: sampleUser.status,
+          subscriptionStatus: sampleUser.subscriptionStatus,
+          maxProjects: sampleUser.maxProjects
+        });
+      }
       
       // Apply filters if provided
       if (planType) {
@@ -898,6 +915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: undefined,
       }));
       
+      console.log(`[ADMIN-API] Returning ${sanitizedUsers.length} users after filtering`);
       res.json(sanitizedUsers);
     } catch (error) {
       console.error("Error retrieving users:", error);
