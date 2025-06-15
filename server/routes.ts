@@ -32,6 +32,17 @@ import { eq, and, or, not, desc, count } from "drizzle-orm";
 import { sendEmail } from "./utils/sendEmail";
 import { verifyPasswordResetToken, resetPasswordWithToken, generatePasswordResetToken, sendPasswordResetEmail } from "./utils/passwordReset";
 import { enhanceUserWithComputedProps } from "./utils/userUtils";
+
+// Helper function to check upload limits with admin bypass
+async function checkUserUploadLimit(user: any, photoCount: number, storage: any): Promise<boolean> {
+  // Admin users have unlimited uploads
+  if (user.role === "admin") {
+    return true;
+  }
+  
+  // Check regular user limits
+  return await storage.checkUploadLimit(user.id, photoCount);
+}
 // Use Cloudflare R2 for storage
 import { 
   BUCKET_NAME as R2_BUCKET_NAME, 
@@ -1693,10 +1704,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Verificar o limite de uploads do usuário
+      // Verificar o limite de uploads do usuário (se não for admin)
       const photoCount = processedPhotos.length;
       
-      if (req.user) {
+      if (req.user && req.user.role !== "admin") {
         const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
         
         if (!hasUploadLimit) {
