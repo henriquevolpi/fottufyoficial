@@ -152,22 +152,17 @@ setupAuth(app);
 app.use((req, res, next) => {
   // Log apenas informações essenciais, apenas para rotas selecionadas que realmente precisam de debug
   // Reduz a quantidade de strings em memória e objetos temporários
-  if (req.path.startsWith('/api/') && (
-      req.path.includes('/auth') || 
-      req.path.includes('/login') || 
-      req.path.includes('/logout') ||
-      process.env.DEBUG_REQUESTS === 'true'
-    )) {
-    console.log(`[DEBUG-REQ] ${req.method} ${req.path} | Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'} | User: ${req.user ? req.user.id : 'none'}`);
+  if (req.path.startsWith('/api/')) {
+    console.log(`[USER] Checking user authentication`);
+    console.log(`[USER] Session ID: ${req.sessionID}`);
+    console.log(`[USER] Cookies: ${req.headers.cookie}`);
+    console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : false}`);
+    console.log(`[USER] User in request: ${req.user ? req.user.id : 'not set'}`);
     
-    // Versão simplificada que usa menos memória, sem criar objetos extras
-    if (process.env.DEBUG_COOKIES === 'true' && req.headers.cookie) {
-      console.log(`[DEBUG-REQ] Cookies: "${req.headers.cookie}"`);
-    }
-
-    // Log passport session data apenas quando realmente necessário
-    if (process.env.DEBUG_SESSION === 'true' && req.session && req.session.passport) {
-      console.log(`[DEBUG-REQ] Passport session: ${JSON.stringify(req.session.passport)}`);
+    if (req.session && req.session.passport) {
+      console.log(`[USER] Session passport data: ${JSON.stringify(req.session.passport)}`);
+    } else {
+      console.log(`[USER] No passport session data found`);
     }
   }
   next();
