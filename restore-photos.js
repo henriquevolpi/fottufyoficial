@@ -4,6 +4,9 @@ import { Pool } from 'pg';
 // Database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 async function restorePhotosData() {
@@ -104,8 +107,4 @@ async function main() {
   }
 }
 
-if (require.main === module) {
-  main();
-}
-
-module.exports = { restorePhotosData, verifyData };
+main();
