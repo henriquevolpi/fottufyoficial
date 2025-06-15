@@ -2,13 +2,12 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// Configuração exclusiva para seu banco Neon correto
-// Forçando uso do banco ep-small-resonance para evitar conflitos
-const FORCED_DATABASE_URL = "postgresql://neondb_owner:npg_wqC0LP7yRHlT@ep-small-resonance-a45diqst-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require";
+// Configuração para seu banco PostgreSQL no Render
+const RENDER_DATABASE_URL = "postgresql://fottufy_user:ls7dGvLeojlTv0YpxclVRMYWhpNfwLKy@dpg-d17j2fgdl3ps73ahtrs0-a.oregon-postgres.render.com/fottufy";
 
-// Configuração otimizada para Neon
+// Configuração otimizada para Render
 const poolConfig: PoolConfig = {
-  connectionString: FORCED_DATABASE_URL,
+  connectionString: RENDER_DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
