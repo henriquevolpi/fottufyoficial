@@ -437,18 +437,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage e associa a um projeto específico
   // Usando streaming para maior eficiência de memória
   app.post("/api/projects/:id/photos/upload", authenticate, streamUploadMiddleware(), cleanupTempFiles, async (req: Request & { files?: any[] }, res: Response) => {
+    console.log(`[UPLOAD] Starting upload to project ${req.params.id}`);
+    console.log(`[UPLOAD] User: ${req.user?.id}, Role: ${req.user?.role}`);
+    console.log(`[UPLOAD] Files received: ${req.files?.length || 0}`);
+    console.log(`[UPLOAD] Request body:`, req.body);
+    
     try {
       if (!req.user) {
+        console.log(`[UPLOAD ERROR] No authenticated user`);
         return res.status(401).json({ message: "Authentication required" });
       }
       
       const projectId = req.params.id;
+      console.log(`[UPLOAD] Project ID from params: ${projectId}`);
       
       // Convert projectId to integer for projects table lookup
       const projectIdNum = parseInt(projectId);
       if (isNaN(projectIdNum)) {
+        console.log(`[UPLOAD ERROR] Invalid project ID format: ${projectId}`);
         return res.status(400).json({ message: "Invalid project ID format" });
       }
+      console.log(`[UPLOAD] Project ID converted to number: ${projectIdNum}`);
       
       // Verificar se o projeto existe e pertence ao usuário (using projects table)
       const project = await db.query.projects.findFirst({
