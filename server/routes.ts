@@ -116,6 +116,10 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   
   // First check for session-based authentication (Passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
+    // Enhance user object with computed properties for consistent API
+    if (req.user) {
+      req.user = enhanceUserWithComputedProps(req.user);
+    }
     return next();
   }
   
@@ -156,6 +160,9 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
               // Login the user to establish a session
               req.login(user, (err) => {
                 if (!err) {
+                  // Enhance user object with computed properties
+                  req.user = enhanceUserWithComputedProps(user);
+                  
                   // Update last login timestamp silently but don't wait for it
                   storage.updateUser(user.id, { lastLoginAt: new Date() })
                     .catch(() => {
