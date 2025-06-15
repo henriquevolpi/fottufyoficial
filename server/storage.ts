@@ -430,19 +430,10 @@ export class MemStorage implements IStorage {
   }
 
   async getUsers(): Promise<User[]> {
-    try {
-      // Buscar todos os usuários da base de dados PostgreSQL
-      const dbUsers = await db.select().from(users).orderBy(users.createdAt);
-      
-      // Converter para o formato User com propriedades computadas
-      const enhancedUsers = dbUsers.map(user => enhanceUserWithComputedProps(user));
-      
-      return enhancedUsers;
-    } catch (error) {
-      console.error('Error fetching users from database:', error);
-      // Fallback para cache em memória se houver erro na base de dados
-      return Array.from(this.users.values());
-    }
+    // Esta implementação é do MemStorage - redirecionar para DatabaseStorage
+    console.log('[MEMSTORAGE] getUsers() called - delegating to DatabaseStorage');
+    const dbStorage = new DatabaseStorage();
+    return await dbStorage.getUsers();
   }
 
   async createUser(userData: InsertUser): Promise<User> {
@@ -1175,7 +1166,35 @@ export class DatabaseStorage implements IStorage {
 
   async getUsers(): Promise<User[]> {
     try {
-      return await db.select().from(users).orderBy(desc(users.createdAt));
+      console.log('[DATABASE] Fetching users from PostgreSQL...');
+      const dbUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+      console.log(`[DATABASE] Found ${dbUsers.length} raw users from database`);
+      
+      // Apply enhanceUserWithComputedProps to each user
+      const enhancedUsers = dbUsers.map(user => {
+        const enhanced = enhanceUserWithComputedProps(user);
+        return enhanced;
+      });
+      
+      console.log(`[DATABASE] Enhanced ${enhancedUsers.length} users with computed properties`);
+      
+      // Log sample enhanced user for debugging
+      if (enhancedUsers.length > 0) {
+        const sampleUser = enhancedUsers[0];
+        console.log('[DATABASE] Sample enhanced user:', {
+          id: sampleUser.id,
+          name: sampleUser.name,
+          email: sampleUser.email,
+          planType: sampleUser.planType,
+          uploadLimit: sampleUser.uploadLimit,
+          status: sampleUser.status,
+          subscriptionStatus: sampleUser.subscriptionStatus,
+          maxProjects: sampleUser.maxProjects,
+          isActive: sampleUser.isActive
+        });
+      }
+      
+      return enhancedUsers;
     } catch (error) {
       console.error("Erro ao buscar todos os usuários:", error);
       return [];
