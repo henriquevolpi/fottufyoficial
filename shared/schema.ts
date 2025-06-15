@@ -208,8 +208,13 @@ export const insertPhotoCommentSchema = createInsertSchema(photoComments).omit({
   photoId: z.string().min(1), // Accept any non-empty string for photo ID
 });
 
-// Types
-export type User = typeof users.$inferSelect;
+// Types with computed properties
+export type User = typeof users.$inferSelect & {
+  uploadLimit?: number;
+  planType?: string;
+  status?: string;
+  subscription_id?: string;
+};
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Project = typeof projects.$inferSelect;

@@ -9,6 +9,7 @@ import {
   WebhookPayload, 
   SUBSCRIPTION_PLANS, 
   Project,
+  projects,
   newProjects,
   photos,
   insertNewProjectSchema,
@@ -601,16 +602,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const projectId = req.params.id;
       
+      // Convert projectId to integer for projects table lookup
+      const projectIdNum = parseInt(projectId);
+      if (isNaN(projectIdNum)) {
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      
       // Parâmetros de paginação
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 100; // valor padrão reduzido para 100 itens
       const offset = (page - 1) * pageSize;
       
-      // Primeiro buscar detalhes do projeto sem as fotos
-      const project = await db.query.newProjects.findFirst({
+      // Primeiro buscar detalhes do projeto sem as fotos (using projects table)
+      const project = await db.query.projects.findFirst({
         where: and(
-          eq(newProjects.id, projectId),
-          eq(newProjects.userId, req.user.id)
+          eq(projects.id, projectIdNum),
+          eq(projects.photographerId, req.user.id)
         )
       });
       
@@ -621,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar contagem total de fotos para este projeto
       const totalPhotosResult = await db.select({ count: count() })
         .from(photos)
-        .where(eq(photos.projectId, projectId));
+        .where(eq(photos.projectId, projectIdNum));
       
       const totalPhotos = totalPhotosResult[0]?.count || 0;
       const totalPages = Math.ceil(totalPhotos / pageSize);
@@ -629,7 +636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Agora buscar apenas as fotos da página atual
       const projectPhotos = await db.select()
         .from(photos)
-        .where(eq(photos.projectId, projectId))
+        .where(eq(photos.projectId, projectIdNum))
         .limit(pageSize)
         .offset(offset);
       
@@ -665,11 +672,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Project ID and photo URL are required" });
       }
       
-      // Verify the project belongs to the user
-      const project = await db.query.newProjects.findFirst({
+      // Convert projectId to integer for projects table lookup
+      const projectIdNum = parseInt(projectId);
+      if (isNaN(projectIdNum)) {
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      
+      // Verify the project belongs to the user (using projects table)
+      const project = await db.query.projects.findFirst({
         where: and(
-          eq(newProjects.id, projectId),
-          eq(newProjects.userId, req.user.id)
+          eq(projects.id, projectIdNum),
+          eq(projects.photographerId, req.user.id)
         )
       });
       
@@ -679,9 +692,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add the photo
       const newPhoto = await db.insert(photos).values({
-        projectId,
+        id: nanoid(),
+        projectId: projectIdNum,
         url,
-        selected: false
+        filename: `photo-${nanoid()}.jpg`,
+        isSelected: false
       }).returning();
       
       res.status(201).json(newPhoto[0]);
