@@ -644,13 +644,15 @@ export class MemStorage implements IStorage {
       return false;
     }
     
+    // Calculate dynamic upload limit based on user's plan
+    const uploadLimit = calculateUploadLimit(user);
+    
     // If user has unlimited plan (uploadLimit < 0), always return true
-    if (user.uploadLimit !== null && user.uploadLimit < 0) {
+    if (uploadLimit < 0) {
       return true;
     }
     
     // Check if user has available upload quota
-    const uploadLimit = user.uploadLimit || 0;
     const usedUploads = user.usedUploads || 0;
     const availableUploads = uploadLimit - usedUploads;
     return availableUploads >= count;
