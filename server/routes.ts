@@ -123,6 +123,29 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   console.log(`[USER] Checking user authentication`);
   console.log(`[USER] Session ID: ${req.sessionID}`);
   console.log(`[USER] Cookies: ${req.headers.cookie}`);
+  console.log(`[USER] Authorization header: ${req.headers.authorization}`);
+  
+  // Check for Authorization header first (Bearer token)
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    const token = req.headers.authorization.substring(7); // Remove 'Bearer ' prefix
+    
+    try {
+      const decoded = Buffer.from(token, 'base64').toString();
+      const [userIdStr] = decoded.split(':');
+      const userId = parseInt(userIdStr);
+      
+      if (userId && !isNaN(userId)) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          console.log(`[USER] Authenticated via Authorization header: ${user.id}`);
+          req.user = enhanceUserWithComputedProps(user);
+          return next();
+        }
+      }
+    } catch (error) {
+      console.log(`[USER] Error decoding Authorization token: ${error}`);
+    }
+  }
   
   // First check for session-based authentication (Passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
@@ -158,30 +181,63 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     console.log(`[USER] No passport session data found`);
   }
   
-  // Check for our direct authentication cookie as fallback
-  if (req.headers.cookie && req.headers.cookie.includes('auth_user=')) {
+  // Check for authentication cookies as fallback
+  if (req.headers.cookie) {
     const cookieStr = req.headers.cookie;
-    const userIdIndex = cookieStr.indexOf('auth_user=');
     
-    if (userIdIndex >= 0) {
-      const valueStart = userIdIndex + 10; // 'auth_user='.length
-      const valueEnd = cookieStr.indexOf(';', valueStart);
-      const valueStr = valueEnd >= 0 
-        ? cookieStr.substring(valueStart, valueEnd) 
-        : cookieStr.substring(valueStart);
-        
-      const userId = parseInt(valueStr);
-      
-      if (userId && !isNaN(userId)) {
+    // Try auth_token first (more secure)
+    if (cookieStr.includes('auth_token=')) {
+      const tokenIndex = cookieStr.indexOf('auth_token=');
+      if (tokenIndex >= 0) {
+        const valueStart = tokenIndex + 11; // 'auth_token='.length
+        const valueEnd = cookieStr.indexOf(';', valueStart);
+        const tokenStr = valueEnd >= 0 
+          ? cookieStr.substring(valueStart, valueEnd) 
+          : cookieStr.substring(valueStart);
+          
         try {
-          const user = await storage.getUser(userId);
-          if (user) {
-            console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
-            req.user = enhanceUserWithComputedProps(user);
-            return next();
+          const decoded = Buffer.from(tokenStr, 'base64').toString();
+          const [userIdStr] = decoded.split(':');
+          const userId = parseInt(userIdStr);
+          
+          if (userId && !isNaN(userId)) {
+            const user = await storage.getUser(userId);
+            if (user) {
+              console.log(`[USER] Authenticated via auth_token: ${user.id}`);
+              req.user = enhanceUserWithComputedProps(user);
+              return next();
+            }
           }
         } catch (error) {
-          console.log(`[USER] Error getting user from auth_user cookie: ${error}`);
+          console.log(`[USER] Error decoding auth_token: ${error}`);
+        }
+      }
+    }
+    
+    // Fallback to auth_user cookie
+    if (cookieStr.includes('auth_user=')) {
+      const userIdIndex = cookieStr.indexOf('auth_user=');
+      
+      if (userIdIndex >= 0) {
+        const valueStart = userIdIndex + 10; // 'auth_user='.length
+        const valueEnd = cookieStr.indexOf(';', valueStart);
+        const valueStr = valueEnd >= 0 
+          ? cookieStr.substring(valueStart, valueEnd) 
+          : cookieStr.substring(valueStart);
+          
+        const userId = parseInt(valueStr);
+        
+        if (userId && !isNaN(userId)) {
+          try {
+            const user = await storage.getUser(userId);
+            if (user) {
+              console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
+              req.user = enhanceUserWithComputedProps(user);
+              return next();
+            }
+          } catch (error) {
+            console.log(`[USER] Error getting user from auth_user cookie: ${error}`);
+          }
         }
       }
     }

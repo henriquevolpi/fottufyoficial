@@ -836,6 +836,19 @@ function UploadModal({
         
         // Enviar a requisição
         xhr.open('POST', '/api/projects');
+        
+        // CRITICAL FIX: Include credentials and authentication headers
+        xhr.withCredentials = true;
+        
+        // Add authentication headers if available
+        const authToken = document.cookie.split('; ').find(row => row.startsWith('auth_token='));
+        if (authToken) {
+          xhr.setRequestHeader('Authorization', `Bearer ${authToken.split('=')[1]}`);
+        }
+        
+        // Add other required headers
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        
         xhr.send(formData);
       });
       

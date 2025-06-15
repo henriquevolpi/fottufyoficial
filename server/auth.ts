@@ -419,8 +419,18 @@ export function setupAuth(app: Express) {
             console.log(`[LOGIN] Session ID: ${req.sessionID}`);
             console.log(`[LOGIN] Session data:`, req.session);
             
-            // Set additional cookie for debugging
+            // Set multiple authentication cookies for maximum compatibility
             res.cookie('auth_user', user.id, {
+              httpOnly: false,
+              maxAge: 30 * 24 * 60 * 60 * 1000,
+              path: '/',
+              sameSite: 'lax',
+              secure: false
+            });
+            
+            // Set simple auth token that frontend can use
+            const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+            res.cookie('auth_token', authToken, {
               httpOnly: false,
               maxAge: 30 * 24 * 60 * 60 * 1000,
               path: '/',
