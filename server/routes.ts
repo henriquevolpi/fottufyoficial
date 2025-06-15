@@ -154,32 +154,31 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
       
       if (userId && !isNaN(userId)) {
         // Get user from storage and establish session
-        storage.getUser(userId)
-          .then(user => {
-            if (user) {
-              // Login the user to establish a session
-              req.login(user, (err) => {
-                if (!err) {
-                  // Enhance user object with computed properties
-                  req.user = enhanceUserWithComputedProps(user);
-                  
-                  // Update last login timestamp silently but don't wait for it
-                  storage.updateUser(user.id, { lastLoginAt: new Date() })
-                    .catch(() => {
-                      // Falha silenciosa para não impactar o usuário
-                    });
-                  
-                  next();
-                }
-              });
-            }
-          })
-          .catch(() => {
-            // Falha silenciosa para economizar memória
-          });
-          
-        // Important: return to prevent execution of code below
-        return;
+        try {
+          const user = await storage.getUser(userId);
+          if (user) {
+            // Login the user to establish a session
+            req.login(user, (err) => {
+              if (!err) {
+                // Enhance user object with computed properties
+                req.user = enhanceUserWithComputedProps(user);
+                
+                // Update last login timestamp silently but don't wait for it
+                storage.updateUser(user.id, { lastLoginAt: new Date() })
+                  .catch(() => {
+                    // Falha silenciosa para não impactar o usuário
+                  });
+                
+                return next();
+              } else {
+                return res.status(401).json({ message: "Erro de autenticação" });
+              }
+            });
+            return;
+          }
+        } catch (error) {
+          // Falha silenciosa para economizar memória
+        }
       }
     }
   }
@@ -1218,6 +1217,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const userId = req.user.id;
       
+      // Buscar dados atualizados do usuário da base de dados PostgreSQL
+      const dbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const user = dbUser[0];
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Enriquecer usuário com propriedades computadas
+      const enhancedUser = enhanceUserWithComputedProps(user);
+      
       // Get all projects for this user
       const userProjects = await storage.getProjects(userId);
       
@@ -1246,32 +1256,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Calculate total usage in MB (for this example, assume 2MB per photo on average)
+      // Calculate total usage in MB (assume 2MB per photo average)
       const averagePhotoSizeMB = 2;
       const totalUploadUsageMB = userProjects.reduce((total, project) => {
         const photoCount = project.photos ? project.photos.length : 0;
         return total + photoCount * averagePhotoSizeMB;
       }, 0);
       
-      // Get user details including plan info
-      const user = await storage.getUser(userId);
-      
-      // Calculate REAL current photo count from all active projects (não arquivados)
+      // Calculate REAL current photo count from all active projects
       const activeUserProjects = userProjects.filter(project => project.status !== "arquivado");
       const realCurrentPhotoCount = activeUserProjects.reduce((total, project) => {
         const photoCount = project.photos ? project.photos.length : 0;
         return total + photoCount;
       }, 0);
       
-      // Prepare response
+      // Prepare comprehensive response with all user plan information
       const stats = {
+        // User information
+        user: {
+          id: enhancedUser.id,
+          name: enhancedUser.name,
+          email: enhancedUser.email,
+          role: enhancedUser.role
+        },
+        
+        // Plan information
+        planType: enhancedUser.planType,
+        subscriptionPlan: user.plan || user.subscriptionPlan || "free",
+        subscriptionStatus: user.isActive ? "active" : "inactive",
+        uploadLimit: enhancedUser.uploadLimit,
+        usedUploads: user.usedUploads || 0,
+        maxProjects: user.maxProjects || 1,
+        maxPhotosPerProject: user.maxPhotosPerProject || 50,
+        
+        // Statistics
         activeProjects,
         photosThisMonth,
         totalUploadUsageMB,
+        realCurrentPhotoCount,
+        
+        // Legacy planInfo for backward compatibility
         planInfo: {
-          name: user?.planType || 'basic',
-          uploadLimit: user?.uploadLimit || 1000,
-          usedUploads: realCurrentPhotoCount // Use real current count instead of stored value
+          name: enhancedUser.planType,
+          uploadLimit: enhancedUser.uploadLimit,
+          usedUploads: realCurrentPhotoCount
         }
       };
       

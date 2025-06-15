@@ -430,7 +430,19 @@ export class MemStorage implements IStorage {
   }
 
   async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    try {
+      // Buscar todos os usuários da base de dados PostgreSQL
+      const dbUsers = await db.select().from(users).orderBy(users.createdAt);
+      
+      // Converter para o formato User com propriedades computadas
+      const enhancedUsers = dbUsers.map(user => enhanceUserWithComputedProps(user));
+      
+      return enhancedUsers;
+    } catch (error) {
+      console.error('Error fetching users from database:', error);
+      // Fallback para cache em memória se houver erro na base de dados
+      return Array.from(this.users.values());
+    }
   }
 
   async createUser(userData: InsertUser): Promise<User> {
