@@ -227,23 +227,22 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     // Use a strong secret for security
     secret: process.env.SESSION_SECRET || "studio-development-secret-key-testing-onlyaaaaa", 
-    // These settings must be true for Replit environment to work properly
-    resave: true, 
-    saveUninitialized: true,
+    // Force session save and initialization
+    resave: false, 
+    saveUninitialized: false,
     store: storage.sessionStore,
-    name: 'studio.sid',
+    name: 'connect.sid', // Use standard Express session name
     cookie: { 
       // Must be false in development (no HTTPS)
       secure: false,
       // Longer session duration (30 days) to avoid frequent re-logins
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      // Allow JavaScript to read the cookie for backup recovery
+      // Set to false to allow frontend access for debugging
       httpOnly: false,
-      // Para Replit, usar 'lax' funciona melhor que 'none'
+      // Use lax for better compatibility in Replit
       sameSite: 'lax',
-      path: '/',
-      // No domain restriction for better compatibility
-      domain: undefined
+      path: '/'
+      // No domain restriction for Replit compatibility
     }
   };
 
@@ -399,41 +398,40 @@ export function setupAuth(app: Express) {
       req.login(user, async (err) => {
         if (err) return next(err);
         
-        // Garantir que a sessão seja salva
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Error saving session:", saveErr);
-            return next(saveErr);
+        // Force regenerate session ID for security
+        req.session.regenerate((regenerateErr) => {
+          if (regenerateErr) {
+            console.error("Error regenerating session:", regenerateErr);
+            // Continue anyway
           }
           
-          // Atualizar timestamp de login (temporariamente desabilitado - campo não existe no schema migrado)
-          try {
-            // await storage.updateUser(user.id, { lastLoginAt: new Date() });
+          // Set user in session manually to ensure it's saved
+          req.session.passport = { user: user.id };
+          
+          // Force save session immediately
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error("Error saving session:", saveErr);
+              return next(saveErr);
+            }
+            
             console.log(`[LOGIN] User ${user.id} logged in successfully`);
-          } catch (updateError) {
-            console.error("Error updating login timestamp:", updateError);
-          }
-          
-          // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
-          try {
-            // Informação sobre o domínio para o javascript do cliente
-            res.cookie('user_id', user.id, {
-              httpOnly: false,  // Precisa ser acessível pelo JS
+            console.log(`[LOGIN] Session ID: ${req.sessionID}`);
+            console.log(`[LOGIN] Session data:`, req.session);
+            
+            // Set additional cookie for debugging
+            res.cookie('auth_user', user.id, {
+              httpOnly: false,
               maxAge: 30 * 24 * 60 * 60 * 1000,
               path: '/',
               sameSite: 'lax',
-              secure: false,
-              // Força o cookie a ser definido mesmo em contextos de iframe
-              domain: undefined
+              secure: false
             });
-          } catch (cookieError) {
-            // Log o erro mas continua o login (não é crucial)
-            console.error("Error setting cookie:", cookieError);
-          }
-          
-          // Retornar apenas os dados necessários por segurança
-          const { password, ...userData } = user;
-          res.json(userData);
+            
+            // Return user data
+            const { password, ...userData } = user;
+            res.json(userData);
+          });
         });
       });
     })(req, res, next);
