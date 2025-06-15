@@ -398,22 +398,15 @@ export function setupAuth(app: Express) {
       req.login(user, async (err) => {
         if (err) return next(err);
         
-        // Force regenerate session ID for security
-        req.session.regenerate((regenerateErr) => {
-          if (regenerateErr) {
-            console.error("Error regenerating session:", regenerateErr);
-            // Continue anyway
+        // Set user in session manually to ensure it's saved
+        req.session.passport = { user: user.id };
+        
+        // Force save session immediately
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Error saving session:", saveErr);
+            return next(saveErr);
           }
-          
-          // Set user in session manually to ensure it's saved
-          req.session.passport = { user: user.id };
-          
-          // Force save session immediately
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error("Error saving session:", saveErr);
-              return next(saveErr);
-            }
             
             console.log(`[LOGIN] User ${user.id} logged in successfully`);
             console.log(`[LOGIN] Session ID: ${req.sessionID}`);
@@ -444,7 +437,6 @@ export function setupAuth(app: Express) {
           });
         });
       });
-    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res) => {

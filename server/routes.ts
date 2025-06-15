@@ -165,6 +165,19 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
         if (user) {
           console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
           req.user = enhanceUserWithComputedProps(user);
+          
+          // Also restore session if it's missing
+          if (!req.isAuthenticated || !req.isAuthenticated()) {
+            console.log(`[USER] Restoring session for user ${userId}`);
+            req.login(user, (err) => {
+              if (err) {
+                console.error(`[USER] Error restoring session: ${err}`);
+              } else {
+                console.log(`[USER] Session restored successfully`);
+              }
+            });
+          }
+          
           return next();
         }
       }
