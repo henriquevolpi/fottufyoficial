@@ -31,6 +31,7 @@ import { db } from "./db";
 import { eq, and, or, not, desc, count } from "drizzle-orm";
 import { sendEmail } from "./utils/sendEmail";
 import { verifyPasswordResetToken, resetPasswordWithToken, generatePasswordResetToken, sendPasswordResetEmail } from "./utils/passwordReset";
+import { enhanceUserWithComputedProps, calculateUploadLimit } from "./utils/userUtils";
 // Use Cloudflare R2 for storage
 import { 
   BUCKET_NAME as R2_BUCKET_NAME, 
@@ -371,7 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         files: uploadedFiles,
         totalUploaded: uploadedFiles.length,
         newUsedUploads: (req.user.usedUploads || 0) + uploadedFiles.length,
-        uploadLimit: req.user.uploadLimit
+        uploadLimit: calculateUploadLimit(req.user)
       });
     } catch (error) {
       console.error("Error uploading photos to R2:", error);
