@@ -120,13 +120,16 @@ async function downloadImage(url: string, filename: string): Promise<string> {
 
 // Basic authentication middleware (otimizado para menor uso de memória)
 const authenticate = async (req: Request, res: Response, next: Function) => {
-  // Logs reduzidos para economizar memória - apenas para rotas importantes ou debug
-  if (process.env.DEBUG_AUTH === 'true' && (req.path.includes('/login') || req.path.includes('/logout'))) {
-    console.log(`[AUTH] ${req.method} ${req.path}`);
-  }
+  console.log(`[USER] Checking user authentication`);
+  console.log(`[USER] Session ID: ${req.sessionID}`);
+  console.log(`[USER] Cookies: ${req.headers.cookie}`);
   
   // First check for session-based authentication (Passport adds isAuthenticated method)
   if (req.isAuthenticated && req.isAuthenticated()) {
+    console.log(`[USER] Is authenticated: true`);
+    console.log(`[USER] User in request: ${req.user?.id}`);
+    console.log(`[USER] Session passport data: ${JSON.stringify(req.session?.passport)}`);
+    
     // Enhance user object with computed properties for consistent API
     if (req.user) {
       req.user = enhanceUserWithComputedProps(req.user);
@@ -134,87 +137,66 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     return next();
   }
   
-  // Check if we have any cookie that can be used to authenticate
-  if (req.headers.cookie) {
-    // First, try to recover from the session cookie
-    if (req.headers.cookie.includes('studio.sid') && req.session && req.sessionID) {
-      // If we have session cookie but no session data, try to force a session refresh
-      req.session.reload((err) => {
-        if (!err && req.isAuthenticated && req.isAuthenticated()) {
-          return next();
-        }
-      });
-    }
-    
-    // Check for our direct authentication cookie - Using optimized string parsing
-    const cookieStr = req.headers.cookie;
-    if (cookieStr.includes('user_id=')) {
-      // Try to extract user ID from cookie - algoritmo otimizado
-      let userId: number | null = null;
-      const userIdIndex = cookieStr.indexOf('user_id=');
-      
-      if (userIdIndex >= 0) {
-        const valueStart = userIdIndex + 8; // 'user_id='.length
-        const valueEnd = cookieStr.indexOf(';', valueStart);
-        const valueStr = valueEnd >= 0 
-          ? cookieStr.substring(valueStart, valueEnd) 
-          : cookieStr.substring(valueStart);
-          
-        userId = parseInt(valueStr);
+  console.log(`[USER] Is authenticated: false`);
+  console.log(`[USER] User in request: not set`);
+  
+  // Check session passport data
+  if (req.session?.passport?.user) {
+    console.log(`[USER] Session passport data: ${JSON.stringify(req.session.passport)}`);
+    // Try to get user from session data
+    try {
+      const user = await storage.getUser(req.session.passport.user);
+      if (user) {
+        console.log(`[USER] Found user in storage: ${user.id}`);
+        req.user = enhanceUserWithComputedProps(user);
+        return next();
       }
+    } catch (error) {
+      console.log(`[USER] Error getting user from storage: ${error}`);
+    }
+  } else {
+    console.log(`[USER] No passport session data found`);
+  }
+  
+  // Check for our direct authentication cookie as fallback
+  if (req.headers.cookie && req.headers.cookie.includes('auth_user=')) {
+    const cookieStr = req.headers.cookie;
+    const userIdIndex = cookieStr.indexOf('auth_user=');
+    
+    if (userIdIndex >= 0) {
+      const valueStart = userIdIndex + 10; // 'auth_user='.length
+      const valueEnd = cookieStr.indexOf(';', valueStart);
+      const valueStr = valueEnd >= 0 
+        ? cookieStr.substring(valueStart, valueEnd) 
+        : cookieStr.substring(valueStart);
+        
+      const userId = parseInt(valueStr);
       
       if (userId && !isNaN(userId)) {
-        // Get user from storage and establish session
         try {
           const user = await storage.getUser(userId);
           if (user) {
-            // Login the user to establish a session
-            req.login(user, (err) => {
-              if (!err) {
-                // Enhance user object with computed properties
-                req.user = enhanceUserWithComputedProps(user);
-                
-                // Update last login timestamp silently but don't wait for it
-                storage.updateUser(user.id, { lastLoginAt: new Date() })
-                  .catch(() => {
-                    // Falha silenciosa para não impactar o usuário
-                  });
-                
-                return next();
-              } else {
-                return res.status(401).json({ message: "Erro de autenticação" });
-              }
-            });
-            return;
+            console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
+            req.user = enhanceUserWithComputedProps(user);
+            return next();
           }
         } catch (error) {
-          // Falha silenciosa para economizar memória
+          console.log(`[USER] Error getting user from auth_user cookie: ${error}`);
         }
       }
     }
   }
   
-  // For development purposes only, allow alternate auth methods
-  
   // Check for admin override parameter (for development testing only)
   if (req.query.admin === 'true') {
     console.log("[AUTH] Admin override via query param");
     try {
-      // Try to find admin in the database first
       const adminUser = await storage.getUserByEmail("admin@studio.com");
       
       if (adminUser) {
-        req.login(adminUser, (err) => {
-          if (err) {
-            console.error("[AUTH] Error logging in admin user:", err);
-            return next(err);
-          }
-          console.log("[AUTH] Admin session established via query param");
-          return next();
-        });
-        return; // Return to avoid calling next() twice
-      } else {
-        console.log("[AUTH] Admin user not found in database");
+        req.user = enhanceUserWithComputedProps(adminUser);
+        console.log("[AUTH] Admin session established via query param");
+        return next();
       }
     } catch (error) {
       console.error("[AUTH] Error fetching admin user:", error);
@@ -222,11 +204,7 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   }
   
   // If we reach here, user is not authenticated
-  if (process.env.DEBUG_AUTH === 'true') {
-    console.log("[AUTH] No authentication found, returning 401");
-  }
-  
-  // Return simplified error message to economizar memória
+  console.log("[AUTH] No authentication found, returning 401");
   return res.status(401).json({ 
     message: "Não autorizado"
   });
