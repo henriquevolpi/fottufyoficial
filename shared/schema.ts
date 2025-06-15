@@ -35,9 +35,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
-  lastEvent: true,
-  lastLoginAt: true,
-  uploadLimit: true,
+  updatedAt: true,
   usedUploads: true,
   subscriptionStartDate: true,
   subscriptionEndDate: true,
@@ -158,22 +156,22 @@ export const insertNewProjectSchema = createInsertSchema(newProjects).omit({
   createdAt: true,
 });
 
-// Photos table with UUIDs
+// Photos table matching current database structure
 export const photos = pgTable("photos", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  projectId: uuid("project_id").notNull().references(() => newProjects.id, { onDelete: "cascade" }),
+  id: text("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
-  filename: text("filename"), // Nome único usado pelo R2
-  originalName: text("original_name"), // Nome original do arquivo enviado pelo usuário
-  selected: boolean("selected").default(false),
+  filename: text("filename").notNull(),
+  originalFilename: text("original_filename"),
+  isSelected: boolean("is_selected").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Relations for the photos table
 export const photosRelations = relations(photos, ({ one, many }) => ({
-  project: one(newProjects, {
+  project: one(projects, {
     fields: [photos.projectId],
-    references: [newProjects.id],
+    references: [projects.id],
   }),
   comments: many(photoComments),
 }));
@@ -185,11 +183,12 @@ export const insertPhotoSchema = createInsertSchema(photos).omit({
 
 // Photo Comments table
 export const photoComments = pgTable("photo_comments", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  photoId: uuid("photo_id").notNull().references(() => photos.id, { onDelete: "cascade" }),
-  clientName: text("client_name").notNull(), // Nome do cliente que comentou
-  comment: text("comment").notNull(), // O comentário em si
-  isViewed: boolean("is_viewed").default(false), // Se o fotógrafo já viu o comentário
+  id: text("id").primaryKey(),
+  photoId: text("photo_id").notNull().references(() => photos.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull(),
+  clientName: text("client_name").notNull(),
+  comment: text("comment").notNull(),
+  isViewed: boolean("is_viewed").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

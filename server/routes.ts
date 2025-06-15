@@ -391,11 +391,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const projectId = req.params.id;
       
-      // Verificar se o projeto existe e pertence ao usuário
-      const project = await db.query.newProjects.findFirst({
+      // Convert projectId to integer for projects table lookup
+      const projectIdNum = parseInt(projectId);
+      if (isNaN(projectIdNum)) {
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      
+      // Verificar se o projeto existe e pertence ao usuário (using projects table)
+      const project = await db.query.projects.findFirst({
         where: and(
-          eq(newProjects.id, projectId),
-          eq(newProjects.userId, req.user.id)
+          eq(projects.id, projectIdNum),
+          eq(projects.photographerId, req.user.id)
         )
       });
       
@@ -443,10 +449,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
             const newPhoto = await db.insert(photos).values({
-              projectId,
+              id: nanoid(),
+              projectId: projectIdNum,
               url: result.url,
               filename,
-              selected: false
+              originalFilename: file.originalname,
+              isSelected: false
             }).returning();
             
             // Armazenar apenas o ID se precisar recuperar depois
@@ -454,8 +462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               newPhotos.push(newPhoto[0].id);
             }
           } catch (dbError) {
-            console.error(`Error adding photo to database: ${filename}`);
-            // Não log do erro completo para economizar memória
+            console.error(`Error adding photo to database: ${filename}`, dbError);
+            // Continue with upload even if database insertion fails
           }
             
           // Armazenar apenas dados essenciais
