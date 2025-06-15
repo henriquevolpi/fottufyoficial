@@ -159,8 +159,8 @@ app.use((req, res, next) => {
     console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : false}`);
     console.log(`[USER] User in request: ${req.user ? req.user.id : 'not set'}`);
     
-    if (req.session && req.session.passport) {
-      console.log(`[USER] Session passport data: ${JSON.stringify(req.session.passport)}`);
+    if (req.session && (req.session as any).passport) {
+      console.log(`[USER] Session passport data: ${JSON.stringify((req.session as any).passport)}`);
     } else {
       console.log(`[USER] No passport session data found`);
     }

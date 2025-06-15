@@ -382,7 +382,7 @@ export function setupAuth(app: Express) {
       req.body.email = req.body.email.toLowerCase();
     }
     
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) {
         // Evitar expor a estrutura interna de autenticação para o cliente
@@ -395,11 +395,11 @@ export function setupAuth(app: Express) {
       req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
       
       // Definir o usuario nas sessões
-      req.login(user, async (err) => {
+      req.login(user, (err: any) => {
         if (err) return next(err);
         
         // Set user in session manually to ensure it's saved
-        req.session.passport = { user: user.id };
+        (req.session as any).passport = { user: user.id };
         
         // Force save session immediately
         req.session.save((saveErr) => {
@@ -408,35 +408,35 @@ export function setupAuth(app: Express) {
             return next(saveErr);
           }
             
-            console.log(`[LOGIN] User ${user.id} logged in successfully`);
-            console.log(`[LOGIN] Session ID: ${req.sessionID}`);
-            console.log(`[LOGIN] Session data:`, req.session);
-            
-            // Set multiple authentication cookies for maximum compatibility
-            res.cookie('auth_user', user.id, {
-              httpOnly: false,
-              maxAge: 30 * 24 * 60 * 60 * 1000,
-              path: '/',
-              sameSite: 'lax',
-              secure: false
-            });
-            
-            // Set simple auth token that frontend can use
-            const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
-            res.cookie('auth_token', authToken, {
-              httpOnly: false,
-              maxAge: 30 * 24 * 60 * 60 * 1000,
-              path: '/',
-              sameSite: 'lax',
-              secure: false
-            });
-            
-            // Return user data
-            const { password, ...userData } = user;
-            res.json(userData);
+          console.log(`[LOGIN] User ${user.id} logged in successfully`);
+          console.log(`[LOGIN] Session ID: ${req.sessionID}`);
+          console.log(`[LOGIN] Session data:`, req.session);
+          
+          // Set multiple authentication cookies for maximum compatibility
+          res.cookie('auth_user', user.id, {
+            httpOnly: false,
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: '/',
+            sameSite: 'lax',
+            secure: false
           });
+          
+          // Set simple auth token that frontend can use
+          const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+          res.cookie('auth_token', authToken, {
+            httpOnly: false,
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: '/',
+            sameSite: 'lax',
+            secure: false
+          });
+          
+          // Return user data
+          const { password, ...userData } = user;
+          res.json(userData);
         });
       });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res) => {
