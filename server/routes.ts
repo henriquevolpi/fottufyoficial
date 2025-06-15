@@ -128,11 +128,14 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   // Check for Authorization header first (Bearer token)
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     const token = req.headers.authorization.substring(7); // Remove 'Bearer ' prefix
+    console.log(`[USER] Processing Authorization header token: ${token.substring(0, 20)}...`);
     
     try {
       const decoded = Buffer.from(token, 'base64').toString();
       const [userIdStr] = decoded.split(':');
       const userId = parseInt(userIdStr);
+      
+      console.log(`[USER] Decoded user ID from token: ${userId}`);
       
       if (userId && !isNaN(userId)) {
         const user = await storage.getUser(userId);
@@ -140,10 +143,31 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
           console.log(`[USER] Authenticated via Authorization header: ${user.id}`);
           req.user = enhanceUserWithComputedProps(user);
           return next();
+        } else {
+          console.log(`[USER] No user found for ID: ${userId}`);
         }
       }
     } catch (error) {
       console.log(`[USER] Error decoding Authorization token: ${error}`);
+    }
+  }
+  
+  // Check for auth_user cookie
+  if (req.headers.cookie) {
+    const cookies = req.headers.cookie.split('; ');
+    const authUserCookie = cookies.find(c => c.startsWith('auth_user='));
+    if (authUserCookie) {
+      const userId = parseInt(authUserCookie.split('=')[1]);
+      console.log(`[USER] Found auth_user cookie with ID: ${userId}`);
+      
+      if (userId && !isNaN(userId)) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
+          req.user = enhanceUserWithComputedProps(user);
+          return next();
+        }
+      }
     }
   }
   
@@ -460,6 +484,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[UPLOAD] Project ID converted to number: ${projectIdNum}`);
       
       // Verificar se o projeto existe e pertence ao usuário (using projects table)
+      console.log(`[UPLOAD] Looking for project with ID: ${projectIdNum}, photographer: ${req.user.id}`);
+      
       const project = await db.query.projects.findFirst({
         where: and(
           eq(projects.id, projectIdNum),
@@ -467,7 +493,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       });
       
+      console.log(`[UPLOAD] Project found:`, project ? { id: project.id, name: project.name } : 'NOT FOUND');
+      
       if (!project) {
+        console.log(`[UPLOAD ERROR] Project not found or unauthorized - projectId: ${projectIdNum}, userId: ${req.user.id}`);
         return res.status(404).json({ message: "Project not found or unauthorized" });
       }
       
