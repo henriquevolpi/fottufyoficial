@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image } from "lucide-react";
-import { compressMultipleImages, isImageFile } from "@/lib/imageCompression";
+import { compressMultipleImages, isValidImageFile } from "@/lib/imageCompression";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+
+// Utility function to format file sizes
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 // Interface para o objeto de projeto retornado pela API
 interface ProjectResponse {
@@ -112,11 +121,6 @@ export default function UploadModal({
       // Redimensionar todas as imagens com progresso
       const compressedFiles = await compressMultipleImages(
         files,
-        {
-          maxWidthOrHeight: 970, // Largura máxima padronizada
-          quality: 0.9, // Qualidade padronizada
-          useWebWorker: true,
-        },
         (processed, total) => {
           // Atualizar progresso do redimensionamento (10% a 40%)
           const compressionProgress = 10 + ((processed / total) * 30);
