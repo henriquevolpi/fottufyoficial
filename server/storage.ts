@@ -639,16 +639,21 @@ export class MemStorage implements IStorage {
   
   // Métodos de gerenciamento de uploads
   async checkUploadLimit(userId: number, count: number): Promise<boolean> {
-    const user = this.users.get(userId);
+    // Buscar usuário diretamente do PostgreSQL para ter dados atualizados
+    const dbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const user = dbUser[0];
+    
     if (!user) return false;
     
+    // Aplicar enhancement para obter limites corretos
+    const enhancedUser = enhanceUserWithComputedProps(user);
+    
     // Check if subscription is active
-    if (user.subscriptionStatus !== "active" && user.planType !== "free") {
+    if (user.isActive !== true) {
       return false;
     }
     
     // Calculate dynamic upload limit based on user's plan
-    const enhancedUser = enhanceUserWithComputedProps(user);
     const uploadLimit = enhancedUser.uploadLimit;
     
     // If user has unlimited plan (uploadLimit < 0), always return true
@@ -659,11 +664,17 @@ export class MemStorage implements IStorage {
     // Check if user has available upload quota
     const usedUploads = user.usedUploads || 0;
     const availableUploads = uploadLimit - usedUploads;
+    
+    console.log(`[UPLOAD-LIMIT] User ${userId}: ${usedUploads}/${uploadLimit} uploads used, attempting ${count}, available: ${availableUploads}`);
+    
     return availableUploads >= count;
   }
   
   async updateUploadUsage(userId: number, addCount: number): Promise<User | undefined> {
-    const user = this.users.get(userId);
+    // Buscar usuário atual do PostgreSQL
+    const dbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const user = dbUser[0];
+    
     if (!user) return undefined;
     
     // Calculate new value for used uploads
@@ -677,12 +688,15 @@ export class MemStorage implements IStorage {
     
     console.log(`Upload usage updated for user ${userId}: ${currentUsed} → ${newUsedUploads} (added ${addCount})`);
     
-    // Update user
-    const updatedUser = await this.updateUser(userId, {
-      usedUploads: newUsedUploads,
-    });
+    // Update user no PostgreSQL
+    await db
+      .update(users)
+      .set({ usedUploads: newUsedUploads })
+      .where(eq(users.id, userId));
     
-    return updatedUser;
+    // Retornar usuário atualizado com enhancement
+    const updatedDbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    return updatedDbUser[0] ? enhanceUserWithComputedProps(updatedDbUser[0]) : undefined;
   }
   
   async syncUsedUploads(userId: number): Promise<User | undefined> {
