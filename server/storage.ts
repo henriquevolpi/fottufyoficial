@@ -1873,9 +1873,14 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Busca usuários com downgrades que já venceram
+   * TEMPORARIAMENTE DESATIVADO - colunas não existem no banco migrado
    */
   async getUsersWithExpiredDowngrades(): Promise<User[]> {
     try {
+      // Retorna array vazio até que as colunas sejam adicionadas
+      return [];
+      
+      /* Código original comentado até migração completa do schema
       const now = new Date();
       
       const expiredUsers = await db
@@ -1887,9 +1892,10 @@ export class DatabaseStorage implements IStorage {
             sql`pending_downgrade_date <= ${now}`
           )
         );
+      */
       
-      console.log(`[DOWNGRADE] Encontrados ${expiredUsers.length} usuários com downgrades expirados`);
-      return expiredUsers;
+      // console.log(`[DOWNGRADE] Encontrados ${expiredUsers.length} usuários com downgrades expirados`);
+      // return expiredUsers;
     } catch (error) {
       console.error("Erro ao buscar usuários com downgrades expirados:", error);
       return [];
@@ -1949,8 +1955,12 @@ export class DatabaseStorage implements IStorage {
     console.log(`[ADM] Plano ${planType} ativado manualmente para usuário ${userId} por ${adminEmail} - expira em 34 dias`);
   }
   
-  // Método para processar planos manuais expirados (executa automaticamente a cada hora)
+  // Método para processar planos manuais expirados (TEMPORARIAMENTE DESATIVADO)
   async processExpiredManualActivations(): Promise<number> {
+    console.log('[ADM] Nenhuma ativação manual expirada encontrada');
+    return 0;
+    
+    /* Código original comentado até migração completa do schema
     const now = new Date();
     const thirtyFourDaysAgo = new Date(now.getTime() - (34 * 24 * 60 * 60 * 1000));
     
@@ -1964,6 +1974,7 @@ export class DatabaseStorage implements IStorage {
           ne(users.planType, 'free')
         )
       );
+    */
     
     let processedCount = 0;
     

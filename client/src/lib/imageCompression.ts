@@ -1,136 +1,116 @@
-/**
- * Utilitário para redimensionamento de imagens no front-end
- * Configuração padrão: largura máxima de 900px, qualidade 80%
- */
-
 import imageCompression from 'browser-image-compression';
 
 /**
- * Configurações padrão de compressão/redimensionamento
- * Baseadas no padrão atual do sistema (920px -> ajustado para 900px, qualidade 80%)
+ * Configurações de compressão otimizadas para fotografias
+ * - Largura máxima: 900px (otimizada para visualização web)
+ * - Qualidade: 80% (balanço entre qualidade e tamanho)
+ * - Formato: preserva o original ou converte para JPEG se necessário
  */
-const DEFAULT_COMPRESSION_OPTIONS = {
-  maxWidthOrHeight: 970, // Largura máxima em pixels
-  useWebWorker: true, // Usar web worker para não bloquear a UI
-  quality: 0.9, // Qualidade 90%
-  fileType: undefined as string | undefined, // Manter o tipo original do arquivo
-  initialQuality: 0.9, // Qualidade inicial
+const COMPRESSION_OPTIONS = {
+  maxWidthOrHeight: 900,
+  useWebWorker: true,
+  quality: 0.8,
+  initialQuality: 0.8,
+  alwaysKeepResolution: false,
+  preserveExif: false, // Remove dados EXIF para reduzir tamanho
 };
 
 /**
- * Redimensiona e comprime uma imagem usando as configurações padrão do sistema
+ * Comprime uma imagem mantendo qualidade visual adequada
  * @param file Arquivo de imagem original
- * @param options Opções customizadas (opcional)
- * @returns Promise com o arquivo processado
+ * @returns Promise com arquivo comprimido
  */
-export async function compressImage(
-  file: File, 
-  options: Partial<typeof DEFAULT_COMPRESSION_OPTIONS> = {}
-): Promise<File> {
+export async function compressImage(file: File): Promise<File> {
   try {
-    // Mesclar opções padrão com opções customizadas
-    const compressionOptions = {
-      ...DEFAULT_COMPRESSION_OPTIONS,
-      ...options,
-    };
-
-    // Log do processamento (para debugging)
-    console.log(`[Frontend] Processando imagem: ${file.name}`, {
-      tamanhoOriginal: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      configuracoes: compressionOptions,
-    });
-
-    // Comprimir/redimensionar a imagem
-    const compressedBlob = await imageCompression(file, compressionOptions);
-
-    // Criar um novo File object preservando o nome original e tipo
-    const compressedFile = new File([compressedBlob], file.name, {
-      type: file.type,
-      lastModified: Date.now(),
-    });
-
-    // Log do resultado
-    console.log(`[Frontend] Imagem processada: ${file.name}`, {
-      tamanhoOriginal: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      tamanhoFinal: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
-      reducao: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`,
-      nomePreservado: compressedFile.name,
-    });
-
+    console.log(`[COMPRESSION] Iniciando compressão de ${file.name}`);
+    console.log(`[COMPRESSION] Tamanho original: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    
+    const compressedFile = await imageCompression(file, COMPRESSION_OPTIONS);
+    
+    console.log(`[COMPRESSION] Tamanho comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`[COMPRESSION] Redução: ${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`);
+    
     return compressedFile;
   } catch (error) {
-    console.error(`[Frontend] Erro ao processar imagem ${file.name}:`, error);
-    // Em caso de erro, retornar o arquivo original
-    console.log(`[Frontend] Retornando arquivo original devido ao erro`);
+    console.error('[COMPRESSION] Erro na compressão:', error);
+    // Em caso de erro, retorna o arquivo original
+    console.log('[COMPRESSION] Usando arquivo original devido ao erro');
     return file;
   }
 }
 
 /**
- * Processa múltiplas imagens em paralelo
+ * Valida se o arquivo é uma imagem suportada
+ * @param file Arquivo para validação
+ * @returns true se for uma imagem válida
+ */
+export function isValidImageFile(file: File): boolean {
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  return validTypes.includes(file.type);
+}
+
+/**
+ * Obtém informações da imagem sem fazer upload
+ * @param file Arquivo de imagem
+ * @returns Promise com dimensões e informações da imagem
+ */
+export async function getImageInfo(file: File): Promise<{
+  width: number;
+  height: number;
+  size: number;
+  type: string;
+}> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        size: file.size,
+        type: file.type,
+      });
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Não foi possível carregar a imagem'));
+    };
+    
+    img.src = url;
+  });
+}
+
+/**
+ * Comprime múltiplas imagens em lote
  * @param files Array de arquivos de imagem
- * @param options Opções de compressão (opcional)
- * @param onProgress Callback de progresso (opcional)
- * @returns Promise com array de arquivos processados
+ * @param onProgress Callback para acompanhar progresso (opcional)
+ * @returns Promise com array de arquivos comprimidos
  */
 export async function compressMultipleImages(
   files: File[],
-  options: Partial<typeof DEFAULT_COMPRESSION_OPTIONS> = {},
-  onProgress?: (processed: number, total: number) => void
+  onProgress?: (completed: number, total: number) => void
 ): Promise<File[]> {
-  const results: File[] = [];
-  
-  console.log(`[Frontend] Iniciando processamento de ${files.length} imagens`);
+  const compressedFiles: File[] = [];
   
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    // Verificar se é uma imagem
-    if (!file.type.startsWith('image/')) {
-      console.log(`[Frontend] Pulando arquivo não-imagem: ${file.name}`);
-      results.push(file);
-      continue;
+    if (isValidImageFile(file)) {
+      const compressed = await compressImage(file);
+      compressedFiles.push(compressed);
+    } else {
+      console.warn(`[COMPRESSION] Arquivo ignorado (tipo não suportado): ${file.name}`);
+      compressedFiles.push(file); // Mantém arquivo original se não for imagem
     }
     
-    try {
-      const compressedFile = await compressImage(file, options);
-      results.push(compressedFile);
-      
-      // Callback de progresso
-      if (onProgress) {
-        onProgress(i + 1, files.length);
-      }
-    } catch (error) {
-      console.error(`[Frontend] Erro ao processar ${file.name}:`, error);
-      // Em caso de erro, usar arquivo original
-      results.push(file);
+    // Chama callback de progresso se fornecido
+    if (onProgress) {
+      onProgress(i + 1, files.length);
     }
   }
   
-  console.log(`[Frontend] Processamento concluído: ${results.length} arquivos`);
-  return results;
-}
-
-/**
- * Verifica se um arquivo é uma imagem válida
- * @param file Arquivo a ser verificado
- * @returns boolean indicando se é uma imagem
- */
-export function isImageFile(file: File): boolean {
-  return file.type.startsWith('image/');
-}
-
-/**
- * Formata o tamanho do arquivo em uma string legível
- * @param bytes Tamanho em bytes
- * @returns String formatada (ex: "2.5 MB")
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return compressedFiles;
 }
