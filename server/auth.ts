@@ -399,34 +399,42 @@ export function setupAuth(app: Express) {
       req.login(user, async (err) => {
         if (err) return next(err);
         
-        // Atualizar timestamp de login (temporariamente desabilitado - campo não existe no schema migrado)
-        try {
-          // await storage.updateUser(user.id, { lastLoginAt: new Date() });
-          console.log(`[LOGIN] User ${user.id} logged in successfully`);
-        } catch (updateError) {
-          console.error("Error updating login timestamp:", updateError);
-        }
-        
-        // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
-        try {
-          // Informação sobre o domínio para o javascript do cliente
-          res.cookie('user_id', user.id, {
-            httpOnly: false,  // Precisa ser acessível pelo JS
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            path: '/',
-            sameSite: 'lax',
-            secure: false,
-            // Força o cookie a ser definido mesmo em contextos de iframe
-            domain: undefined
-          });
-        } catch (cookieError) {
-          // Log o erro mas continua o login (não é crucial)
-          console.error("Error setting cookie:", cookieError);
-        }
-        
-        // Retornar apenas os dados necessários por segurança
-        const { password, ...userData } = user;
-        res.json(userData);
+        // Garantir que a sessão seja salva
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Error saving session:", saveErr);
+            return next(saveErr);
+          }
+          
+          // Atualizar timestamp de login (temporariamente desabilitado - campo não existe no schema migrado)
+          try {
+            // await storage.updateUser(user.id, { lastLoginAt: new Date() });
+            console.log(`[LOGIN] User ${user.id} logged in successfully`);
+          } catch (updateError) {
+            console.error("Error updating login timestamp:", updateError);
+          }
+          
+          // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
+          try {
+            // Informação sobre o domínio para o javascript do cliente
+            res.cookie('user_id', user.id, {
+              httpOnly: false,  // Precisa ser acessível pelo JS
+              maxAge: 30 * 24 * 60 * 60 * 1000,
+              path: '/',
+              sameSite: 'lax',
+              secure: false,
+              // Força o cookie a ser definido mesmo em contextos de iframe
+              domain: undefined
+            });
+          } catch (cookieError) {
+            // Log o erro mas continua o login (não é crucial)
+            console.error("Error setting cookie:", cookieError);
+          }
+          
+          // Retornar apenas os dados necessários por segurança
+          const { password, ...userData } = user;
+          res.json(userData);
+        });
       });
     })(req, res, next);
   });
