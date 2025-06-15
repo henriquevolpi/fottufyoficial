@@ -227,9 +227,9 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     // Use a strong secret for security
     secret: process.env.SESSION_SECRET || "studio-development-secret-key-testing-onlyaaaaa", 
-    // Force session save and initialization
-    resave: false, 
-    saveUninitialized: false,
+    // Force session save and initialization for better reliability
+    resave: true, 
+    saveUninitialized: true,
     store: storage.sessionStore,
     name: 'connect.sid', // Use standard Express session name
     cookie: { 
@@ -239,10 +239,11 @@ export function setupAuth(app: Express) {
       maxAge: 30 * 24 * 60 * 60 * 1000,
       // Set to false to allow frontend access for debugging
       httpOnly: false,
-      // Use lax for better compatibility in Replit
+      // Use lax for better compatibility in same-origin setup
       sameSite: 'lax',
-      path: '/'
+      path: '/',
       // No domain restriction for Replit compatibility
+      domain: undefined
     }
   };
 

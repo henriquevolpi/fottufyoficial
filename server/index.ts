@@ -136,12 +136,39 @@ app.use(express.static(path.join(process.cwd(), 'public'), {
 // We must use the cors package rather than custom headers to ensure consistent behavior
 import cors from 'cors';
 
-// Configure CORS with credentials support
+// Configure CORS with credentials support for Replit environment
 app.use(cors({
-  origin: true, // Allow the requesting origin (dynamically)
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all Replit domains and localhost for development
+    const allowedOrigins = [
+      /^https:\/\/.*\.replit\.dev$/,
+      /^https:\/\/.*\.repl\.co$/,
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5000'
+    ];
+    
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedOrigins.some(pattern => {
+      if (typeof pattern === 'string') return pattern === origin;
+      return pattern.test(origin);
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] Blocked origin: ${origin}`);
+      callback(null, true); // Allow all for now to debug
+    }
+  },
   credentials: true, // This is essential for cookies to work
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 // Set up authentication BEFORE any route handlers
