@@ -2,12 +2,12 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// Configuração para usar o banco PostgreSQL do Render
-const FORCED_DATABASE_URL = "postgresql://fottufy_user:ls7dGvLeojlTv0YpxclVRMYWhpNfwLKy@dpg-d17j2fgdl3ps73ahtrs0-a.oregon-postgres.render.com/fottufy";
+// Configuração para seu banco PostgreSQL no Render
+const RENDER_DATABASE_URL = "postgresql://fottufy_user:ls7dGvLeojlTv0YpxclVRMYWhpNfwLKy@dpg-d17j2fgdl3ps73ahtrs0-a.oregon-postgres.render.com/fottufy";
 
-// Configuração otimizada para Neon
+// Configuração otimizada para Render
 const poolConfig: PoolConfig = {
-  connectionString: FORCED_DATABASE_URL,
+  connectionString: RENDER_DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },

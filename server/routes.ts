@@ -9,6 +9,7 @@ import {
   WebhookPayload, 
   SUBSCRIPTION_PLANS, 
   Project,
+  projects,
   newProjects,
   photos,
   insertNewProjectSchema,
@@ -30,6 +31,18 @@ import { db } from "./db";
 import { eq, and, or, not, desc, count } from "drizzle-orm";
 import { sendEmail } from "./utils/sendEmail";
 import { verifyPasswordResetToken, resetPasswordWithToken, generatePasswordResetToken, sendPasswordResetEmail } from "./utils/passwordReset";
+import { enhanceUserWithComputedProps } from "./utils/userUtils";
+
+// Helper function to check upload limits with admin bypass
+async function checkUserUploadLimit(user: any, photoCount: number, storage: any): Promise<boolean> {
+  // Admin users have unlimited uploads
+  if (user.role === "admin") {
+    return true;
+  }
+  
+  // Check regular user limits
+  return await storage.checkUploadLimit(user.id, photoCount);
+}
 // Use Cloudflare R2 for storage
 import { 
   BUCKET_NAME as R2_BUCKET_NAME, 
@@ -105,97 +118,83 @@ async function downloadImage(url: string, filename: string): Promise<string> {
   });
 }
 
-// Basic authentication middleware (otimizado para menor uso de memória)
+// Simplified authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
-  // Logs reduzidos para economizar memória - apenas para rotas importantes ou debug
-  if (process.env.DEBUG_AUTH === 'true' && (req.path.includes('/login') || req.path.includes('/logout'))) {
-    console.log(`[AUTH] ${req.method} ${req.path}`);
-  }
+  console.log(`[AUTH] Checking authentication for ${req.method} ${req.path}`);
   
-  // First check for session-based authentication (Passport adds isAuthenticated method)
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    return next();
-  }
-  
-  // Check if we have any cookie that can be used to authenticate
-  if (req.headers.cookie) {
-    // First, try to recover from the session cookie
-    if (req.headers.cookie.includes('studio.sid') && req.session && req.sessionID) {
-      // If we have session cookie but no session data, try to force a session refresh
-      req.session.reload((err) => {
-        if (!err && req.isAuthenticated && req.isAuthenticated()) {
-          return next();
-        }
-      });
+  try {
+    // Method 1: Check Passport session authentication
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log(`[AUTH] ✓ Authenticated via Passport session: ${req.user.id}`);
+      req.user = enhanceUserWithComputedProps(req.user);
+      return next();
     }
     
-    // Check for our direct authentication cookie - Using optimized string parsing
-    const cookieStr = req.headers.cookie;
-    if (cookieStr.includes('user_id=')) {
-      // Try to extract user ID from cookie - algoritmo otimizado
-      let userId: number | null = null;
-      const userIdIndex = cookieStr.indexOf('user_id=');
-      
-      if (userIdIndex >= 0) {
-        const valueStart = userIdIndex + 8; // 'user_id='.length
-        const valueEnd = cookieStr.indexOf(';', valueStart);
-        const valueStr = valueEnd >= 0 
-          ? cookieStr.substring(valueStart, valueEnd) 
-          : cookieStr.substring(valueStart);
-          
-        userId = parseInt(valueStr);
-      }
-      
-      if (userId && !isNaN(userId)) {
-        // Get user from storage and establish session
-        storage.getUser(userId)
-          .then(user => {
-            if (user) {
-              // Login the user to establish a session
-              req.login(user, (err) => {
-                if (!err) {
-                  // Update last login timestamp silently but don't wait for it
-                  storage.updateUser(user.id, { lastLoginAt: new Date() })
-                    .catch(() => {
-                      // Falha silenciosa para não impactar o usuário
-                    });
-                  
-                  next();
-                }
-              });
-            }
-          })
-          .catch(() => {
-            // Falha silenciosa para economizar memória
-          });
-          
-        // Important: return to prevent execution of code below
-        return;
+    // Method 2: Check session passport data directly
+    if (req.session?.passport?.user) {
+      console.log(`[AUTH] Found session data, fetching user: ${req.session.passport.user}`);
+      const user = await storage.getUser(req.session.passport.user);
+      if (user) {
+        console.log(`[AUTH] ✓ Authenticated via session data: ${user.id}`);
+        req.user = enhanceUserWithComputedProps(user);
+        return next();
       }
     }
+    
+    // Method 3: Check auth cookies
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split('; ');
+      
+      // Try auth_user cookie first
+      const authUserCookie = cookies.find(c => c.startsWith('auth_user='));
+      if (authUserCookie) {
+        const userId = parseInt(authUserCookie.split('=')[1]);
+        if (userId && !isNaN(userId)) {
+          const user = await storage.getUser(userId);
+          if (user) {
+            console.log(`[AUTH] ✓ Authenticated via auth_user cookie: ${user.id}`);
+            req.user = enhanceUserWithComputedProps(user);
+            return next();
+          }
+        }
+      }
+      
+      // Try auth_token cookie
+      const authTokenCookie = cookies.find(c => c.startsWith('auth_token='));
+      if (authTokenCookie) {
+        try {
+          const token = authTokenCookie.split('=')[1];
+          const decoded = Buffer.from(token, 'base64').toString();
+          const [userIdStr] = decoded.split(':');
+          const userId = parseInt(userIdStr);
+          
+          if (userId && !isNaN(userId)) {
+            const user = await storage.getUser(userId);
+            if (user) {
+              console.log(`[AUTH] ✓ Authenticated via auth_token: ${user.id}`);
+              req.user = enhanceUserWithComputedProps(user);
+              return next();
+            }
+          }
+        } catch (error) {
+          console.log(`[AUTH] Error decoding auth_token: ${error}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.log(`[AUTH] Error in authentication middleware: ${error}`);
   }
-  
-  // For development purposes only, allow alternate auth methods
   
   // Check for admin override parameter (for development testing only)
   if (req.query.admin === 'true') {
     console.log("[AUTH] Admin override via query param");
     try {
-      // Try to find admin in the database first
       const adminUser = await storage.getUserByEmail("admin@studio.com");
       
       if (adminUser) {
-        req.login(adminUser, (err) => {
-          if (err) {
-            console.error("[AUTH] Error logging in admin user:", err);
-            return next(err);
-          }
-          console.log("[AUTH] Admin session established via query param");
-          return next();
-        });
-        return; // Return to avoid calling next() twice
-      } else {
-        console.log("[AUTH] Admin user not found in database");
+        req.user = enhanceUserWithComputedProps(adminUser);
+        console.log("[AUTH] Admin session established via query param");
+        return next();
       }
     } catch (error) {
       console.error("[AUTH] Error fetching admin user:", error);
@@ -203,11 +202,7 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   }
   
   // If we reach here, user is not authenticated
-  if (process.env.DEBUG_AUTH === 'true') {
-    console.log("[AUTH] No authentication found, returning 401");
-  }
-  
-  // Return simplified error message to economizar memória
+  console.log("[AUTH] No authentication found, returning 401");
   return res.status(401).json({ 
     message: "Não autorizado"
   });
@@ -306,12 +301,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar se o usuário possui limite disponível
       const uploadCount = req.files.length;
-      const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
+      const canUpload = await checkUserUploadLimit(req.user, uploadCount, storage);
       
       if (!canUpload) {
         return res.status(403).json({ 
           message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
-          uploadLimit: req.user.uploadLimit,
+          uploadLimit: enhanceUserWithComputedProps(req.user).uploadLimit,
           usedUploads: req.user.usedUploads
         });
       }
@@ -370,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         files: uploadedFiles,
         totalUploaded: uploadedFiles.length,
         newUsedUploads: (req.user.usedUploads || 0) + uploadedFiles.length,
-        uploadLimit: req.user.uploadLimit
+        uploadLimit: enhanceUserWithComputedProps(req.user).uploadLimit
       });
     } catch (error) {
       console.error("Error uploading photos to R2:", error);
@@ -384,22 +379,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload uma ou mais imagens diretamente para o Cloudflare R2 Storage e associa a um projeto específico
   // Usando streaming para maior eficiência de memória
   app.post("/api/projects/:id/photos/upload", authenticate, streamUploadMiddleware(), cleanupTempFiles, async (req: Request & { files?: any[] }, res: Response) => {
+    console.log(`[UPLOAD] Starting upload to project ${req.params.id}`);
+    console.log(`[UPLOAD] User: ${req.user?.id}, Role: ${req.user?.role}`);
+    console.log(`[UPLOAD] Files received: ${req.files?.length || 0}`);
+    console.log(`[UPLOAD] Request body:`, req.body);
+    
     try {
       if (!req.user) {
+        console.log(`[UPLOAD ERROR] No authenticated user`);
         return res.status(401).json({ message: "Authentication required" });
       }
       
       const projectId = req.params.id;
+      console.log(`[UPLOAD] Project ID from params: ${projectId}`);
       
-      // Verificar se o projeto existe e pertence ao usuário
-      const project = await db.query.newProjects.findFirst({
+      // Convert projectId to integer for projects table lookup
+      const projectIdNum = parseInt(projectId);
+      if (isNaN(projectIdNum)) {
+        console.log(`[UPLOAD ERROR] Invalid project ID format: ${projectId}`);
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      console.log(`[UPLOAD] Project ID converted to number: ${projectIdNum}`);
+      
+      // Verificar se o projeto existe e pertence ao usuário (using projects table)
+      console.log(`[UPLOAD] Looking for project with ID: ${projectIdNum}, photographer: ${req.user.id}`);
+      
+      const project = await db.query.projects.findFirst({
         where: and(
-          eq(newProjects.id, projectId),
-          eq(newProjects.userId, req.user.id)
+          eq(projects.id, projectIdNum),
+          eq(projects.photographerId, req.user.id)
         )
       });
       
+      console.log(`[UPLOAD] Project found:`, project ? { id: project.id, name: project.name } : 'NOT FOUND');
+      
       if (!project) {
+        console.log(`[UPLOAD ERROR] Project not found or unauthorized - projectId: ${projectIdNum}, userId: ${req.user.id}`);
         return res.status(404).json({ message: "Project not found or unauthorized" });
       }
       
@@ -410,12 +425,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar se o usuário possui limite disponível
       const uploadCount = req.files.length;
-      const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
+      const canUpload = await checkUserUploadLimit(req.user, uploadCount, storage);
       
       if (!canUpload) {
         return res.status(403).json({ 
           message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
-          uploadLimit: req.user.uploadLimit,
+          uploadLimit: enhanceUserWithComputedProps(req.user).uploadLimit,
           usedUploads: req.user.usedUploads
         });
       }
@@ -443,10 +458,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Adicionar a foto ao banco de dados associada ao projeto
           try {
             const newPhoto = await db.insert(photos).values({
-              projectId,
+              id: nanoid(),
+              projectId: projectIdNum,
               url: result.url,
               filename,
-              selected: false
+              originalFilename: file.originalname,
+              isSelected: false
             }).returning();
             
             // Armazenar apenas o ID se precisar recuperar depois
@@ -454,8 +471,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               newPhotos.push(newPhoto[0].id);
             }
           } catch (dbError) {
-            console.error(`Error adding photo to database: ${filename}`);
-            // Não log do erro completo para economizar memória
+            console.error(`Error adding photo to database: ${filename}`, dbError);
+            // Continue with upload even if database insertion fails
           }
             
           // Armazenar apenas dados essenciais
@@ -496,7 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalUploaded: uploadedFiles.length,
         projectId: projectId,
         newUsedUploads: (req.user.usedUploads || 0) + uploadedFiles.length,
-        uploadLimit: req.user.uploadLimit
+        uploadLimit: enhanceUserWithComputedProps(req.user).uploadLimit
       });
     } catch (error) {
       console.error("Error uploading photos to project:", error);
@@ -593,16 +610,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const projectId = req.params.id;
       
+      // Convert projectId to integer for projects table lookup
+      const projectIdNum = parseInt(projectId);
+      if (isNaN(projectIdNum)) {
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      
       // Parâmetros de paginação
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 100; // valor padrão reduzido para 100 itens
       const offset = (page - 1) * pageSize;
       
-      // Primeiro buscar detalhes do projeto sem as fotos
-      const project = await db.query.newProjects.findFirst({
+      // Primeiro buscar detalhes do projeto sem as fotos (using projects table)
+      const project = await db.query.projects.findFirst({
         where: and(
-          eq(newProjects.id, projectId),
-          eq(newProjects.userId, req.user.id)
+          eq(projects.id, projectIdNum),
+          eq(projects.photographerId, req.user.id)
         )
       });
       
@@ -613,7 +636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar contagem total de fotos para este projeto
       const totalPhotosResult = await db.select({ count: count() })
         .from(photos)
-        .where(eq(photos.projectId, projectId));
+        .where(eq(photos.projectId, projectIdNum));
       
       const totalPhotos = totalPhotosResult[0]?.count || 0;
       const totalPages = Math.ceil(totalPhotos / pageSize);
@@ -621,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Agora buscar apenas as fotos da página atual
       const projectPhotos = await db.select()
         .from(photos)
-        .where(eq(photos.projectId, projectId))
+        .where(eq(photos.projectId, projectIdNum))
         .limit(pageSize)
         .offset(offset);
       
@@ -657,11 +680,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Project ID and photo URL are required" });
       }
       
-      // Verify the project belongs to the user
-      const project = await db.query.newProjects.findFirst({
+      // Convert projectId to integer for projects table lookup
+      const projectIdNum = parseInt(projectId);
+      if (isNaN(projectIdNum)) {
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      
+      // Verify the project belongs to the user (using projects table)
+      const project = await db.query.projects.findFirst({
         where: and(
-          eq(newProjects.id, projectId),
-          eq(newProjects.userId, req.user.id)
+          eq(projects.id, projectIdNum),
+          eq(projects.photographerId, req.user.id)
         )
       });
       
@@ -671,9 +700,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add the photo
       const newPhoto = await db.insert(photos).values({
-        projectId,
+        id: nanoid(),
+        projectId: projectIdNum,
         url,
-        selected: false
+        filename: `photo-${nanoid()}.jpg`,
+        isSelected: false
       }).returning();
       
       res.status(201).json(newPhoto[0]);
@@ -834,7 +865,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
       
+      console.log('[ADMIN-API] Fetching users for admin panel...');
       let users = await storage.getUsers();
+      console.log(`[ADMIN-API] Found ${users.length} users from database`);
+      
+      // Log sample user for debugging
+      if (users.length > 0) {
+        const sampleUser = users[0];
+        console.log('[ADMIN-API] Sample user data:', {
+          id: sampleUser.id,
+          name: sampleUser.name,
+          email: sampleUser.email,
+          planType: sampleUser.planType,
+          uploadLimit: sampleUser.uploadLimit,
+          status: sampleUser.status,
+          subscriptionStatus: sampleUser.subscriptionStatus,
+          maxProjects: sampleUser.maxProjects
+        });
+      }
       
       // Apply filters if provided
       if (planType) {
@@ -868,6 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: undefined,
       }));
       
+      console.log(`[ADMIN-API] Returning ${sanitizedUsers.length} users after filtering`);
       res.json(sanitizedUsers);
     } catch (error) {
       console.error("Error retrieving users:", error);
@@ -1187,6 +1236,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const userId = req.user.id;
       
+      // Buscar dados atualizados do usuário da base de dados PostgreSQL
+      const dbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const user = dbUser[0];
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Enriquecer usuário com propriedades computadas
+      const enhancedUser = enhanceUserWithComputedProps(user);
+      
       // Get all projects for this user
       const userProjects = await storage.getProjects(userId);
       
@@ -1215,32 +1275,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Calculate total usage in MB (for this example, assume 2MB per photo on average)
+      // Calculate total usage in MB (assume 2MB per photo average)
       const averagePhotoSizeMB = 2;
       const totalUploadUsageMB = userProjects.reduce((total, project) => {
         const photoCount = project.photos ? project.photos.length : 0;
         return total + photoCount * averagePhotoSizeMB;
       }, 0);
       
-      // Get user details including plan info
-      const user = await storage.getUser(userId);
-      
-      // Calculate REAL current photo count from all active projects (não arquivados)
+      // Calculate REAL current photo count from all active projects
       const activeUserProjects = userProjects.filter(project => project.status !== "arquivado");
       const realCurrentPhotoCount = activeUserProjects.reduce((total, project) => {
         const photoCount = project.photos ? project.photos.length : 0;
         return total + photoCount;
       }, 0);
       
-      // Prepare response
+      // Prepare comprehensive response with all user plan information
       const stats = {
+        // User information
+        user: {
+          id: enhancedUser.id,
+          name: enhancedUser.name,
+          email: enhancedUser.email,
+          role: enhancedUser.role
+        },
+        
+        // Plan information
+        planType: enhancedUser.planType,
+        subscriptionPlan: user.plan || user.subscriptionPlan || "free",
+        subscriptionStatus: user.isActive ? "active" : "inactive",
+        uploadLimit: enhancedUser.uploadLimit,
+        usedUploads: user.usedUploads || 0,
+        maxProjects: user.maxProjects || 1,
+        maxPhotosPerProject: user.maxPhotosPerProject || 50,
+        
+        // Statistics
         activeProjects,
         photosThisMonth,
         totalUploadUsageMB,
+        realCurrentPhotoCount,
+        
+        // Legacy planInfo for backward compatibility
         planInfo: {
-          name: user?.planType || 'basic',
-          uploadLimit: user?.uploadLimit || 1000,
-          usedUploads: realCurrentPhotoCount // Use real current count instead of stored value
+          name: enhancedUser.planType,
+          uploadLimit: enhancedUser.uploadLimit,
+          usedUploads: realCurrentPhotoCount
         }
       };
       
@@ -1616,11 +1694,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Verificar o limite de uploads do usuário
+      // Verificar o limite de uploads do usuário 
       const photoCount = processedPhotos.length;
       
       if (req.user) {
-        const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
+        const hasUploadLimit = await checkUserUploadLimit(req.user, photoCount, storage);
         
         if (!hasUploadLimit) {
           return res.status(403).json({ 
@@ -1952,9 +2030,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No photos provided" });
       }
       
-      // Verificar o limite de upload do usuário (se não for admin)
-      if (req.user && req.user.role !== "admin") {
-        const canUpload = await storage.checkUploadLimit(req.user.id, photoCount);
+      // Verificar o limite de upload do usuário
+      if (req.user) {
+        const canUpload = await checkUserUploadLimit(req.user, photoCount, storage);
         if (!canUpload) {
           return res.status(403).json({ 
             message: "Upload limit exceeded", 
@@ -1963,8 +2041,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Atualizar o uso de upload
-        await storage.updateUploadUsage(req.user.id, photoCount);
+        // Atualizar o uso de upload (se não for admin)
+        if (req.user.role !== "admin") {
+          await storage.updateUploadUsage(req.user.id, photoCount);
+        }
       }
       
       // Atualizar o projeto com as novas fotos
@@ -3035,5 +3115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   return httpServer;
 }
+

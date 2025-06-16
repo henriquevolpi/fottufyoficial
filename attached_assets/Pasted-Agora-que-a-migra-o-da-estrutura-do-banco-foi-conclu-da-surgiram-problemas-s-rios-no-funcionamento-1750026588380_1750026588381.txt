@@ -1,0 +1,58 @@
+Agora que a migração da estrutura do banco foi concluída, surgiram problemas sérios no funcionamento do projeto, especificamente nas integrações, lógicas e funcionalidades principais.
+
+Quero que você execute uma CORREÇÃO COMPLETA, profunda, detalhada e definitiva, garantindo que tudo funcione como antes da migração.
+
+Aqui está exatamente o que está quebrado e precisa ser corrigido:
+
+1. **Uploads não funcionam:**  
+A API de uploads não consegue mais salvar fotos nos projetos. Provavelmente está com problema de relacionamento de project_id, já que os IDs foram alterados (inteiro vs UUID). Corrija isso imediatamente.
+
+2. **Comentários não funcionam:**  
+A API de comentários não encontra mais as fotos e projetos corretamente. Corrija a lógica para que os comentários sejam vinculados corretamente ao photo_id e project_id.
+
+3. **Planos não aparecem e estão quebrados:**  
+O painel admin não mostra mais os planos separados como antes (Free, Basic, Basic V2, Standard, Professional).  
+O backend não está puxando corretamente os dados dos planos (`subscription_plan`, `subscription_status`, `used_uploads`, `max_projects`, `max_photos_per_project`).  
+O frontend não recebe as informações corretas, portanto, não exibe o status correto dos planos, nem os limites.
+
+4. **Limite de uploads e controle de plano não funcionam:**  
+O cálculo de uso (`used_uploads`) não funciona.  
+O backend não calcula ou não busca corretamente quantas fotos cada usuário enviou.  
+As restrições de plano (quantidade de projetos, quantidade de uploads) estão quebradas.
+
+5. **Status de assinatura e Stripe quebrados:**  
+O sistema não reconhece mais se o usuário está ativo, gratuito, inadimplente ou pago.  
+Os dados da Stripe não aparecem corretamente (`stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_end_date`).
+
+⚠️ **Tarefa agora:**  
+- Verificar e corrigir todas as rotas do backend que fazem:  
+   ✅ Upload de fotos  
+   ✅ Criação de comentários  
+   ✅ Consulta dos planos e status dos usuários  
+   ✅ Consulta dos limites de uploads e projetos  
+   ✅ Controle e exibição dos planos no painel admin e dashboard dos usuários  
+
+- Corrigir todas as lógicas de negócio associadas:  
+   ✔️ Limite de uploads  
+   ✔️ Limite de projetos  
+   ✔️ Verificação de plano ativo ou inativo  
+   ✔️ Contagem correta de fotos por usuário  
+
+- Corrigir também o frontend para:  
+   ✔️ Mostrar os planos corretamente (Free, Basic, Basic V2, Standard, Professional).  
+   ✔️ Mostrar corretamente o limite de uploads e o uso atual.  
+   ✔️ Mostrar corretamente se o usuário está ativo, gratuito ou inadimplente.  
+   ✔️ Mostrar corretamente as fotos e comentários nos projetos.
+
+⚠️ **Atenção:**  
+- Todos os dados e lógicas precisam estar funcionando exatamente como antes da migração, mas agora adaptados corretamente para a nova estrutura no Render.  
+- Nenhum dado pode ser perdido. Nenhuma funcionalidade pode continuar quebrada.  
+
+Após executar, gere um relatório detalhado confirmando:  
+- Quantos usuários por plano.  
+- Limites de uploads funcionando.  
+- Upload e comentários funcionando.  
+- Planos ativos, gratuitos, pagos e inadimplentes funcionando corretamente.  
+- Integração Stripe funcionando e refletindo status real.  
+
+⚠️ Isso é prioridade máxima. Execute com extremo cuidado e precisão.

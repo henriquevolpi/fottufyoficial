@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-06-16T00:52:55.539Z",
+  "timestamp": "2025-06-15T20:54:53.248Z",
   "database": "neondb",
   "totalTables": 7,
-  "totalRecords": 57063,
+  "totalRecords": 57005,
   "results": [
     {
       "table": "new_projects",
@@ -17,7 +17,7 @@
     {
       "table": "photo_comments",
       "success": true,
-      "records": 23
+      "records": 22
     },
     {
       "table": "photos",
@@ -27,17 +27,17 @@
     {
       "table": "projects",
       "success": true,
-      "records": 142
+      "records": 140
     },
     {
       "table": "session",
       "success": true,
-      "records": 56670
+      "records": 56616
     },
     {
       "table": "users",
       "success": true,
-      "records": 200
+      "records": 199
     }
   ],
   "successfulTables": 7,

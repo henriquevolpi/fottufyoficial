@@ -1,9 +1,6 @@
 -- Backup da tabela: photo_comments
--- Total de registros: 23
--- Data do backup: 2025-06-16T00:52:53.948Z
-
--- Desabilitar triggers
-ALTER TABLE "photo_comments" DISABLE TRIGGER ALL;
+-- Total de registros: 22
+-- Data do backup: 2025-06-15T20:54:51.290Z
 
 INSERT INTO "photo_comments" ("id", "photo_id", "client_name", "comment", "is_viewed", "created_at") VALUES
 ('211ccb32-04cb-4b83-9835-a4a9b94ab464', 'j-kpQQpqG4RKHuUn5bMML', 'Maria Santos', 'Foto maravilhosa! A iluminação ficou perfeita.', false, '2025-06-08T02:19:14.156Z'),
@@ -27,9 +24,5 @@ INSERT INTO "photo_comments" ("id", "photo_id", "client_name", "comment", "is_vi
 ('fce2b456-7669-4d91-a7ba-b5e96b6d56c8', 'YRaYfc0cGKgwAANF5Ip24', 'Cliente', 'chapelada', false, '2025-06-11T23:23:19.730Z'),
 ('864d60c3-1889-4524-8b5d-f0b580f36673', 'bZ4bh2KesFhfeH7tOErwp', 'Cliente', 'teste', false, '2025-06-12T15:33:49.790Z'),
 ('fb283aac-ddf2-4baa-8d86-58f55062cee7', 'Mt4SFihbx0YM2zUt_8dep', 'Cliente', '1234', false, '2025-06-12T15:34:34.394Z'),
-('b9a3b9ba-8261-4905-828a-c2a1b84a5495', 'kXgOmcSJ5tB607DwdN4pJ', 'Cliente', 'TESTENEON', false, '2025-06-14T04:22:57.177Z'),
-('bc847d84-e0f7-4f49-bd8b-42b0ae444d4e', '6NoTPq_Tyvnno9PzEkMO0', 'Cliente', 'tu', false, '2025-06-16T00:48:02.597Z');
-
--- Reabilitar triggers
-ALTER TABLE "photo_comments" ENABLE TRIGGER ALL;
+('b9a3b9ba-8261-4905-828a-c2a1b84a5495', 'kXgOmcSJ5tB607DwdN4pJ', 'Cliente', 'TESTENEON', false, '2025-06-14T04:22:57.177Z');
 

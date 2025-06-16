@@ -1,7 +1,7 @@
 {
   "tableName": "photo_comments",
-  "timestamp": "2025-06-16T00:52:53.946Z",
-  "recordCount": 23,
+  "timestamp": "2025-06-15T20:54:51.282Z",
+  "recordCount": 22,
   "structure": {
     "columns": [
       {
@@ -243,14 +243,6 @@
       "comment": "TESTENEON",
       "is_viewed": false,
       "created_at": "2025-06-14T04:22:57.177Z"
-    },
-    {
-      "id": "bc847d84-e0f7-4f49-bd8b-42b0ae444d4e",
-      "photo_id": "6NoTPq_Tyvnno9PzEkMO0",
-      "client_name": "Cliente",
-      "comment": "tu",
-      "is_viewed": false,
-      "created_at": "2025-06-16T00:48:02.597Z"
     }
   ]
 }

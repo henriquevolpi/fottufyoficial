@@ -3,22 +3,28 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// User model matching Render database structure
+// User model matching migrated database structure
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").default("photographer"),
-  status: text("status").default("active"),
+  role: text("role").notNull().default("photographer"), // photographer | admin
   phone: text("phone"),
-  created_at: timestamp("created_at").defaultNow(),
   plan: text("plan").default("free"),
-  plan_expires_at: timestamp("plan_expires_at"),
-  max_projects: integer("max_projects").default(5),
-  max_photos_per_project: integer("max_photos_per_project").default(50),
-  is_active: boolean("is_active").default(true),
-  updated_at: timestamp("updated_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  planExpiresAt: timestamp("plan_expires_at"),
+  maxProjects: integer("max_projects").default(5),
+  maxPhotosPerProject: integer("max_photos_per_project").default(50),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionPlan: text("subscription_plan").default("free"),
+  subscriptionStatus: text("subscription_status").default("active"),
+  usedUploads: integer("used_uploads").default(0),
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
 });
 
 // Relations for users
@@ -29,9 +35,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
-  lastEvent: true,
-  lastLoginAt: true,
-  uploadLimit: true,
+  updatedAt: true,
   usedUploads: true,
   subscriptionStartDate: true,
   subscriptionEndDate: true,
@@ -152,22 +156,22 @@ export const insertNewProjectSchema = createInsertSchema(newProjects).omit({
   createdAt: true,
 });
 
-// Photos table with UUIDs
+// Photos table matching current database structure
 export const photos = pgTable("photos", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  projectId: uuid("project_id").notNull().references(() => newProjects.id, { onDelete: "cascade" }),
+  id: text("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
-  filename: text("filename"), // Nome único usado pelo R2
-  originalName: text("original_name"), // Nome original do arquivo enviado pelo usuário
-  selected: boolean("selected").default(false),
+  filename: text("filename").notNull(),
+  originalFilename: text("original_filename"),
+  isSelected: boolean("is_selected").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Relations for the photos table
 export const photosRelations = relations(photos, ({ one, many }) => ({
-  project: one(newProjects, {
+  project: one(projects, {
     fields: [photos.projectId],
-    references: [newProjects.id],
+    references: [projects.id],
   }),
   comments: many(photoComments),
 }));
@@ -179,11 +183,12 @@ export const insertPhotoSchema = createInsertSchema(photos).omit({
 
 // Photo Comments table
 export const photoComments = pgTable("photo_comments", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  photoId: uuid("photo_id").notNull().references(() => photos.id, { onDelete: "cascade" }),
-  clientName: text("client_name").notNull(), // Nome do cliente que comentou
-  comment: text("comment").notNull(), // O comentário em si
-  isViewed: boolean("is_viewed").default(false), // Se o fotógrafo já viu o comentário
+  id: text("id").primaryKey(),
+  photoId: text("photo_id").notNull().references(() => photos.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull(),
+  clientName: text("client_name").notNull(),
+  comment: text("comment").notNull(),
+  isViewed: boolean("is_viewed").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -203,8 +208,13 @@ export const insertPhotoCommentSchema = createInsertSchema(photoComments).omit({
   photoId: z.string().min(1), // Accept any non-empty string for photo ID
 });
 
-// Types
-export type User = typeof users.$inferSelect;
+// Types with computed properties
+export type User = typeof users.$inferSelect & {
+  uploadLimit?: number;
+  planType?: string;
+  status?: string;
+  subscription_id?: string;
+};
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Project = typeof projects.$inferSelect;
