@@ -10,12 +10,15 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Configuração otimizada para PostgreSQL do Render  
+// Configuração otimizada para PostgreSQL do Render com SSL
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
+  ssl: {
+    rejectUnauthorized: false
+  }
 };
 
 // Log database connection status

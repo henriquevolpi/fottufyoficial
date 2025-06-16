@@ -1046,8 +1046,9 @@ export class DatabaseStorage implements IStorage {
   public sessionStore: any;
 
   constructor() {
+    // Configurar sessionStore com pool já configurado para SSL
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      pool: pool, // Usar o pool já configurado com SSL
       createTableIfMissing: true,
       tableName: 'session',
       schemaName: 'public',
