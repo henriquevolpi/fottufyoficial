@@ -2155,27 +2155,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Obter planos de assinatura
   app.get("/api/subscription/plans", authenticate, async (req: Request, res: Response) => {
     try {
-      // Preparar os planos V2 para mostrar a todos os usuários
-      const plansV2 = {
-        FREE: { ...SUBSCRIPTION_PLANS.FREE, current: req.user?.planType === 'free' },
-        BASIC_V2: { ...SUBSCRIPTION_PLANS.BASIC_V2, current: req.user?.planType === 'basic_v2' },
-        STANDARD_V2: { ...SUBSCRIPTION_PLANS.STANDARD_V2, current: req.user?.planType === 'standard_v2' },
-        PROFESSIONAL_V2: { ...SUBSCRIPTION_PLANS.PROFESSIONAL_V2, current: req.user?.planType === 'professional_v2' },
+      // Obter o tipo de plano do usuário atual
+      const userPlanType = req.user?.planType || 'free';
+      
+      // Normalizar o planType para comparação (converter para lowercase e remover espaços)
+      const normalizedUserPlan = userPlanType.toLowerCase().trim();
+      
+      // Mapear todos os planos disponíveis e marcar o atual
+      const allPlans = {
+        FREE: { ...SUBSCRIPTION_PLANS.FREE, current: normalizedUserPlan === 'free' },
+        BASIC: { ...SUBSCRIPTION_PLANS.BASIC, current: normalizedUserPlan === 'basic' },
+        BASIC_V2: { ...SUBSCRIPTION_PLANS.BASIC_V2, current: normalizedUserPlan === 'basic_v2' },
+        STANDARD: { ...SUBSCRIPTION_PLANS.STANDARD, current: normalizedUserPlan === 'standard' },
+        STANDARD_V2: { ...SUBSCRIPTION_PLANS.STANDARD_V2, current: normalizedUserPlan === 'standard_v2' },
+        PROFESSIONAL: { ...SUBSCRIPTION_PLANS.PROFESSIONAL, current: normalizedUserPlan === 'professional' },
+        PROFESSIONAL_V2: { ...SUBSCRIPTION_PLANS.PROFESSIONAL_V2, current: normalizedUserPlan === 'professional_v2' },
       };
       
-      // Verificar se o usuário está em um plano antigo
-      const userPlanType = req.user?.planType || 'free';
-      const isLegacyPlan = ['basic', 'standard', 'professional'].includes(userPlanType);
-      
-      // Se o usuário está em um plano antigo, adicione esse plano específico aos planos disponíveis
-      let plans = plansV2;
-      if (isLegacyPlan) {
-        const planKey = userPlanType.toUpperCase() as keyof typeof SUBSCRIPTION_PLANS;
-        plans = {
-          ...plansV2,
-          [planKey]: { ...SUBSCRIPTION_PLANS[planKey], current: true }
-        };
-      }
+      // Filtrar apenas os planos que existem no SUBSCRIPTION_PLANS
+      const plans = Object.fromEntries(
+        Object.entries(allPlans).filter(([key, plan]) => 
+          SUBSCRIPTION_PLANS[key as keyof typeof SUBSCRIPTION_PLANS] !== undefined
+        )
+      );
       
       // Incluir estatísticas do usuário atual
       const userStats = {
