@@ -62,12 +62,12 @@ interface HotmartWebhookPayload {
 // Mapeamento dos códigos de oferta da Hotmart para os planos do Fottufy
 // Configurado com os códigos reais das ofertas da Hotmart
 const HOTMART_OFFER_TO_PLAN_MAP: Record<string, string> = {
-  // Mapeamento conforme especificado
-  "ro76q5uz": "basic_v2",
-  "z0pxaesy": "basic_v2",  // Corrigido: Plano Básico deve mapear para basic_v2
-  "tpfhcllk": "standard",
-  "hjb8gqn7": "standard_v2",  // Corrigido: Plano R$29,90 deve mapear para standard_v2 (15.000 fotos)
-  "xtuh4ji0": "professional"
+  // Mapeamento corrigido conforme solicitação
+  "ro76q5uz": "basic_v2",        // R$14,90 - 6.000 fotos
+  "z0pxaesy": "basic_v2",        // R$14,90 - 6.000 fotos  
+  "tpfhcllk": "standard_v2",     // R$29,90 - 15.000 fotos (CORRIGIDO)
+  "hjb8gqn7": "standard_v2",     // R$29,90 - 15.000 fotos
+  "xtuh4ji0": "professional_v2"  // R$49,90 - 35.000 fotos (CORRIGIDO)
 };
 
 // Função para gerar uma senha aleatória para novos usuários
