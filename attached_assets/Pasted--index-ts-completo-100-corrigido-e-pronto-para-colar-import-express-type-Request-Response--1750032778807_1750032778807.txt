@@ -43,7 +43,7 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "https://37c5b464-5962-44e7-9a4e-6af568cdfd81-00-27kawzdbfhlcc.worf.replit.dev",
+    "https://SEU-FRONTEND.replit.dev",
     "http://localhost:3000",
     "http://localhost:5000"
   ],
@@ -57,12 +57,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET!,
   resave: false,
   saveUninitialized: false,
-  store: dbStorage.sessionStore,
   cookie: {
     httpOnly: true,
     secure: false,
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    sameSite: "lax"
   }
 }));
 
