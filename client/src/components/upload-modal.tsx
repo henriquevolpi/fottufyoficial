@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image } from "lucide-react";
-import { compressMultipleImages, isValidImageFile, formatFileSize } from "@/lib/imageCompression";
+import { compressMultipleImages, isImageFile } from "@/lib/imageCompression";
 import {
   Dialog,
   DialogContent,
@@ -112,6 +112,11 @@ export default function UploadModal({
       // Redimensionar todas as imagens com progresso
       const compressedFiles = await compressMultipleImages(
         files,
+        {
+          maxWidthOrHeight: 970, // Largura máxima padronizada
+          quality: 0.9, // Qualidade padronizada
+          useWebWorker: true,
+        },
         (processed, total) => {
           // Atualizar progresso do redimensionamento (10% a 40%)
           const compressionProgress = 10 + ((processed / total) * 30);

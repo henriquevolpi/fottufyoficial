@@ -1,18 +1,12 @@
 #!/usr/bin/env node
 
-import { Pool } from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configuração da conexão para o banco Render
-const RENDER_DATABASE_URL = "postgresql://fottufy_user:ls7dGvLeojlTv0YpxclVRMYWhpNfwLKy@dpg-d17j2fgdl3ps73ahtrs0-a.oregon-postgres.render.com/fottufy";
-
+// Configuração da conexão usando a variável de ambiente
 const pool = new Pool({
-  connectionString: RENDER_DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   }
@@ -219,7 +213,7 @@ async function cleanup() {
 }
 
 // Executar restauração
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   const useSQL = process.argv.includes('--sql') || !process.argv.includes('--json');
   
   performRestore(useSQL)
@@ -234,4 +228,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     });
 }
 
-export { performRestore, cleanup };
+module.exports = { performRestore, cleanup };

@@ -1,1 +1,0 @@
--- Tabela photos: sem dados
