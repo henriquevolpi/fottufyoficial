@@ -369,10 +369,13 @@ export class MemStorage implements IStorage {
     
     this.userId = 1;
     this.projectId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // 24 hours to clean expired sessions
-      stale: false, // Do not delete stale sessions
-      ttl: 7 * 24 * 60 * 60 * 1000 // 7 days TTL (matches cookie maxAge)
+    // Use PostgreSQL session store for better reliability in cloud environments
+    this.sessionStore = new PostgresSessionStore({
+      pool: pool, // Use the existing database pool
+      tableName: 'session', // Table name for storing sessions
+      createTableIfMissing: true, // Automatically create the table if it doesn't exist
+      ttl: 7 * 24 * 60 * 60 * 1000, // 7 days TTL (matches cookie maxAge)
+      schemaName: 'public' // Use public schema
     });
     
     // Create a default admin user for testing
