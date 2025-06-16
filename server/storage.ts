@@ -5,7 +5,6 @@ import {
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
-import { enhanceUserWithComputedProps } from "./utils/userUtils";
 import { nanoid } from "nanoid";
 import { db } from "./db";
 import { eq, and, desc, asc, count, inArray, sql, lt, ne, gte, isNull, or } from "drizzle-orm";
@@ -369,13 +368,10 @@ export class MemStorage implements IStorage {
     
     this.userId = 1;
     this.projectId = 1;
-    // Use PostgreSQL session store for better reliability in cloud environments
-    this.sessionStore = new PostgresSessionStore({
-      pool: pool, // Use the existing database pool
-      tableName: 'session', // Table name for storing sessions
-      createTableIfMissing: true, // Automatically create the table if it doesn't exist
-      ttl: 7 * 24 * 60 * 60 * 1000, // 7 days TTL (matches cookie maxAge)
-      schemaName: 'public' // Use public schema
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // 24 hours to clean expired sessions
+      stale: false, // Do not delete stale sessions
+      ttl: 7 * 24 * 60 * 60 * 1000 // 7 days TTL (matches cookie maxAge)
     });
     
     // Create a default admin user for testing
@@ -433,10 +429,7 @@ export class MemStorage implements IStorage {
   }
 
   async getUsers(): Promise<User[]> {
-    // Esta implementação é do MemStorage - redirecionar para DatabaseStorage
-    console.log('[MEMSTORAGE] getUsers() called - delegating to DatabaseStorage');
-    const dbStorage = new DatabaseStorage();
-    return await dbStorage.getUsers();
+    return Array.from(this.users.values());
   }
 
   async createUser(userData: InsertUser): Promise<User> {
@@ -642,53 +635,28 @@ export class MemStorage implements IStorage {
   
   // Métodos de gerenciamento de uploads
   async checkUploadLimit(userId: number, count: number): Promise<boolean> {
-    // Buscar usuário diretamente do PostgreSQL para ter dados atualizados
-    const dbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const user = dbUser[0];
-    
+    const user = this.users.get(userId);
     if (!user) return false;
     
-    // Aplicar enhancement para obter limites corretos
-    const enhancedUser = enhanceUserWithComputedProps(user);
-    
-    console.log(`[UPLOAD-LIMIT] User ${userId} (${user.email}): plan=${user.plan}, role=${user.role}, isActive=${user.isActive}`);
-    console.log(`[UPLOAD-LIMIT] Enhanced user: planType=${enhancedUser.planType}, uploadLimit=${enhancedUser.uploadLimit}`);
-    
-    // Admin users have unlimited uploads
-    if (user.role === 'admin') {
-      console.log(`[UPLOAD-LIMIT] Admin user - allowing upload`);
-      return true;
-    }
-    
     // Check if subscription is active
-    if (user.isActive !== true) {
-      console.log(`[UPLOAD-LIMIT] User not active - denying upload`);
+    if (user.subscriptionStatus !== "active" && user.planType !== "free") {
       return false;
     }
     
-    // Calculate dynamic upload limit based on user's plan
-    const uploadLimit = enhancedUser.uploadLimit;
-    
     // If user has unlimited plan (uploadLimit < 0), always return true
-    if (uploadLimit < 0) {
-      console.log(`[UPLOAD-LIMIT] Unlimited plan - allowing upload`);
+    if (user.uploadLimit !== null && user.uploadLimit < 0) {
       return true;
     }
     
     // Check if user has available upload quota
+    const uploadLimit = user.uploadLimit || 0;
     const usedUploads = user.usedUploads || 0;
     const availableUploads = uploadLimit - usedUploads;
-    
-    console.log(`[UPLOAD-LIMIT] User ${userId}: ${usedUploads}/${uploadLimit} uploads used, attempting ${count}, available: ${availableUploads}`);
-    
     return availableUploads >= count;
   }
   
   async updateUploadUsage(userId: number, addCount: number): Promise<User | undefined> {
-    // Buscar usuário atual do PostgreSQL
-    const dbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const user = dbUser[0];
-    
+    const user = this.users.get(userId);
     if (!user) return undefined;
     
     // Calculate new value for used uploads
@@ -702,15 +670,12 @@ export class MemStorage implements IStorage {
     
     console.log(`Upload usage updated for user ${userId}: ${currentUsed} → ${newUsedUploads} (added ${addCount})`);
     
-    // Update user no PostgreSQL
-    await db
-      .update(users)
-      .set({ usedUploads: newUsedUploads })
-      .where(eq(users.id, userId));
+    // Update user
+    const updatedUser = await this.updateUser(userId, {
+      usedUploads: newUsedUploads,
+    });
     
-    // Retornar usuário atualizado com enhancement
-    const updatedDbUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    return updatedDbUser[0] ? enhanceUserWithComputedProps(updatedDbUser[0]) : undefined;
+    return updatedUser;
   }
   
   async syncUsedUploads(userId: number): Promise<User | undefined> {
@@ -1195,35 +1160,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUsers(): Promise<User[]> {
     try {
-      console.log('[DATABASE] Fetching users from PostgreSQL...');
-      const dbUsers = await db.select().from(users).orderBy(desc(users.createdAt));
-      console.log(`[DATABASE] Found ${dbUsers.length} raw users from database`);
-      
-      // Apply enhanceUserWithComputedProps to each user
-      const enhancedUsers = dbUsers.map(user => {
-        const enhanced = enhanceUserWithComputedProps(user);
-        return enhanced;
-      });
-      
-      console.log(`[DATABASE] Enhanced ${enhancedUsers.length} users with computed properties`);
-      
-      // Log sample enhanced user for debugging
-      if (enhancedUsers.length > 0) {
-        const sampleUser = enhancedUsers[0];
-        console.log('[DATABASE] Sample enhanced user:', {
-          id: sampleUser.id,
-          name: sampleUser.name,
-          email: sampleUser.email,
-          planType: sampleUser.planType,
-          uploadLimit: sampleUser.uploadLimit,
-          status: sampleUser.status,
-          subscriptionStatus: sampleUser.subscriptionStatus,
-          maxProjects: sampleUser.maxProjects,
-          isActive: sampleUser.isActive
-        });
-      }
-      
-      return enhancedUsers;
+      return await db.select().from(users).orderBy(desc(users.createdAt));
     } catch (error) {
       console.error("Erro ao buscar todos os usuários:", error);
       return [];
@@ -1936,14 +1873,9 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Busca usuários com downgrades que já venceram
-   * TEMPORARIAMENTE DESATIVADO - colunas não existem no banco migrado
    */
   async getUsersWithExpiredDowngrades(): Promise<User[]> {
     try {
-      // Retorna array vazio até que as colunas sejam adicionadas
-      return [];
-      
-      /* Código original comentado até migração completa do schema
       const now = new Date();
       
       const expiredUsers = await db
@@ -1955,10 +1887,9 @@ export class DatabaseStorage implements IStorage {
             sql`pending_downgrade_date <= ${now}`
           )
         );
-      */
       
-      // console.log(`[DOWNGRADE] Encontrados ${expiredUsers.length} usuários com downgrades expirados`);
-      // return expiredUsers;
+      console.log(`[DOWNGRADE] Encontrados ${expiredUsers.length} usuários com downgrades expirados`);
+      return expiredUsers;
     } catch (error) {
       console.error("Erro ao buscar usuários com downgrades expirados:", error);
       return [];
@@ -2018,12 +1949,8 @@ export class DatabaseStorage implements IStorage {
     console.log(`[ADM] Plano ${planType} ativado manualmente para usuário ${userId} por ${adminEmail} - expira em 34 dias`);
   }
   
-  // Método para processar planos manuais expirados (TEMPORARIAMENTE DESATIVADO)
+  // Método para processar planos manuais expirados (executa automaticamente a cada hora)
   async processExpiredManualActivations(): Promise<number> {
-    console.log('[ADM] Nenhuma ativação manual expirada encontrada');
-    return 0;
-    
-    /* Código original comentado até migração completa do schema
     const now = new Date();
     const thirtyFourDaysAgo = new Date(now.getTime() - (34 * 24 * 60 * 60 * 1000));
     
@@ -2037,7 +1964,6 @@ export class DatabaseStorage implements IStorage {
           ne(users.planType, 'free')
         )
       );
-    */
     
     let processedCount = 0;
     

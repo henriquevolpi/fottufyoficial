@@ -9,7 +9,6 @@ import { User as SelectUser, users } from "@shared/schema";
 import { sendEmail } from "./utils/sendEmail";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { enhanceUserWithComputedProps } from "./utils/userUtils";
 
 declare global {
   namespace Express {
@@ -223,33 +222,28 @@ async function comparePasswords(supplied: string, stored: string): Promise<boole
 }
 
 export function setupAuth(app: Express) {
-  // Detect if we're in a cross-domain environment
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isReplit = !!(process.env.REPLIT_DB_URL || process.env.REPL_ID);
-  
-  // Configure session cookie options for cross-domain compatibility
+  // Configure session cookie options for maximum compatibility
   const sessionSettings: session.SessionOptions = {
+    // Use a strong secret for security
     secret: process.env.SESSION_SECRET || "studio-development-secret-key-testing-onlyaaaaa", 
+    // These settings must be true for Replit environment to work properly
     resave: true, 
     saveUninitialized: true,
     store: storage.sessionStore,
-    name: 'fottufy.sid', // Custom session name to avoid conflicts
+    name: 'studio.sid',
     cookie: { 
-      // Enable secure cookies for HTTPS environments (Replit uses HTTPS)
-      secure: !!(isReplit || isProduction),
-      // Long session duration
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      // Allow frontend access to cookies for debugging and fallback auth
+      // Must be false in development (no HTTPS)
+      secure: false,
+      // Longer session duration (30 days) to avoid frequent re-logins
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      // Allow JavaScript to read the cookie for backup recovery
       httpOnly: false,
-      // Critical: Use 'none' for cross-domain functionality
-      sameSite: isReplit || isProduction ? 'none' : 'lax',
+      // Para Replit, usar 'lax' funciona melhor que 'none'
+      sameSite: 'lax',
       path: '/',
-      // No domain restriction to allow cross-domain access
+      // No domain restriction for better compatibility
       domain: undefined
-    },
-    // Additional options for better cross-domain support
-    proxy: true, // Trust proxy headers
-    rolling: true // Reset expiration on each request
+    }
   };
 
   app.set("trust proxy", 1);
@@ -349,23 +343,18 @@ export function setupAuth(app: Express) {
           console.log(`Session ID: ${req.sessionID}`);
         }
         
-        // Set cross-domain compatible cookies for registration
-        const cookieOptions = {
-          httpOnly: false,
-          maxAge: 30 * 24 * 60 * 60 * 1000,
-          path: '/',
-          sameSite: (isReplit || isProduction ? 'none' : 'lax') as 'none' | 'lax',
-          secure: isReplit || isProduction,
-          domain: undefined
-        };
-        
+        // Definir o cookie de backup (igual ao login)
         try {
-          res.cookie('auth_user', user.id, cookieOptions);
-          
-          const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
-          res.cookie('auth_token', authToken, cookieOptions);
+          res.cookie('user_id', user.id, {
+            httpOnly: false,  // Precisa ser acessível pelo JS
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: '/',
+            sameSite: 'lax',
+            secure: false,
+            domain: undefined
+          });
         } catch (cookieError) {
-          console.error("Error setting cookies after registration:", cookieError);
+          console.error("Error setting cookie after registration:", cookieError);
         }
         
         // Importante: Retornar o objeto de usuário COMPLETO (exceto senha) igual ao fluxo de login
@@ -393,7 +382,7 @@ export function setupAuth(app: Express) {
       req.body.email = req.body.email.toLowerCase();
     }
     
-    passport.authenticate("local", (err: any, user: any, info: any) => {
+    passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
       if (!user) {
         // Evitar expor a estrutura interna de autenticação para o cliente
@@ -406,43 +395,37 @@ export function setupAuth(app: Express) {
       req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
       
       // Definir o usuario nas sessões
-      req.login(user, (err: any) => {
+      req.login(user, async (err) => {
         if (err) return next(err);
         
-        // Set user in session manually to ensure it's saved
-        (req.session as any).passport = { user: user.id };
+        // Atualizar o campo lastLoginAt
+        try {
+          await storage.updateUser(user.id, { lastLoginAt: new Date() });
+        } catch (updateError) {
+          // Log o erro mas continua o login (não é crucial)
+          console.error("Error updating lastLoginAt:", updateError);
+        }
         
-        // Force save session immediately
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Error saving session:", saveErr);
-            return next(saveErr);
-          }
-            
-          console.log(`[LOGIN] User ${user.id} logged in successfully`);
-          console.log(`[LOGIN] Session ID: ${req.sessionID}`);
-          console.log(`[LOGIN] Session data:`, req.session);
-          
-          // Set multiple authentication cookies for cross-domain compatibility
-          const cookieOptions = {
-            httpOnly: false,
+        // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
+        try {
+          // Informação sobre o domínio para o javascript do cliente
+          res.cookie('user_id', user.id, {
+            httpOnly: false,  // Precisa ser acessível pelo JS
             maxAge: 30 * 24 * 60 * 60 * 1000,
             path: '/',
-            sameSite: (isReplit || isProduction ? 'none' : 'lax') as 'none' | 'lax',
-            secure: isReplit || isProduction,
-            domain: undefined // Allow cross-domain
-          };
-          
-          res.cookie('auth_user', user.id, cookieOptions);
-          
-          // Set simple auth token that frontend can use
-          const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
-          res.cookie('auth_token', authToken, cookieOptions);
-          
-          // Return user data
-          const { password, ...userData } = user;
-          res.json(userData);
-        });
+            sameSite: 'lax',
+            secure: false,
+            // Força o cookie a ser definido mesmo em contextos de iframe
+            domain: undefined
+          });
+        } catch (cookieError) {
+          // Log o erro mas continua o login (não é crucial)
+          console.error("Error setting cookie:", cookieError);
+        }
+        
+        // Retornar apenas os dados necessários por segurança
+        const { password, ...userData } = user;
+        res.json(userData);
       });
     })(req, res, next);
   });
@@ -460,50 +443,112 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", async (req, res) => {
-    console.log("[USER] Checking user authentication");
-    console.log(`[USER] Session ID: ${req.sessionID}`);
-    console.log(`[USER] Cookies: ${req.headers.cookie ? 'present' : 'undefined'}`);
-    console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
-    console.log(`[USER] User in request: ${req.user ? 'set' : "not set"}`);
+  app.get("/api/user", (req, res) => {
+    if (process.env.DEBUG_AUTH === 'true') {
+      console.log("[USER] Checking user authentication");
+      console.log(`[USER] Session ID: ${req.sessionID}`);
+      console.log(`[USER] Cookies: ${req.headers.cookie ? 'present' : 'undefined'}`);
+      console.log(`[USER] Is authenticated: ${req.isAuthenticated ? req.isAuthenticated() : "not a function"}`);
+      console.log(`[USER] User in request: ${req.user ? 'set' : "not set"}`);
+    }
     
     // First, handle normal passport session authentication
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      console.log(`[USER] User authenticated via session`);
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`[USER] User authenticated via session`);
+      }
       
-      // Apply enhanceUserWithComputedProps to get real plan data and limits
-      const enhancedUser = enhanceUserWithComputedProps(req.user);
-      const { password, ...userData } = enhancedUser;
-      
-      console.log('[USER-API] Returning enhanced user data:', {
-        id: userData.id,
-        name: userData.name,
-        planType: userData.planType,
-        uploadLimit: userData.uploadLimit,
-        status: userData.status,
-        maxProjects: userData.maxProjects
-      });
-      
+      // Return user data without password - enviando apenas os dados necessários
+      const { password, ...userData } = req.user;
       return res.json(userData);
     }
     
-    // Try to recover session from cookies if available
-    if (req.headers.cookie && req.headers.cookie.includes('studio.sid')) {
-      console.log('[USER] Session cookie found, attempting to reload session...');
+    // If we have any backup cookies but no session, try to rebuild session
+    if (req.headers.cookie) {
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log('[USER] Found cookies but no passport session. Attempting to recover...');
+      }
       
-      // Force session reload to recover user data
-      req.session.reload((err) => {
-        if (!err && req.isAuthenticated && req.isAuthenticated() && req.user) {
-          console.log('[USER] Session recovered successfully');
-          const enhancedUser = enhanceUserWithComputedProps(req.user);
-          const { password, ...userData } = enhancedUser;
-          return res.json(userData);
-        } else {
-          console.log('[USER] Failed to recover session from cookie');
-          return res.status(401).json({ message: "Não autorizado" });
+      // Try to extract user ID from any available cookie
+      let userId = null;
+      const cookies = req.headers.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        // Check both our original cookie and the new user_id cookie
+        if (name === 'studio_user_id' || name === 'user_id') {
+          userId = parseInt(value);
+          break;
         }
-      });
-      return;
+      }
+      
+      if (userId && !isNaN(userId)) {
+        // Try to get the user data
+        storage.getUser(userId)
+          .then(user => {
+            if (user) {
+              if (process.env.DEBUG_AUTH === 'true') {
+                console.log(`[USER] Loaded user from cookie`);
+              }
+              
+              // Atualizar o campo lastLoginAt
+              storage.updateUser(user.id, { lastLoginAt: new Date() })
+                .then(updatedUser => {
+                  if (process.env.DEBUG_AUTH === 'true') {
+                    console.log(`[USER] Last login timestamp updated`);
+                  }
+                  
+                  // Se o updateUser retornar um usuário atualizado, usamos ele, caso contrário mantém o original
+                  const userToLogin = updatedUser || user;
+                  
+                  // Login the user to establish a session
+                  req.login(userToLogin, (err) => {
+                    if (err && process.env.DEBUG_AUTH === 'true') {
+                      console.error('[USER] Error establishing session');
+                      return res.status(401).json({ message: "Não autorizado" });
+                    }
+                    
+                    // Return the user data
+                    if (process.env.DEBUG_AUTH === 'true') {
+                      console.log('[USER] Session established');
+                    }
+                    const { password, ...userData } = userToLogin;
+                    return res.json(userData);
+                  });
+                })
+                .catch(error => {
+                  if (process.env.DEBUG_AUTH === 'true') {
+                    console.error("[USER] Error updating last login timestamp");
+                  }
+                  
+                  // Login the user to establish a session (mesmo com erro na atualização do timestamp)
+                  req.login(user, (err) => {
+                    if (err && process.env.DEBUG_AUTH === 'true') {
+                      console.error('[USER] Error establishing session');
+                      return res.status(401).json({ message: "Não autorizado" });
+                    }
+                    
+                    // Return the user data
+                    if (process.env.DEBUG_AUTH === 'true') {
+                      console.log('[USER] Session established');
+                    }
+                    const { password, ...userData } = user;
+                    return res.json(userData);
+                  });
+                });
+              return; // Important to prevent executing the code below
+            } else if (process.env.DEBUG_AUTH === 'true') {
+              console.log(`[USER] Could not find user from cookie`);
+            }
+          })
+          .catch(err => {
+            if (process.env.DEBUG_AUTH === 'true') {
+              console.error('[USER] Error loading user from cookie');
+            }
+          });
+        
+        // Return early since we're handling response in promise
+        return;
+      }
     }
     
     // Log adicional apenas se DEBUG_AUTH for habilitado
