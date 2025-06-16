@@ -29,10 +29,29 @@ async function restoreSimple() {
     replitPool = await connectToReplit();
     
     console.log('🧹 Limpando banco...');
-    await replitPool.query('DROP SCHEMA public CASCADE');
-    await replitPool.query('CREATE SCHEMA public');
-    await replitPool.query('GRANT ALL ON SCHEMA public TO postgres');
-    await replitPool.query('GRANT ALL ON SCHEMA public TO public');
+    
+    // Obter e dropar todas as tabelas existentes
+    const existingTables = await replitPool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+    `);
+    
+    for (const row of existingTables.rows) {
+      await replitPool.query(`DROP TABLE IF EXISTS ${row.table_name} CASCADE`);
+    }
+    
+    // Obter e dropar todas as sequences existentes
+    const existingSequences = await replitPool.query(`
+      SELECT sequence_name 
+      FROM information_schema.sequences 
+      WHERE sequence_schema = 'public'
+    `);
+    
+    for (const row of existingSequences.rows) {
+      await replitPool.query(`DROP SEQUENCE IF EXISTS ${row.sequence_name} CASCADE`);
+    }
     
     console.log('📖 Lendo dump...');
     const dumpPath = path.join(__dirname, 'neon-complete-dump.sql');
