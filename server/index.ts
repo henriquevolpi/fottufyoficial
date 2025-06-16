@@ -359,6 +359,24 @@ app.use((req, res, next) => {
     // Verificar a conexão a cada 2 minutos (120000 ms)
     const dbHealthCheckInterval = startDbHealthCheck(120000);
     
+    // ==================== SISTEMA DE LIMPEZA DE SESSÕES ====================
+    // Limpeza automática de sessões expiradas a cada 6 horas
+    const cleanupExpiredSessions = async () => {
+      try {
+        console.log('[SESSION-CLEANUP] Iniciando limpeza de sessões expiradas...');
+        const result = await pool.query('DELETE FROM session WHERE expire < NOW()');
+        const deletedCount = result.rowCount || 0;
+        
+        if (deletedCount > 0) {
+          console.log(`[SESSION-CLEANUP] ${deletedCount} sessões expiradas removidas`);
+        } else {
+          console.log('[SESSION-CLEANUP] Nenhuma sessão expirada encontrada');
+        }
+      } catch (error) {
+        console.error('[SESSION-CLEANUP] Erro ao limpar sessões:', error);
+      }
+    };
+
     // ==================== SISTEMA AUTOMÁTICO DE DOWNGRADE ====================
     // Agendador para processar downgrades expirados a cada hora
     const processExpiredDowngrades = async () => {
@@ -393,14 +411,19 @@ app.use((req, res, next) => {
       }
     };
     
+    // Executar limpeza de sessões inicial após 1 minuto do startup
+    setTimeout(cleanupExpiredSessions, 60000);
+    
     // Executar verificações iniciais após 30 segundos do startup
     setTimeout(processExpiredDowngrades, 30000);
     setTimeout(processExpiredManualActivations, 45000); // 15 segundos depois do primeiro
     
-    // Configurar para executar a cada hora (3600000 ms)
-    const downgradeIntervalId = setInterval(processExpiredDowngrades, 3600000);
-    const manualActivationIntervalId = setInterval(processExpiredManualActivations, 3600000);
+    // Configurar intervalos
+    const sessionCleanupIntervalId = setInterval(cleanupExpiredSessions, 6 * 60 * 60 * 1000); // 6 horas
+    const downgradeIntervalId = setInterval(processExpiredDowngrades, 3600000); // 1 hora
+    const manualActivationIntervalId = setInterval(processExpiredManualActivations, 3600000); // 1 hora
     
+    console.log('[SESSION-CLEANUP] Sistema de limpeza automática iniciado - verificação a cada 6 horas');
     console.log('[DOWNGRADE] Sistema automático de downgrade iniciado - verificação a cada hora');
     console.log('[ADM] Sistema de controle manual ADM iniciado - verificação a cada hora (34 dias)');
     // ====================================================================
