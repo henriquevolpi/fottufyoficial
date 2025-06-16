@@ -2,16 +2,17 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// Configuração exclusiva para seu banco Neon correto
-// Forçando uso do banco ep-small-resonance para evitar conflitos
-const FORCED_DATABASE_URL = "postgresql://neondb_owner:npg_wqC0LP7yRHlT@ep-small-resonance-a45diqst-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require";
+// Configuração para PostgreSQL do Replit (desenvolvimento seguro)
+// Banco Neon permanece intacto como backup de produção
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
+}
 
-// Configuração otimizada para Neon
+// Configuração otimizada para PostgreSQL local do Replit
 const poolConfig: PoolConfig = {
-  connectionString: FORCED_DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
+  connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
@@ -116,14 +117,14 @@ export async function testConnection() {
     return { 
       connected: true, 
       timestamp: result.rows[0].now,
-      using: 'Neon Database'
+      using: 'Replit PostgreSQL'
     };
   } catch (error: any) {
     console.error('Database connection error:', error);
     return { 
       connected: false, 
       error: error.message,
-      using: 'Neon Database'
+      using: 'Replit PostgreSQL'
     };
   }
 }
