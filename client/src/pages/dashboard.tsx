@@ -704,11 +704,6 @@ function UploadModal({
       
       const compressedFiles = await compressMultipleImages(
         selectedFiles,
-        {
-          maxWidthOrHeight: 970, // Largura máxima padronizada
-          quality: 0.9, // Qualidade padronizada
-          useWebWorker: true,
-        },
         (processed, total) => {
           // Atualizar progresso da compressão (5% a 25%)
           const compressionProgress = 5 + (processed / total) * 20;
@@ -1235,7 +1230,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         </CardContent>
         <CardFooter className="pl-4 pb-4 pt-4 bg-transparent flex items-center">
           <Button 
-            size="md"
+            size="default"
             className="text-base font-normal px-7 py-2 rounded-full flex items-center
               bg-white border-2 border-blue-600 text-blue-600
               hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700
@@ -1526,14 +1521,14 @@ export default function Dashboard() {
         if (currentTab !== "all") {
           const statusFilter = getStatusFilter(currentTab);
           filtered = formattedProjects.filter(
-            project => project.status === statusFilter
+            (project: any) => project.status === statusFilter
           );
         }
         
         // Apply search filter if any
         if (searchQuery && searchQuery.length > 0) {
           const query = searchQuery.toLowerCase();
-          filtered = filtered.filter(project => {
+          filtered = filtered.filter((project: any) => {
             // Verificar nome/name - aceitar ambos os formatos
             const projectName = project.nome || project.name || '';
             const clientName = project.cliente || project.clientName || '';
@@ -1935,18 +1930,11 @@ export default function Dashboard() {
                       )}
                     </div>
                     
-                    {comment.photoId && comment.photoUrl && (
+                    {comment.photoId && (
                       <div className="flex items-start space-x-3 mb-3 p-3 bg-white rounded border">
-                        <div className="flex-shrink-0">
-                          <img 
-                            src={comment.photoUrl} 
-                            alt={comment.photoOriginalName || comment.photoFilename || 'Foto'} 
-                            className="w-16 h-16 object-cover rounded border"
-                          />
-                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
-                            {comment.photoOriginalName || comment.photoFilename || 'Arquivo sem nome'}
+                            Foto ID: {comment.photoId}
                           </p>
                           <p className="text-sm text-gray-700 mt-2 leading-relaxed">
                             "{comment.comment}"
