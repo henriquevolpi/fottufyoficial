@@ -3,45 +3,22 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Existing User model
+// User model matching Render database structure
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  phone: text("phone").notNull(), // Adicionando campo de telefone
-  role: text("role").notNull().default("photographer"), // photographer | admin
-  status: text("status").notNull().default("active"), // active | suspended | canceled
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  
-  // Campos relacionados ao plano e assinatura
-  planType: text("plan_type").default("free"), // free | basic | standard | professional
-  uploadLimit: integer("upload_limit").default(0),
-  usedUploads: integer("used_uploads").default(0),
-  subscriptionStartDate: timestamp("subscription_start_date"),
-  subscriptionEndDate: timestamp("subscription_end_date"),
-  subscriptionStatus: text("subscription_status").default("inactive"), // active | inactive | canceled
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  subscription_id: text("subscription_id"), // mantido para compatibilidade
-  
-  lastEvent: jsonb("last_event").default(null).$type<{
-    type: string;
-    timestamp: string;
-  } | null>(),
-  
-  // Campos para controle de downgrade automático
-  pendingDowngradeDate: timestamp("pending_downgrade_date"), // Data quando o downgrade deve ocorrer (evento + 3 dias)
-  pendingDowngradeReason: text("pending_downgrade_reason"), // Motivo do downgrade pendente (canceled, refunded, etc)
-  originalPlanBeforeDowngrade: text("original_plan_before_downgrade"), // Plano original antes do downgrade
-  
-  // Campos para controle de ativação manual pelo ADM
-  manualActivationDate: timestamp("manual_activation_date"), // Data quando o plano foi ativado manualmente pelo ADM
-  manualActivationBy: text("manual_activation_by"), // Email do administrador que ativou manualmente
-  isManualActivation: boolean("is_manual_activation").default(false), // Flag para indicar se é ativação manual
-  
-  // Campo para rastrear o último login do usuário
-  lastLoginAt: timestamp("last_login_at"),
+  role: text("role").default("photographer"),
+  status: text("status").default("active"),
+  phone: text("phone"),
+  created_at: timestamp("created_at").defaultNow(),
+  plan: text("plan").default("free"),
+  plan_expires_at: timestamp("plan_expires_at"),
+  max_projects: integer("max_projects").default(5),
+  max_photos_per_project: integer("max_photos_per_project").default(50),
+  is_active: boolean("is_active").default(true),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Relations for users
