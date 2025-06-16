@@ -1,45 +1,45 @@
 {
-  "timestamp": "2025-06-15T20:45:12.202Z",
+  "timestamp": "2025-06-16T01:11:12.485Z",
   "database": "neondb",
   "totalTables": 7,
-  "totalRecords": 0,
+  "totalRecords": 57357,
   "results": [
     {
       "table": "new_projects",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 1
     },
     {
       "table": "password_reset_tokens",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 27
     },
     {
       "table": "photo_comments",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 23
     },
     {
       "table": "photos",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 0
     },
     {
       "table": "projects",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 142
     },
     {
       "table": "session",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 56964
     },
     {
       "table": "users",
-      "success": false,
-      "error": "column reference \"constraint_name\" is ambiguous"
+      "success": true,
+      "records": 200
     }
   ],
-  "successfulTables": 0,
-  "failedTables": 7
+  "successfulTables": 7,
+  "failedTables": 0
 }

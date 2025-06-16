@@ -1,0 +1,797 @@
+{
+  "database": "neondb",
+  "totalTables": 7,
+  "totalRecords": 57357,
+  "tables": {
+    "users": {
+      "recordCount": 200,
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": "nextval('users_id_seq'::regclass)",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "email",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "password",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "role",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": "'photographer'::text",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": "'active'::text",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": "now()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "plan_type",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": "'free'::text",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "upload_limit",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "column_default": "0",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "used_uploads",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "column_default": "0",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "subscription_start_date",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "subscription_end_date",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "subscription_status",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": "'inactive'::text",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "stripe_customer_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "stripe_subscription_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "subscription_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "last_event",
+          "data_type": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'null'::jsonb",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "phone",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "last_login_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "pending_downgrade_date",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "pending_downgrade_reason",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "original_plan_before_downgrade",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "manual_activation_date",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "manual_activation_by",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "is_manual_activation",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "column_default": "false",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "users_email_unique",
+          "constraint_type": "UNIQUE",
+          "column_name": "email"
+        },
+        {
+          "constraint_name": "users_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        }
+      ],
+      "primaryKeys": [
+        {
+          "column_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": "nextval('users_id_seq'::regclass)",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        }
+      ],
+      "hasData": true
+    },
+    "projects": {
+      "recordCount": 142,
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": "nextval('projects_id_seq'::regclass)",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "public_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "client_name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "client_email",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "photographer_id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": "'pending'::text",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "photos",
+          "data_type": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "selected_photos",
+          "data_type": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": "now()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "visual_watermark",
+          "data_type": "boolean",
+          "is_nullable": "NO",
+          "column_default": "false",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "apply_watermark",
+          "data_type": "boolean",
+          "is_nullable": "NO",
+          "column_default": "false",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "show_watermark",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "column_default": "true",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "projects_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        },
+        {
+          "constraint_name": "projects_public_id_unique",
+          "constraint_type": "UNIQUE",
+          "column_name": "public_id"
+        }
+      ],
+      "primaryKeys": [
+        {
+          "column_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": "nextval('projects_id_seq'::regclass)",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        }
+      ],
+      "hasData": true
+    },
+    "new_projects": {
+      "recordCount": 1,
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": "now()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "show_watermark",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "column_default": "true",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "new_projects_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        }
+      ],
+      "primaryKeys": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "hasData": true
+    },
+    "photos": {
+      "recordCount": 0,
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "project_id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "url",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "selected",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "column_default": "false",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": "now()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "original_name",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "filename",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "photos_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        }
+      ],
+      "primaryKeys": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "hasData": false
+    },
+    "photo_comments": {
+      "recordCount": 23,
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "photo_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "client_name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "comment",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "is_viewed",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "column_default": "false",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": "now()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "photo_comments_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        }
+      ],
+      "primaryKeys": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "hasData": true
+    },
+    "password_reset_tokens": {
+      "recordCount": 27,
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": "nextval('password_reset_tokens_id_seq'::regclass)",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        },
+        {
+          "column_name": "token",
+          "data_type": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": "now()",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "expires_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "used",
+          "data_type": "boolean",
+          "is_nullable": "NO",
+          "column_default": "false",
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "password_reset_tokens_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "id"
+        }
+      ],
+      "primaryKeys": [
+        {
+          "column_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "column_default": "nextval('password_reset_tokens_id_seq'::regclass)",
+          "character_maximum_length": null,
+          "numeric_precision": 32,
+          "numeric_scale": 0
+        }
+      ],
+      "hasData": true
+    },
+    "session": {
+      "recordCount": 56964,
+      "columns": [
+        {
+          "column_name": "sid",
+          "data_type": "character varying",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "sess",
+          "data_type": "json",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        },
+        {
+          "column_name": "expire",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "column_default": null,
+          "character_maximum_length": null,
+          "numeric_precision": null,
+          "numeric_scale": null
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "session_pkey",
+          "constraint_type": "PRIMARY KEY",
+          "column_name": "sid"
+        }
+      ],
+      "primaryKeys": [],
+      "hasData": true
+    }
+  },
+  "relationships": [],
+  "issues": {
+    "redundancies": [
+      {
+        "type": "duplicate_tables",
+        "tables": [
+          "projects",
+          "new_projects"
+        ],
+        "severity": "critical",
+        "description": "Duas tabelas para projetos causam redundância e confusão"
+      }
+    ],
+    "unusedFields": [],
+    "dataQuality": [
+      {
+        "type": "empty_table",
+        "table": "photos",
+        "description": "Tabela de fotos está vazia - pode indicar problema na migração ou uso da tabela"
+      },
+      {
+        "type": "excessive_sessions",
+        "table": "session",
+        "description": "56,964 sessões armazenadas - implementar limpeza automática"
+      }
+    ],
+    "recommendations": []
+  }
+}

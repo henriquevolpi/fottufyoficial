@@ -1,367 +1,536 @@
+#!/usr/bin/env node
 
-const { Pool } = require('pg');
+import { Pool } from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Usando a mesma configuração do server/db.ts
-const FORCED_DATABASE_URL = "postgresql://neondb_owner:npg_wqC0LP7yRHlT@ep-small-resonance-a45diqst-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DATABASE_URL = "postgresql://neondb_owner:npg_wqC0LP7yRHlT@ep-small-resonance-a45diqst-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
 const pool = new Pool({
-  connectionString: FORCED_DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 5,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionString: DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
-async function analyzeDatabaseStructure() {
-  console.log('='.repeat(80));
-  console.log('RELATÓRIO COMPLETO DA ESTRUTURA DO BANCO DE DADOS');
-  console.log('='.repeat(80));
-  console.log(`Database: ${FORCED_DATABASE_URL.split('@')[1].split('/')[0]}`);
-  console.log(`Timestamp: ${new Date().toISOString()}`);
-  console.log('='.repeat(80));
-
+// Função para obter todas as tabelas
+async function getAllTables() {
+  const client = await pool.connect();
   try {
-    // 1. LISTAR TODAS AS TABELAS
-    console.log('\n📋 1. TABELAS EXISTENTES NO BANCO');
-    console.log('-'.repeat(50));
-    
-    const tablesQuery = `
-      SELECT 
-        schemaname,
-        tablename,
-        tableowner,
-        hasindexes,
-        hasrules,
-        hastriggers
-      FROM pg_tables 
-      WHERE schemaname = 'public'
-      ORDER BY tablename;
-    `;
-    
-    const tablesResult = await pool.query(tablesQuery);
-    console.log(`Total de tabelas encontradas: ${tablesResult.rows.length}`);
-    console.log();
-    
-    tablesResult.rows.forEach((table, index) => {
-      console.log(`${index + 1}. ${table.tablename}`);
-      console.log(`   - Schema: ${table.schemaname}`);
-      console.log(`   - Owner: ${table.tableowner}`);
-      console.log(`   - Possui índices: ${table.hasindexes}`);
-      console.log(`   - Possui regras: ${table.hasrules}`);
-      console.log(`   - Possui triggers: ${table.hastriggers}`);
-      console.log();
-    });
-
-    // 2. ESTRUTURA DETALHADA DE CADA TABELA
-    console.log('\n🏗️  2. ESTRUTURA DETALHADA DAS TABELAS');
-    console.log('-'.repeat(50));
-
-    for (const table of tablesResult.rows) {
-      console.log(`\n📊 TABELA: ${table.tablename.toUpperCase()}`);
-      console.log('─'.repeat(40));
-
-      // Colunas da tabela
-      const columnsQuery = `
-        SELECT 
-          column_name,
-          data_type,
-          character_maximum_length,
-          is_nullable,
-          column_default,
-          ordinal_position
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-          AND table_name = $1
-        ORDER BY ordinal_position;
-      `;
-      
-      const columnsResult = await pool.query(columnsQuery, [table.tablename]);
-      console.log(`Colunas (${columnsResult.rows.length}):`);
-      
-      columnsResult.rows.forEach((col) => {
-        const nullable = col.is_nullable === 'YES' ? 'NULL' : 'NOT NULL';
-        const maxLength = col.character_maximum_length ? `(${col.character_maximum_length})` : '';
-        const defaultValue = col.column_default ? ` DEFAULT ${col.column_default}` : '';
-        
-        console.log(`  ${col.ordinal_position}. ${col.column_name}`);
-        console.log(`     Tipo: ${col.data_type}${maxLength}`);
-        console.log(`     Nulo: ${nullable}`);
-        if (defaultValue) console.log(`     Padrão: ${col.column_default}`);
-        console.log();
-      });
-
-      // Contagem de registros
-      try {
-        const countResult = await pool.query(`SELECT COUNT(*) as total FROM "${table.tablename}"`);
-        console.log(`📈 Total de registros: ${countResult.rows[0].total}`);
-      } catch (error) {
-        console.log(`❌ Erro ao contar registros: ${error.message}`);
-      }
-      
-      console.log();
-    }
-
-    // 3. CHAVES PRIMÁRIAS
-    console.log('\n🔑 3. CHAVES PRIMÁRIAS');
-    console.log('-'.repeat(50));
-    
-    const primaryKeysQuery = `
-      SELECT 
-        tc.table_name,
-        kcu.column_name
-      FROM information_schema.table_constraints tc
-      JOIN information_schema.key_column_usage kcu 
-        ON tc.constraint_name = kcu.constraint_name
-      WHERE tc.constraint_type = 'PRIMARY KEY'
-        AND tc.table_schema = 'public'
-      ORDER BY tc.table_name, kcu.ordinal_position;
-    `;
-    
-    const primaryKeysResult = await pool.query(primaryKeysQuery);
-    
-    const primaryKeysByTable = {};
-    primaryKeysResult.rows.forEach(row => {
-      if (!primaryKeysByTable[row.table_name]) {
-        primaryKeysByTable[row.table_name] = [];
-      }
-      primaryKeysByTable[row.table_name].push(row.column_name);
-    });
-    
-    Object.entries(primaryKeysByTable).forEach(([tableName, columns]) => {
-      console.log(`${tableName}: ${columns.join(', ')}`);
-    });
-
-    // 4. CHAVES ESTRANGEIRAS E RELACIONAMENTOS
-    console.log('\n🔗 4. CHAVES ESTRANGEIRAS E RELACIONAMENTOS');
-    console.log('-'.repeat(50));
-    
-    const foreignKeysQuery = `
-      SELECT 
-        tc.table_name as tabela_origem,
-        kcu.column_name as coluna_origem,
-        ccu.table_name as tabela_destino,
-        ccu.column_name as coluna_destino,
-        tc.constraint_name as nome_constraint,
-        rc.delete_rule,
-        rc.update_rule
-      FROM information_schema.table_constraints tc
-      JOIN information_schema.key_column_usage kcu 
-        ON tc.constraint_name = kcu.constraint_name
-      JOIN information_schema.constraint_column_usage ccu 
-        ON ccu.constraint_name = tc.constraint_name
-      JOIN information_schema.referential_constraints rc
-        ON tc.constraint_name = rc.constraint_name
-      WHERE tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema = 'public'
-      ORDER BY tc.table_name, kcu.column_name;
-    `;
-    
-    const foreignKeysResult = await pool.query(foreignKeysQuery);
-    
-    if (foreignKeysResult.rows.length === 0) {
-      console.log('❌ Nenhuma chave estrangeira encontrada');
-    } else {
-      foreignKeysResult.rows.forEach((fk, index) => {
-        console.log(`${index + 1}. ${fk.tabela_origem}.${fk.coluna_origem} → ${fk.tabela_destino}.${fk.coluna_destino}`);
-        console.log(`   Constraint: ${fk.nome_constraint}`);
-        console.log(`   Delete Rule: ${fk.delete_rule}`);
-        console.log(`   Update Rule: ${fk.update_rule}`);
-        console.log();
-      });
-    }
-
-    // 5. ÍNDICES
-    console.log('\n📇 5. ÍNDICES DAS TABELAS');
-    console.log('-'.repeat(50));
-    
-    const indexesQuery = `
-      SELECT 
-        schemaname,
-        tablename,
-        indexname,
-        indexdef
-      FROM pg_indexes 
-      WHERE schemaname = 'public'
-      ORDER BY tablename, indexname;
-    `;
-    
-    const indexesResult = await pool.query(indexesQuery);
-    
-    const indexesByTable = {};
-    indexesResult.rows.forEach(row => {
-      if (!indexesByTable[row.tablename]) {
-        indexesByTable[row.tablename] = [];
-      }
-      indexesByTable[row.tablename].push({
-        name: row.indexname,
-        definition: row.indexdef
-      });
-    });
-    
-    Object.entries(indexesByTable).forEach(([tableName, indexes]) => {
-      console.log(`\n${tableName}:`);
-      indexes.forEach((index, i) => {
-        console.log(`  ${i + 1}. ${index.name}`);
-        console.log(`     ${index.definition}`);
-      });
-    });
-
-    // 6. CONSTRAINTS E VALIDAÇÕES
-    console.log('\n✅ 6. CONSTRAINTS E VALIDAÇÕES');
-    console.log('-'.repeat(50));
-    
-    const constraintsQuery = `
-      SELECT 
-        tc.table_name,
-        tc.constraint_name,
-        tc.constraint_type,
-        cc.check_clause
-      FROM information_schema.table_constraints tc
-      LEFT JOIN information_schema.check_constraints cc
-        ON tc.constraint_name = cc.constraint_name
-      WHERE tc.table_schema = 'public'
-        AND tc.constraint_type IN ('CHECK', 'UNIQUE')
-      ORDER BY tc.table_name, tc.constraint_type;
-    `;
-    
-    const constraintsResult = await pool.query(constraintsQuery);
-    
-    if (constraintsResult.rows.length === 0) {
-      console.log('❌ Nenhuma constraint CHECK ou UNIQUE encontrada');
-    } else {
-      constraintsResult.rows.forEach((constraint) => {
-        console.log(`${constraint.table_name}.${constraint.constraint_name}`);
-        console.log(`  Tipo: ${constraint.constraint_type}`);
-        if (constraint.check_clause) {
-          console.log(`  Regra: ${constraint.check_clause}`);
-        }
-        console.log();
-      });
-    }
-
-    // 7. ANÁLISE DE PROBLEMAS POTENCIAIS
-    console.log('\n⚠️  7. ANÁLISE DE PROBLEMAS POTENCIAIS');
-    console.log('-'.repeat(50));
-    
-    // Verificar tabelas sem chave primária
-    console.log('\n🔍 Tabelas sem chave primária:');
-    const tablesWithoutPK = tablesResult.rows.filter(table => 
-      !primaryKeysByTable[table.tablename]
-    );
-    
-    if (tablesWithoutPK.length === 0) {
-      console.log('✅ Todas as tabelas possuem chave primária');
-    } else {
-      tablesWithoutPK.forEach(table => {
-        console.log(`❌ ${table.tablename}`);
-      });
-    }
-    
-    // Verificar relacionamentos quebrados
-    console.log('\n🔍 Verificação de integridade referencial:');
-    for (const fk of foreignKeysResult.rows) {
-      try {
-        const integrityQuery = `
-          SELECT COUNT(*) as broken_refs
-          FROM "${fk.tabela_origem}" o
-          LEFT JOIN "${fk.tabela_destino}" d ON o."${fk.coluna_origem}" = d."${fk.coluna_destino}"
-          WHERE o."${fk.coluna_origem}" IS NOT NULL 
-            AND d."${fk.coluna_destino}" IS NULL;
-        `;
-        
-        const integrityResult = await pool.query(integrityQuery);
-        const brokenRefs = integrityResult.rows[0].broken_refs;
-        
-        if (brokenRefs > 0) {
-          console.log(`❌ ${fk.tabela_origem}.${fk.coluna_origem} → ${fk.tabela_destino}.${fk.coluna_destino}: ${brokenRefs} referências quebradas`);
-        } else {
-          console.log(`✅ ${fk.tabela_origem}.${fk.coluna_origem} → ${fk.tabela_destino}.${fk.coluna_destino}: OK`);
-        }
-      } catch (error) {
-        console.log(`❌ Erro ao verificar ${fk.tabela_origem}.${fk.coluna_origem}: ${error.message}`);
-      }
-    }
-
-    // 8. DETALHAMENTO DE CAMPOS JSON/JSONB
-    console.log('\n📄 8. CAMPOS JSON/JSONB IDENTIFICADOS');
-    console.log('-'.repeat(50));
-    
-    const jsonFieldsQuery = `
+    const query = `
       SELECT 
         table_name,
-        column_name,
-        data_type
-      FROM information_schema.columns 
+        table_type,
+        is_insertable_into,
+        is_typed
+      FROM information_schema.tables 
       WHERE table_schema = 'public' 
-        AND data_type IN ('json', 'jsonb')
-      ORDER BY table_name, column_name;
+      ORDER BY table_name;
     `;
-    
-    const jsonFieldsResult = await pool.query(jsonFieldsQuery);
-    
-    if (jsonFieldsResult.rows.length === 0) {
-      console.log('❌ Nenhum campo JSON/JSONB encontrado');
-    } else {
-      for (const field of jsonFieldsResult.rows) {
-        console.log(`\n${field.table_name}.${field.column_name} (${field.data_type})`);
-        
-        // Verificar estrutura dos dados JSON
-        try {
-          const sampleQuery = `
-            SELECT "${field.column_name}"
-            FROM "${field.table_name}" 
-            WHERE "${field.column_name}" IS NOT NULL 
-            LIMIT 3;
-          `;
-          
-          const sampleResult = await pool.query(sampleQuery);
-          console.log('  Exemplos de dados:');
-          sampleResult.rows.forEach((row, i) => {
-            console.log(`    ${i + 1}. ${JSON.stringify(row[field.column_name], null, 2).substring(0, 200)}${JSON.stringify(row[field.column_name]).length > 200 ? '...' : ''}`);
-          });
-        } catch (error) {
-          console.log(`    ❌ Erro ao acessar dados: ${error.message}`);
-        }
-      }
-    }
-
-    // 9. RESUMO EXECUTIVO
-    console.log('\n📋 9. RESUMO EXECUTIVO');
-    console.log('-'.repeat(50));
-    
-    const totalTables = tablesResult.rows.length;
-    const totalRelationships = foreignKeysResult.rows.length;
-    const totalIndexes = indexesResult.rows.length;
-    
-    console.log(`📊 Total de tabelas: ${totalTables}`);
-    console.log(`🔗 Total de relacionamentos: ${totalRelationships}`);
-    console.log(`📇 Total de índices: ${totalIndexes}`);
-    console.log(`📄 Total de campos JSON: ${jsonFieldsResult.rows.length}`);
-    
-    // Contar total de registros em todas as tabelas
-    let totalRecords = 0;
-    for (const table of tablesResult.rows) {
-      try {
-        const countResult = await pool.query(`SELECT COUNT(*) as total FROM "${table.tablename}"`);
-        totalRecords += parseInt(countResult.rows[0].total);
-      } catch (error) {
-        console.log(`❌ Erro ao contar ${table.tablename}: ${error.message}`);
-      }
-    }
-    console.log(`📈 Total de registros no banco: ${totalRecords.toLocaleString()}`);
-    
-    console.log('\n' + '='.repeat(80));
-    console.log('FIM DO RELATÓRIO');
-    console.log('='.repeat(80));
-
-  } catch (error) {
-    console.error('❌ Erro durante a análise:', error);
+    const result = await client.query(query);
+    return result.rows;
   } finally {
-    await pool.end();
+    client.release();
   }
 }
 
-// Executar a análise
-analyzeDatabaseStructure().catch(console.error);
+// Função para obter estrutura detalhada de uma tabela
+async function getTableStructure(tableName) {
+  const client = await pool.connect();
+  try {
+    // Colunas da tabela
+    const columnsQuery = `
+      SELECT 
+        column_name,
+        data_type,
+        character_maximum_length,
+        numeric_precision,
+        numeric_scale,
+        is_nullable,
+        column_default,
+        ordinal_position,
+        udt_name,
+        is_updatable
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = $1
+      ORDER BY ordinal_position;
+    `;
+    const columnsResult = await client.query(columnsQuery, [tableName]);
+    
+    // Constraints da tabela
+    const constraintsQuery = `
+      SELECT 
+        tc.constraint_name,
+        tc.constraint_type,
+        kcu.column_name,
+        tc.is_deferrable,
+        tc.initially_deferred
+      FROM information_schema.table_constraints tc
+      LEFT JOIN information_schema.key_column_usage kcu 
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+        AND tc.table_name = kcu.table_name
+      WHERE tc.table_schema = 'public' 
+      AND tc.table_name = $1
+      ORDER BY tc.constraint_type, kcu.ordinal_position;
+    `;
+    const constraintsResult = await client.query(constraintsQuery, [tableName]);
+    
+    // Foreign keys da tabela
+    const foreignKeysQuery = `
+      SELECT 
+        kcu.column_name,
+        ccu.table_name AS foreign_table_name,
+        ccu.column_name AS foreign_column_name,
+        rc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule
+      FROM information_schema.key_column_usage kcu
+      JOIN information_schema.constraint_column_usage ccu 
+        ON kcu.constraint_name = ccu.constraint_name
+      JOIN information_schema.referential_constraints rc 
+        ON kcu.constraint_name = rc.constraint_name
+      WHERE kcu.table_schema = 'public'
+      AND kcu.table_name = $1;
+    `;
+    const foreignKeysResult = await client.query(foreignKeysQuery, [tableName]);
+    
+    // Índices da tabela
+    const indexesQuery = `
+      SELECT 
+        indexname,
+        indexdef,
+        tablespace
+      FROM pg_indexes 
+      WHERE schemaname = 'public' 
+      AND tablename = $1;
+    `;
+    const indexesResult = await client.query(indexesQuery, [tableName]);
+    
+    // Contagem de registros
+    const countQuery = `SELECT COUNT(*) as count FROM "${tableName}"`;
+    const countResult = await client.query(countQuery);
+    
+    // Tamanho da tabela
+    const sizeQuery = `
+      SELECT 
+        pg_size_pretty(pg_total_relation_size($1)) as total_size,
+        pg_size_pretty(pg_relation_size($1)) as table_size,
+        pg_size_pretty(pg_total_relation_size($1) - pg_relation_size($1)) as index_size
+    `;
+    const sizeResult = await client.query(sizeQuery, [`public.${tableName}`]);
+    
+    return {
+      columns: columnsResult.rows,
+      constraints: constraintsResult.rows,
+      foreignKeys: foreignKeysResult.rows,
+      indexes: indexesResult.rows,
+      recordCount: parseInt(countResult.rows[0].count),
+      sizes: sizeResult.rows[0]
+    };
+  } finally {
+    client.release();
+  }
+}
+
+// Função para analisar relacionamentos órfãos
+async function analyzeOrphanedRelationships() {
+  const client = await pool.connect();
+  try {
+    const issues = [];
+    
+    // Verificar projects órfãos (sem photographer_id válido)
+    const orphanedProjectsQuery = `
+      SELECT p.id, p.name, p.photographer_id
+      FROM projects p
+      LEFT JOIN users u ON p.photographer_id = u.id
+      WHERE u.id IS NULL AND p.photographer_id IS NOT NULL;
+    `;
+    const orphanedProjects = await client.query(orphanedProjectsQuery);
+    if (orphanedProjects.rows.length > 0) {
+      issues.push({
+        type: 'orphaned_records',
+        table: 'projects',
+        description: 'Projetos com photographer_id que não existem na tabela users',
+        count: orphanedProjects.rows.length,
+        examples: orphanedProjects.rows.slice(0, 5)
+      });
+    }
+    
+    // Verificar new_projects órfãos
+    const orphanedNewProjectsQuery = `
+      SELECT np.id, np.name, np.user_id
+      FROM new_projects np
+      LEFT JOIN users u ON np.user_id = u.id
+      WHERE u.id IS NULL AND np.user_id IS NOT NULL;
+    `;
+    const orphanedNewProjects = await client.query(orphanedNewProjectsQuery);
+    if (orphanedNewProjects.rows.length > 0) {
+      issues.push({
+        type: 'orphaned_records',
+        table: 'new_projects',
+        description: 'Novos projetos com user_id que não existem na tabela users',
+        count: orphanedNewProjects.rows.length,
+        examples: orphanedNewProjects.rows.slice(0, 5)
+      });
+    }
+    
+    // Verificar photos órfãs
+    const orphanedPhotosQuery = `
+      SELECT ph.id, ph.filename, ph.project_id
+      FROM photos ph
+      LEFT JOIN new_projects np ON ph.project_id = np.id
+      WHERE np.id IS NULL AND ph.project_id IS NOT NULL;
+    `;
+    const orphanedPhotos = await client.query(orphanedPhotosQuery);
+    if (orphanedPhotos.rows.length > 0) {
+      issues.push({
+        type: 'orphaned_records',
+        table: 'photos',
+        description: 'Fotos com project_id que não existem na tabela new_projects',
+        count: orphanedPhotos.rows.length,
+        examples: orphanedPhotos.rows.slice(0, 5)
+      });
+    }
+    
+    // Verificar password_reset_tokens órfãos
+    const orphanedTokensQuery = `
+      SELECT prt.id, prt.token, prt.user_id
+      FROM password_reset_tokens prt
+      LEFT JOIN users u ON prt.user_id = u.id
+      WHERE u.id IS NULL AND prt.user_id IS NOT NULL;
+    `;
+    const orphanedTokens = await client.query(orphanedTokensQuery);
+    if (orphanedTokens.rows.length > 0) {
+      issues.push({
+        type: 'orphaned_records',
+        table: 'password_reset_tokens',
+        description: 'Tokens de reset com user_id que não existem na tabela users',
+        count: orphanedTokens.rows.length,
+        examples: orphanedTokens.rows.slice(0, 5)
+      });
+    }
+    
+    return issues;
+  } finally {
+    client.release();
+  }
+}
+
+// Função para analisar campos não utilizados
+async function analyzeUnusedFields() {
+  const client = await pool.connect();
+  try {
+    const issues = [];
+    
+    // Verificar campos sempre NULL ou com valores padrão
+    const tables = ['users', 'projects', 'new_projects', 'photos', 'photo_comments', 'password_reset_tokens'];
+    
+    for (const tableName of tables) {
+      const columnsQuery = `
+        SELECT column_name, data_type
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = $1;
+      `;
+      const columns = await client.query(columnsQuery, [tableName]);
+      
+      for (const column of columns.rows) {
+        const fieldName = column.column_name;
+        
+        // Verificar se o campo está sempre NULL
+        const nullCheckQuery = `
+          SELECT COUNT(*) as total,
+                 COUNT(${fieldName}) as non_null
+          FROM "${tableName}";
+        `;
+        const nullCheck = await client.query(nullCheckQuery);
+        const total = parseInt(nullCheck.rows[0].total);
+        const nonNull = parseInt(nullCheck.rows[0].non_null);
+        
+        if (total > 0 && nonNull === 0) {
+          issues.push({
+            type: 'unused_field',
+            table: tableName,
+            field: fieldName,
+            description: `Campo sempre NULL em ${total} registros`,
+            severity: 'medium'
+          });
+        }
+        
+        // Verificar campos com valores repetitivos (mais de 95% iguais)
+        if (nonNull > 10) {
+          const diversityQuery = `
+            SELECT COUNT(DISTINCT ${fieldName}) as unique_values,
+                   COUNT(*) as total_records
+            FROM "${tableName}"
+            WHERE ${fieldName} IS NOT NULL;
+          `;
+          const diversity = await client.query(diversityQuery);
+          const uniqueValues = parseInt(diversity.rows[0].unique_values);
+          const totalRecords = parseInt(diversity.rows[0].total_records);
+          
+          if (totalRecords > 0 && (uniqueValues / totalRecords) < 0.05) {
+            issues.push({
+              type: 'low_diversity_field',
+              table: tableName,
+              field: fieldName,
+              description: `Campo com baixa diversidade: ${uniqueValues} valores únicos em ${totalRecords} registros`,
+              severity: 'low'
+            });
+          }
+        }
+      }
+    }
+    
+    return issues;
+  } finally {
+    client.release();
+  }
+}
+
+// Função para analisar redundâncias
+async function analyzeRedundancies() {
+  const issues = [];
+  
+  // Verificar se há duas tabelas de projetos (projects e new_projects)
+  issues.push({
+    type: 'table_redundancy',
+    description: 'Existem duas tabelas de projetos: "projects" e "new_projects"',
+    tables: ['projects', 'new_projects'],
+    recommendation: 'Considerar migrar todos os dados para uma única tabela',
+    severity: 'high'
+  });
+  
+  // Verificar sessions muito antigas
+  const client = await pool.connect();
+  try {
+    const oldSessionsQuery = `
+      SELECT COUNT(*) as count
+      FROM session
+      WHERE expire < NOW() - INTERVAL '30 days';
+    `;
+    const oldSessions = await client.query(oldSessionsQuery);
+    const oldCount = parseInt(oldSessions.rows[0].count);
+    
+    if (oldCount > 0) {
+      issues.push({
+        type: 'data_cleanup',
+        table: 'session',
+        description: `${oldCount} sessões expiradas há mais de 30 dias`,
+        recommendation: 'Implementar limpeza automática de sessões antigas',
+        severity: 'medium'
+      });
+    }
+    
+    // Verificar tokens de reset expirados
+    const expiredTokensQuery = `
+      SELECT COUNT(*) as count
+      FROM password_reset_tokens
+      WHERE expires_at < NOW();
+    `;
+    const expiredTokens = await client.query(expiredTokensQuery);
+    const expiredCount = parseInt(expiredTokens.rows[0].count);
+    
+    if (expiredCount > 0) {
+      issues.push({
+        type: 'data_cleanup',
+        table: 'password_reset_tokens',
+        description: `${expiredCount} tokens de reset de senha expirados`,
+        recommendation: 'Implementar limpeza automática de tokens expirados',
+        severity: 'medium'
+      });
+    }
+    
+  } finally {
+    client.release();
+  }
+  
+  return issues;
+}
+
+// Função principal de análise
+async function performDatabaseAnalysis() {
+  console.log('🔍 ANÁLISE COMPLETA DA ESTRUTURA DO BANCO DE DADOS\n');
+  console.log('=' .repeat(80));
+  
+  try {
+    const client = await pool.connect();
+    const dbInfo = await client.query('SELECT current_database(), current_user, version()');
+    console.log(`\nBANCO: ${dbInfo.rows[0].current_database}`);
+    console.log(`USUÁRIO: ${dbInfo.rows[0].current_user}`);
+    console.log(`VERSÃO: ${dbInfo.rows[0].version.split(',')[0]}\n`);
+    client.release();
+    
+    // 1. Obter todas as tabelas
+    console.log('📋 1. INVENTÁRIO DE TABELAS');
+    console.log('=' .repeat(50));
+    const tables = await getAllTables();
+    console.log(`Total de tabelas encontradas: ${tables.length}\n`);
+    
+    const analysis = {
+      database: dbInfo.rows[0].current_database,
+      timestamp: new Date().toISOString(),
+      tables: {},
+      summary: {
+        totalTables: tables.length,
+        totalRecords: 0,
+        totalSize: '0 MB'
+      },
+      issues: {
+        orphanedRecords: [],
+        unusedFields: [],
+        redundancies: [],
+        structuralIssues: []
+      }
+    };
+    
+    // 2. Analisar cada tabela
+    console.log('🔬 2. ANÁLISE DETALHADA POR TABELA');
+    console.log('=' .repeat(50));
+    
+    for (const table of tables) {
+      const tableName = table.table_name;
+      console.log(`\n📦 TABELA: ${tableName.toUpperCase()}`);
+      console.log('-' .repeat(40));
+      
+      const structure = await getTableStructure(tableName);
+      analysis.tables[tableName] = {
+        type: table.table_type,
+        recordCount: structure.recordCount,
+        sizes: structure.sizes,
+        columns: structure.columns,
+        constraints: structure.constraints,
+        foreignKeys: structure.foreignKeys,
+        indexes: structure.indexes
+      };
+      
+      analysis.summary.totalRecords += structure.recordCount;
+      
+      console.log(`Registros: ${structure.recordCount.toLocaleString()}`);
+      console.log(`Tamanho total: ${structure.sizes.total_size}`);
+      console.log(`Tamanho da tabela: ${structure.sizes.table_size}`);
+      console.log(`Tamanho dos índices: ${structure.sizes.index_size}`);
+      
+      console.log('\nCOLUNAS:');
+      structure.columns.forEach(col => {
+        const nullable = col.is_nullable === 'YES' ? 'NULL' : 'NOT NULL';
+        const defaultVal = col.column_default ? ` DEFAULT ${col.column_default}` : '';
+        const length = col.character_maximum_length ? `(${col.character_maximum_length})` : '';
+        console.log(`  ${col.column_name}: ${col.data_type}${length} ${nullable}${defaultVal}`);
+      });
+      
+      if (structure.constraints.length > 0) {
+        console.log('\nCONSTRAINTS:');
+        structure.constraints.forEach(constraint => {
+          console.log(`  ${constraint.constraint_type}: ${constraint.constraint_name} (${constraint.column_name || 'múltiplas colunas'})`);
+        });
+      }
+      
+      if (structure.foreignKeys.length > 0) {
+        console.log('\nCHAVES ESTRANGEIRAS:');
+        structure.foreignKeys.forEach(fk => {
+          console.log(`  ${fk.column_name} -> ${fk.foreign_table_name}.${fk.foreign_column_name}`);
+          console.log(`    Update: ${fk.update_rule}, Delete: ${fk.delete_rule}`);
+        });
+      }
+      
+      if (structure.indexes.length > 0) {
+        console.log('\nÍNDICES:');
+        structure.indexes.forEach(idx => {
+          console.log(`  ${idx.indexname}: ${idx.indexdef}`);
+        });
+      }
+    }
+    
+    // 3. Analisar relacionamentos órfãos
+    console.log('\n\n🔗 3. ANÁLISE DE RELACIONAMENTOS');
+    console.log('=' .repeat(50));
+    const orphanedIssues = await analyzeOrphanedRelationships();
+    analysis.issues.orphanedRecords = orphanedIssues;
+    
+    if (orphanedIssues.length === 0) {
+      console.log('✅ Nenhum relacionamento órfão encontrado');
+    } else {
+      orphanedIssues.forEach(issue => {
+        console.log(`❌ ${issue.description}`);
+        console.log(`   Tabela: ${issue.table}`);
+        console.log(`   Registros afetados: ${issue.count}`);
+        if (issue.examples.length > 0) {
+          console.log(`   Exemplos: ${JSON.stringify(issue.examples.slice(0, 2), null, 2)}`);
+        }
+        console.log('');
+      });
+    }
+    
+    // 4. Analisar campos não utilizados
+    console.log('\n📊 4. ANÁLISE DE UTILIZAÇÃO DE CAMPOS');
+    console.log('=' .repeat(50));
+    const unusedFieldsIssues = await analyzeUnusedFields();
+    analysis.issues.unusedFields = unusedFieldsIssues;
+    
+    if (unusedFieldsIssues.length === 0) {
+      console.log('✅ Todos os campos estão sendo utilizados adequadamente');
+    } else {
+      unusedFieldsIssues.forEach(issue => {
+        console.log(`⚠️  ${issue.table}.${issue.field}: ${issue.description}`);
+      });
+    }
+    
+    // 5. Analisar redundâncias
+    console.log('\n🔄 5. ANÁLISE DE REDUNDÂNCIAS');
+    console.log('=' .repeat(50));
+    const redundancyIssues = await analyzeRedundancies();
+    analysis.issues.redundancies = redundancyIssues;
+    
+    redundancyIssues.forEach(issue => {
+      const severity = issue.severity === 'high' ? '🔴' : issue.severity === 'medium' ? '🟡' : '🟢';
+      console.log(`${severity} ${issue.description}`);
+      if (issue.recommendation) {
+        console.log(`   Recomendação: ${issue.recommendation}`);
+      }
+      console.log('');
+    });
+    
+    // 6. Resumo final
+    console.log('\n📈 6. RESUMO EXECUTIVO');
+    console.log('=' .repeat(50));
+    console.log(`Total de tabelas: ${analysis.summary.totalTables}`);
+    console.log(`Total de registros: ${analysis.summary.totalRecords.toLocaleString()}`);
+    console.log(`Relacionamentos órfãos: ${analysis.issues.orphanedRecords.length}`);
+    console.log(`Campos subutilizados: ${analysis.issues.unusedFields.length}`);
+    console.log(`Problemas de redundância: ${analysis.issues.redundancies.length}`);
+    
+    // Salvar relatório
+    const reportFile = path.join(__dirname, 'database-analysis-report.json');
+    fs.writeFileSync(reportFile, JSON.stringify(analysis, null, 2));
+    console.log(`\n📄 Relatório detalhado salvo em: ${reportFile}`);
+    
+    return analysis;
+    
+  } catch (error) {
+    console.error('💥 Erro durante a análise:', error);
+    throw error;
+  }
+}
+
+// Executar análise
+if (import.meta.url === `file://${process.argv[1]}`) {
+  performDatabaseAnalysis()
+    .then(() => {
+      return pool.end();
+    })
+    .then(() => {
+      console.log('\n✅ Análise completa finalizada');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('💥 Erro fatal:', error);
+      pool.end().finally(() => process.exit(1));
+    });
+}
+
+export { performDatabaseAnalysis };
