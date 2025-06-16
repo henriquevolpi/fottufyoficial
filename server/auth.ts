@@ -223,28 +223,33 @@ async function comparePasswords(supplied: string, stored: string): Promise<boole
 }
 
 export function setupAuth(app: Express) {
-  // Configure session cookie options for maximum compatibility
+  // Detect if we're in a cross-domain environment
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isReplit = !!(process.env.REPLIT_DB_URL || process.env.REPL_ID);
+  
+  // Configure session cookie options for cross-domain compatibility
   const sessionSettings: session.SessionOptions = {
-    // Use a strong secret for security
     secret: process.env.SESSION_SECRET || "studio-development-secret-key-testing-onlyaaaaa", 
-    // Force session save and initialization for better reliability
     resave: true, 
     saveUninitialized: true,
     store: storage.sessionStore,
-    name: 'connect.sid', // Use standard Express session name
+    name: 'fottufy.sid', // Custom session name to avoid conflicts
     cookie: { 
-      // Must be false in development (no HTTPS)
-      secure: false,
-      // Longer session duration (30 days) to avoid frequent re-logins
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      // Set to false to allow frontend access for debugging
+      // Enable secure cookies for HTTPS environments (Replit uses HTTPS)
+      secure: !!(isReplit || isProduction),
+      // Long session duration
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      // Allow frontend access to cookies for debugging and fallback auth
       httpOnly: false,
-      // Use lax for better compatibility in same-origin setup
-      sameSite: 'lax',
+      // Critical: Use 'none' for cross-domain functionality
+      sameSite: isReplit || isProduction ? 'none' : 'lax',
       path: '/',
-      // No domain restriction for Replit compatibility
+      // No domain restriction to allow cross-domain access
       domain: undefined
-    }
+    },
+    // Additional options for better cross-domain support
+    proxy: true, // Trust proxy headers
+    rolling: true // Reset expiration on each request
   };
 
   app.set("trust proxy", 1);
@@ -344,18 +349,23 @@ export function setupAuth(app: Express) {
           console.log(`Session ID: ${req.sessionID}`);
         }
         
-        // Definir o cookie de backup (igual ao login)
+        // Set cross-domain compatible cookies for registration
+        const cookieOptions = {
+          httpOnly: false,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          path: '/',
+          sameSite: (isReplit || isProduction ? 'none' : 'lax') as 'none' | 'lax',
+          secure: isReplit || isProduction,
+          domain: undefined
+        };
+        
         try {
-          res.cookie('user_id', user.id, {
-            httpOnly: false,  // Precisa ser acessível pelo JS
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            path: '/',
-            sameSite: 'lax',
-            secure: false,
-            domain: undefined
-          });
+          res.cookie('auth_user', user.id, cookieOptions);
+          
+          const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+          res.cookie('auth_token', authToken, cookieOptions);
         } catch (cookieError) {
-          console.error("Error setting cookie after registration:", cookieError);
+          console.error("Error setting cookies after registration:", cookieError);
         }
         
         // Importante: Retornar o objeto de usuário COMPLETO (exceto senha) igual ao fluxo de login
@@ -413,24 +423,21 @@ export function setupAuth(app: Express) {
           console.log(`[LOGIN] Session ID: ${req.sessionID}`);
           console.log(`[LOGIN] Session data:`, req.session);
           
-          // Set multiple authentication cookies for maximum compatibility
-          res.cookie('auth_user', user.id, {
+          // Set multiple authentication cookies for cross-domain compatibility
+          const cookieOptions = {
             httpOnly: false,
             maxAge: 30 * 24 * 60 * 60 * 1000,
             path: '/',
-            sameSite: 'lax',
-            secure: false
-          });
+            sameSite: (isReplit || isProduction ? 'none' : 'lax') as 'none' | 'lax',
+            secure: isReplit || isProduction,
+            domain: undefined // Allow cross-domain
+          };
+          
+          res.cookie('auth_user', user.id, cookieOptions);
           
           // Set simple auth token that frontend can use
           const authToken = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
-          res.cookie('auth_token', authToken, {
-            httpOnly: false,
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            path: '/',
-            sameSite: 'lax',
-            secure: false
-          });
+          res.cookie('auth_token', authToken, cookieOptions);
           
           // Return user data
           const { password, ...userData } = user;
