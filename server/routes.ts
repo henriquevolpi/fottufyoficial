@@ -118,166 +118,71 @@ async function downloadImage(url: string, filename: string): Promise<string> {
   });
 }
 
-// Basic authentication middleware (otimizado para menor uso de memória)
+// Simplified authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
-  console.log(`[USER] Checking user authentication`);
-  console.log(`[USER] Session ID: ${req.sessionID}`);
-  console.log(`[USER] Cookies: ${req.headers.cookie}`);
-  console.log(`[USER] Authorization header: ${req.headers.authorization}`);
+  console.log(`[AUTH] Checking authentication for ${req.method} ${req.path}`);
   
-  // Check for Authorization header first (Bearer token)
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-    const token = req.headers.authorization.substring(7); // Remove 'Bearer ' prefix
-    console.log(`[USER] Processing Authorization header token: ${token.substring(0, 20)}...`);
-    
-    try {
-      const decoded = Buffer.from(token, 'base64').toString();
-      const [userIdStr] = decoded.split(':');
-      const userId = parseInt(userIdStr);
-      
-      console.log(`[USER] Decoded user ID from token: ${userId}`);
-      
-      if (userId && !isNaN(userId)) {
-        const user = await storage.getUser(userId);
-        if (user) {
-          console.log(`[USER] Authenticated via Authorization header: ${user.id}`);
-          req.user = enhanceUserWithComputedProps(user);
-          return next();
-        } else {
-          console.log(`[USER] No user found for ID: ${userId}`);
-        }
-      }
-    } catch (error) {
-      console.log(`[USER] Error decoding Authorization token: ${error}`);
-    }
-  }
-  
-  // Check for auth_user cookie
-  if (req.headers.cookie) {
-    const cookies = req.headers.cookie.split('; ');
-    const authUserCookie = cookies.find(c => c.startsWith('auth_user='));
-    if (authUserCookie) {
-      const userId = parseInt(authUserCookie.split('=')[1]);
-      console.log(`[USER] Found auth_user cookie with ID: ${userId}`);
-      
-      if (userId && !isNaN(userId)) {
-        const user = await storage.getUser(userId);
-        if (user) {
-          console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
-          req.user = enhanceUserWithComputedProps(user);
-          
-          // Also restore session if it's missing
-          if (!req.isAuthenticated || !req.isAuthenticated()) {
-            console.log(`[USER] Restoring session for user ${userId}`);
-            req.login(user, (err) => {
-              if (err) {
-                console.error(`[USER] Error restoring session: ${err}`);
-              } else {
-                console.log(`[USER] Session restored successfully`);
-              }
-            });
-          }
-          
-          return next();
-        }
-      }
-    }
-  }
-  
-  // First check for session-based authentication (Passport adds isAuthenticated method)
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    console.log(`[USER] Is authenticated: true`);
-    console.log(`[USER] User in request: ${req.user?.id}`);
-    console.log(`[USER] Session passport data: ${JSON.stringify(req.session?.passport)}`);
-    
-    // Enhance user object with computed properties for consistent API
-    if (req.user) {
+  try {
+    // Method 1: Check Passport session authentication
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log(`[AUTH] ✓ Authenticated via Passport session: ${req.user.id}`);
       req.user = enhanceUserWithComputedProps(req.user);
+      return next();
     }
-    return next();
-  }
-  
-  console.log(`[USER] Is authenticated: false`);
-  console.log(`[USER] User in request: not set`);
-  
-  // Check session passport data
-  if (req.session?.passport?.user) {
-    console.log(`[USER] Session passport data: ${JSON.stringify(req.session.passport)}`);
-    // Try to get user from session data
-    try {
+    
+    // Method 2: Check session passport data directly
+    if (req.session?.passport?.user) {
+      console.log(`[AUTH] Found session data, fetching user: ${req.session.passport.user}`);
       const user = await storage.getUser(req.session.passport.user);
       if (user) {
-        console.log(`[USER] Found user in storage: ${user.id}`);
+        console.log(`[AUTH] ✓ Authenticated via session data: ${user.id}`);
         req.user = enhanceUserWithComputedProps(user);
         return next();
       }
-    } catch (error) {
-      console.log(`[USER] Error getting user from storage: ${error}`);
     }
-  } else {
-    console.log(`[USER] No passport session data found`);
-  }
-  
-  // Check for authentication cookies as fallback
-  if (req.headers.cookie) {
-    const cookieStr = req.headers.cookie;
     
-    // Try auth_token first (more secure)
-    if (cookieStr.includes('auth_token=')) {
-      const tokenIndex = cookieStr.indexOf('auth_token=');
-      if (tokenIndex >= 0) {
-        const valueStart = tokenIndex + 11; // 'auth_token='.length
-        const valueEnd = cookieStr.indexOf(';', valueStart);
-        const tokenStr = valueEnd >= 0 
-          ? cookieStr.substring(valueStart, valueEnd) 
-          : cookieStr.substring(valueStart);
-          
+    // Method 3: Check auth cookies
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split('; ');
+      
+      // Try auth_user cookie first
+      const authUserCookie = cookies.find(c => c.startsWith('auth_user='));
+      if (authUserCookie) {
+        const userId = parseInt(authUserCookie.split('=')[1]);
+        if (userId && !isNaN(userId)) {
+          const user = await storage.getUser(userId);
+          if (user) {
+            console.log(`[AUTH] ✓ Authenticated via auth_user cookie: ${user.id}`);
+            req.user = enhanceUserWithComputedProps(user);
+            return next();
+          }
+        }
+      }
+      
+      // Try auth_token cookie
+      const authTokenCookie = cookies.find(c => c.startsWith('auth_token='));
+      if (authTokenCookie) {
         try {
-          const decoded = Buffer.from(tokenStr, 'base64').toString();
+          const token = authTokenCookie.split('=')[1];
+          const decoded = Buffer.from(token, 'base64').toString();
           const [userIdStr] = decoded.split(':');
           const userId = parseInt(userIdStr);
           
           if (userId && !isNaN(userId)) {
             const user = await storage.getUser(userId);
             if (user) {
-              console.log(`[USER] Authenticated via auth_token: ${user.id}`);
+              console.log(`[AUTH] ✓ Authenticated via auth_token: ${user.id}`);
               req.user = enhanceUserWithComputedProps(user);
               return next();
             }
           }
         } catch (error) {
-          console.log(`[USER] Error decoding auth_token: ${error}`);
+          console.log(`[AUTH] Error decoding auth_token: ${error}`);
         }
       }
     }
-    
-    // Fallback to auth_user cookie
-    if (cookieStr.includes('auth_user=')) {
-      const userIdIndex = cookieStr.indexOf('auth_user=');
-      
-      if (userIdIndex >= 0) {
-        const valueStart = userIdIndex + 10; // 'auth_user='.length
-        const valueEnd = cookieStr.indexOf(';', valueStart);
-        const valueStr = valueEnd >= 0 
-          ? cookieStr.substring(valueStart, valueEnd) 
-          : cookieStr.substring(valueStart);
-          
-        const userId = parseInt(valueStr);
-        
-        if (userId && !isNaN(userId)) {
-          try {
-            const user = await storage.getUser(userId);
-            if (user) {
-              console.log(`[USER] Authenticated via auth_user cookie: ${user.id}`);
-              req.user = enhanceUserWithComputedProps(user);
-              return next();
-            }
-          } catch (error) {
-            console.log(`[USER] Error getting user from auth_user cookie: ${error}`);
-          }
-        }
-      }
-    }
+  } catch (error) {
+    console.log(`[AUTH] Error in authentication middleware: ${error}`);
   }
   
   // Check for admin override parameter (for development testing only)

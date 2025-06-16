@@ -42,12 +42,11 @@ const upload = multer({
 const app = express();
 
 app.use(cors({
-  origin: [
-    "https://37c5b464-5962-44e7-9a4e-6af568cdfd81-00-27kawzdbfhlcc.worf.replit.dev",
-    "http://localhost:3000",
-    "http://localhost:5000"
-  ],
-  credentials: true
+  origin: true, // Allow all origins in development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 app.use(express.json({ limit: "50mb" }));
