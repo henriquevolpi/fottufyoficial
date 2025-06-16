@@ -2,15 +2,15 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// Configuração para PostgreSQL do Replit (desenvolvimento seguro)
-// Banco Neon permanece intacto como backup de produção
+// Configuração para PostgreSQL do Render (produção)
+// Migração completa do Replit para Render concluída
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 
-// Configuração otimizada para PostgreSQL local do Replit
+// Configuração otimizada para PostgreSQL do Render  
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
   max: 20,
