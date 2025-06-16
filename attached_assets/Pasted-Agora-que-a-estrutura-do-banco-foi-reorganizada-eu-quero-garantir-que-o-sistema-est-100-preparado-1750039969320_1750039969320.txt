@@ -1,0 +1,48 @@
+Agora que a estrutura do banco foi reorganizada, eu quero garantir que o sistema está 100% preparado, organizado e sem riscos para qualquer futura migração para outro banco (Render, Railway, Neon, PlanetScale, Supabase, etc.).
+
+Por isso, eu quero que você me responda claramente:
+	1.	✅ Planos:
+
+	•	O campo plan_type está corretamente implementado e sendo usado da forma correta?
+	•	Quais são os planos reconhecidos (free, basic, standard, professional, manual_activation, etc.)?
+	•	Está bem definido no banco qual é o limite de uploads, projetos, etc., para cada plano?
+
+	2.	✅ Status da Conta:
+
+	•	O campo status está funcionando corretamente? (ex.: active, pending_payment, canceled, suspended)?
+	•	Se a pessoa não paga, ou cancela no Stripe ou Hotmart, o status muda automaticamente para pending_payment ou canceled?
+
+	3.	✅ Controle de Upload:
+
+	•	O campo used_uploads está sincronizado corretamente com a quantidade real de fotos na tabela photos?
+	•	O campo upload_limit está correto e impede novos uploads quando o limite é atingido?
+	•	Esse controle funciona de forma confiável, inclusive quando há alteração de plano ou downgrade?
+
+	4.	✅ Subscrição e Pagamento:
+
+	•	O banco está preparado para trabalhar com Stripe e Hotmart?
+	•	Os campos stripe_customer_id e stripe_subscription_id estão implementados e funcionando?
+	•	Existe verificação automática do status de pagamento (via webhook ou checagem periódica)?
+	•	Existe controle para ativação manual (via painel ADM), com is_manual_activation e controle de data?
+
+	5.	✅ Downgrade e Cancelamento:
+
+	•	Está implementado o controle de downgrade automático quando o pagamento não é realizado (utilizando pending_downgrade_date e subscription_end_date)?
+	•	Está funcionando corretamente a lógica de voltar para o plano free após vencimento ou cancelamento?
+
+	6.	✅ Segurança dos Dados:
+
+	•	Ao deletar um projeto, as fotos no Cloudflare R2 (ou outro storage) estão sendo deletadas corretamente?
+	•	Existe controle correto para deletar ou desativar usuários, projetos e fotos (soft delete ou delete total)?
+
+	7.	✅ Performance:
+
+	•	O banco tem índices criados nas tabelas users (id, email), projects (id, public_id, photographer_id) e photos (id, project_id)?
+	•	Está otimizado para não sofrer lentidão quando tiver muitos dados?
+
+	8.	✅ Checklist Final:
+
+	•	Me mostre um checklist do que está 100% correto e funcionando hoje.
+	•	E me diga exatamente o que ainda falta melhorar ou ajustar, para que eu nunca tenha problemas de migração, perda de dados, bugs em uploads, erros de limite, problemas em downgrade, status errado de contas, etc.
+
+Se houver algo que não está bem implementado, eu quero que você liste para vermos o que precisamos fazer
