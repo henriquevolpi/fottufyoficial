@@ -77,9 +77,6 @@ app.use('/uploads', express.static(uploadsDir));
 
 registerRoutes(app);
 
-setupVite(app);
-serveStatic(app);
-
 startDbHealthCheck();
 
 app.get('/api/test-db', async (req, res) => {
@@ -112,8 +109,17 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 const port = Number(process.env.PORT) || 5000;
-app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
+  
+  // Setup Vite after server is created
+  try {
+    await setupVite(app, server);
+    serveStatic(app);
+    console.log("✓ Frontend configured successfully");
+  } catch (error) {
+    console.error("Frontend setup error:", error);
+  }
 });
 
 export { upload };
