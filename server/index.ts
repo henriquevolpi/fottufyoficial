@@ -148,26 +148,12 @@ app.use(cors({
 import { setupAuth } from './auth';
 setupAuth(app);
 
-// Configure session logging middleware (otimizado para menor uso de memória)
+// Configure session logging middleware (otimizado - apenas erros em produção)
 app.use((req, res, next) => {
-  // Log apenas informações essenciais, apenas para rotas selecionadas que realmente precisam de debug
-  // Reduz a quantidade de strings em memória e objetos temporários
-  if (req.path.startsWith('/api/') && (
-      req.path.includes('/auth') || 
-      req.path.includes('/login') || 
-      req.path.includes('/logout') ||
-      process.env.DEBUG_REQUESTS === 'true'
-    )) {
-    console.log(`[DEBUG-REQ] ${req.method} ${req.path} | Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'} | User: ${req.user ? req.user.id : 'none'}`);
-    
-    // Versão simplificada que usa menos memória, sem criar objetos extras
-    if (process.env.DEBUG_COOKIES === 'true' && req.headers.cookie) {
-      console.log(`[DEBUG-REQ] Cookies: "${req.headers.cookie}"`);
-    }
-
-    // Log passport session data apenas quando realmente necessário
-    if (process.env.DEBUG_SESSION === 'true' && req.session && req.session.passport) {
-      console.log(`[DEBUG-REQ] Passport session: ${JSON.stringify(req.session.passport)}`);
+  // Log apenas para erros críticos em produção, debug completo apenas em desenvolvimento
+  if (process.env.NODE_ENV === 'development' && process.env.DEBUG_REQUESTS === 'true') {
+    if (req.path.includes('/auth') || req.path.includes('/login') || req.path.includes('/logout')) {
+      console.log(`[DEBUG-REQ] ${req.method} ${req.path} | Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'N/A'} | User: ${req.user ? req.user.id : 'none'}`);
     }
   }
   next();
@@ -207,42 +193,21 @@ app.get('/api/test-db', async (req: Request, res: Response) => {
   }
 });
 
-// Request/response logging middleware
+// Request/response logging middleware (otimizado para produção)
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  // Log apenas em desenvolvimento ou para erros críticos (>= 400)
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG_API === 'true') {
+    const start = Date.now();
+    const path = req.path;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      // Versão simplificada do log para reduzir uso de memória
-      // Não inclui o corpo da resposta nos logs
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      
-      // Se for uma resposta muito grande (como de fotos), apenas registrar o tamanho
-      if (capturedJsonResponse && Array.isArray(capturedJsonResponse)) {
-        logLine += ` :: Array[${capturedJsonResponse.length}]`;
-      } else if (capturedJsonResponse && typeof capturedJsonResponse === 'object') {
-        // Para objetos, capturar apenas as chaves mas não os valores
-        const keys = Object.keys(capturedJsonResponse).join(',');
-        logLine += ` :: Object{${keys}}`;
+    res.on("finish", () => {
+      const duration = Date.now() - start;
+      if (path.startsWith("/api") && (res.statusCode >= 400 || process.env.NODE_ENV === 'development')) {
+        // Log simplificado apenas com informações essenciais
+        log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
       }
-
-      if (logLine.length > 120) {
-        logLine = logLine.slice(0, 119) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
+    });
+  }
   next();
 });
 
