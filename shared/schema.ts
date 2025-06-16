@@ -175,10 +175,10 @@ export const insertNewProjectSchema = createInsertSchema(newProjects).omit({
   createdAt: true,
 });
 
-// Photos table with UUIDs - MIGRATED FROM PROJECTS.PHOTOS JSON
+// Photos table - NORMALIZED AND OPTIMIZED
 export const photos = pgTable("photos", {
   id: uuid("id").defaultRandom().primaryKey(),
-  projectId: uuid("project_id").notNull(), // References projects.public_id after migration
+  projectId: text("project_id").notNull(), // References projects.public_id
   url: text("url").notNull(),
   filename: text("filename"), // Nome único usado pelo R2
   originalName: text("original_name"), // Nome original do arquivo enviado pelo usuário
