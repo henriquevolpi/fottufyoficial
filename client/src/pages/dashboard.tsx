@@ -889,7 +889,7 @@ function UploadModal({
           <DialogDescription className="text-sm mt-1">
             
             <p className="bg-yellow-200 text-black font-semibold inline px- rounded-sm">
-              Aceitamos fotos apenas abaixo de 2mb cada, para conforto dos clientes ❤️
+              Aceitamos fotos apenas abaixo de 2mb cada, para conforto dos clientes ❤️ / Envie no máximo lotes de 400 fotos, para evitar erros no upload 📸
             </p>
           </DialogDescription>
         </DialogHeader>
