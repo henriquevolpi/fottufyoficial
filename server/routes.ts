@@ -1442,8 +1442,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate project data and ensure photographerId is set to the current user's ID if logged in
       const currentUserId = req.user?.id || parseInt(photographerId || '1');
       
-      // Generate a unique public ID for the project URL
-      const uniquePublicId = nanoid(10); // 10 character unique ID
+      // Generate a unique public ID for the project URL with collision detection
+      let uniquePublicId;
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      do {
+        uniquePublicId = nanoid(12); // Increased from 10 to 12 characters for better uniqueness
+        attempts++;
+        
+        // Check if this public_id already exists
+        const existingProject = await db.query.projects.findFirst({
+          where: eq(projects.publicId, uniquePublicId)
+        });
+        
+        if (!existingProject) {
+          break; // Found unique ID
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error(`Failed to generate unique public_id after ${maxAttempts} attempts`);
+          throw new Error("Failed to generate unique project identifier");
+        }
+      } while (attempts < maxAttempts);
       
       const projectData = insertProjectSchema.parse({
         name: name,
