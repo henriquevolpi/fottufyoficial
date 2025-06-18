@@ -1,0 +1,104 @@
+{
+  "timestamp": "2025-06-18T20:55:01.365Z",
+  "status": "READY_FOR_MIGRATION",
+  "sections": {
+    "plans": {
+      "status": "OK",
+      "data": [
+        {
+          "plan_type": "basic_v2",
+          "users_count": "21",
+          "total_limit": "126000",
+          "total_used": "6133",
+          "avg_used": "292.0476190476190476"
+        },
+        {
+          "plan_type": "free",
+          "users_count": "174",
+          "total_limit": "1740",
+          "total_used": "9006",
+          "avg_used": "51.7586206896551724"
+        },
+        {
+          "plan_type": "professional",
+          "users_count": "2",
+          "total_limit": "100000",
+          "total_used": "103",
+          "avg_used": "51.5000000000000000"
+        },
+        {
+          "plan_type": "professional_v2",
+          "users_count": "1",
+          "total_limit": "35000",
+          "total_used": "1526",
+          "avg_used": "1526.0000000000000000"
+        },
+        {
+          "plan_type": "standard_v2",
+          "users_count": "4",
+          "total_limit": "60000",
+          "total_used": "412",
+          "avg_used": "103.0000000000000000"
+        }
+      ],
+      "validation": "Todos os planos têm limites definidos e usuários ativos"
+    },
+    "upload_control": {
+      "status": "OK",
+      "inconsistencies": 0,
+      "data": [],
+      "validation": "Controle de upload totalmente sincronizado"
+    },
+    "status_subscriptions": {
+      "status": "OK",
+      "data": [
+        {
+          "status": "active",
+          "subscription_status": "active",
+          "count": "39",
+          "with_stripe": "0",
+          "with_subscription": "0"
+        },
+        {
+          "status": "active",
+          "subscription_status": "inactive",
+          "count": "163",
+          "with_stripe": "0",
+          "with_subscription": "0"
+        }
+      ],
+      "validation": "Status e assinaturas organizados corretamente"
+    },
+    "performance_indexes": {
+      "status": "OK",
+      "total_indexes": 15,
+      "critical_missing": [],
+      "validation": "Todos os índices críticos estão presentes"
+    },
+    "referential_integrity": {
+      "status": "OK",
+      "orphan_projects": 0,
+      "orphan_photos": 0,
+      "validation": "Verificação de dados órfãos concluída"
+    },
+    "general_stats": {
+      "status": "INFO",
+      "data": {
+        "total_users": "202",
+        "total_projects": "168",
+        "total_photos": "17180",
+        "total_uploads_used": "17180",
+        "total_upload_capacity": "322740"
+      },
+      "validation": "Estatísticas coletadas com sucesso"
+    },
+    "backup_readiness": {
+      "status": "OK",
+      "backup_files": [
+        "backup_render_completo_20250618_185323.sql"
+      ],
+      "exists": true,
+      "validation": "Backup de segurança disponível"
+    }
+  }
+}
