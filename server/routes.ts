@@ -9,6 +9,7 @@ import {
   WebhookPayload, 
   SUBSCRIPTION_PLANS, 
   Project,
+  projects,
   newProjects,
   photos,
   insertNewProjectSchema,
@@ -1452,11 +1453,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attempts++;
         
         // Check if this public_id already exists
-        const existingProject = await db.query.projects.findFirst({
-          where: eq(projects.publicId, uniquePublicId)
-        });
+        const existingProject = await db.select()
+          .from(projects)
+          .where(eq(projects.publicId, uniquePublicId))
+          .limit(1);
         
-        if (!existingProject) {
+        if (existingProject.length === 0) {
           break; // Found unique ID
         }
         
@@ -1663,10 +1665,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(project);
     } catch (error) {
+      console.error("Error creating project:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : 'No stack available');
+      
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid project data", errors: error.errors });
+        return res.status(400).json({ 
+          message: "Invalid project data", 
+          errors: error.errors,
+          details: error.message 
+        });
       }
-      res.status(500).json({ message: "Failed to create project" });
+      
+      // Check for database constraint errors
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate key value')) {
+          return res.status(409).json({ 
+            message: "Duplicate key error - this should not happen after sequence fix",
+            error: error.message 
+          });
+        }
+        
+        return res.status(500).json({ 
+          message: "Failed to create project", 
+          error: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to create project - unknown error" });
     }
   });
   
