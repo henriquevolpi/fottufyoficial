@@ -112,20 +112,10 @@ export async function uploadFileToR2(
   applyWatermark: boolean = true
 ): Promise<{ url: string, key: string }> {
   try {
-    // Processar a imagem somente se for um tipo de imagem suportado
-    let processedBuffer = buffer;
-    if (isValidFileType(contentType)) {
-      try {
-        const watermarkStatus = applyWatermark ? "com marca d'água" : "sem marca d'água";
-        console.log(`Processando imagem: ${fileName} (redimensionamento ${watermarkStatus})`);
-        processedBuffer = await processImage(buffer, contentType, applyWatermark);
-        console.log(`Imagem processada com sucesso: ${fileName}`);
-      } catch (processingError) {
-        console.error(`Erro ao processar imagem ${fileName}:`, processingError);
-        // Em caso de erro no processamento, continua com o buffer original
-        processedBuffer = buffer;
-      }
-    }
+    // PROCESSAMENTO DESATIVADO: Front-end faz o redimensionamento
+    // Enviar arquivo diretamente para R2 sem qualquer processamento
+    const processedBuffer = buffer;
+    console.log(`Enviando arquivo direto para R2: ${fileName} (${(buffer.length / 1024 / 1024).toFixed(2)} MB) - sem processamento backend`);
 
     // Create command to upload file
     // Note: Cloudflare R2 does not support ACLs like AWS S3

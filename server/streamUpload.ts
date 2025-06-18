@@ -165,28 +165,18 @@ export async function streamDirectToR2(
 }
 
 /**
- * Processa uma imagem e faz upload para o R2 usando streaming
- * Versão otimizada com melhor gerenciamento de memória
+ * Upload direto para R2 sem processamento
+ * Substitui o processamento anterior - agora apenas faz streaming direto
  */
 export async function processAndStreamToR2(
   filePath: string,
   fileName: string,
   contentType: string,
-  applyWatermark: boolean = true
+  applyWatermark: boolean = false // Ignorado - processamento desativado
 ): Promise<{ url: string, key: string }> {
-  let fileBuffer: Buffer | null = null;
-  let processedBuffer: Buffer | null = null; 
-  let processedFilePath: string | null = null;
-  
   try {
-    // Log de memória no início do processamento
+    // Log de memória no início do upload
     logMemory('processAndStreamToR2-start', `File: ${fileName}, Type: ${contentType}`);
-    
-    // Para tipos de arquivo que não são imagens, use streaming direto
-    if (!isValidFileType(contentType)) {
-      logMemory('processAndStreamToR2-non-image', `Skipping processing for non-image: ${fileName}`);
-      return streamDirectToR2(filePath, fileName, contentType);
-    }
     
     // Obter o tamanho do arquivo para o log
     let fileSize = 0;
@@ -198,93 +188,33 @@ export async function processAndStreamToR2(
       console.error(`Erro ao obter tamanho do arquivo ${filePath}:`, statError);
     }
     
-    // Para imagens, precisamos ler o arquivo, processar e depois fazer upload
-    const watermarkStatus = applyWatermark ? "com marca d'água" : "sem marca d'água";
+    // PROCESSAMENTO DESATIVADO: Enviar arquivo direto para R2 sem processamento
+    console.log(`Enviando arquivo direto para R2: ${fileName} (${(fileSize / 1024 / 1024).toFixed(2)} MB) - sem processamento backend`);
+    
+    // Usar streaming direto para todos os tipos de arquivo
+    const result = await streamDirectToR2(filePath, fileName, contentType);
+    
     if (process.env.DEBUG_MEMORY === 'true') {
-      console.log(`Processando imagem: ${fileName} (redimensionamento ${watermarkStatus})`);
+      console.log(`Arquivo enviado com sucesso: ${fileName}`);
     }
     
-    // Log antes de ler o arquivo para memória
-    logMemory('processAndStreamToR2-before-read', `Reading file into memory: ${fileName}`);
+    // Log do final do upload bem-sucedido
+    logMemory('processAndStreamToR2-complete', `Successfully uploaded: ${fileName}`);
     
-    // Ler o arquivo e processar a imagem - armazenando referência para liberar mais tarde
-    fileBuffer = await fs.readFile(filePath);
+    return result;
     
-    // Log após ler o arquivo para memória
-    logMemory('processAndStreamToR2-after-read', `File buffer size: ${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB`);
-    
-    // Log antes do processamento da imagem
-    logMemory('processAndStreamToR2-before-process', `Processing image: ${fileName}`);
-    
-    // Processar a imagem e armazenar em um buffer separado
-    processedBuffer = await processImage(fileBuffer, contentType, applyWatermark);
-    
-    // Liberar o buffer original assim que tivermos o buffer processado
-    fileBuffer = null; // Permitir que o garbage collector libere esse buffer
-    
-    // Log após processamento da imagem
-    if (processedBuffer) {
-      logMemory('processAndStreamToR2-after-process', `Processed buffer size: ${(processedBuffer.length / 1024 / 1024).toFixed(2)} MB`);
-    }
-    
-    // Criar um novo caminho temporário para o arquivo processado
-    processedFilePath = path.join(TMP_DIR, `processed-${randomUUID()}`);
-    
-    // Log antes de escrever o arquivo processado
-    logMemory('processAndStreamToR2-before-write', `Writing processed file: ${processedFilePath}`);
-    
-    // Escrever o buffer processado no arquivo
-    if (processedBuffer) {
-      await fs.writeFile(processedFilePath, processedBuffer);
-      // Liberar o buffer processado após escrever no arquivo
-      processedBuffer = null; // Permitir que o garbage collector libere esse buffer
-    }
-    
-    // Log após escrever o arquivo processado
-    logMemory('processAndStreamToR2-after-write', `Processed file written to disk`);
-    
-    try {
-      // Fazer upload do arquivo processado
-      const result = await streamDirectToR2(processedFilePath, fileName, contentType);
-      if (process.env.DEBUG_MEMORY === 'true') {
-        console.log(`Imagem processada com sucesso: ${fileName}`);
-      }
-      
-      // Log do final do processamento bem-sucedido
-      logMemory('processAndStreamToR2-complete', `Successfully processed and uploaded: ${fileName}`);
-      
-      return result;
-    } finally {
-      // Limpar o arquivo processado
-      if (processedFilePath) {
-        try {
-          await fs.unlink(processedFilePath);
-          logMemory('processAndStreamToR2-cleanup', `Deleted processed temporary file: ${processedFilePath}`);
-          processedFilePath = null; // Limpar referência
-        } catch (cleanupError) {
-          console.error(`Erro ao limpar arquivo processado: ${cleanupError}`);
-        }
-      }
-    }
-  } catch (processingError) {
-    // Log em caso de erro de processamento
-    logMemory('processAndStreamToR2-error', `Error processing image ${fileName}: ${processingError instanceof Error ? processingError.message : String(processingError)}`);
-    console.error(`Erro ao processar imagem ${fileName}:`, processingError);
-    
-    // Em caso de erro no processamento, tenta fazer o upload do arquivo original
-    logMemory('processAndStreamToR2-fallback', `Falling back to direct upload for: ${fileName}`);
-    return streamDirectToR2(filePath, fileName, contentType);
+  } catch (uploadError) {
+    // Log em caso de erro
+    logMemory('processAndStreamToR2-error', `Error uploading ${fileName}: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+    console.error(`Erro ao fazer upload do arquivo ${fileName}:`, uploadError);
+    throw uploadError;
   } finally {
-    // Garantir liberação completa de memória
-    fileBuffer = null;
-    processedBuffer = null;
-    
     // Sugerir coleta de lixo em ambiente de DEBUG
     if (process.env.DEBUG_MEMORY === 'true' && global.gc) {
       try {
         setTimeout(() => {
           global.gc && global.gc();
-          logMemory('processAndStreamToR2-gc', `Garbage collection sugerida após processamento de ${fileName}`);
+          logMemory('processAndStreamToR2-gc', `Garbage collection sugerida após upload de ${fileName}`);
         }, 100);
       } catch (gcError) {
         console.error('Erro ao sugerir garbage collection:', gcError);
