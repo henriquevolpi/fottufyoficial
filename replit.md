@@ -118,7 +118,12 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
 - **Sync Verification**: Upload count validation and orphan photo cleanup
 
 ## Changelog
-- June 19, 2025. Initial setup
+- June 19, 2025: Initial setup
+- June 19, 2025: Implemented batch processing system for image uploads to prevent browser crashes:
+  - Modified `compressMultipleImages()` to process images in batches of 30 with 500ms pauses
+  - Created `batchUpload.ts` utility for uploading images in groups of 100
+  - Added `/api/projects/:projectId/add-photos` endpoint for additional batch uploads
+  - System now handles 1000+ images without browser memory issues or request timeouts
 
 ## User Preferences
 

@@ -67,7 +67,7 @@ export async function compressImage(
 }
 
 /**
- * Processa múltiplas imagens em paralelo
+ * Processa múltiplas imagens em lotes pequenos para evitar travamento do navegador
  * @param files Array de arquivos de imagem
  * @param options Opções de compressão (opcional)
  * @param onProgress Callback de progresso (opcional)
@@ -79,35 +79,71 @@ export async function compressMultipleImages(
   onProgress?: (processed: number, total: number) => void
 ): Promise<File[]> {
   const results: File[] = [];
+  const batchSize = 30; // Processar 30 imagens por lote
   
-  console.log(`[Frontend] Iniciando processamento de ${files.length} imagens`);
+  console.log(`[Frontend] Iniciando processamento de ${files.length} imagens em lotes de ${batchSize}`);
   
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  // Processar em lotes pequenos
+  for (let batchStart = 0; batchStart < files.length; batchStart += batchSize) {
+    const batchEnd = Math.min(batchStart + batchSize, files.length);
+    const batch = files.slice(batchStart, batchEnd);
     
-    // Verificar se é uma imagem
-    if (!file.type.startsWith('image/')) {
-      console.log(`[Frontend] Pulando arquivo não-imagem: ${file.name}`);
-      results.push(file);
-      continue;
+    console.log(`[Frontend] Processando lote ${Math.floor(batchStart/batchSize) + 1}/${Math.ceil(files.length/batchSize)} - ${batch.length} imagens`);
+    
+    // Processar este lote
+    for (let i = 0; i < batch.length; i++) {
+      const file = batch[i];
+      const globalIndex = batchStart + i;
+      
+      // Verificar se é uma imagem
+      if (!file.type.startsWith('image/')) {
+        console.log(`[Frontend] Pulando arquivo não-imagem: ${file.name}`);
+        results.push(file);
+        
+        // Callback de progresso
+        if (onProgress) {
+          onProgress(globalIndex + 1, files.length);
+        }
+        continue;
+      }
+      
+      try {
+        const compressedFile = await compressImage(file, options);
+        results.push(compressedFile);
+        
+        // Callback de progresso
+        if (onProgress) {
+          onProgress(globalIndex + 1, files.length);
+        }
+      } catch (error) {
+        console.error(`[Frontend] Erro ao processar ${file.name}:`, error);
+        // Em caso de erro, usar arquivo original
+        results.push(file);
+        
+        // Callback de progresso mesmo com erro
+        if (onProgress) {
+          onProgress(globalIndex + 1, files.length);
+        }
+      }
     }
     
-    try {
-      const compressedFile = await compressImage(file, options);
-      results.push(compressedFile);
+    // "Respirar" entre lotes para permitir garbage collection e não travar o navegador
+    if (batchEnd < files.length) {
+      console.log(`[Frontend] Pausando 500ms entre lotes para liberar memória...`);
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Callback de progresso
-      if (onProgress) {
-        onProgress(i + 1, files.length);
+      // Forçar garbage collection se disponível (apenas para debug)
+      if (typeof window !== 'undefined' && (window as any).gc) {
+        try {
+          (window as any).gc();
+        } catch (e) {
+          // Ignorar erro se gc não estiver disponível
+        }
       }
-    } catch (error) {
-      console.error(`[Frontend] Erro ao processar ${file.name}:`, error);
-      // Em caso de erro, usar arquivo original
-      results.push(file);
     }
   }
   
-  console.log(`[Frontend] Processamento concluído: ${results.length} arquivos`);
+  console.log(`[Frontend] Processamento concluído: ${results.length} arquivos processados em ${Math.ceil(files.length/batchSize)} lotes`);
   return results;
 }
 

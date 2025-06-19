@@ -813,6 +813,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Add photos to existing project (for batch upload)
+  app.post("/api/projects/:projectId/add-photos", r2Upload.array('photos', 10000), async (req: Request, res: Response) => {
+    try {
+      const projectId = req.params.projectId;
+      console.log(`[Batch Upload] Adicionando fotos ao projeto ${projectId}`);
+      
+      if (!projectId) {
+        return res.status(400).json({ message: "Project ID is required" });
+      }
+      
+      // Verificar se o projeto existe
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Verificar se há arquivos para upload
+      const uploadedFiles = req.files as Express.Multer.File[];
+      if (!uploadedFiles || uploadedFiles.length === 0) {
+        return res.status(400).json({ message: "No photos provided" });
+      }
+      
+      console.log(`[Batch Upload] Processando ${uploadedFiles.length} fotos para o projeto ${projectId}`);
+      
+      let successCount = 0;
+      const newPhotos: string[] = [];
+      
+      // Processar cada arquivo
+      for (const file of uploadedFiles) {
+        try {
+          const filename = generateUniqueFileName(file.originalname);
+          
+          // Upload para o R2 usando streaming
+          const result = await processAndStreamToR2(
+            file.path, 
+            filename, 
+            file.mimetype
+          );
+          
+          // Adicionar a foto ao banco de dados associada ao projeto
+          const newPhoto = await db.insert(photos).values({
+            projectId,
+            url: result.url,
+            filename,
+            selected: false
+          }).returning();
+          
+          if (newPhoto && newPhoto[0]) {
+            newPhotos.push(newPhoto[0].id);
+            successCount++;
+          }
+        } catch (uploadError) {
+          console.error(`[Batch Upload] Erro ao processar arquivo ${file.originalname}:`, uploadError);
+          // Continuar com próximo arquivo mesmo se este falhar
+        }
+      }
+      
+      // Atualizar a contagem de uploads do usuário
+      if (successCount > 0) {
+        await storage.updateUploadUsage(project.photographerId, successCount);
+        console.log(`[Batch Upload] Atualizou contagem de uploads do usuário ${project.photographerId}: +${successCount}`);
+      }
+      
+      // Limpar arquivos temporários
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        await cleanupTempFiles(uploadedFiles);
+      }
+      
+      console.log(`[Batch Upload] Concluído: ${successCount}/${uploadedFiles.length} fotos adicionadas ao projeto ${projectId}`);
+      
+      res.status(200).json({ 
+        message: "Photos added successfully", 
+        count: successCount,
+        totalRequested: uploadedFiles.length,
+        projectId: projectId
+      });
+    } catch (error) {
+      console.error("[Batch Upload] Erro ao adicionar fotos:", error);
+      res.status(500).json({ message: "Failed to add photos to project" });
+    }
+  });
   
   // ==================== Auth Routes ==================== 
   // (basic routes handled by setupAuth)

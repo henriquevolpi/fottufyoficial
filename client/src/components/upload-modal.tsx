@@ -127,91 +127,36 @@ export default function UploadModal({
       console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
       setUploadPercentage(40); // 40% - redimensionamento concluído
 
-      // ETAPA 2: Preparar FormData com imagens redimensionadas
-      const formData = new FormData();
+      // ETAPA 2: Envio em lotes para evitar travamento do navegador
+      console.log(`[Frontend] Iniciando envio em lotes de ${compressedFiles.length} imagens`);
+      
+      const projectData = {
+        nome: values.nome,
+        cliente: values.cliente,
+        emailCliente: values.emailCliente,
+        dataEvento: values.dataEvento,
+        observacoes: values.observacoes || "",
+      };
 
-      // Add project data with names matching the server API fields
-      formData.append("name", values.nome);
-      formData.append("clientName", values.cliente);
-      formData.append("clientEmail", values.emailCliente);
-      formData.append("date", values.dataEvento);
-      formData.append("notes", values.observacoes || "");
-      formData.append("photographerId", "1"); // Using default ID
-
-      // Add compressed photos to FormData - server expects 'photos' field name for multer
-      compressedFiles.forEach((file) => {
-        // Each file with the same field name 'photos' for multer array handling
-        formData.append("photos", file);
-      });
-
-      // Add total count of photos
-      formData.append("photoCount", compressedFiles.length.toString());
-
-      // Use a fallback approach for browsers that don't support FormData properly
-      // Create JSON photosData as a backup - sem usar os previews visuais
-      const photoDataJson = JSON.stringify(
-        compressedFiles.map((file) => ({
-          // Não enviamos URLs de preview, apenas o nome do arquivo que é suficiente
-          // para o servidor processar o upload corretamente
-          url: "", // Campo vazio, o servidor usará os arquivos enviados diretamente
-          filename: file.name,
-        })),
+      // Importar função de upload em lotes dinamicamente
+      const { uploadInBatches } = await import("@/lib/batchUpload");
+      
+      // Enviar imagens em lotes (progresso 40% a 100%)
+      const batchResult = await uploadInBatches(
+        compressedFiles,
+        projectData,
+        (percentage) => {
+          setUploadPercentage(Math.round(percentage));
+        }
       );
-      formData.append("photosData", photoDataJson);
 
-      // ETAPA 3: Enviar para o servidor (progresso 40% a 100%)
-      console.log(`[Frontend] Enviando ${compressedFiles.length} imagens redimensionadas para o servidor`);
+      if (!batchResult.success) {
+        throw new Error(batchResult.message || "Falha no upload em lotes");
+      }
 
-      // Send data to API endpoint using XMLHttpRequest for upload progress tracking
-      const newProject = await new Promise<ProjectResponse>(
-        (resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-
-          // Track upload progress (40% a 100%)
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              const uploadProgress = (event.loaded / event.total) * 60; // 60% do progresso restante
-              const totalProgress = 40 + uploadProgress; // 40% já foi usado na compressão
-              setUploadPercentage(Math.round(totalProgress));
-            }
-          };
-
-          // Handle completion
-          xhr.onload = () => {
-            setUploadStatus("completed");
-
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const response = JSON.parse(xhr.responseText);
-                resolve(response);
-              } catch (e) {
-                reject(new Error("Invalid JSON response from server"));
-              }
-            } else {
-              let errorMessage = "Failed to create project";
-              try {
-                const errorData = JSON.parse(xhr.responseText);
-                errorMessage = errorData.message || errorMessage;
-              } catch (e) {
-                // If we can't parse JSON, use the status text
-                errorMessage = `Server error: ${xhr.statusText}`;
-              }
-              reject(new Error(errorMessage));
-            }
-          };
-
-          // Handle network errors
-          xhr.onerror = () => {
-            setUploadStatus("idle");
-            reject(new Error("Network error occurred"));
-          };
-
-          // Send the request
-          xhr.open("POST", "/api/projects", true);
-          xhr.send(formData);
-        },
-      );
-      console.log("Projeto criado com sucesso na API:", newProject);
+      setUploadStatus("completed");
+      const newProject = batchResult.data;
+      console.log("Projeto criado com sucesso via upload em lotes:", newProject);
 
       // Create link for sharing (useful for console debugging)
       const shareableLink = `${window.location.origin}/project-view/${newProject.id}`;
