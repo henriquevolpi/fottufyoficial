@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image } from "lucide-react";
 import { compressMultipleImages, isImageFile } from "@/lib/imageCompression";
+import { useGlobalUploadProtection } from "@/hooks/use-upload-protection";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,15 @@ export default function UploadModal({
     "idle" | "uploading" | "completed"
   >("idle");
 
+  // Sistema de proteção contra tela branca
+  const {
+    startUpload,
+    updateProgress,
+    reportActivity,
+    finishUpload,
+    cancelUpload
+  } = useGlobalUploadProtection();
+
   // Função para liberar URLs de preview e limpar memória
   const cleanupPreviewUrls = (urlsToCleanup: string[]) => {
     urlsToCleanup.forEach(url => {
@@ -127,11 +137,17 @@ export default function UploadModal({
     setIsSubmitting(true);
 
     try {
+      // Ativar sistema de proteção contra tela branca
+      startUpload(files.length);
+      
       // ETAPA 1: Redimensionar imagens no front-end antes do upload
       console.log(`[Frontend] Iniciando redimensionamento de ${files.length} imagens antes do upload`);
       
       setUploadStatus("uploading");
       setUploadPercentage(10); // 10% - iniciando processamento
+      
+      // Reportar atividade para evitar detectar travamento
+      reportActivity();
 
       // Redimensionar todas as imagens com progresso
       const compressedFiles = await compressMultipleImages(
@@ -145,11 +161,25 @@ export default function UploadModal({
           // Atualizar progresso do redimensionamento (10% a 40%)
           const compressionProgress = 10 + ((processed / total) * 30);
           setUploadPercentage(Math.round(compressionProgress));
+          
+          // Atualizar sistema de proteção global
+          updateProgress(
+            compressionProgress,
+            `Comprimindo imagens... ${processed}/${total}`,
+            processed
+          );
+          
+          // Reportar atividade para evitar detectar travamento
+          reportActivity();
         }
       );
 
       console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
       setUploadPercentage(40); // 40% - redimensionamento concluído
+      
+      // Atualizar proteção global
+      updateProgress(40, "Compressão concluída, iniciando upload...", compressedFiles.length);
+      reportActivity();
 
       // ETAPA 2: Envio em lotes para evitar travamento do navegador
       console.log(`[Frontend] Iniciando envio em lotes de ${compressedFiles.length} imagens`);
@@ -169,8 +199,18 @@ export default function UploadModal({
       const batchResult = await uploadInBatches(
         compressedFiles,
         projectData,
-        (percentage) => {
+        (percentage: number) => {
           setUploadPercentage(Math.round(percentage));
+          
+          // Atualizar sistema de proteção global
+          updateProgress(
+            percentage,
+            `Enviando imagens para o servidor...`,
+            Math.floor((percentage / 100) * files.length)
+          );
+          
+          // Reportar atividade para evitar detectar travamento
+          reportActivity();
         }
       );
 
@@ -181,6 +221,9 @@ export default function UploadModal({
       setUploadStatus("completed");
       const newProject = batchResult.data;
       console.log("Projeto criado com sucesso via upload em lotes:", newProject);
+      
+      // Finalizar sistema de proteção global
+      finishUpload();
 
       // Create link for sharing (useful for console debugging)
       const shareableLink = `${window.location.origin}/project-view/${newProject.id}`;
@@ -233,6 +276,9 @@ export default function UploadModal({
       onClose();
     } catch (error) {
       console.error("Error creating project:", error);
+      
+      // Cancelar sistema de proteção global em caso de erro
+      cancelUpload();
       
       // LIMPEZA DE MEMÓRIA EM CASO DE ERRO
       console.log(`[Frontend] Liberando memória devido a erro no upload`);

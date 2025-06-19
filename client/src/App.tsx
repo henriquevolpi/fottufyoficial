@@ -19,6 +19,8 @@ import CreatePassword from "@/pages/create-password";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import AdminLayout from "@/components/layout/admin-layout";
+import { UploadProtectionProvider } from "@/hooks/use-upload-protection";
+import { UploadProtectionSystem } from "@/components/upload-protection-system";
 import PricingPage from "@/pages/pricing";
 import TestR2 from "@/pages/test-r2";
 import TestImageUpload from "@/pages/test-image-upload";
@@ -149,8 +151,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router />
-        <Toaster />
+        <UploadProtectionProvider>
+          <Router />
+          <Toaster />
+          <UploadProtectionSystem />
+        </UploadProtectionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
