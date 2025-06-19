@@ -79,6 +79,30 @@ export default function UploadModal({
     "idle" | "uploading" | "completed"
   >("idle");
 
+  // Função para liberar URLs de preview e limpar memória
+  const cleanupPreviewUrls = (urlsToCleanup: string[]) => {
+    urlsToCleanup.forEach(url => {
+      if (url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+      }
+    });
+  };
+
+  // Função para limpar referências de arquivos e liberar memória
+  const cleanupFileReferences = (filesToCleanup: File[]) => {
+    // Forçar liberação das referências
+    filesToCleanup.length = 0;
+    
+    // Sugerir garbage collection se disponível (apenas para debug)
+    if (typeof window !== 'undefined' && (window as any).gc) {
+      try {
+        setTimeout(() => (window as any).gc(), 100);
+      } catch (e) {
+        // Ignorar erro se gc não estiver disponível
+      }
+    }
+  };
+
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
     defaultValues: {
@@ -185,13 +209,45 @@ export default function UploadModal({
         onUpload(formattedProject);
       }
 
+      // ETAPA 3: Limpeza de memória após upload bem-sucedido
+      console.log(`[Frontend] Iniciando limpeza de memória após upload bem-sucedido`);
+      
+      // Liberar URLs de preview
+      cleanupPreviewUrls(previews);
+      console.log(`[Frontend] ${previews.length} URLs de preview liberadas`);
+      
+      // Limpar referências de arquivos originais
+      const originalFilesCount = files.length;
+      cleanupFileReferences(files);
+      console.log(`[Frontend] ${originalFilesCount} referências de arquivos originais liberadas`);
+      
+      // Nota: Arquivos comprimidos são liberados automaticamente pela função uploadInBatches
+      console.log(`[Frontend] Limpeza de memória concluída após upload bem-sucedido`);
+
       // Reset form and close modal only after project creation is confirmed
       form.reset();
       setFiles([]);
       setPreviews([]);
+      setUploadPercentage(0);
+      setUploadStatus("idle");
       onClose();
     } catch (error) {
       console.error("Error creating project:", error);
+      
+      // LIMPEZA DE MEMÓRIA EM CASO DE ERRO
+      console.log(`[Frontend] Liberando memória devido a erro no upload`);
+      
+      // Liberar URLs de preview
+      cleanupPreviewUrls(previews);
+      console.log(`[Frontend] ${previews.length} URLs de preview liberadas após erro`);
+      
+      // Limpar referências de arquivos originais em caso de erro
+      const originalFilesCount = files.length;
+      if (originalFilesCount > 0) {
+        cleanupFileReferences(files);
+        console.log(`[Frontend] ${originalFilesCount} referências de arquivos originais liberadas após erro`);
+      }
+      
       toast({
         title: "Error creating project",
         description:
@@ -202,6 +258,7 @@ export default function UploadModal({
       });
     } finally {
       setIsSubmitting(false);
+      setUploadStatus("idle");
     }
   };
 
@@ -273,6 +330,13 @@ export default function UploadModal({
   };
 
   const removeFile = (index: number) => {
+    // Liberar URL de preview específica antes de remover
+    const urlToRevoke = previews[index];
+    if (urlToRevoke && urlToRevoke.startsWith('blob:')) {
+      URL.revokeObjectURL(urlToRevoke);
+      console.log(`[Frontend] URL de preview liberada: ${urlToRevoke}`);
+    }
+
     const newFiles = [...files];
     newFiles.splice(index, 1);
     setFiles(newFiles);
@@ -285,9 +349,20 @@ export default function UploadModal({
   // Limpar o estado quando o modal for fechado
   const handleClose = () => {
     if (!isSubmitting) {
+      // Liberar URLs de preview antes de limpar
+      cleanupPreviewUrls(previews);
+      console.log(`[Frontend] ${previews.length} URLs de preview liberadas no fechamento do modal`);
+      
+      // Limpar referências de arquivos
+      const filesCount = files.length;
+      cleanupFileReferences(files);
+      console.log(`[Frontend] ${filesCount} referências de arquivos liberadas no fechamento do modal`);
+      
       form.reset();
       setFiles([]);
       setPreviews([]);
+      setUploadPercentage(0);
+      setUploadStatus("idle");
       onClose();
     }
   };

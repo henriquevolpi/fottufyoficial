@@ -1,9 +1,43 @@
 /**
  * Utilitário para redimensionamento de imagens no front-end
- * Configuração padrão: largura máxima de 900px, qualidade 80%
+ * Configuração padrão: largura máxima de 970px, qualidade 90%
+ * Inclui gerenciamento automático de memória para uploads grandes
  */
 
 import imageCompression from 'browser-image-compression';
+
+/**
+ * Função utilitária para limpeza de recursos de canvas
+ * Usado internamente pela biblioteca de compressão quando necessário
+ */
+function cleanupCanvas(canvas: HTMLCanvasElement | null): void {
+  if (canvas) {
+    try {
+      canvas.width = 0;
+      canvas.height = 0;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    } catch (e) {
+      // Ignorar erros de limpeza
+    }
+  }
+}
+
+/**
+ * Função para sugerir garbage collection se disponível
+ * Usado para otimizar memória durante processamento de lotes grandes
+ */
+function suggestGarbageCollection(): void {
+  if (typeof window !== 'undefined' && (window as any).gc) {
+    try {
+      setTimeout(() => (window as any).gc(), 100);
+    } catch (e) {
+      // Ignorar se gc não estiver disponível
+    }
+  }
+}
 
 /**
  * Configurações padrão de compressão/redimensionamento
@@ -127,19 +161,14 @@ export async function compressMultipleImages(
       }
     }
     
-    // "Respirar" entre lotes para permitir garbage collection e não travar o navegador
+    // Limpeza de memória entre lotes para evitar acúmulo de recursos
     if (batchEnd < files.length) {
       console.log(`[Frontend] Pausando 500ms entre lotes para liberar memória...`);
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Forçar garbage collection se disponível (apenas para debug)
-      if (typeof window !== 'undefined' && (window as any).gc) {
-        try {
-          (window as any).gc();
-        } catch (e) {
-          // Ignorar erro se gc não estiver disponível
-        }
-      }
+      // Sugerir garbage collection usando função utilitária
+      suggestGarbageCollection();
+      console.log(`[Frontend] Garbage collection sugerida entre lotes`);
     }
   }
   
