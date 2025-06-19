@@ -2,20 +2,23 @@ import { Pool, PoolConfig } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@shared/schema';
 
-// Configuração para PostgreSQL do Render (produção)
-// Migração completa do Replit para Render concluída
+// Configuração para PostgreSQL (adaptável para Replit e produção)
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 
-// Configuração otimizada para PostgreSQL do Render com SSL
+// Detectar ambiente e configurar SSL adequadamente
+const isReplit = process.env.REPL_ID !== undefined;
+const isProduction = process.env.NODE_ENV === 'production';
+
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
-  max: 20,
+  max: isReplit ? 10 : 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: isReplit ? 15000 : 10000,
+  // SSL necessário para conectar ao banco
   ssl: {
     rejectUnauthorized: false
   }
@@ -120,14 +123,14 @@ export async function testConnection() {
     return { 
       connected: true, 
       timestamp: result.rows[0].now,
-      using: 'Replit PostgreSQL'
+      using: isReplit ? 'Replit PostgreSQL' : 'PostgreSQL'
     };
   } catch (error: any) {
     console.error('Database connection error:', error);
     return { 
       connected: false, 
       error: error.message,
-      using: 'Replit PostgreSQL'
+      using: isReplit ? 'Replit PostgreSQL' : 'PostgreSQL'
     };
   }
 }
