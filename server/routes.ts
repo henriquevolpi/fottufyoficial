@@ -986,7 +986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all projects with photo counts for admin dashboard
   app.get("/api/admin/projects", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
-      // Use raw SQL to handle the type mismatch between projects.id (integer) and photos.project_id (text)
+      // Use raw SQL to get projects with real photo counts (photos use public_id, not numeric id)
       const result = await db.execute(`
         SELECT 
           p.id,
@@ -1004,8 +1004,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             project_id,
             COUNT(*) as photo_count
           FROM photos 
+          WHERE project_id IS NOT NULL AND project_id != ''
           GROUP BY project_id
-        ) photo_counts ON p.id::text = photo_counts.project_id
+        ) photo_counts ON p.public_id = photo_counts.project_id
         ORDER BY p.created_at DESC
       `);
 
