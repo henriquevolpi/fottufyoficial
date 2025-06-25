@@ -1022,6 +1022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         daysOld: Math.ceil(parseFloat(row.days_old))
       }));
 
+      console.log("Admin projects sample:", projectsWithStats.slice(0, 3).map(p => ({ name: p.name, photoCount: p.photoCount })));
       res.json(projectsWithStats);
     } catch (error) {
       console.error("Error retrieving projects:", error);

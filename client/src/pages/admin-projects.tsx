@@ -99,6 +99,13 @@ export default function AdminProjects() {
     }
   }, [error, toast]);
 
+  React.useEffect(() => {
+    if (projects) {
+      console.log("Admin projects data:", projects);
+      console.log("First project photoCount:", projects[0]?.photoCount);
+    }
+  }, [projects]);
+
   return (
     <AdminLayout>
       <div className="p-6">
