@@ -238,7 +238,7 @@ export default function AdminProjects() {
                     filteredProjects.map((project) => (
                       <TableRow key={project.id}>
                         <TableCell className="font-mono text-sm">
-                          {project.publicId}
+                          {project.projectViewId || `project-view/${project.id}`}
                         </TableCell>
                         <TableCell className="font-medium">
                           {project.name}

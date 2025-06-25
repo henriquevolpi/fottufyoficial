@@ -1006,6 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const projectsWithStats = result.rows.map(row => ({
         id: row.id,
         publicId: row.public_id,
+        projectViewId: `project-view/${row.id}`,
         name: row.name,
         clientName: row.client_name,
         photographerId: row.photographer_id,
