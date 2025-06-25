@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/layout/admin-layout";
@@ -88,13 +88,16 @@ export default function AdminProjects() {
     return years === 1 ? "1 year" : `${years} years`;
   };
 
-  if (error) {
-    toast({
-      title: "Error loading projects",
-      description: "Failed to load projects data. Please try again.",
-      variant: "destructive",
-    });
-  }
+  // Move toast to useEffect to prevent re-render loop
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading projects",
+        description: "Failed to load projects data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   return (
     <AdminLayout>

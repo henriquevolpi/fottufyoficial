@@ -986,38 +986,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all projects with photo counts for admin dashboard
   app.get("/api/admin/projects", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
-      // Query all projects with photo counts and creation dates
-      const projectsWithStats = await db
-        .select({
-          id: projects.id,
-          publicId: projects.publicId,
-          name: projects.name,
-          clientName: projects.clientName,
-          photographerId: projects.photographerId,
-          status: projects.status,
-          createdAt: projects.createdAt,
-          photoCount: count(photos.id)
-        })
-        .from(projects)
-        .leftJoin(photos, eq(projects.id, photos.projectId))
-        .groupBy(projects.id, projects.publicId, projects.name, projects.clientName, 
-                projects.photographerId, projects.status, projects.createdAt)
-        .orderBy(desc(projects.createdAt));
+      // Use raw SQL to handle the type mismatch between projects.id (integer) and photos.project_id (text)
+      const result = await db.execute(`
+        SELECT 
+          p.id,
+          p.public_id,
+          p.name,
+          p.client_name,
+          p.photographer_id,
+          p.status,
+          p.created_at,
+          COALESCE(photo_counts.photo_count, 0) as photo_count,
+          EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 86400 as days_old
+        FROM projects p
+        LEFT JOIN (
+          SELECT 
+            project_id,
+            COUNT(*) as photo_count
+          FROM photos 
+          GROUP BY project_id
+        ) photo_counts ON p.id::text = photo_counts.project_id
+        ORDER BY p.created_at DESC
+      `);
 
-      // Calculate days since creation for each project
-      const projectsWithAge = projectsWithStats.map(project => {
-        const now = new Date();
-        const createdDate = new Date(project.createdAt);
-        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        return {
-          ...project,
-          daysOld: diffDays
-        };
-      });
+      const projectsWithStats = result.rows.map(row => ({
+        id: row.id,
+        publicId: row.public_id,
+        name: row.name,
+        clientName: row.client_name,
+        photographerId: row.photographer_id,
+        status: row.status,
+        createdAt: row.created_at,
+        photoCount: parseInt(row.photo_count),
+        daysOld: Math.ceil(parseFloat(row.days_old))
+      }));
 
-      res.json(projectsWithAge);
+      res.json(projectsWithStats);
     } catch (error) {
       console.error("Error retrieving projects:", error);
       res.status(500).json({ message: "Failed to retrieve projects" });
