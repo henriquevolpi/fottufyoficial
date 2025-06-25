@@ -996,17 +996,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           p.photographer_id,
           p.status,
           p.created_at,
-          COALESCE(photo_counts.photo_count, 0) as photo_count,
+          COALESCE((SELECT COUNT(*) FROM photos ph WHERE ph.project_id = p.public_id), 0) as photo_count,
           EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 86400 as days_old
         FROM projects p
-        LEFT JOIN (
-          SELECT 
-            project_id,
-            COUNT(*) as photo_count
-          FROM photos 
-          WHERE project_id IS NOT NULL AND project_id != ''
-          GROUP BY project_id
-        ) photo_counts ON p.public_id = photo_counts.project_id
+
         ORDER BY p.created_at DESC
       `);
 
@@ -1022,7 +1015,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         daysOld: Math.ceil(parseFloat(row.days_old))
       }));
 
-      console.log("Admin projects sample:", projectsWithStats.slice(0, 3).map(p => ({ name: p.name, photoCount: p.photoCount })));
       res.json(projectsWithStats);
     } catch (error) {
       console.error("Error retrieving projects:", error);
