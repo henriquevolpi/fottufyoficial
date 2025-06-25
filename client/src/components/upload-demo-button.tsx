@@ -56,7 +56,7 @@ export function UploadDemoButton() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 z-[9997] bg-gray-800 text-white p-3 rounded-lg text-xs">
+    <>
       <div className="mb-2 font-medium">Teste Sistema Proteção</div>
       <div className="space-y-2">
         <Button 
@@ -82,6 +82,6 @@ export function UploadDemoButton() {
           Status: {Math.round(uploadState.progress)}%
         </div>
       )}
-    </div>
+    </>
   );
 }
