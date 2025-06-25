@@ -983,6 +983,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all projects with photo counts for admin dashboard
+  app.get("/api/admin/projects", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Query all projects with photo counts and creation dates
+      const projectsWithStats = await db
+        .select({
+          id: projects.id,
+          publicId: projects.publicId,
+          name: projects.name,
+          clientName: projects.clientName,
+          photographerId: projects.photographerId,
+          status: projects.status,
+          createdAt: projects.createdAt,
+          photoCount: count(photos.id)
+        })
+        .from(projects)
+        .leftJoin(photos, eq(projects.id, photos.projectId))
+        .groupBy(projects.id, projects.publicId, projects.name, projects.clientName, 
+                projects.photographerId, projects.status, projects.createdAt)
+        .orderBy(desc(projects.createdAt));
+
+      // Calculate days since creation for each project
+      const projectsWithAge = projectsWithStats.map(project => {
+        const now = new Date();
+        const createdDate = new Date(project.createdAt);
+        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return {
+          ...project,
+          daysOld: diffDays
+        };
+      });
+
+      res.json(projectsWithAge);
+    } catch (error) {
+      console.error("Error retrieving projects:", error);
+      res.status(500).json({ message: "Failed to retrieve projects" });
+    }
+  });
+
   // Get all users (legacy endpoint - keeping for backward compatibility)
   app.get("/api/users", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {

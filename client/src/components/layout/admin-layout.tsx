@@ -7,7 +7,8 @@ import {
   Users,
   Settings,
   BarChart3,
-  LogOut
+  LogOut,
+  Folder
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -69,6 +70,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 <LayoutGrid className="mr-2 h-4 w-4" />
                 Dashboard
+              </Button>
+            </li>
+            <li>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-white hover:bg-purple-700 hover:text-white"
+                onClick={() => setLocation("/admin/projects")}
+              >
+                <Folder className="mr-2 h-4 w-4" />
+                Projects
               </Button>
             </li>
             <li>

@@ -10,6 +10,7 @@ import Project from "@/pages/project";
 import ProjectView from "@/pages/project-view";
 import ProjectEdit from "@/pages/project-edit";
 import Admin from "@/pages/admin";
+import AdminProjects from "@/pages/admin-projects";
 import AuthPage from "@/pages/auth-page";
 import SubscriptionPage from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
@@ -111,6 +112,7 @@ function Router() {
       <ProtectedRoute path="/subscription" component={SubscriptionPage} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />
+      <ProtectedRoute path="/admin/projects" component={AdminProjects} adminOnly={true} />
       <Route path="/planos">
         {() => <PricingPage />}
       </Route>
