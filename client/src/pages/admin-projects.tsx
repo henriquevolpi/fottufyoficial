@@ -255,7 +255,7 @@ export default function AdminProjects() {
                         <TableCell>
                           <div className="flex items-center space-x-1">
                             <Image className="h-4 w-4 text-gray-500" />
-                            <span>{project.photoCount}</span>
+                            <span className="font-medium">{project.photoCount.toLocaleString()}</span>
                           </div>
                         </TableCell>
                         <TableCell>

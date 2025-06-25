@@ -137,6 +137,11 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Added multiple detection layers: activity reporting, responsiveness monitoring, automatic fallback
   - System ensures users always have visual feedback during large uploads, even in extreme scenarios
   - Integrated protection system into existing upload modal with progress synchronization
+- June 25, 2025: Added admin panel Projects management tab:
+  - Created comprehensive admin dashboard for project oversight
+  - Implemented real photo count display (fixed SQL join between projects.id and photos.project_id)
+  - Added project statistics cards, search functionality, and sortable table view
+  - Shows project age, status, photographer, and accurate photo counts with thousand separators
 
 ## User Preferences
 
