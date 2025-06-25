@@ -99,13 +99,7 @@ export default function AdminProjects() {
     }
   }, [error, toast]);
 
-  // Remove debug logs
-  // React.useEffect(() => {
-  //   if (projects) {
-  //     console.log("Admin projects data:", projects);
-  //     console.log("First project photoCount:", projects[0]?.photoCount);
-  //   }
-  // }, [projects]);
+  // Debug removed - system working correctly
 
   return (
     <AdminLayout>

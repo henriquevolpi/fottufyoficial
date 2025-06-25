@@ -1000,7 +1000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 86400 as days_old
         FROM projects p
 
-        ORDER BY p.created_at DESC
+        ORDER BY photo_count DESC, p.created_at DESC
       `);
 
       const projectsWithStats = result.rows.map(row => ({
