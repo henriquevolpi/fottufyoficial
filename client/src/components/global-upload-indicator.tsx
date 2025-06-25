@@ -30,9 +30,8 @@ export function GlobalUploadIndicator({
     if (isUploading) {
       setIsVisible(true);
     } else {
-      // Delay para mostrar conclusão antes de esconder
-      const timer = setTimeout(() => setIsVisible(false), 2000);
-      return () => clearTimeout(timer);
+      // Esconder imediatamente quando não há upload
+      setIsVisible(false);
     }
   }, [isUploading]);
 

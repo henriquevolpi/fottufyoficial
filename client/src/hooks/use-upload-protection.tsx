@@ -26,20 +26,8 @@ const EMERGENCY_OVERLAY_DELAY = 10000; // 10 segundos
 
 export function useUploadProtection() {
   const [state, setState] = useState<UploadProtectionState>(() => {
-    // Recuperar estado do localStorage se existir
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Verificar se é um upload recente (menos de 1 hora)
-        if (Date.now() - parsed.startTime < 3600000) {
-          return parsed;
-        }
-      }
-    } catch (error) {
-      console.warn('Erro ao recuperar estado do upload:', error);
-    }
-    
+    // Sempre iniciar com estado limpo - não recuperar do localStorage
+    // para evitar exibição desnecessária do sistema de proteção
     return {
       isActive: false,
       progress: 0,
