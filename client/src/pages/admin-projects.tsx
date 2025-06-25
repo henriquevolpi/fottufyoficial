@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/layout/admin-layout";
@@ -42,6 +42,10 @@ interface ProjectWithStats {
   createdAt: string;
   photoCount: number;
   daysOld: number;
+  userEmail?: string;
+  userStatus?: string;
+  userPlanType?: string;
+  projectViewId?: string;
 }
 
 export default function AdminProjects() {
