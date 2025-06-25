@@ -142,6 +142,8 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Implemented real photo count display (fixed SQL join between projects.id and photos.project_id)
   - Added project statistics cards, search functionality, and sortable table view
   - Shows project age, status, photographer, and accurate photo counts with thousand separators
+  - Updated Project ID format to show "project-view/[id]" instead of random public_id
+  - Removed visual upload test components that were interfering with normal operation
 
 ## User Preferences
 

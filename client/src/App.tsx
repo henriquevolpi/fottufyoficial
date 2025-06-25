@@ -23,9 +23,7 @@ import AdminLayout from "@/components/layout/admin-layout";
 import { UploadProtectionProvider } from "@/hooks/use-upload-protection";
 import { UploadProtectionSystem } from "@/components/upload-protection-system";
 import PricingPage from "@/pages/pricing";
-import TestR2 from "@/pages/test-r2";
-import TestImageUpload from "@/pages/test-image-upload";
-import TestCompression from "@/pages/test-compression";
+
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import SimpleResetPage from "@/pages/simple-reset";
@@ -122,15 +120,7 @@ function Router() {
       <Route path="/debug">
         {() => <DebugPage />}
       </Route>
-      <Route path="/test-r2">
-        {() => <TestR2 />}
-      </Route>
-      <Route path="/test-image-upload">
-        {() => <TestImageUpload />}
-      </Route>
-      <Route path="/test-compression">
-        {() => <TestCompression />}
-      </Route>
+
       <Route path="/home">
         {() => <LandingPage />}
       </Route>

@@ -11,7 +11,7 @@
 import React from 'react';
 import { GlobalUploadIndicator } from './global-upload-indicator';
 import { UploadFallbackOverlay } from './upload-fallback-overlay';
-import { UploadDemoButton } from './upload-demo-button';
+
 import { useGlobalUploadProtection } from '@/hooks/use-upload-protection';
 
 export function UploadProtectionSystem() {
@@ -57,24 +57,6 @@ export function UploadProtectionSystem() {
           timeElapsed={timeElapsed}
         />
       )}
-
-      {/* Notificação de Status da UI (apenas para debug) */}
-      {process.env.NODE_ENV === 'development' && uploadState.isActive && (
-        <div className="fixed bottom-4 right-4 z-[9998] bg-gray-800 text-white text-xs p-2 rounded">
-          UI Status: {isUIResponsive ? '✅ Responsiva' : '⚠️ Possível travamento'}
-          <br />
-          Tempo: {Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}
-          {estimatedTimeRemaining && (
-            <>
-              <br />
-              ETA: {formatTimeRemaining(estimatedTimeRemaining)}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Botão de demonstração (apenas em desenvolvimento) */}
-      <UploadDemoButton />
     </>
   );
 }
