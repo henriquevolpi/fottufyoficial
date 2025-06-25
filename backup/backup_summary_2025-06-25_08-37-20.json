@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-06-25T08:37:20.748Z",
+  "totalTables": 8,
+  "totalSequences": 3,
+  "totalIndexes": 11,
+  "tables": {
+    "new_projects": {
+      "structure": true,
+      "columns": 6,
+      "data": 0
+    },
+    "password_reset_tokens": {
+      "structure": true,
+      "columns": 6,
+      "data": 0
+    },
+    "photo_comments": {
+      "structure": true,
+      "columns": 6,
+      "data": 32
+    },
+    "photos": {
+      "structure": true,
+      "columns": 7,
+      "data": 17180
+    },
+    "projects": {
+      "structure": true,
+      "columns": 13,
+      "data": 214
+    },
+    "session": {
+      "structure": true,
+      "columns": 3,
+      "data": 21908
+    },
+    "session_backup": {
+      "structure": true,
+      "columns": 3,
+      "data": 0
+    },
+    "users": {
+      "structure": true,
+      "columns": 25,
+      "data": 209
+    }
+  },
+  "success": true,
+  "errors": []
+}
