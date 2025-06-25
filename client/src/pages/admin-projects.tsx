@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -39,6 +46,8 @@ interface ProjectWithStats {
 
 export default function AdminProjects() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"photos_desc" | "photos_asc" | "date_desc" | "date_asc">("photos_desc");
+  const [filterByPlan, setFilterByPlan] = useState<"all" | "free" | "paid">("all");
   const { toast } = useToast();
 
   // Fetch projects data
@@ -46,13 +55,47 @@ export default function AdminProjects() {
     queryKey: ["/api/admin/projects"],
   });
 
-  // Filter projects based on search term
-  const filteredProjects = projects?.filter(project =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.publicId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.id.toString().includes(searchTerm)
-  ) || [];
+  // Filter and sort projects based on search term, plan filter, and sort order
+  const filteredAndSortedProjects = useMemo(() => {
+    if (!projects) return [];
+    
+    // Apply search filter
+    let filtered = projects.filter(project =>
+      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.publicId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.id.toString().includes(searchTerm)
+    );
+
+    // Apply plan filter
+    if (filterByPlan !== "all") {
+      if (filterByPlan === "free") {
+        filtered = filtered.filter(project => project.userPlanType === "free");
+      } else if (filterByPlan === "paid") {
+        filtered = filtered.filter(project => 
+          project.userPlanType && project.userPlanType !== "free"
+        );
+      }
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "photos_desc":
+          return b.photoCount - a.photoCount;
+        case "photos_asc":
+          return a.photoCount - b.photoCount;
+        case "date_desc":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "date_asc":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [projects, searchTerm, filterByPlan, sortBy]);
 
   // Calculate statistics
   const totalProjects = projects?.length || 0;
@@ -62,6 +105,10 @@ export default function AdminProjects() {
     project.daysOld > oldest.daysOld ? project : oldest, 
     projects[0]
   );
+
+  // Calculate plan statistics
+  const freeAccounts = projects?.filter(p => p.userPlanType === "free").length || 0;
+  const paidAccounts = projects?.filter(p => p.userPlanType && p.userPlanType !== "free").length || 0;
 
   // Helper function to get status badge
   const getStatusBadge = (status: string) => {
@@ -215,20 +262,47 @@ export default function AdminProjects() {
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Search Projects</CardTitle>
+            <CardTitle>Search & Filters</CardTitle>
             <CardDescription>
-              Search by project name, email, or project ID
+              Search by project name, email, or project ID. Filter and sort projects.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="flex items-center space-x-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Sort by Photos */}
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="photos_desc">More Photos First</SelectItem>
+                  <SelectItem value="photos_asc">Less Photos First</SelectItem>
+                  <SelectItem value="date_desc">Newest First</SelectItem>
+                  <SelectItem value="date_asc">Oldest First</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Filter by Plan */}
+              <Select value={filterByPlan} onValueChange={(value: any) => setFilterByPlan(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by plan..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Accounts</SelectItem>
+                  <SelectItem value="free">Free Accounts ({freeAccounts})</SelectItem>
+                  <SelectItem value="paid">Paid Accounts ({paidAccounts})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -240,7 +314,7 @@ export default function AdminProjects() {
             <CardDescription>
               {isLoading 
                 ? "Loading projects..." 
-                : `Showing ${filteredProjects.length} of ${totalProjects} projects`
+                : `Showing ${filteredAndSortedProjects.length} of ${totalProjects} projects`
               }
             </CardDescription>
           </CardHeader>
@@ -274,14 +348,14 @@ export default function AdminProjects() {
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                       </TableRow>
                     ))
-                  ) : filteredProjects.length === 0 ? (
+                  ) : filteredAndSortedProjects.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         {searchTerm ? "No projects found matching your search." : "No projects found."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProjects.map((project) => (
+                    filteredAndSortedProjects.map((project) => (
                       <TableRow key={project.id}>
                         <TableCell className="font-mono text-sm">
                           {project.projectViewId || `project-view/${project.id}`}

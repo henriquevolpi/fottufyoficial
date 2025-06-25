@@ -146,6 +146,7 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Removed visual upload test components that were interfering with normal operation
   - Fixed upload protection system to only activate during actual uploads and prevent unnecessary display
   - Modified admin projects table to show account email, plan type, and account status instead of client name
+  - Added filtering options for projects by photo count (ascending/descending) and account type (free/paid)
 
 ## User Preferences
 
