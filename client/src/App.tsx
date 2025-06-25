@@ -20,8 +20,9 @@ import CreatePassword from "@/pages/create-password";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import AdminLayout from "@/components/layout/admin-layout";
-import { UploadProtectionProvider } from "@/hooks/use-upload-protection";
-import { UploadProtectionSystem } from "@/components/upload-protection-system";
+// Upload protection temporarily disabled
+// import { UploadProtectionProvider } from "@/hooks/use-upload-protection";
+// import { UploadProtectionSystem } from "@/components/upload-protection-system";
 import PricingPage from "@/pages/pricing";
 
 import ForgotPasswordPage from "@/pages/forgot-password";
@@ -143,11 +144,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <UploadProtectionProvider>
-          <Router />
-          <Toaster />
-          <UploadProtectionSystem />
-        </UploadProtectionProvider>
+        <Router />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );
