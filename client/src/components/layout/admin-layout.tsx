@@ -62,16 +62,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 User Management
               </Button>
             </li>
-            <li>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-white hover:bg-purple-700 hover:text-white"
-                onClick={() => setLocation("/admin/dashboard")}
-              >
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-            </li>
+            
             <li>
               <Button 
                 variant="ghost" 
@@ -130,9 +121,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <Button 
             variant="ghost" 
             className="text-white hover:bg-purple-700"
-            onClick={() => setLocation("/admin/dashboard")}
+            onClick={() => setLocation("/admin/projects")}
           >
-            <LayoutGrid className="h-6 w-6" />
+            <Folder className="h-6 w-6" />
           </Button>
           <Button 
             variant="ghost" 
