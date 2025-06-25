@@ -986,7 +986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all projects with photo counts for admin dashboard
   app.get("/api/admin/projects", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
-      // Use raw SQL to get projects with real photo counts (photos use public_id, not numeric id)
+      // Use raw SQL to get projects with real photo counts and user info
       const result = await db.execute(`
         SELECT 
           p.id,
@@ -997,9 +997,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           p.status,
           p.created_at,
           COALESCE((SELECT COUNT(*) FROM photos ph WHERE ph.project_id = p.public_id), 0) as photo_count,
-          EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 86400 as days_old
+          EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 86400 as days_old,
+          u.email,
+          u.status as user_status,
+          u.plan_type
         FROM projects p
-
+        LEFT JOIN users u ON p.photographer_id = u.id
         ORDER BY photo_count DESC, p.created_at DESC
       `);
 
@@ -1013,7 +1016,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: row.status,
         createdAt: row.created_at,
         photoCount: parseInt(row.photo_count),
-        daysOld: Math.ceil(parseFloat(row.days_old))
+        daysOld: Math.ceil(parseFloat(row.days_old)),
+        userEmail: row.email,
+        userStatus: row.user_status,
+        userPlanType: row.plan_type
       }));
 
       res.json(projectsWithStats);

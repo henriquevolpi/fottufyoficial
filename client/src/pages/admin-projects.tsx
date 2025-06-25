@@ -49,8 +49,9 @@ export default function AdminProjects() {
   // Filter projects based on search term
   const filteredProjects = projects?.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.publicId.toLowerCase().includes(searchTerm.toLowerCase())
+    project.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.publicId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.id.toString().includes(searchTerm)
   ) || [];
 
   // Calculate statistics
@@ -86,6 +87,49 @@ export default function AdminProjects() {
     }
     const years = Math.floor(days / 365);
     return years === 1 ? "1 year" : `${years} years`;
+  };
+
+  // Function to get plan badge
+  const getPlanBadge = (planType: string) => {
+    const planMap = {
+      'free': { color: 'bg-gray-100 text-gray-800', label: 'Free' },
+      'basic_v2': { color: 'bg-blue-100 text-blue-800', label: 'Basic' },
+      'standard_v2': { color: 'bg-purple-100 text-purple-800', label: 'Standard' },
+      'professional': { color: 'bg-yellow-100 text-yellow-800', label: 'Pro' },
+      'professional_v2': { color: 'bg-orange-100 text-orange-800', label: 'Pro V2' }
+    };
+    
+    const planInfo = planMap[planType as keyof typeof planMap] || { 
+      color: 'bg-gray-100 text-gray-800', 
+      label: planType || 'Unknown' 
+    };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${planInfo.color}`}>
+        {planInfo.label}
+      </span>
+    );
+  };
+
+  // Function to get user status badge
+  const getUserStatusBadge = (userStatus: string) => {
+    const statusMap = {
+      'active': { color: 'bg-green-100 text-green-800', label: 'Active' },
+      'inactive': { color: 'bg-red-100 text-red-800', label: 'Inactive' },
+      'suspended': { color: 'bg-orange-100 text-orange-800', label: 'Suspended' },
+      'pending': { color: 'bg-yellow-100 text-yellow-800', label: 'Pending' }
+    };
+    
+    const statusInfo = statusMap[userStatus as keyof typeof statusMap] || { 
+      color: 'bg-gray-100 text-gray-800', 
+      label: userStatus || 'Unknown' 
+    };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+        {statusInfo.label}
+      </span>
+    );
   };
 
   // Move toast to useEffect to prevent re-render loop
@@ -173,7 +217,7 @@ export default function AdminProjects() {
           <CardHeader>
             <CardTitle>Search Projects</CardTitle>
             <CardDescription>
-              Search by project name, client name, or project ID
+              Search by project name, email, or project ID
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -207,9 +251,10 @@ export default function AdminProjects() {
                   <TableRow>
                     <TableHead>Project ID</TableHead>
                     <TableHead>Project Name</TableHead>
-                    <TableHead>Client Name</TableHead>
+                    <TableHead>Account Email</TableHead>
+                    <TableHead>Plan Type</TableHead>
+                    <TableHead>Account Status</TableHead>
                     <TableHead>Photos</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Age</TableHead>
                     <TableHead>Created At</TableHead>
                   </TableRow>
@@ -221,16 +266,17 @@ export default function AdminProjects() {
                       <TableRow key={index}>
                         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                       </TableRow>
                     ))
                   ) : filteredProjects.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         {searchTerm ? "No projects found matching your search." : "No projects found."}
                       </TableCell>
                     </TableRow>
@@ -243,17 +289,20 @@ export default function AdminProjects() {
                         <TableCell className="font-medium">
                           {project.name}
                         </TableCell>
+                        <TableCell className="text-sm">
+                          {project.userEmail || "No email"}
+                        </TableCell>
                         <TableCell>
-                          {project.clientName || "Not specified"}
+                          {getPlanBadge(project.userPlanType)}
+                        </TableCell>
+                        <TableCell>
+                          {getUserStatusBadge(project.userStatus)}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
                             <Image className="h-4 w-4 text-gray-500" />
                             <span className="font-medium">{project.photoCount.toLocaleString()}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(project.status)}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
