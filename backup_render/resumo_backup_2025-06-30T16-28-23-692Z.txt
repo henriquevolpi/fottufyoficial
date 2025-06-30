@@ -1,0 +1,19 @@
+RESUMO DO BACKUP - 2025-06-30T16:28:27.466Z
+
+Banco de origem: Render PostgreSQL
+Total de tabelas: 8
+Total de registros: 41414
+Arquivo gerado: ./backup_render/backup_render_completo_2025-06-30T16-28-23-692Z.sql
+
+Tabelas incluídas:
+- new_projects
+- password_reset_tokens
+- photo_comments
+- photos
+- projects
+- session
+- session_backup
+- users
+
+Status: BACKUP CONCLUÍDO COM SUCESSO
+Banco permaneceu intacto durante o processo.
