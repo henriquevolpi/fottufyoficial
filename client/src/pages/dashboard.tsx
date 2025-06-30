@@ -1668,10 +1668,10 @@ export default function Dashboard() {
           </svg>
           <div>
             <p className="font-semibold mb-1 text-lg bg-gradient-to-r from-blue-900 via-blue-500 to-blue-400 bg-clip-text text-transparent">
-              Revise os projetos
+              Estamos Sempre buscando melhorar!
             </p>
             <p className="text-base bg-gradient-to-r from-blue-700 via-blue-400 to-blue-800 bg-clip-text text-transparent">
-              Devido a uma atualização de segurança no servidor, alguns projetos sairam do ar, por favor, caso algumas fotos não estejam aparecendo, reenvie as fotos. não irá acontecer novamente
+              Ajude-nos a crescer recomendando a Fottufy a um amigo fotógrafo! ❤️
             </p>
           </div>
         </div>
