@@ -8,6 +8,8 @@ import { compressMultipleImages, isImageFile } from "@/lib/imageCompression";
 import { useGlobalUploadProtection } from "@/hooks/use-upload-protection";
 import { detectDevice, detectBrowserCapabilities, detectConnection, logEnvironmentInfo, getRecommendedUploadSettings } from "@/lib/deviceDetection";
 import { useUploadAnalytics } from "@/lib/uploadAnalytics";
+import { validateUpload, generateSafetyRecommendations } from "@/lib/uploadValidator";
+import { saveUploadBackup, generateBackupSessionId, updateUploadProgress, removeUploadBackup } from "@/lib/uploadBackup";
 import {
   Dialog,
   DialogContent,
@@ -141,10 +143,11 @@ export default function UploadModal({
 
     setIsSubmitting(true);
 
-    // ===== DETECÇÃO E ANALYTICS (100% SEGURA) =====
+    // ===== DETECÇÃO E VALIDAÇÃO PREVENTIVA (100% SEGURA) =====
     let deviceInfo = null;
     let sessionId = null;
     let recommendedSettings = null;
+    let backupSessionId = null;
     
     try {
       // Detectar ambiente e capabilities (não afeta upload se falhar)
@@ -156,6 +159,56 @@ export default function UploadModal({
       
       // Log completo do ambiente
       logEnvironmentInfo();
+      
+      // VALIDAÇÃO PREVENTIVA DE SEGURANÇA
+      const validation = validateUpload(files);
+      const safetyRecommendations = generateSafetyRecommendations(validation);
+      
+      // Exibir validação de segurança
+      console.log('=== VALIDAÇÃO DE SEGURANÇA ===');
+      safetyRecommendations.forEach(rec => {
+        if (rec.includes('❌')) {
+          console.error(rec);
+        } else if (rec.includes('⚠️')) {
+          console.warn(rec);
+        } else {
+          console.log(rec);
+        }
+      });
+      
+      // Mostrar riscos detectados
+      if (validation.risks.length > 0) {
+        console.log('=== RISCOS DETECTADOS ===');
+        validation.risks.forEach(risk => {
+          const level = risk.level === 'critical' ? '🔴' : 
+                      risk.level === 'high' ? '🟠' : 
+                      risk.level === 'medium' ? '🟡' : '🟢';
+          console.log(`${level} ${risk.category.toUpperCase()}: ${risk.message}`);
+          console.log(`   Recomendação: ${risk.recommendation}`);
+          if (risk.technical) {
+            console.log(`   Técnico: ${risk.technical}`);
+          }
+        });
+        console.log('===============================');
+      }
+      
+      // Criar sessão de backup
+      backupSessionId = generateBackupSessionId();
+      saveUploadBackup(backupSessionId, {
+        projectData: {
+          nome: values.nome,
+          cliente: values.cliente,
+          emailCliente: values.emailCliente,
+          dataEvento: values.dataEvento,
+          observacoes: values.observacoes || ""
+        },
+        files: files.map(f => ({
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          lastModified: f.lastModified
+        }))
+      });
       
       // Obter configurações recomendadas
       recommendedSettings = getRecommendedUploadSettings();
@@ -245,6 +298,13 @@ export default function UploadModal({
         }
       } catch (e) { /* Falha silenciosa */ }
       
+      // Backup: compressão concluída
+      try {
+        if (backupSessionId) {
+          updateUploadProgress(backupSessionId, 'upload', 40, compressedFiles.length, files.length);
+        }
+      } catch (e) { /* Falha silenciosa */ }
+      
       setUploadPercentage(40); // 40% - redimensionamento concluído
       
       // Atualizar proteção global
@@ -300,6 +360,15 @@ export default function UploadModal({
             finalFileCount: newProject.photos?.length || files.length,
             success: true
           });
+        }
+      } catch (e) { /* Falha silenciosa */ }
+      
+      // Backup: upload concluído com sucesso
+      try {
+        if (backupSessionId) {
+          updateUploadProgress(backupSessionId, 'completed', 100, files.length, files.length);
+          // Remover backup após sucesso
+          setTimeout(() => removeUploadBackup(backupSessionId), 5000);
         }
       } catch (e) { /* Falha silenciosa */ }
       
@@ -373,6 +442,14 @@ export default function UploadModal({
             success: false,
             errorMessage: error instanceof Error ? error.message : 'Unknown error'
           });
+        }
+      } catch (e) { /* Falha silenciosa */ }
+      
+      // Backup: erro no upload
+      try {
+        if (backupSessionId) {
+          updateUploadProgress(backupSessionId, 'failed', 0, 0, files.length);
+          // Manter backup para possível recuperação
         }
       } catch (e) { /* Falha silenciosa */ }
       
