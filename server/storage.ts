@@ -1,7 +1,7 @@
 import { 
   users, type User, type InsertUser, 
   projects, type Project, type InsertProject,
-  photos, photoComments,
+  photos, photoComments, portfolios, portfolioPhotos,
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
@@ -339,6 +339,16 @@ export interface IStorage {
   getPhotoComments(photoId: string): Promise<PhotoComment[]>;
   getProjectPhotoComments(projectId: string): Promise<PhotoComment[]>;
   markCommentsAsViewed(commentIds: string[]): Promise<void>;
+  
+  // Portfolio methods
+  getUserPortfolios(userId: number): Promise<any[]>;
+  createPortfolio(data: any): Promise<any>;
+  getPortfolio(id: number): Promise<any | undefined>;
+  getPortfolioBySlug(slug: string): Promise<any | undefined>;
+  updatePortfolio(id: number, data: any): Promise<any | undefined>;
+  deletePortfolio(id: number): Promise<boolean>;
+  addPhotosToPortfolio(portfolioId: number, photoIds: string[]): Promise<void>;
+  removePhotosFromPortfolio(portfolioId: number, photoIds: string[]): Promise<void>;
   
   // Session store
   sessionStore: any;
@@ -1801,6 +1811,166 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao excluir projeto:", error);
       return false;
+    }
+  }
+
+  // ==================== Portfolio Methods ====================
+  
+  async getUserPortfolios(userId: number): Promise<any[]> {
+    try {
+      const result = await db.select().from(portfolios).where(eq(portfolios.userId, userId));
+      return result.map(portfolio => ({
+        ...portfolio,
+        photos: [] // Will be populated in a real implementation
+      }));
+    } catch (error) {
+      console.error("Error fetching user portfolios:", error);
+      return [];
+    }
+  }
+
+  async createPortfolio(data: any): Promise<any> {
+    try {
+      const [portfolio] = await db.insert(portfolios).values({
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        isPublic: data.isPublic,
+        userId: data.userId
+      }).returning();
+      
+      return {
+        ...portfolio,
+        photos: []
+      };
+    } catch (error) {
+      console.error("Error creating portfolio:", error);
+      throw error;
+    }
+  }
+
+  async getPortfolio(id: number): Promise<any | undefined> {
+    try {
+      const [portfolio] = await db.select().from(portfolios).where(eq(portfolios.id, id));
+      if (!portfolio) return undefined;
+      
+      const photos = await db.select().from(portfolioPhotos).where(eq(portfolioPhotos.portfolioId, id));
+      
+      return {
+        ...portfolio,
+        photos: photos
+      };
+    } catch (error) {
+      console.error("Error fetching portfolio:", error);
+      return undefined;
+    }
+  }
+
+  async getPortfolioBySlug(slug: string): Promise<any | undefined> {
+    try {
+      const [portfolio] = await db.select().from(portfolios).where(eq(portfolios.slug, slug));
+      if (!portfolio) return undefined;
+      
+      const photos = await db.select().from(portfolioPhotos).where(eq(portfolioPhotos.portfolioId, portfolio.id));
+      
+      return {
+        ...portfolio,
+        photos: photos,
+        user: { name: "Fotógrafo Profissional" }
+      };
+    } catch (error) {
+      console.error("Error fetching portfolio by slug:", error);
+      return undefined;
+    }
+  }
+
+  async updatePortfolio(id: number, data: any): Promise<any | undefined> {
+    try {
+      const [portfolio] = await db.update(portfolios)
+        .set({
+          name: data.name,
+          description: data.description,
+          isPublic: data.isPublic,
+          updatedAt: new Date()
+        })
+        .where(eq(portfolios.id, id))
+        .returning();
+      
+      if (!portfolio) return undefined;
+      
+      const photos = await db.select().from(portfolioPhotos).where(eq(portfolioPhotos.portfolioId, id));
+      
+      return {
+        ...portfolio,
+        photos: photos
+      };
+    } catch (error) {
+      console.error("Error updating portfolio:", error);
+      return undefined;
+    }
+  }
+
+  async deletePortfolio(id: number): Promise<boolean> {
+    try {
+      // Delete photos first
+      await db.delete(portfolioPhotos).where(eq(portfolioPhotos.portfolioId, id));
+      
+      // Delete portfolio
+      const result = await db.delete(portfolios).where(eq(portfolios.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting portfolio:", error);
+      return false;
+    }
+  }
+
+  async addPhotosToPortfolio(portfolioId: number, photoIds: string[]): Promise<void> {
+    try {
+      // Get user projects to find photos
+      const userProjects = await db.select().from(projects);
+      
+      const photosToAdd = [];
+      let order = 0;
+      
+      for (const project of userProjects) {
+        if (project.photos && Array.isArray(project.photos)) {
+          for (const photo of project.photos) {
+            if (photoIds.includes(photo.id)) {
+              photosToAdd.push({
+                portfolioId: portfolioId,
+                photoUrl: photo.url,
+                originalName: photo.originalName || photo.filename,
+                order: order++
+              });
+            }
+          }
+        }
+      }
+      
+      if (photosToAdd.length > 0) {
+        await db.insert(portfolioPhotos).values(photosToAdd);
+      }
+    } catch (error) {
+      console.error("Error adding photos to portfolio:", error);
+      throw error;
+    }
+  }
+
+  async removePhotosFromPortfolio(portfolioId: number, photoIds: string[]): Promise<void> {
+    try {
+      for (const photoId of photoIds) {
+        await db.delete(portfolioPhotos)
+          .where(
+            and(
+              eq(portfolioPhotos.portfolioId, portfolioId),
+              eq(portfolioPhotos.id, parseInt(photoId))
+            )
+          );
+      }
+    } catch (error) {
+      console.error("Error removing photos from portfolio:", error);
+      throw error;
     }
   }
 

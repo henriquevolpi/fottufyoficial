@@ -2739,6 +2739,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ==================== Portfolio Routes ====================
+  
+  // Get user portfolios
+  app.get("/api/portfolios", authenticate, async (req: Request, res: Response) => {
+    try {
+      const portfolios = await storage.getUserPortfolios(req.user!.id);
+      res.json(portfolios);
+    } catch (error) {
+      console.error("Error fetching portfolios:", error);
+      res.status(500).json({ message: "Failed to fetch portfolios" });
+    }
+  });
+
+  // Create new portfolio
+  app.post("/api/portfolios", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { name, description, isPublic } = req.body;
+      
+      if (!name?.trim()) {
+        return res.status(400).json({ message: "Portfolio name is required" });
+      }
+
+      // Generate slug from name
+      const slug = name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, "")
+        .replace(/\s+/g, "-")
+        .trim();
+
+      const portfolio = await storage.createPortfolio({
+        name,
+        slug,
+        description: description || "",
+        isPublic: isPublic !== false,
+        userId: req.user!.id
+      });
+
+      res.status(201).json(portfolio);
+    } catch (error) {
+      console.error("Error creating portfolio:", error);
+      res.status(500).json({ message: "Failed to create portfolio" });
+    }
+  });
+
+  // Update portfolio
+  app.put("/api/portfolios/:id", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { name, description, isPublic } = req.body;
+      
+      const portfolio = await storage.getPortfolio(parseInt(id));
+      if (!portfolio || portfolio.userId !== req.user!.id) {
+        return res.status(404).json({ message: "Portfolio not found" });
+      }
+
+      const updatedPortfolio = await storage.updatePortfolio(parseInt(id), {
+        name,
+        description,
+        isPublic
+      });
+
+      res.json(updatedPortfolio);
+    } catch (error) {
+      console.error("Error updating portfolio:", error);
+      res.status(500).json({ message: "Failed to update portfolio" });
+    }
+  });
+
+  // Delete portfolio
+  app.delete("/api/portfolios/:id", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const portfolio = await storage.getPortfolio(parseInt(id));
+      if (!portfolio || portfolio.userId !== req.user!.id) {
+        return res.status(404).json({ message: "Portfolio not found" });
+      }
+
+      await storage.deletePortfolio(parseInt(id));
+      res.json({ message: "Portfolio deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting portfolio:", error);
+      res.status(500).json({ message: "Failed to delete portfolio" });
+    }
+  });
+
+  // Add photos to portfolio
+  app.post("/api/portfolios/:id/photos", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { photoIds } = req.body;
+      
+      if (!photoIds || !Array.isArray(photoIds)) {
+        return res.status(400).json({ message: "Photo IDs array is required" });
+      }
+
+      const portfolio = await storage.getPortfolio(parseInt(id));
+      if (!portfolio || portfolio.userId !== req.user!.id) {
+        return res.status(404).json({ message: "Portfolio not found" });
+      }
+
+      await storage.addPhotosToPortfolio(parseInt(id), photoIds);
+      const updatedPortfolio = await storage.getPortfolio(parseInt(id));
+      
+      res.json(updatedPortfolio);
+    } catch (error) {
+      console.error("Error adding photos to portfolio:", error);
+      res.status(500).json({ message: "Failed to add photos to portfolio" });
+    }
+  });
+
+  // Remove photos from portfolio
+  app.delete("/api/portfolios/:id/photos", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { photoIds } = req.body;
+      
+      if (!photoIds || !Array.isArray(photoIds)) {
+        return res.status(400).json({ message: "Photo IDs array is required" });
+      }
+
+      const portfolio = await storage.getPortfolio(parseInt(id));
+      if (!portfolio || portfolio.userId !== req.user!.id) {
+        return res.status(404).json({ message: "Portfolio not found" });
+      }
+
+      await storage.removePhotosFromPortfolio(parseInt(id), photoIds);
+      const updatedPortfolio = await storage.getPortfolio(parseInt(id));
+      
+      res.json(updatedPortfolio);
+    } catch (error) {
+      console.error("Error removing photos from portfolio:", error);
+      res.status(500).json({ message: "Failed to remove photos from portfolio" });
+    }
+  });
+
   // ==================== Rotas para redefinição de senha ====================
   
   /**
