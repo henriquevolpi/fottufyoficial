@@ -165,6 +165,7 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Created comprehensive error utility system (errorUtils.ts) for consistent error handling
   - Users now receive specific guidance for cache issues, account limits, network problems, and file format errors
   - Error messages now include actionable suggestions instead of generic "unknown error" messages
+  - Portfolio management button temporarily removed from dashboard during implementation and testing phase
 
 ## User Preferences
 

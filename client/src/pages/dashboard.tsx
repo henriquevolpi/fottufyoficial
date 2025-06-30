@@ -1199,32 +1199,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         </CardContent>
       </Card>
 
-      {/* Portfolio card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center">
-            <Camera className="h-5 w-5 mr-2 text-purple-500" />
-            Portfólios
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">
-            3
-          </div>
-          <p className="text-sm text-gray-500 mt-1">
-            Portfólios públicos criados
-          </p>
-        </CardContent>
-        <CardFooter className="pt-3">
-          <Button 
-            onClick={() => setLocation("/meu-portfolio")}
-            className="w-full"
-            variant="outline"
-          >
-            Gerenciar Portfólios
-          </Button>
-        </CardFooter>
-      </Card>
+
       
 
 
