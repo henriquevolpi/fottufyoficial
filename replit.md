@@ -151,3 +151,5 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+**CRÍTICO**: NUNCA mexer no banco de dados existente. O sistema de portfólio é completamente independente usando apenas dados mock. Não tocar em tabelas, migrações ou estruturas que já funcionam.
