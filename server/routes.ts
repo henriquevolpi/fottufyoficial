@@ -1310,9 +1310,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get user stats for dashboard
   app.get("/api/user/stats", authenticate, async (req: Request, res: Response) => {
+    let responseSent = false;
+    
     try {
       if (!req.user) {
-        return res.status(401).json({ message: "Authentication required" });
+        if (!responseSent) {
+          responseSent = true;
+          return res.status(401).json({ message: "Authentication required" });
+        }
+        return;
       }
       const userId = req.user.id;
       
@@ -1353,6 +1359,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user details including plan info
       const user = await storage.getUser(userId);
+      if (!user) {
+        if (!responseSent) {
+          responseSent = true;
+          return res.status(404).json({ message: "User not found" });
+        }
+        return;
+      }
       
       // Calculate REAL current photo count from all active projects (não arquivados)
       const activeUserProjects = userProjects.filter(project => project.status !== "arquivado");
@@ -1367,16 +1380,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         photosThisMonth,
         totalUploadUsageMB,
         planInfo: {
-          name: user?.planType || 'basic',
-          uploadLimit: user?.uploadLimit || 1000,
+          name: user.planType || 'basic',
+          uploadLimit: user.uploadLimit || 1000,
           usedUploads: realCurrentPhotoCount // Use real current count instead of stored value
         }
       };
       
-      res.json(stats);
+      if (!responseSent) {
+        responseSent = true;
+        res.json(stats);
+      }
     } catch (error) {
       console.error("Error retrieving user stats:", error);
-      res.status(500).json({ message: "Error retrieving user statistics" });
+      if (!responseSent) {
+        responseSent = true;
+        res.status(500).json({ message: "Error retrieving user statistics" });
+      }
     }
   });
   
