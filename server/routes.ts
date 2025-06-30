@@ -3212,5 +3212,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===============================
+  // PORTFOLIO SYSTEM ROUTES - NEW FEATURE
+  // ===============================
+  
+  /**
+   * Get user's portfolios
+   * GET /api/portfolios
+   */
+  app.get("/api/portfolios", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      // Mock data for now - will be replaced with real database queries when tables are created
+      const mockPortfolios = [
+        {
+          id: 1,
+          name: "Ensaio Casamento Amanda & João",
+          slug: "ensaio-casamento-amanda-joao",
+          description: "Fotos do ensaio pré-casamento no parque",
+          coverImageUrl: null,
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          photos: []
+        }
+      ];
+      
+      res.json(mockPortfolios);
+    } catch (error) {
+      console.error("Error fetching portfolios:", error);
+      res.status(500).json({ error: "Failed to fetch portfolios" });
+    }
+  });
+
+  /**
+   * Create new portfolio
+   * POST /api/portfolios
+   */
+  app.post("/api/portfolios", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const { name, description, isPublic, slug } = req.body;
+
+      if (!name || !slug) {
+        return res.status(400).json({ error: "Name and slug are required" });
+      }
+
+      // Mock response for now
+      const newPortfolio = {
+        id: Date.now(),
+        userId: req.user.id,
+        name,
+        slug,
+        description: description || null,
+        coverImageUrl: null,
+        isPublic: isPublic ?? true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        photos: []
+      };
+
+      res.status(201).json(newPortfolio);
+    } catch (error) {
+      console.error("Error creating portfolio:", error);
+      res.status(500).json({ error: "Failed to create portfolio" });
+    }
+  });
+
+  /**
+   * Get public portfolio by slug
+   * GET /api/portfolio/public/:slug
+   */
+  app.get("/api/portfolio/public/:slug", async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+
+      // Mock response for now
+      if (slug === "ensaio-casamento-amanda-joao") {
+        const mockPortfolio = {
+          id: 1,
+          name: "Ensaio Casamento Amanda & João",
+          slug: "ensaio-casamento-amanda-joao",
+          description: "Fotos do ensaio pré-casamento no parque",
+          coverImageUrl: null,
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+          photos: [],
+          user: {
+            name: "Fotógrafo Profissional"
+          }
+        };
+        
+        return res.json(mockPortfolio);
+      }
+
+      res.status(404).json({ error: "Portfolio not found" });
+    } catch (error) {
+      console.error("Error fetching public portfolio:", error);
+      res.status(500).json({ error: "Failed to fetch portfolio" });
+    }
+  });
+
+  /**
+   * Upload photos to portfolio
+   * POST /api/portfolios/:id/photos
+   */
+  app.post("/api/portfolios/:id/photos", r2Upload.array('photos', 50), async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const portfolioId = parseInt(req.params.id);
+      const files = req.files as Express.Multer.File[];
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
+      // Mock response for now
+      const uploadedPhotos = files.map((file, index) => ({
+        id: Date.now() + index,
+        portfolioId,
+        photoUrl: `https://cdn.fottufy.com/${file.filename}`,
+        originalName: file.originalname,
+        description: null,
+        order: index,
+        createdAt: new Date().toISOString()
+      }));
+
+      res.json(uploadedPhotos);
+    } catch (error) {
+      console.error("Error uploading portfolio photos:", error);
+      res.status(500).json({ error: "Failed to upload photos" });
+    }
+  });
+
   return httpServer;
 }

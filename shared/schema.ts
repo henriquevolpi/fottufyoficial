@@ -295,10 +295,48 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   used: boolean("used").notNull().default(false),
 });
 
+// Portfolio system
+export const portfolios = pgTable("portfolios", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  coverImageUrl: text("cover_image_url"),
+  isPublic: boolean("is_public").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const portfolioPhotos = pgTable("portfolio_photos", {
+  id: serial("id").primaryKey(),
+  portfolioId: integer("portfolio_id").notNull().references(() => portfolios.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
+  originalName: varchar("original_name", { length: 255 }),
+  description: text("description"),
+  order: integer("order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
   user: one(users, {
     fields: [passwordResetTokens.userId],
     references: [users.id],
+  }),
+}));
+
+export const portfoliosRelations = relations(portfolios, ({ one, many }) => ({
+  user: one(users, {
+    fields: [portfolios.userId],
+    references: [users.id],
+  }),
+  photos: many(portfolioPhotos),
+}));
+
+export const portfolioPhotosRelations = relations(portfolioPhotos, ({ one }) => ({
+  portfolio: one(portfolios, {
+    fields: [portfolioPhotos.portfolioId],
+    references: [portfolios.id],
   }),
 }));
 
@@ -310,6 +348,25 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
+// Portfolio schemas
+export const insertPortfolioSchema = createInsertSchema(portfolios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPortfolioPhotoSchema = createInsertSchema(portfolioPhotos).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Portfolio = typeof portfolios.$inferSelect;
+export type InsertPortfolio = z.infer<typeof insertPortfolioSchema>;
+
+export type PortfolioPhoto = typeof portfolioPhotos.$inferSelect;
+export type InsertPortfolioPhoto = z.infer<typeof insertPortfolioPhotoSchema>;
+
 // NOTA: Tabela session removida do schema Drizzle para evitar conflitos
 // A tabela session é gerenciada pelo connect-pg-simple e não deve ser alterada pelo Drizzle
 // Formato atual no banco: sid (varchar), sess (json), expire (timestamp)

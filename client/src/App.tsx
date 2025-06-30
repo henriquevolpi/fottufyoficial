@@ -27,6 +27,8 @@ import PricingPage from "@/pages/pricing";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import SimpleResetPage from "@/pages/simple-reset";
+import PortfolioPage from "@/pages/portfolio";
+import PortfolioPublicPage from "@/pages/portfolio-public";
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -111,6 +113,10 @@ function Router() {
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/admin" component={Admin} adminOnly={true} />
       <ProtectedRoute path="/admin/projects" component={AdminProjects} adminOnly={true} />
+      <ProtectedRoute path="/meu-portfolio" component={PortfolioPage} />
+      <Route path="/portfolio/:slug">
+        {(params) => <PortfolioPublicPage />}
+      </Route>
       <Route path="/planos">
         {() => <PricingPage />}
       </Route>
