@@ -1,0 +1,94 @@
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+psql:backup_render_completo_20250618_185323.sql:26: ERROR:  role "fottufy_user" does not exist
+COMMENT
+CREATE EXTENSION
+COMMENT
+SET
+SET
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:67: ERROR:  role "fottufy_user" does not exist
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:83: ERROR:  role "fottufy_user" does not exist
+CREATE SEQUENCE
+psql:backup_render_completo_20250618_185323.sql:98: ERROR:  role "fottufy_user" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:121: ERROR:  role "fottufy_user" does not exist
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:138: ERROR:  role "fottufy_user" does not exist
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:161: ERROR:  role "fottufy_user" does not exist
+CREATE SEQUENCE
+psql:backup_render_completo_20250618_185323.sql:176: ERROR:  role "fottufy_user" does not exist
+ALTER SEQUENCE
+psql:backup_render_completo_20250618_185323.sql:193: ERROR:  relation "session" already exists
+psql:backup_render_completo_20250618_185323.sql:196: ERROR:  role "fottufy_user" does not exist
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:209: ERROR:  role "fottufy_user" does not exist
+CREATE TABLE
+psql:backup_render_completo_20250618_185323.sql:244: ERROR:  role "fottufy_user" does not exist
+CREATE SEQUENCE
+psql:backup_render_completo_20250618_185323.sql:259: ERROR:  role "fottufy_user" does not exist
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COPY 0
+COPY 0
+COPY 30
+COPY 19609
+COPY 155
+COPY 19946
+COPY 0
+COPY 202
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     27
+(1 row)
+
+ setval 
+--------
+    228
+(1 row)
+
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+psql:backup_render_completo_20250618_185323.sql:40345: ERROR:  multiple primary keys for table "session" are not allowed
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+REVOKE
+GRANT
+psql:backup_render_completo_20250618_185323.sql:40439: ERROR:  role "fottufy_user" does not exist
+psql:backup_render_completo_20250618_185323.sql:40446: ERROR:  role "fottufy_user" does not exist
+psql:backup_render_completo_20250618_185323.sql:40453: ERROR:  role "fottufy_user" does not exist
+psql:backup_render_completo_20250618_185323.sql:40460: ERROR:  role "fottufy_user" does not exist
+psql:backup_render_completo_20250618_185323.sql:40467: ERROR:  role "fottufy_user" does not exist
+psql:backup_render_completo_20250618_185323.sql:40474: ERROR:  role "fottufy_user" does not exist
