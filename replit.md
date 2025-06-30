@@ -158,6 +158,13 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Database remained completely intact during backup process
   - Backup includes: 223 users, 222 projects, 17,180 photos, 33 comments
   - Files: backup_render_completo_2025-06-30T16-28-23-692Z.sql and summary
+- June 30, 2025: Enhanced error messaging system for uploads:
+  - Fixed ERR_HTTP_HEADERS_SENT error in user stats endpoint with proper response handling
+  - Improved server-side error messages to be specific about connection, storage, quota, and timeout issues
+  - Enhanced client-side error parsing with detailed context for different failure types
+  - Created comprehensive error utility system (errorUtils.ts) for consistent error handling
+  - Users now receive specific guidance for cache issues, account limits, network problems, and file format errors
+  - Error messages now include actionable suggestions instead of generic "unknown error" messages
 
 ## User Preferences
 

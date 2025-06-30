@@ -210,12 +210,63 @@ export default function ProjectEdit() {
           
           return;
         } else {
-          console.error("Erro ao adicionar fotos:", await response.text());
-          // Continuar com o fallback para localStorage
+          const errorData = await response.json().catch(() => ({ message: "Erro desconhecido" }));
+          console.error("Erro ao adicionar fotos:", errorData);
+          
+          // Mostrar erro específico baseado na resposta do servidor
+          let errorMessage = "Erro durante o upload";
+          let errorDetails = "";
+          
+          if (errorData.message) {
+            errorMessage = errorData.message;
+            errorDetails = errorData.details || "";
+          } else if (response.status === 413) {
+            errorMessage = "Arquivos muito grandes";
+            errorDetails = "Reduza o tamanho das imagens ou envie menos fotos por vez";
+          } else if (response.status === 401) {
+            errorMessage = "Sessão expirada";
+            errorDetails = "Faça login novamente para continuar";
+          } else if (response.status === 403) {
+            errorMessage = "Limite de uploads atingido";
+            errorDetails = "Você atingiu o limite do seu plano atual";
+          } else if (response.status >= 500) {
+            errorMessage = "Problema no servidor";
+            errorDetails = "Tente novamente em alguns minutos";
+          }
+          
+          toast({
+            title: errorMessage,
+            description: errorDetails || errorData.suggestion || "Tente recarregar a página ou limpar o cache do navegador",
+            variant: "destructive",
+          });
+          return;
         }
-      } catch (apiError) {
+      } catch (apiError: any) {
         console.error("Erro na API ao adicionar fotos:", apiError);
-        // Continuar com fallback para localStorage
+        
+        // Analisar tipo de erro de rede
+        let errorMessage = "Problema de conexão";
+        let errorDetails = "";
+        
+        if (apiError.name === "TypeError" && apiError.message.includes("fetch")) {
+          errorMessage = "Sem conexão com o servidor";
+          errorDetails = "Verifique sua conexão com a internet";
+        } else if (apiError.name === "AbortError") {
+          errorMessage = "Upload cancelado";
+          errorDetails = "O upload foi interrompido";
+        } else if (apiError.message.includes("timeout")) {
+          errorMessage = "Tempo limite excedido";
+          errorDetails = "Conexão muito lenta. Tente com menos fotos";
+        } else {
+          errorDetails = "Erro interno do sistema";
+        }
+        
+        toast({
+          title: errorMessage,
+          description: errorDetails,
+          variant: "destructive",
+        });
+        return;
       }
       
       // Fallback: Atualizar no localStorage
@@ -262,11 +313,47 @@ export default function ProjectEdit() {
         setLocation(`/project/${project.id}`);
       }, 1000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao adicionar fotos:', error);
+      
+      // Analisar o tipo de erro para dar mensagem mais específica
+      let errorMessage = "Erro ao adicionar fotos";
+      let errorDetails = "";
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes("projeto não encontrado") || errorMsg.includes("not found")) {
+          errorMessage = "Projeto não encontrado";
+          errorDetails = "O projeto pode ter sido removido ou você não tem mais acesso";
+        } else if (errorMsg.includes("memória") || errorMsg.includes("memory")) {
+          errorMessage = "Memória insuficiente";
+          errorDetails = "Muitas fotos selecionadas. Tente com menos imagens por vez";
+        } else if (errorMsg.includes("formato") || errorMsg.includes("type")) {
+          errorMessage = "Formato de arquivo inválido";
+          errorDetails = "Apenas imagens JPG, PNG e WEBP são permitidas";
+        } else if (errorMsg.includes("tamanho") || errorMsg.includes("size")) {
+          errorMessage = "Arquivo muito grande";
+          errorDetails = "Reduza o tamanho das imagens antes de enviar";
+        } else if (errorMsg.includes("limite") || errorMsg.includes("quota")) {
+          errorMessage = "Limite de uploads atingido";
+          errorDetails = "Você atingiu o limite do seu plano atual";
+        } else if (errorMsg.includes("conexão") || errorMsg.includes("network")) {
+          errorMessage = "Problema de conexão";
+          errorDetails = "Verifique sua internet e tente novamente";
+        } else if (errorMsg.includes("cache") || errorMsg.includes("localStorage")) {
+          errorMessage = "Problema no cache do navegador";
+          errorDetails = "Limpe o cache do navegador e tente novamente";
+        } else {
+          errorDetails = "Erro interno do sistema";
+        }
+      } else {
+        errorDetails = "Erro desconhecido durante o processamento";
+      }
+      
       toast({
-        title: "Erro ao adicionar fotos",
-        description: "Ocorreu um problema ao adicionar novas fotos ao projeto.",
+        title: errorMessage,
+        description: errorDetails || "Tente recarregar a página ou entrar em contato com o suporte",
         variant: "destructive",
       });
     } finally {

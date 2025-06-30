@@ -375,9 +375,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error uploading photos to R2:", error);
+      
+      // Analisar o tipo de erro para dar mensagem mais específica
+      let errorMessage = "Erro interno do servidor durante o upload";
+      let errorDetails = "";
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes("network") || errorMsg.includes("connection")) {
+          errorMessage = "Problema de conexão com o servidor de armazenamento";
+          errorDetails = "Verifique sua conexão com a internet e tente novamente";
+        } else if (errorMsg.includes("timeout")) {
+          errorMessage = "Tempo limite excedido durante o upload";
+          errorDetails = "Arquivos muito grandes ou conexão lenta. Tente com menos fotos por vez";
+        } else if (errorMsg.includes("storage") || errorMsg.includes("bucket")) {
+          errorMessage = "Problema no sistema de armazenamento";
+          errorDetails = "Nosso sistema de arquivos está temporariamente indisponível";
+        } else if (errorMsg.includes("memory") || errorMsg.includes("heap")) {
+          errorMessage = "Sobrecarga do sistema durante processamento";
+          errorDetails = "Muitas fotos sendo processadas. Aguarde alguns minutos e tente novamente";
+        } else if (errorMsg.includes("quota") || errorMsg.includes("limit")) {
+          errorMessage = "Limite de conta atingido";
+          errorDetails = "Você atingiu o limite de uploads do seu plano. Considere fazer upgrade";
+        } else {
+          errorDetails = error.message;
+        }
+      }
+      
       return res.status(500).json({
-        message: "Failed to upload files",
-        error: error instanceof Error ? error.message : "Unknown error"
+        message: errorMessage,
+        details: errorDetails,
+        suggestion: "Se o problema persistir, limpe o cache do navegador ou entre em contato com o suporte"
       });
     }
   });
@@ -501,9 +530,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error uploading photos to project:", error);
+      
+      // Analisar o tipo de erro para dar mensagem mais específica
+      let errorMessage = "Erro ao adicionar fotos ao projeto";
+      let errorDetails = "";
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes("not found") || errorMsg.includes("unauthorized")) {
+          errorMessage = "Projeto não encontrado ou sem permissão";
+          errorDetails = "Verifique se o projeto ainda existe e se você tem acesso a ele";
+        } else if (errorMsg.includes("network") || errorMsg.includes("connection")) {
+          errorMessage = "Problema de conexão durante o upload";
+          errorDetails = "Verifique sua conexão com a internet e tente novamente";
+        } else if (errorMsg.includes("storage") || errorMsg.includes("bucket")) {
+          errorMessage = "Erro no sistema de armazenamento";
+          errorDetails = "Nosso servidor de arquivos está temporariamente indisponível";
+        } else if (errorMsg.includes("quota") || errorMsg.includes("limit")) {
+          errorMessage = "Limite de uploads atingido";
+          errorDetails = "Você atingiu o limite do seu plano. Considere fazer upgrade para continuar";
+        } else if (errorMsg.includes("timeout")) {
+          errorMessage = "Tempo limite excedido";
+          errorDetails = "Upload muito lento. Tente com menos fotos ou verifique sua conexão";
+        } else {
+          errorDetails = error.message;
+        }
+      }
+      
       return res.status(500).json({
-        message: "Failed to upload files to project",
-        error: error instanceof Error ? error.message : "Unknown error"
+        message: errorMessage,
+        details: errorDetails,
+        suggestion: "Tente recarregar a página ou limpar o cache do navegador"
       });
     }
   });
@@ -892,7 +950,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("[Batch Upload] Erro ao adicionar fotos:", error);
-      res.status(500).json({ message: "Failed to add photos to project" });
+      
+      // Analisar o tipo de erro para dar mensagem mais específica
+      let errorMessage = "Erro durante upload em lote";
+      let errorDetails = "";
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes("not found") || errorMsg.includes("project")) {
+          errorMessage = "Projeto não encontrado";
+          errorDetails = "O projeto foi removido ou você não tem mais acesso a ele";
+        } else if (errorMsg.includes("authentication") || errorMsg.includes("unauthorized")) {
+          errorMessage = "Sessão expirada";
+          errorDetails = "Faça login novamente para continuar o upload";
+        } else if (errorMsg.includes("storage") || errorMsg.includes("bucket") || errorMsg.includes("r2")) {
+          errorMessage = "Problema no servidor de arquivos";
+          errorDetails = "Sistema de armazenamento temporariamente indisponível";
+        } else if (errorMsg.includes("memory") || errorMsg.includes("heap")) {
+          errorMessage = "Sobrecarga do sistema";
+          errorDetails = "Muitas fotos sendo processadas. Aguarde e tente com menos fotos";
+        } else if (errorMsg.includes("quota") || errorMsg.includes("limit")) {
+          errorMessage = "Limite de uploads excedido";
+          errorDetails = "Você atingiu o limite do seu plano atual";
+        } else if (errorMsg.includes("timeout")) {
+          errorMessage = "Tempo limite excedido";
+          errorDetails = "Upload muito lento. Tente com menos fotos por vez";
+        } else {
+          errorDetails = error.message;
+        }
+      }
+      
+      res.status(500).json({ 
+        message: errorMessage,
+        details: errorDetails,
+        suggestion: "Recarregue a página e tente novamente com menos fotos"
+      });
     }
   });
   
