@@ -3221,12 +3221,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * GET /api/portfolios
    */
   app.get("/api/portfolios", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     try {
-      // Mock data for now - will be replaced with real database queries when tables are created
+      // Mock data - sistema independente de portfólio
       const mockPortfolios = [
         {
           id: 1,
