@@ -29,7 +29,8 @@ import {
   MessageSquare,
   MessageCircle,
   Eye,
-  Check
+  Check,
+  Image as ImageIcon
 } from "lucide-react";
 import { 
   Tabs, 
@@ -1202,7 +1203,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
-            <Image className="h-5 w-5 mr-2 text-purple-500" />
+            <Camera className="h-5 w-5 mr-2 text-purple-500" />
             Portfólios
           </CardTitle>
         </CardHeader>
