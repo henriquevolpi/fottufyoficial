@@ -310,10 +310,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
       
       if (!canUpload) {
+        // Buscar informações detalhadas do usuário para mensagem personalizada
+        const user = await storage.getUser(req.user.id);
+        const planName = user?.planType || 'gratuito';
+        const uploadLimit = user?.uploadLimit || 0;
+        const usedUploads = user?.usedUploads || 0;
+        
         return res.status(403).json({ 
-          message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
-          uploadLimit: req.user.uploadLimit,
-          usedUploads: req.user.usedUploads
+          message: "Limite de uploads atingido", 
+          error: "UPLOAD_LIMIT_REACHED",
+          details: `Sua conta ${planName} atingiu o limite de ${uploadLimit} fotos (${usedUploads} utilizadas). Para continuar fazendo uploads, verifique sua assinatura no painel ou entre em contato com nosso suporte.`,
+          uploadLimit,
+          usedUploads
         });
       }
       
@@ -443,10 +451,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const canUpload = await storage.checkUploadLimit(req.user.id, uploadCount);
       
       if (!canUpload) {
+        // Buscar informações detalhadas do usuário para mensagem personalizada
+        const user = await storage.getUser(req.user.id);
+        const planName = user?.planType || 'gratuito';
+        const uploadLimit = user?.uploadLimit || 0;
+        const usedUploads = user?.usedUploads || 0;
+        
         return res.status(403).json({ 
-          message: "Upload limit exceeded. Please upgrade your plan to upload more photos.", 
-          uploadLimit: req.user.uploadLimit,
-          usedUploads: req.user.usedUploads
+          message: "Limite de uploads atingido", 
+          error: "UPLOAD_LIMIT_REACHED",
+          details: `Sua conta ${planName} atingiu o limite de ${uploadLimit} fotos (${usedUploads} utilizadas). Para continuar fazendo uploads, verifique sua assinatura no painel ou entre em contato com nosso suporte.`,
+          uploadLimit,
+          usedUploads
         });
       }
       
@@ -1890,10 +1906,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const hasUploadLimit = await storage.checkUploadLimit(req.user.id, photoCount);
         
         if (!hasUploadLimit) {
+          // Buscar informações detalhadas do usuário para mensagem personalizada
+          const user = await storage.getUser(req.user.id);
+          const planName = user?.planType || 'gratuito';
+          const uploadLimit = user?.uploadLimit || 0;
+          const usedUploads = user?.usedUploads || 0;
+          
           return res.status(403).json({ 
-            message: "Upload limit reached", 
+            message: "Limite de uploads atingido", 
             error: "UPLOAD_LIMIT_REACHED",
-            details: "You have reached the upload limit for your current plan. Please upgrade to continue uploading photos."
+            details: `Sua conta ${planName} atingiu o limite de ${uploadLimit} fotos (${usedUploads} utilizadas). Para continuar fazendo uploads, verifique sua assinatura no painel ou entre em contato com nosso suporte.`
           });
         }
       }

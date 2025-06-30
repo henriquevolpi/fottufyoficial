@@ -166,6 +166,12 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Users now receive specific guidance for cache issues, account limits, network problems, and file format errors
   - Error messages now include actionable suggestions instead of generic "unknown error" messages
   - Portfolio management button temporarily removed from dashboard during implementation and testing phase
+- June 30, 2025: Implemented friendly error messages for upload limit exceeded:
+  - Updated server-side error responses to include specific account plan information and usage details
+  - Created personalized error messages showing plan type, current usage, and limit numbers
+  - Added client-side error parsing to detect and display user-friendly messages for upload limits
+  - Error now shows: "Sua conta [plan] atingiu o limite de [X] fotos ([Y] utilizadas). Para continuar fazendo uploads, verifique sua assinatura no painel ou entre em contato com nosso suporte."
+  - Applied to all upload endpoints: project creation, generic photo upload, and project-specific photo upload
 
 ## User Preferences
 

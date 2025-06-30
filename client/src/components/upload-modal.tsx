@@ -470,12 +470,34 @@ export default function UploadModal({
         console.log(`[Frontend] ${originalFilesCount} referências de arquivos originais liberadas após erro`);
       }
       
+      // Tratamento específico para erro de limite de upload
+      let errorTitle = "Erro ao criar projeto";
+      let errorDescription = "Ocorreu um erro ao criar o projeto. Tente novamente.";
+      
+      if (error instanceof Error) {
+        // Verificar se é um erro de resposta da API
+        try {
+          const errorResponse = JSON.parse(error.message);
+          if (errorResponse.error === "UPLOAD_LIMIT_REACHED") {
+            errorTitle = "Limite de uploads atingido";
+            errorDescription = errorResponse.details || "Você atingiu o limite de uploads do seu plano atual.";
+          } else {
+            errorDescription = errorResponse.details || error.message;
+          }
+        } catch {
+          // Se não conseguir parsear como JSON, é uma mensagem de erro simples
+          if (error.message.includes("limit") || error.message.includes("limite")) {
+            errorTitle = "Limite de uploads atingido";
+            errorDescription = "Você atingiu o limite de uploads do seu plano. Verifique sua assinatura no painel ou entre em contato com nosso suporte.";
+          } else {
+            errorDescription = error.message;
+          }
+        }
+      }
+      
       toast({
-        title: "Error creating project",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while creating the project. Please try again.",
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
