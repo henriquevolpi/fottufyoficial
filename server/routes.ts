@@ -812,7 +812,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update the user's upload usage (reduce by 1)
       await storage.updateUploadUsage(userId, -1);
-      console.log(`Updated upload usage for user ${userId} after deleting photo ${photoId}`);
+      if (process.env.DEBUG_UPLOAD === 'true') {
+        console.log(`Updated upload usage for user ${userId} after deleting photo ${photoId}`);
+      }
       
       res.json({ message: "Photo deleted successfully" });
     } catch (error) {
@@ -834,7 +836,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Project ID and array of photo IDs are required" });
       }
       
-      console.log(`Salvando seleção para projeto ${projectId} com ${photoIds.length} fotos`);
+      if (process.env.DEBUG_SELECTION === 'true') {
+        console.log(`Salvando seleção para projeto ${projectId} com ${photoIds.length} fotos`);
+      }
       
       // Verificar se o projeto existe e se o usuário tem permissão
       const project = await storage.getProject(projectId);
@@ -2109,7 +2113,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      console.log(`[WATERMARK] Projeto atualizado: showWatermark = ${updatedProject.showWatermark}`);
+      if (process.env.DEBUG_WATERMARK === 'true') {
+        console.log(`[WATERMARK] Projeto atualizado: showWatermark = ${updatedProject.showWatermark}`);
+      }
       
       res.json(updatedProject);
     } catch (error) {
