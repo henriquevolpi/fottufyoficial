@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image } from "lucide-react";
 import { compressMultipleImages, isImageFile } from "@/lib/imageCompression";
 import { useGlobalUploadProtection } from "@/hooks/use-upload-protection";
+import { detectDevice, detectBrowserCapabilities, detectConnection, logEnvironmentInfo, getRecommendedUploadSettings } from "@/lib/deviceDetection";
+import { useUploadAnalytics } from "@/lib/uploadAnalytics";
 import {
   Dialog,
   DialogContent,
@@ -89,6 +91,9 @@ export default function UploadModal({
     cancelUpload
   } = useGlobalUploadProtection();
 
+  // Sistema de analytics e detecção (100% seguro)
+  const analytics = useUploadAnalytics();
+
   // Função para liberar URLs de preview e limpar memória
   const cleanupPreviewUrls = (urlsToCleanup: string[]) => {
     urlsToCleanup.forEach(url => {
@@ -136,12 +141,60 @@ export default function UploadModal({
 
     setIsSubmitting(true);
 
+    // ===== DETECÇÃO E ANALYTICS (100% SEGURA) =====
+    let deviceInfo = null;
+    let sessionId = null;
+    let recommendedSettings = null;
+    
+    try {
+      // Detectar ambiente e capabilities (não afeta upload se falhar)
+      deviceInfo = {
+        device: detectDevice(),
+        capabilities: detectBrowserCapabilities(),
+        connection: detectConnection()
+      };
+      
+      // Log completo do ambiente
+      logEnvironmentInfo();
+      
+      // Obter configurações recomendadas
+      recommendedSettings = getRecommendedUploadSettings();
+      
+      // Iniciar analytics
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+      sessionId = analytics.startSession(files.length, totalSize, deviceInfo);
+      
+      // Mostrar warnings se houver
+      if (recommendedSettings.warnings.length > 0) {
+        console.log('=== AVISOS DE COMPATIBILIDADE ===');
+        recommendedSettings.warnings.forEach(warning => {
+          console.warn(`⚠️ ${warning}`);
+        });
+        console.log('===============================');
+      }
+    } catch (error) {
+      // Falha silenciosa - não deve afetar upload
+      console.warn('[Detecção] Erro na detecção do ambiente (upload continua):', error);
+    }
+
     try {
       // Ativar sistema de proteção contra tela branca
       startUpload(files.length);
       
       // ETAPA 1: Redimensionar imagens no front-end antes do upload
       console.log(`[Frontend] Iniciando redimensionamento de ${files.length} imagens antes do upload`);
+      
+      // Analytics: início da compressão
+      try {
+        if (sessionId) {
+          analytics.logEvent('compression_start', {
+            fileCount: files.length,
+            totalSizeMB: (files.reduce((acc, file) => acc + file.size, 0) / 1024 / 1024).toFixed(2),
+            deviceType: deviceInfo?.device?.type || 'unknown',
+            webWorkerSupported: deviceInfo?.capabilities?.supportsWebWorker || false
+          });
+        }
+      } catch (e) { /* Falha silenciosa */ }
       
       setUploadStatus("uploading");
       setUploadPercentage(10); // 10% - iniciando processamento
@@ -175,6 +228,23 @@ export default function UploadModal({
       );
 
       console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
+      
+      // Analytics: fim da compressão
+      try {
+        if (sessionId) {
+          const originalSize = files.reduce((acc, file) => acc + file.size, 0);
+          const compressedSize = compressedFiles.reduce((acc, file) => acc + file.size, 0);
+          const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+          
+          analytics.logEvent('compression_end', {
+            originalSizeMB: (originalSize / 1024 / 1024).toFixed(2),
+            compressedSizeMB: (compressedSize / 1024 / 1024).toFixed(2),
+            compressionRatio: parseFloat(compressionRatio),
+            durationMs: Date.now() - (sessionId ? parseInt(sessionId.split('_')[1]) : Date.now())
+          });
+        }
+      } catch (e) { /* Falha silenciosa */ }
+      
       setUploadPercentage(40); // 40% - redimensionamento concluído
       
       // Atualizar proteção global
@@ -221,6 +291,17 @@ export default function UploadModal({
       setUploadStatus("completed");
       const newProject = batchResult.data;
       console.log("Projeto criado com sucesso via upload em lotes:", newProject);
+      
+      // Analytics: sucesso do upload
+      try {
+        if (sessionId) {
+          analytics.endSession(true, {
+            projectId: newProject.id || 'unknown',
+            finalFileCount: newProject.photos?.length || files.length,
+            success: true
+          });
+        }
+      } catch (e) { /* Falha silenciosa */ }
       
       // Finalizar sistema de proteção global
       finishUpload();
@@ -276,6 +357,24 @@ export default function UploadModal({
       onClose();
     } catch (error) {
       console.error("Error creating project:", error);
+      
+      // Analytics: erro no upload
+      try {
+        if (sessionId) {
+          analytics.logEvent('error', {
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            errorType: error instanceof Error ? error.constructor.name : 'UnknownError',
+            stage: 'upload',
+            deviceInfo: deviceInfo?.device || {},
+            filesCount: files.length
+          });
+          
+          analytics.endSession(false, {
+            success: false,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      } catch (e) { /* Falha silenciosa */ }
       
       // Cancelar sistema de proteção global em caso de erro
       cancelUpload();
