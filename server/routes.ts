@@ -3330,12 +3330,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(portfolioPhotos.portfolioId, portfolio.id))
         .orderBy(portfolioPhotos.order);
 
-      // Map photos with proper URL handling
+      // Map photos - use URLs exactly as stored in database
       const photos = rawPhotos.map(photo => ({
         ...photo,
-        photoUrl: photo.photoUrl.startsWith('http') 
-          ? photo.photoUrl // Use complete URLs as-is
-          : `https://cdn.fottufy.com/${photo.photoUrl}.jpg` // Build URL for IDs
+        photoUrl: photo.photoUrl // Use URLs exactly as stored
       }));
 
       const result = {
