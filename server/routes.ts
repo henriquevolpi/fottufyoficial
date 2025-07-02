@@ -3399,6 +3399,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
+   * Upload banner for portfolio
+   * POST /api/portfolios/:id/banner
+   */
+  app.post("/api/portfolios/:id/banner", authenticate, r2Upload.single('banner'), async (req: Request, res: Response) => {
+    try {
+      const portfolioId = parseInt(req.params.id);
+      const file = req.file;
+
+      console.log(`[Portfolio Banner] Starting banner upload for portfolio ${portfolioId}`);
+      console.log(`[Portfolio Banner] File received:`, file ? file.originalname : 'No file');
+
+      if (!file) {
+        return res.status(400).json({ error: "No banner file uploaded" });
+      }
+
+      // Check if portfolio belongs to user
+      const [existingPortfolio] = await db
+        .select()
+        .from(portfolios)
+        .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, req.user!.id)))
+        .limit(1);
+
+      if (!existingPortfolio) {
+        return res.status(404).json({ error: "Portfolio not found" });
+      }
+
+      // Generate unique filename for banner
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 12);
+      const extension = getExtensionFromMimeType(file.mimetype);
+      const uniqueFilename = `banner-${timestamp}-${randomString}${extension}`;
+
+      // Process banner image (same logic as photo upload)
+      const processedBuffer = await processImage(file.buffer, file.mimetype);
+
+      // Upload to R2
+      const r2Response = await uploadFileToR2(
+        processedBuffer,
+        uniqueFilename,
+        file.mimetype
+      );
+
+      // Update portfolio with banner URL
+      const [updatedPortfolio] = await db
+        .update(portfolios)
+        .set({ 
+          bannerUrl: r2Response.url,
+          updatedAt: new Date() 
+        })
+        .where(eq(portfolios.id, portfolioId))
+        .returning();
+
+      console.log(`[Portfolio Banner] Banner uploaded successfully: ${uniqueFilename}`);
+
+      res.json({
+        success: true,
+        bannerUrl: r2Response.url,
+        portfolio: updatedPortfolio
+      });
+
+    } catch (error) {
+      console.error("Error uploading portfolio banner:", error);
+      res.status(500).json({ 
+        error: "Failed to upload banner",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  /**
    * Get user's projects and photos for portfolio selection
    * GET /api/portfolios/photos-source
    */

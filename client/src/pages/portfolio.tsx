@@ -19,6 +19,7 @@ interface Portfolio {
   slug: string;
   description?: string;
   coverImageUrl?: string;
+  bannerUrl?: string;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
@@ -69,6 +70,12 @@ export default function PortfolioPage() {
   const [uploadPercentage, setUploadPercentage] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "completed">("idle");
   const [isSubmittingPhotos, setIsSubmittingPhotos] = useState(false);
+  
+  // Estados para banner
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -424,6 +431,88 @@ export default function PortfolioPage() {
     }
   };
 
+  // Banner functions
+  const openBannerModal = (portfolioId: number) => {
+    setSelectedPortfolioId(portfolioId);
+    setBannerFile(null);
+    setBannerPreview(null);
+    setIsUploadingBanner(false);
+    setIsBannerModalOpen(true);
+  };
+
+  const closeBannerModal = () => {
+    if (!isUploadingBanner) {
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+      setBannerFile(null);
+      setBannerPreview(null);
+      setIsBannerModalOpen(false);
+    }
+  };
+
+  const handleBannerFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione apenas arquivos de imagem",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  };
+
+  const handleBannerUpload = async () => {
+    if (!bannerFile || !selectedPortfolioId) return;
+
+    setIsUploadingBanner(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('banner', bannerFile);
+
+      const response = await fetch(`/api/portfolios/${selectedPortfolioId}/banner`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Falha no upload do banner');
+      }
+
+      const result = await response.json();
+
+      // Atualizar dados
+      await queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/portfolios'] });
+
+      closeBannerModal();
+      
+      toast({ 
+        title: "Banner atualizado!", 
+        description: "O banner do portfólio foi atualizado com sucesso" 
+      });
+
+    } catch (error: any) {
+      console.error("Erro no upload do banner:", error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Tente novamente",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       
@@ -576,6 +665,15 @@ export default function PortfolioPage() {
                   >
                     <Upload className="mr-1 h-3 w-3" />
                     Upload
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openBannerModal(portfolio.id)}
+                  >
+                    <Image className="mr-1 h-3 w-3" />
+                    Banner
                   </Button>
                   
                   {portfolio.isPublic && (
@@ -873,6 +971,89 @@ export default function PortfolioPage() {
                   )}
                 </Button>
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Banner Upload Modal */}
+      <Dialog open={isBannerModalOpen} onOpenChange={closeBannerModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar Banner do Portfólio</DialogTitle>
+            <DialogDescription>
+              Selecione uma imagem para ser o banner da página pública do seu portfólio
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Área de Upload */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="flex flex-col items-center">
+                <Image className="h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-sm text-gray-600 mb-4">
+                  Arraste uma imagem aqui ou clique para selecionar
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById("banner-file-upload")?.click()}
+                >
+                  Selecionar Banner
+                </Button>
+                <input
+                  id="banner-file-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerFileSelect}
+                />
+              </div>
+            </div>
+
+            {/* Preview do Banner */}
+            {bannerPreview && (
+              <div className="space-y-3">
+                <h4 className="font-medium">Preview do Banner</h4>
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={bannerPreview}
+                    alt="Preview do banner"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-xs text-gray-600">
+                  {bannerFile?.name}
+                </p>
+              </div>
+            )}
+
+            {/* Ações */}
+            <div className="flex justify-between space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={closeBannerModal}
+                disabled={isUploadingBanner}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleBannerUpload} 
+                disabled={!bannerFile || isUploadingBanner}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isUploadingBanner ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Atualizar Banner
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>

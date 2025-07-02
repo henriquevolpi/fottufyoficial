@@ -303,6 +303,7 @@ export const portfolios = pgTable("portfolios", {
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   description: text("description"),
   coverImageUrl: text("cover_image_url"),
+  bannerUrl: text("banner_url"),
   isPublic: boolean("is_public").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

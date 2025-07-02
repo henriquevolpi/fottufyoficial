@@ -21,6 +21,7 @@ interface Portfolio {
   slug: string;
   description?: string;
   coverImageUrl?: string;
+  bannerUrl?: string;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
@@ -207,6 +208,19 @@ export default function PortfolioPublicPage() {
               </Button>
             </div>
           </div>
+
+          {/* Banner personalizado */}
+          {portfolio.bannerUrl && (
+            <div className="mb-8">
+              <div className="aspect-video max-w-4xl mx-auto rounded-lg overflow-hidden shadow-lg">
+                <img
+                  src={portfolio.bannerUrl}
+                  alt={`Banner do portfólio ${portfolio.name}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="text-center max-w-3xl mx-auto">
             <Badge variant="secondary" className="mb-4">
