@@ -269,6 +269,15 @@ export default function PortfolioPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Banner Image */}
+      <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0">
+        <img 
+          src="/bannerdash2.jpg" 
+          alt="Portfolio Banner" 
+          className="w-full h-auto object-cover" 
+        />
+      </div>
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Meus Portfólios</h1>

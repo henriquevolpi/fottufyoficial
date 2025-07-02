@@ -3252,7 +3252,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(projects.photographerId, req.user!.id))
         .orderBy(desc(projects.createdAt));
 
-      res.json(userProjects);
+      // Parse photos JSON data for each project
+      const projectsWithParsedPhotos = userProjects.map(project => ({
+        id: project.id,
+        name: project.name,
+        photos: project.photos ? JSON.parse(project.photos) : []
+      }));
+
+      res.json(projectsWithParsedPhotos);
     } catch (error) {
       console.error("Error fetching user projects for portfolio:", error);
       res.status(500).json({ error: "Failed to fetch photos source" });
