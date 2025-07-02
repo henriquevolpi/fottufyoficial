@@ -2929,11 +2929,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get photos for each portfolio
       const portfoliosWithPhotos = await Promise.all(
         userPortfolios.map(async (portfolio) => {
-          const photos = await db
+          const rawPhotos = await db
             .select()
             .from(portfolioPhotos)
             .where(eq(portfolioPhotos.portfolioId, portfolio.id))
             .orderBy(portfolioPhotos.order);
+
+          // Fix photo URLs - ensure they are complete CDN URLs
+          const photos = rawPhotos.map(photo => {
+            let photoUrl = photo.photoUrl;
+            
+            // If photoUrl doesn't start with http, it's probably just an ID/filename
+            // Convert it to the full CDN URL
+            if (photoUrl && !photoUrl.startsWith('http')) {
+              photoUrl = `https://cdn.fottufy.com/${photoUrl}`;
+              // If it doesn't have an extension, add .jpg
+              if (!photoUrl.includes('.')) {
+                photoUrl += '.jpg';
+              }
+            }
+            
+            return {
+              ...photo,
+              photoUrl
+            };
+          });
 
           return {
             ...portfolio,
@@ -3132,15 +3152,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add photos to portfolio
       const newPhotos = [];
       for (const photoUrl of photoUrls) {
-        // Extract photo ID from URL (e.g., from "https://cdn.fottufy.com/1745693254465-gkh3yn7h2a.jpg" extract "1745693254465-gkh3yn7h2a")
-        const photoId = photoUrl.replace('https://cdn.fottufy.com/', '').replace('.jpg', '');
+        // Store the complete URL and get original name from the source photo
+        // First, try to find the source photo in projects to get the original name
+        let originalName = `foto-${Date.now()}-${nextOrder}.jpg`; // Fallback
+        
+        try {
+          // Try to find the original photo in the photos table
+          const [sourcePhoto] = await db
+            .select({ originalName: photos.originalName })
+            .from(photos)
+            .where(eq(photos.url, photoUrl))
+            .limit(1);
+          
+          if (sourcePhoto?.originalName) {
+            originalName = sourcePhoto.originalName;
+          }
+        } catch (findError) {
+          console.log(`Could not find source photo for ${photoUrl}, using fallback name`);
+        }
         
         const [newPhoto] = await db
           .insert(portfolioPhotos)
           .values({
             portfolioId,
-            photoUrl: photoId, // Store just the ID, not the full URL
-            originalName: `portfolio-photo-${Date.now()}-${nextOrder}.jpg`,
+            photoUrl: photoUrl, // Store the complete URL
+            originalName: originalName, // Use the original name from source
             order: nextOrder,
           })
           .returning();
@@ -3447,11 +3483,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(portfolioPhotos.portfolioId, portfolio.id))
         .orderBy(portfolioPhotos.order);
 
-      // Map photos - use URLs exactly as stored in database
-      const photos = rawPhotos.map(photo => ({
-        ...photo,
-        photoUrl: photo.photoUrl // Use URLs exactly as stored
-      }));
+      // Map photos - ensure URLs are complete
+      const photos = rawPhotos.map(photo => {
+        let photoUrl = photo.photoUrl;
+        
+        // If photoUrl doesn't start with http, it's probably just an ID/filename
+        // Convert it to the full CDN URL
+        if (photoUrl && !photoUrl.startsWith('http')) {
+          photoUrl = `https://cdn.fottufy.com/${photoUrl}`;
+          // If it doesn't have an extension, add .jpg
+          if (!photoUrl.includes('.')) {
+            photoUrl += '.jpg';
+          }
+        }
+        
+        return {
+          ...photo,
+          photoUrl
+        };
+      });
 
       const result = {
         id: portfolio.id,
