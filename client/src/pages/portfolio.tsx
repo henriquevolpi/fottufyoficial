@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Portfolio {
   id: number;
@@ -25,103 +26,28 @@ interface Portfolio {
 
 interface PortfolioPhoto {
   id: number;
+  portfolioId: number;
   photoUrl: string;
   originalName?: string;
   description?: string;
   order: number;
+  createdAt: string;
 }
 
-// Mock data para demonstração
-const mockPortfolios: Portfolio[] = [
-  {
-    id: 1,
-    name: "Ensaios de Casamento",
-    slug: "ensaios-casamento",
-    description: "Coleção dos melhores momentos de casamentos fotografados",
-    isPublic: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    photos: [
-      {
-        id: 1,
-        photoUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_01.jpg",
-        order: 0
-      },
-      {
-        id: 2,
-        photoUrl: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_02.jpg",
-        order: 1
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: "Retratos Corporativos",
-    slug: "retratos-corporativos",
-    description: "Fotos profissionais para empresas e executivos",
-    isPublic: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    photos: [
-      {
-        id: 3,
-        photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
-        originalName: "executivo_01.jpg",
-        order: 0
-      }
-    ]
-  }
-];
+interface ProjectPhoto {
+  id: string;
+  url: string;
+  filename: string;
+  originalName?: string;
+}
 
-const mockUserProjects = [
-  {
-    id: 1,
-    name: "Casamento Ana & João",
-    photos: [
-      {
-        id: "photo_1",
-        url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop",
-        filename: "casamento_01.jpg",
-        originalName: "casamento_ana_joao_01.jpg"
-      },
-      {
-        id: "photo_2", 
-        url: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop",
-        filename: "casamento_02.jpg",
-        originalName: "casamento_ana_joao_02.jpg"
-      },
-      {
-        id: "photo_3",
-        url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop",
-        filename: "casamento_03.jpg",
-        originalName: "casamento_ana_joao_03.jpg"
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: "Ensaio Corporativo",
-    photos: [
-      {
-        id: "photo_4",
-        url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
-        filename: "corporativo_01.jpg",
-        originalName: "executivo_silva.jpg"
-      },
-      {
-        id: "photo_5",
-        url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=600&fit=crop",
-        filename: "corporativo_02.jpg",
-        originalName: "executivo_santos.jpg"
-      }
-    ]
-  }
-];
+interface Project {
+  id: number;
+  name: string;
+  photos: ProjectPhoto[];
+}
 
 export default function PortfolioPage() {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddPhotosOpen, setIsAddPhotosOpen] = useState(false);
@@ -135,17 +61,148 @@ export default function PortfolioPage() {
   });
 
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Generate slug from name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s]/g, "")
-      .replace(/\s+/g, "-")
-      .trim();
-  };
+  // Fetch portfolios from real API
+  const { data: portfolios = [], isLoading } = useQuery({
+    queryKey: ['/api/portfolios'],
+    queryFn: () => fetch('/api/portfolios', { credentials: 'include' }).then(res => res.json())
+  });
+
+  // Fetch user projects for photo selection
+  const { data: userProjects = [] } = useQuery({
+    queryKey: ['/api/portfolios/photos-source'],
+    queryFn: () => fetch('/api/portfolios/photos-source', { credentials: 'include' }).then(res => res.json()),
+    enabled: isAddPhotosOpen
+  });
+
+  // Create portfolio mutation
+  const createPortfolioMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string; isPublic: boolean }) => {
+      const response = await fetch('/api/portfolios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create portfolio');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      setIsCreateOpen(false);
+      setNewPortfolio({ name: "", description: "", isPublic: true });
+      toast({ title: "Portfólio criado com sucesso!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao criar portfólio", 
+        description: error.message || "Tente novamente",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Update portfolio mutation
+  const updatePortfolioMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { name: string; description: string; isPublic: boolean } }) => {
+      const response = await fetch(`/api/portfolios/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update portfolio');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      setIsEditOpen(false);
+      setEditingPortfolio(null);
+      toast({ title: "Portfólio atualizado com sucesso!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao atualizar portfólio", 
+        description: error.message || "Tente novamente",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Delete portfolio mutation
+  const deletePortfolioMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/portfolios/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete portfolio');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      toast({ title: "Portfólio excluído com sucesso!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao excluir portfólio", 
+        description: error.message || "Tente novamente",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Add photos to portfolio mutation
+  const addPhotosMutation = useMutation({
+    mutationFn: async ({ portfolioId, photoUrls }: { portfolioId: number; photoUrls: string[] }) => {
+      const response = await fetch(`/api/portfolios/${portfolioId}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ photoUrls })
+      });
+      if (!response.ok) throw new Error('Failed to add photos');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      setIsAddPhotosOpen(false);
+      setSelectedPhotos([]);
+      setSelectedPortfolioId(null);
+      toast({ title: `${data?.length || 0} fotos adicionadas ao portfólio!` });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao adicionar fotos", 
+        description: error.message || "Tente novamente",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Delete photo from portfolio mutation
+  const deletePhotoMutation = useMutation({
+    mutationFn: async ({ portfolioId, photoId }: { portfolioId: number; photoId: number }) => {
+      const response = await fetch(`/api/portfolios/${portfolioId}/photos/${photoId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete photo');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      toast({ title: "Foto removida do portfólio!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao remover foto", 
+        description: error.message || "Tente novamente",
+        variant: "destructive" 
+      });
+    }
+  });
 
   const handleCreatePortfolio = () => {
     if (!newPortfolio.name.trim()) {
@@ -153,38 +210,26 @@ export default function PortfolioPage() {
       return;
     }
 
-    const slug = generateSlug(newPortfolio.name);
-    const portfolio: Portfolio = {
-      id: Date.now(),
-      ...newPortfolio,
-      slug,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      photos: []
-    };
-
-    setPortfolios(prev => [...prev, portfolio]);
-    setIsCreateOpen(false);
-    setNewPortfolio({ name: "", description: "", isPublic: true });
-    toast({ title: "Portfólio criado com sucesso!" });
+    createPortfolioMutation.mutate(newPortfolio);
   };
 
   const handleEditPortfolio = () => {
     if (!editingPortfolio) return;
 
-    setPortfolios(prev => prev.map(p => 
-      p.id === editingPortfolio.id 
-        ? { ...editingPortfolio, updatedAt: new Date().toISOString() }
-        : p
-    ));
-    setIsEditOpen(false);
-    setEditingPortfolio(null);
-    toast({ title: "Portfólio atualizado com sucesso!" });
+    updatePortfolioMutation.mutate({
+      id: editingPortfolio.id,
+      data: {
+        name: editingPortfolio.name,
+        description: editingPortfolio.description || "",
+        isPublic: editingPortfolio.isPublic
+      }
+    });
   };
 
   const handleDeletePortfolio = (id: number) => {
-    setPortfolios(prev => prev.filter(p => p.id !== id));
-    toast({ title: "Portfólio excluído com sucesso!" });
+    if (confirm("Tem certeza que deseja excluir este portfólio? Esta ação não pode ser desfeita.")) {
+      deletePortfolioMutation.mutate(id);
+    }
   };
 
   const copyPublicLink = (slug: string) => {
@@ -199,30 +244,10 @@ export default function PortfolioPage() {
       return;
     }
 
-    const allPhotos = mockUserProjects.flatMap(project => project.photos);
-    const photosToAdd = allPhotos.filter(photo => selectedPhotos.includes(photo.id));
-
-    setPortfolios(prev => prev.map(portfolio => {
-      if (portfolio.id === selectedPortfolioId) {
-        const newPhotos = photosToAdd.map((photo, index) => ({
-          id: Date.now() + index,
-          photoUrl: photo.url,
-          originalName: photo.originalName,
-          order: portfolio.photos.length + index
-        }));
-        return {
-          ...portfolio,
-          photos: [...portfolio.photos, ...newPhotos],
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return portfolio;
-    }));
-
-    setIsAddPhotosOpen(false);
-    setSelectedPhotos([]);
-    setSelectedPortfolioId(null);
-    toast({ title: `${photosToAdd.length} fotos adicionadas ao portfólio!` });
+    addPhotosMutation.mutate({
+      portfolioId: selectedPortfolioId,
+      photoUrls: selectedPhotos
+    });
   };
 
   const openAddPhotosModal = (portfolioId: number) => {
@@ -234,6 +259,12 @@ export default function PortfolioPage() {
   const openEditModal = (portfolio: Portfolio) => {
     setEditingPortfolio({ ...portfolio });
     setIsEditOpen(true);
+  };
+
+  const handleDeletePhoto = (portfolioId: number, photoId: number) => {
+    if (confirm("Tem certeza que deseja remover esta foto do portfólio?")) {
+      deletePhotoMutation.mutate({ portfolioId, photoId });
+    }
   };
 
   return (
@@ -315,7 +346,7 @@ export default function PortfolioPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {portfolios.map((portfolio) => (
+          {portfolios.map((portfolio: Portfolio) => (
             <Card key={portfolio.id} className="overflow-hidden">
               <div className="aspect-video bg-gray-100 relative">
                 {portfolio.photos.length > 0 ? (
@@ -462,11 +493,11 @@ export default function PortfolioPage() {
               Selecione fotos dos seus projetos para adicionar ao portfólio:
             </p>
             
-            {mockUserProjects.map((project) => (
+            {userProjects.map((project: Project) => (
               <div key={project.id} className="space-y-2">
                 <h4 className="font-medium">{project.name}</h4>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {project.photos.map((photo) => (
+                  {project.photos.map((photo: ProjectPhoto) => (
                     <div
                       key={photo.id}
                       className={`relative cursor-pointer border-2 rounded-lg overflow-hidden ${
