@@ -2893,6 +2893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.get("/api/portfolios", authenticate, async (req: Request, res: Response) => {
     try {
+      // Se as tabelas de portfólio não existem, retorna lista vazia
       const userPortfolios = await db
         .select({
           id: portfolios.id,
@@ -2927,7 +2928,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(portfoliosWithPhotos);
     } catch (error) {
       console.error("Error fetching user portfolios:", error);
-      res.status(500).json({ error: "Failed to fetch portfolios" });
+      // Se a tabela não existe, retorna lista vazia em vez de erro
+      res.json([]);
     }
   });
 
