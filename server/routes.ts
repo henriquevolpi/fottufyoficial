@@ -3330,10 +3330,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(portfolioPhotos.portfolioId, portfolio.id))
         .orderBy(portfolioPhotos.order);
 
-      // Map photos with correct URL handling - use local uploads route instead of external CDN
+      // Map photos with URL handling - use stored URLs directly
       const photos = rawPhotos.map(photo => ({
         ...photo,
-        photoUrl: `/uploads/${photo.photoUrl}.jpg`
+        photoUrl: photo.photoUrl // Use stored URLs directly (already complete)
       }));
 
       const result = {
