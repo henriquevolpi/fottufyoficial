@@ -666,15 +666,15 @@ export default function PortfolioPage() {
                       <div
                         key={photo.id}
                         className={`relative cursor-pointer border-2 rounded-lg overflow-hidden transition-all hover:scale-105 ${
-                          selectedPhotos.includes(photo.id) 
+                          selectedPhotos.includes(photo.url) 
                             ? 'border-blue-500 ring-2 ring-blue-200' 
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                         onClick={() => {
                           setSelectedPhotos(prev =>
-                            prev.includes(photo.id)
-                              ? prev.filter(id => id !== photo.id)
-                              : [...prev, photo.id]
+                            prev.includes(photo.url)
+                              ? prev.filter(url => url !== photo.url)
+                              : [...prev, photo.url]
                           );
                         }}
                       >
@@ -686,7 +686,7 @@ export default function PortfolioPage() {
                             loading="lazy"
                           />
                         </div>
-                        {selectedPhotos.includes(photo.id) && (
+                        {selectedPhotos.includes(photo.url) && (
                           <div className="absolute inset-0 bg-blue-500 bg-opacity-30 flex items-center justify-center">
                             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                               <span className="text-white text-sm font-bold">✓</span>
