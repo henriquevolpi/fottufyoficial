@@ -34,8 +34,25 @@ import https from "https";
 import bodyParser from "body-parser";
 import passport from "passport";
 import { db } from "./db";
-import { eq, and, or, not, desc, count } from "drizzle-orm";
+import { eq, and, or, not, desc, count, sql } from "drizzle-orm";
+import { processImage } from "./imageProcessor";
 import { sendEmail } from "./utils/sendEmail";
+
+// Função helper para extensões de arquivo
+function getExtensionFromMimeType(mimetype: string): string {
+  switch(mimetype) {
+    case 'image/jpeg':
+      return '.jpg';
+    case 'image/png':
+      return '.png';
+    case 'image/gif':
+      return '.gif';
+    case 'image/webp':
+      return '.webp';
+    default:
+      return '.jpg'; // Default to jpg
+  }
+}
 import { verifyPasswordResetToken, resetPasswordWithToken, generatePasswordResetToken, sendPasswordResetEmail } from "./utils/passwordReset";
 // Use Cloudflare R2 for storage
 import { 
@@ -3235,6 +3252,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting portfolio photo:", error);
       res.status(500).json({ error: "Failed to delete photo" });
+    }
+  });
+
+  /**
+   * Upload photos directly to portfolio
+   * POST /api/portfolios/:id/upload
+   */
+  app.post("/api/portfolios/:id/upload", authenticate, upload.array('photos'), async (req: Request, res: Response) => {
+    try {
+      const portfolioId = parseInt(req.params.id);
+      const files = req.files as Express.Multer.File[];
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No photos uploaded" });
+      }
+
+      // Check if portfolio belongs to user
+      const [existingPortfolio] = await db
+        .select()
+        .from(portfolios)
+        .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, req.user!.id)))
+        .limit(1);
+
+      if (!existingPortfolio) {
+        return res.status(404).json({ error: "Portfolio not found" });
+      }
+
+      console.log(`[Portfolio Upload] Processing ${files.length} photos for portfolio ${portfolioId}`);
+
+      // Upload each photo to R2 and create database entries
+      const uploadedPhotos = [];
+      
+      // Get current max order for ordering
+      const maxOrderResult = await db
+        .select({ maxOrder: sql<number>`COALESCE(MAX(${portfolioPhotos.order}), -1)` })
+        .from(portfolioPhotos)
+        .where(eq(portfolioPhotos.portfolioId, portfolioId));
+      
+      let currentOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
+
+      for (const file of files) {
+        try {
+          // Generate unique filename
+          const timestamp = Date.now();
+          const randomString = Math.random().toString(36).substring(2, 12);
+          const extension = getExtensionFromMimeType(file.mimetype);
+          const uniqueFilename = `${timestamp}-${randomString}${extension}`;
+
+          // Process image if needed (same logic as project upload)
+          const processedBuffer = await processImage(file.buffer, file.mimetype);
+
+          // Upload to R2 using existing function
+          const r2Response = await uploadFileToR2(
+            processedBuffer,
+            uniqueFilename,
+            file.mimetype
+          );
+
+          // Create portfolio photo entry
+          const [portfolioPhoto] = await db
+            .insert(portfolioPhotos)
+            .values({
+              portfolioId,
+              photoUrl: r2Response.url,
+              originalName: file.originalname,
+              order: currentOrder++,
+              createdAt: new Date(),
+            })
+            .returning();
+
+          uploadedPhotos.push(portfolioPhoto);
+
+          console.log(`[Portfolio Upload] Photo uploaded successfully: ${uniqueFilename}`);
+
+        } catch (photoError) {
+          console.error(`[Portfolio Upload] Error processing photo ${file.originalname}:`, photoError);
+          // Continue processing other photos
+        }
+      }
+
+      // Update portfolio's updated timestamp
+      await db
+        .update(portfolios)
+        .set({ updatedAt: new Date() })
+        .where(eq(portfolios.id, portfolioId));
+
+      console.log(`[Portfolio Upload] Successfully uploaded ${uploadedPhotos.length} photos to portfolio ${portfolioId}`);
+
+      res.json({
+        success: true,
+        photos: uploadedPhotos,
+        message: `${uploadedPhotos.length} photos uploaded successfully`
+      });
+
+    } catch (error) {
+      console.error("Error uploading photos to portfolio:", error);
+      res.status(500).json({ 
+        error: "Failed to upload photos",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

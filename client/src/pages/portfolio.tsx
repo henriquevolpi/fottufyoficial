@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { compressMultipleImages } from "@/lib/imageCompression";
 
 interface Portfolio {
   id: number;
@@ -59,6 +60,15 @@ export default function PortfolioPage() {
     description: "",
     isPublic: true
   });
+  
+  // Estados para upload direto de fotos
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadPreviews, setUploadPreviews] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadPercentage, setUploadPercentage] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "completed">("idle");
+  const [isSubmittingPhotos, setIsSubmittingPhotos] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -267,6 +277,145 @@ export default function PortfolioPage() {
     }
   };
 
+  // Funções para upload direto de fotos
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    );
+    
+    if (droppedFiles.length > 0) {
+      addFilesToUpload(droppedFiles);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      addFilesToUpload(selectedFiles);
+    }
+  };
+
+  const addFilesToUpload = (newFiles: File[]) => {
+    // Criar previews para as novas imagens
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    
+    setUploadFiles(prev => [...prev, ...newFiles]);
+    setUploadPreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeUploadFile = (index: number) => {
+    // Liberar URL de preview
+    URL.revokeObjectURL(uploadPreviews[index]);
+    
+    setUploadFiles(prev => prev.filter((_, i) => i !== index));
+    setUploadPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDirectUpload = async () => {
+    if (!selectedPortfolioId || uploadFiles.length === 0) {
+      toast({ title: "Selecione fotos para fazer upload", variant: "destructive" });
+      return;
+    }
+
+    try {
+      setIsSubmittingPhotos(true);
+      setUploadStatus("uploading");
+      setUploadPercentage(10);
+
+      // Comprimir imagens usando a mesma lógica do dashboard
+      console.log(`[Portfolio] Iniciando compressão de ${uploadFiles.length} imagens`);
+      
+      const compressedFiles = await compressMultipleImages(
+        uploadFiles,
+        {
+          maxWidthOrHeight: 970,
+          quality: 0.9,
+          useWebWorker: true,
+        },
+        (processed, total) => {
+          const compressionProgress = 10 + ((processed / total) * 30);
+          setUploadPercentage(Math.round(compressionProgress));
+        }
+      );
+
+      setUploadPercentage(40);
+      console.log(`[Portfolio] Compressão concluída: ${compressedFiles.length} imagens`);
+
+      // Fazer upload para o portfólio específico
+      const formData = new FormData();
+      compressedFiles.forEach((file, index) => {
+        formData.append('photos', file, file.name);
+      });
+
+      const response = await fetch(`/api/portfolios/${selectedPortfolioId}/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Falha no upload');
+      }
+
+      const result = await response.json();
+      
+      setUploadPercentage(100);
+      setUploadStatus("completed");
+
+      // Limpar estado e fechar modal
+      uploadPreviews.forEach(url => URL.revokeObjectURL(url));
+      setUploadFiles([]);
+      setUploadPreviews([]);
+      setIsUploadModalOpen(false);
+      setUploadPercentage(0);
+      setUploadStatus("idle");
+
+      // Atualizar dados
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      
+      toast({ 
+        title: "Upload concluído!", 
+        description: `${result.photos?.length || compressedFiles.length} fotos adicionadas ao portfólio` 
+      });
+
+    } catch (error: any) {
+      console.error("Erro no upload:", error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Tente novamente",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingPhotos(false);
+      setUploadStatus("idle");
+    }
+  };
+
+  const openUploadModal = (portfolioId: number) => {
+    setSelectedPortfolioId(portfolioId);
+    setUploadFiles([]);
+    setUploadPreviews([]);
+    setUploadPercentage(0);
+    setUploadStatus("idle");
+    setIsUploadModalOpen(true);
+  };
+
+  const closeUploadModal = () => {
+    if (!isSubmittingPhotos) {
+      // Limpar URLs de preview
+      uploadPreviews.forEach(url => URL.revokeObjectURL(url));
+      setUploadFiles([]);
+      setUploadPreviews([]);
+      setUploadPercentage(0);
+      setUploadStatus("idle");
+      setIsUploadModalOpen(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Banner Image */}
@@ -415,8 +564,17 @@ export default function PortfolioPage() {
                     size="sm"
                     onClick={() => openAddPhotosModal(portfolio.id)}
                   >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Adicionar
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openUploadModal(portfolio.id)}
+                  >
                     <Upload className="mr-1 h-3 w-3" />
-                    Fotos
+                    Upload
                   </Button>
                   
                   {portfolio.isPublic && (
@@ -576,6 +734,142 @@ export default function PortfolioPage() {
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   Adicionar {selectedPhotos.length > 0 ? `${selectedPhotos.length} ` : ''}Fotos
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Photos Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={closeUploadModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Upload de Fotos para o Portfólio</DialogTitle>
+            <DialogDescription>
+              Selecione fotos do seu computador para adicionar ao portfólio
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col flex-1 min-h-0 space-y-4">
+            {/* Área de Upload */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                isDragging ? "border-primary bg-primary/10" : "border-gray-300 hover:border-gray-400"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleFileDrop}
+            >
+              <div className="flex flex-col items-center">
+                <Upload className="h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-lg font-medium text-gray-700 mb-2">
+                  {isDragging ? "Solte as fotos aqui" : "Arraste fotos aqui ou clique para selecionar"}
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Formatos aceitos: JPG, PNG, WebP, GIF
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById("portfolio-file-upload")?.click()}
+                >
+                  Selecionar Fotos
+                </Button>
+                <input
+                  id="portfolio-file-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+            </div>
+
+            {/* Preview das Fotos Selecionadas */}
+            {uploadFiles.length > 0 && (
+              <div className="flex-1 overflow-y-auto">
+                <h4 className="font-medium mb-3">
+                  Fotos Selecionadas ({uploadFiles.length})
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {uploadFiles.map((file, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={uploadPreviews[index]}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeUploadFile(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                      <p className="text-xs text-gray-600 mt-1 truncate" title={file.name}>
+                        {file.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Barra de Progresso */}
+            {uploadStatus === "uploading" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Processando fotos...</span>
+                  <span>{uploadPercentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${uploadPercentage}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Ações */}
+            <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
+              <div className="text-sm text-gray-600">
+                {uploadFiles.length > 0 && (
+                  <span>{uploadFiles.length} fotos selecionadas</span>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={closeUploadModal}
+                  disabled={isSubmittingPhotos}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleDirectUpload} 
+                  disabled={uploadFiles.length === 0 || isSubmittingPhotos}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isSubmittingPhotos ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload {uploadFiles.length > 0 ? `${uploadFiles.length} ` : ''}Fotos
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
