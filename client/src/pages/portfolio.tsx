@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -484,63 +484,89 @@ export default function PortfolioPage() {
 
       {/* Add Photos Modal */}
       <Dialog open={isAddPhotosOpen} onOpenChange={setIsAddPhotosOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Adicionar Fotos ao Portfólio</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-gray-600">
+          
+          <div className="flex flex-col flex-1 min-h-0">
+            <p className="text-gray-600 mb-4 flex-shrink-0">
               Selecione fotos dos seus projetos para adicionar ao portfólio:
             </p>
             
-            {userProjects.map((project: Project) => (
-              <div key={project.id} className="space-y-2">
-                <h4 className="font-medium">{project.name}</h4>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {project.photos.map((photo: ProjectPhoto) => (
-                    <div
-                      key={photo.id}
-                      className={`relative cursor-pointer border-2 rounded-lg overflow-hidden ${
-                        selectedPhotos.includes(photo.id) 
-                          ? 'border-blue-500' 
-                          : 'border-gray-200'
-                      }`}
-                      onClick={() => {
-                        setSelectedPhotos(prev =>
-                          prev.includes(photo.id)
-                            ? prev.filter(id => id !== photo.id)
-                            : [...prev, photo.id]
-                        );
-                      }}
-                    >
-                      <img
-                        src={photo.url}
-                        alt={photo.originalName}
-                        className="w-full h-20 object-cover"
-                      />
-                      {selectedPhotos.includes(photo.id) && (
-                        <div className="absolute inset-0 bg-blue-500 bg-opacity-30 flex items-center justify-center">
-                          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
-                          </div>
+            {/* Área de rolagem dos projetos */}
+            <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+              {userProjects.map((project: Project) => (
+                <div key={project.id} className="space-y-3">
+                  <h4 className="font-medium text-lg sticky top-0 bg-white py-2 border-b">
+                    {project.name} ({project.photos.length} fotos)
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    {project.photos.map((photo: ProjectPhoto) => (
+                      <div
+                        key={photo.id}
+                        className={`relative cursor-pointer border-2 rounded-lg overflow-hidden transition-all hover:scale-105 ${
+                          selectedPhotos.includes(photo.id) 
+                            ? 'border-blue-500 ring-2 ring-blue-200' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => {
+                          setSelectedPhotos(prev =>
+                            prev.includes(photo.id)
+                              ? prev.filter(id => id !== photo.id)
+                              : [...prev, photo.id]
+                          );
+                        }}
+                      >
+                        <div className="aspect-square">
+                          <img
+                            src={photo.url}
+                            alt={photo.originalName}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        {selectedPhotos.includes(photo.id) && (
+                          <div className="absolute inset-0 bg-blue-500 bg-opacity-30 flex items-center justify-center">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">✓</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
             
-            <div className="flex justify-between items-center pt-4">
-              <span className="text-sm text-gray-600">
-                {selectedPhotos.length} fotos selecionadas
-              </span>
+            {/* Área de ações fixa na parte inferior */}
+            <div className="flex-shrink-0 flex justify-between items-center pt-4 mt-4 border-t bg-white">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600 font-medium">
+                  {selectedPhotos.length} fotos selecionadas
+                </span>
+                {selectedPhotos.length > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedPhotos([])}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    Limpar seleção
+                  </Button>
+                )}
+              </div>
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={() => setIsAddPhotosOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleAddPhotos} disabled={selectedPhotos.length === 0}>
-                  Adicionar Fotos
+                <Button 
+                  onClick={handleAddPhotos} 
+                  disabled={selectedPhotos.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Adicionar {selectedPhotos.length > 0 ? `${selectedPhotos.length} ` : ''}Fotos
                 </Button>
               </div>
             </div>
