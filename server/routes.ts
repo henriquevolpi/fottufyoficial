@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { deleteFileFromR2 } from "./r2";
+import { deleteFileFromR2, r2Upload } from "./r2";
 import { 
   insertUserSchema, 
   insertProjectSchema, 
@@ -3295,10 +3295,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * Upload photos directly to portfolio
    * POST /api/portfolios/:id/upload
    */
-  app.post("/api/portfolios/:id/upload", authenticate, upload.array('photos'), async (req: Request, res: Response) => {
+  app.post("/api/portfolios/:id/upload", authenticate, r2Upload.array('photos'), async (req: Request, res: Response) => {
     try {
       const portfolioId = parseInt(req.params.id);
       const files = req.files as Express.Multer.File[];
+      
+      console.log(`[Portfolio Upload] Starting upload for portfolio ${portfolioId}`);
+      console.log(`[Portfolio Upload] Files received:`, files ? files.length : 0);
+      console.log(`[Portfolio Upload] Files array:`, files);
 
       if (!files || files.length === 0) {
         return res.status(400).json({ error: "No photos uploaded" });
