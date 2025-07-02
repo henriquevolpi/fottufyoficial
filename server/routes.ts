@@ -3252,12 +3252,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(projects.photographerId, req.user!.id))
         .orderBy(desc(projects.createdAt));
 
-      // Parse photos JSON data for each project
-      const projectsWithParsedPhotos = userProjects.map(project => ({
-        id: project.id,
-        name: project.name,
-        photos: project.photos ? JSON.parse(project.photos) : []
-      }));
+      // Parse photos JSON data for each project (handle both string and object formats)
+      const projectsWithParsedPhotos = userProjects.map(project => {
+        let photos = [];
+        
+        if (project.photos) {
+          try {
+            // If it's already an object, use it directly; if it's a string, parse it
+            if (typeof project.photos === 'string') {
+              photos = JSON.parse(project.photos);
+            } else if (Array.isArray(project.photos)) {
+              photos = project.photos;
+            }
+          } catch (error) {
+            console.error(`Error parsing photos for project ${project.id}:`, error);
+            photos = [];
+          }
+        }
+        
+        return {
+          id: project.id,
+          name: project.name,
+          photos
+        };
+      });
 
       res.json(projectsWithParsedPhotos);
     } catch (error) {
@@ -3296,12 +3314,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Portfolio not found" });
       }
 
-      // Get portfolio photos
-      const photos = await db
-        .select()
+      // Get portfolio photos with proper field mapping and construct full URLs
+      const rawPhotos = await db
+        .select({
+          id: portfolioPhotos.id,
+          photoUrl: portfolioPhotos.photoUrl,
+          originalName: portfolioPhotos.originalName,
+          description: portfolioPhotos.description,
+          order: portfolioPhotos.order,
+        })
         .from(portfolioPhotos)
         .where(eq(portfolioPhotos.portfolioId, portfolio.id))
         .orderBy(portfolioPhotos.order);
+
+      // Construct full CDN URLs for each photo from storage ID
+      const photos = rawPhotos.map(photo => ({
+        ...photo,
+        photoUrl: `https://cdn.fottufy.com/${photo.photoUrl}.jpg`
+      }));
 
       const result = {
         id: portfolio.id,
