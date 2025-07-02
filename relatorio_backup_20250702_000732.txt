@@ -1,0 +1,29 @@
+=== RELATÓRIO DETALHADO DO BACKUP SEGURO ===
+Data/Hora: Wed Jul  2 12:07:53 AM UTC 2025
+Arquivo: backup_seguro_20250702_000732.sql
+Tamanho: 12M
+Linhas totais: 42379
+
+TABELAS INCLUÍDAS NO BACKUP:
+Total de tabelas: 8
+CREATE TABLE public.new_projects (
+CREATE TABLE public.password_reset_tokens (
+CREATE TABLE public.photo_comments (
+CREATE TABLE public.photos (
+CREATE TABLE public.projects (
+CREATE TABLE public.session (
+CREATE TABLE public.session_backup (
+CREATE TABLE public.users (
+
+CONTADORES DE DADOS:
+COPY public.new_projects (id, user_id, title, description, created_at, show_watermark) FROM stdin;
+COPY public.password_reset_tokens (id, user_id, token, expires_at, used, created_at) FROM stdin;
+COPY public.photo_comments (id, photo_id, client_name, comment, is_viewed, created_at) FROM stdin;
+COPY public.photos (id, project_id, url, selected, created_at, original_name, filename) FROM stdin;
+COPY public.projects (id, public_id, name, client_name, client_email, photographer_id, status, photos, selected_photos, created_at, visual_watermark, apply_watermark, show_watermark) FROM stdin;
+COPY public.session (sid, sess, expire) FROM stdin;
+COPY public.session_backup (sid, sess, expire) FROM stdin;
+COPY public.users (id, name, email, password, role, status, created_at, plan_type, upload_limit, used_uploads, subscription_start_date, subscription_end_date, subscription_status, stripe_customer_id, stripe_subscription_id, subscription_id, last_event, phone, last_login_at, pending_downgrade_date, pending_downgrade_reason, original_plan_before_downgrade, manual_activation_date, manual_activation_by, is_manual_activation) FROM stdin;
+
+STATUS: ✓ BACKUP COMPLETO E SEGURO CONCLUÍDO
+INTEGRIDADE: ✓ ESTRUTURA E DADOS PRESERVADOS
