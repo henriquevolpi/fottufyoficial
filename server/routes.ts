@@ -3115,11 +3115,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add photos to portfolio
       const newPhotos = [];
       for (const photoUrl of photoUrls) {
+        // Extract photo ID from URL (e.g., from "https://cdn.fottufy.com/1745693254465-gkh3yn7h2a.jpg" extract "1745693254465-gkh3yn7h2a")
+        const photoId = photoUrl.replace('https://cdn.fottufy.com/', '').replace('.jpg', '');
+        
         const [newPhoto] = await db
           .insert(portfolioPhotos)
           .values({
             portfolioId,
-            photoUrl,
+            photoUrl: photoId, // Store just the ID, not the full URL
             originalName: `portfolio-photo-${Date.now()}-${nextOrder}.jpg`,
             order: nextOrder,
           })
@@ -3327,10 +3330,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(portfolioPhotos.portfolioId, portfolio.id))
         .orderBy(portfolioPhotos.order);
 
-      // Construct full CDN URLs for each photo from storage ID
+      // Map photos with correct URL handling - use local uploads route instead of external CDN
       const photos = rawPhotos.map(photo => ({
         ...photo,
-        photoUrl: `https://cdn.fottufy.com/${photo.photoUrl}.jpg`
+        photoUrl: `/uploads/${photo.photoUrl}.jpg`
       }));
 
       const result = {
