@@ -76,7 +76,13 @@ export default function PortfolioPage() {
   // Fetch portfolios from real API
   const { data: portfolios = [], isLoading } = useQuery({
     queryKey: ['/api/portfolios'],
-    queryFn: () => fetch('/api/portfolios', { credentials: 'include' }).then(res => res.json())
+    queryFn: async () => {
+      console.log('[Portfolio] Fetching portfolios...');
+      const response = await fetch('/api/portfolios', { credentials: 'include' });
+      const data = await response.json();
+      console.log('[Portfolio] Portfolios fetched:', data);
+      return data;
+    }
   });
 
   // Fetch user projects for photo selection
@@ -362,6 +368,7 @@ export default function PortfolioPage() {
       }
 
       const result = await response.json();
+      console.log(`[Portfolio] Upload result:`, result);
       
       setUploadPercentage(100);
       setUploadStatus("completed");
@@ -374,8 +381,9 @@ export default function PortfolioPage() {
       setUploadPercentage(0);
       setUploadStatus("idle");
 
-      // Atualizar dados
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      // Atualizar dados - invalidar tanto a lista quanto o portfólio específico
+      await queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/portfolios'] });
       
       toast({ 
         title: "Upload concluído!", 

@@ -3316,6 +3316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`[Portfolio Upload] Processing ${files.length} photos for portfolio ${portfolioId}`);
+      console.log(`[Portfolio Upload] Portfolio found:`, existingPortfolio.name, 'ID:', existingPortfolio.id);
 
       // Upload each photo to R2 and create database entries
       const uploadedPhotos = [];
@@ -3347,6 +3348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           // Create portfolio photo entry
+          console.log(`[Portfolio Upload] Creating DB entry for photo: ${uniqueFilename}, URL: ${r2Response.url}`);
           const [portfolioPhoto] = await db
             .insert(portfolioPhotos)
             .values({
@@ -3358,6 +3360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })
             .returning();
 
+          console.log(`[Portfolio Upload] DB entry created:`, portfolioPhoto);
           uploadedPhotos.push(portfolioPhoto);
 
           console.log(`[Portfolio Upload] Photo uploaded successfully: ${uniqueFilename}`);
