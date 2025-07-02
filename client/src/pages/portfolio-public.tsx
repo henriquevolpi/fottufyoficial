@@ -25,122 +25,8 @@ interface Portfolio {
   createdAt: string;
   updatedAt: string;
   photos: PortfolioPhoto[];
-  user: {
-    name: string;
-  };
+  userName: string;
 }
-
-// Mock portfolios data for demonstration
-const mockPortfolios: Portfolio[] = [
-  {
-    id: 1,
-    name: "Ensaios de Casamento",
-    slug: "ensaios-casamento",
-    description: "Coleção dos melhores momentos de casamentos fotografados. Cada imagem conta uma história única de amor, alegria e celebração. Meu trabalho visa capturar a essência natural e espontânea dos momentos mais preciosos do seu grande dia.",
-    isPublic: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    user: {
-      name: "Fotógrafo Profissional"
-    },
-    photos: [
-      {
-        id: 1,
-        photoUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_01.jpg",
-        order: 0
-      },
-      {
-        id: 2,
-        photoUrl: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_02.jpg",
-        order: 1
-      },
-      {
-        id: 3,
-        photoUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_03.jpg",
-        order: 2
-      },
-      {
-        id: 4,
-        photoUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_04.jpg",
-        order: 3
-      },
-      {
-        id: 5,
-        photoUrl: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_05.jpg",
-        order: 4
-      },
-      {
-        id: 6,
-        photoUrl: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&h=600&fit=crop",
-        originalName: "casamento_ana_joao_06.jpg",
-        order: 5
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: "Retratos Corporativos",
-    slug: "retratos-corporativos",
-    description: "Fotos profissionais para empresas e executivos. Imagens que transmitem confiança, profissionalismo e personalidade para seu uso corporativo.",
-    isPublic: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    user: {
-      name: "Fotógrafo Profissional"
-    },
-    photos: [
-      {
-        id: 7,
-        photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
-        originalName: "executivo_01.jpg",
-        order: 0
-      },
-      {
-        id: 8,
-        photoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=600&fit=crop",
-        originalName: "executivo_02.jpg",
-        order: 1
-      },
-      {
-        id: 9,
-        photoUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=600&fit=crop",
-        originalName: "executivo_03.jpg",
-        order: 2
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: "Ensaios Família",
-    slug: "ensaios-familia",
-    description: "Momentos especiais em família capturados com carinho e naturalidade. Fotografias que eternizam os laços e a felicidade compartilhada.",
-    isPublic: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    user: {
-      name: "Fotógrafo Profissional"
-    },
-    photos: [
-      {
-        id: 10,
-        photoUrl: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800&h=600&fit=crop",
-        originalName: "familia_01.jpg",
-        order: 0
-      },
-      {
-        id: 11,
-        photoUrl: "https://images.unsplash.com/photo-1609220136736-443140cceaac?w=800&h=600&fit=crop",
-        originalName: "familia_02.jpg",
-        order: 1
-      }
-    ]
-  }
-];
 
 export default function PortfolioPublicPage() {
   const params = useParams();
@@ -149,16 +35,42 @@ export default function PortfolioPublicPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<PortfolioPhoto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const slug = params.slug;
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const foundPortfolio = mockPortfolios.find(p => p.slug === slug && p.isPublic);
-      setPortfolio(foundPortfolio || null);
-      setIsLoading(false);
-    }, 500);
+    const fetchPortfolio = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/portfolios/public/${slug}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Portfólio não encontrado");
+          } else {
+            setError("Erro ao carregar portfólio");
+          }
+          setPortfolio(null);
+          return;
+        }
+        
+        const data = await response.json();
+        setPortfolio(data);
+      } catch (err) {
+        console.error("Erro ao buscar portfólio:", err);
+        setError("Erro ao carregar portfólio");
+        setPortfolio(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchPortfolio();
+    }
   }, [slug]);
 
   const openLightbox = (photo: PortfolioPhoto) => {
@@ -178,10 +90,31 @@ export default function PortfolioPublicPage() {
   };
 
   const downloadPhoto = (photo: PortfolioPhoto) => {
-    // In a real implementation, this would trigger a download
-    toast({ title: `Download iniciado: ${photo.originalName}` });
+    const link = document.createElement('a');
+    link.href = photo.photoUrl;
+    link.download = photo.originalName || `foto_${photo.id}.jpg`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
+  const navigatePhoto = (direction: 'prev' | 'next') => {
+    if (!selectedPhoto || !portfolio) return;
+    
+    const currentIndex = portfolio.photos.findIndex(p => p.id === selectedPhoto.id);
+    let newIndex;
+    
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : portfolio.photos.length - 1;
+    } else {
+      newIndex = currentIndex < portfolio.photos.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setSelectedPhoto(portfolio.photos[newIndex]);
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -193,16 +126,26 @@ export default function PortfolioPublicPage() {
     );
   }
 
-  if (!portfolio) {
+  // Error state
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Portfólio não encontrado</h1>
-          <p className="text-gray-600 mb-6">
-            O portfólio que você está procurando não existe ou não está público.
-          </p>
-          <Button onClick={() => window.history.back()}>
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="mb-6">
+            <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Portfólio não encontrado</h1>
+            <p className="text-gray-600">
+              {error === "Portfólio não encontrado" 
+                ? "O portfólio que você está procurando não existe ou foi removido."
+                : "Ocorreu um erro ao carregar o portfólio. Tente novamente mais tarde."
+              }
+            </p>
+          </div>
+          <Button 
+            onClick={() => window.history.back()} 
+            variant="outline"
+            className="inline-flex items-center"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
@@ -211,194 +154,203 @@ export default function PortfolioPublicPage() {
     );
   }
 
-  const sortedPhotos = portfolio.photos.sort((a, b) => a.order - b.order);
+  // Portfolio not found (different from error)
+  if (!portfolio) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="mb-6">
+            <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Portfólio não encontrado</h1>
+            <p className="text-gray-600">
+              O portfólio que você está procurando não existe ou não está público.
+            </p>
+          </div>
+          <Button 
+            onClick={() => window.history.back()} 
+            variant="outline"
+            className="inline-flex items-center"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => window.history.back()}
+      {/* Hero Section */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              onClick={() => window.history.back()} 
+              variant="ghost" 
+              size="sm"
               className="text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar
             </Button>
             
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
+            <div className="flex items-center space-x-2">
+              <Button 
                 onClick={sharePortfolio}
-                className="hidden sm:flex"
+                variant="outline" 
+                size="sm"
+                className="inline-flex items-center"
               >
                 <Share2 className="mr-2 h-4 w-4" />
                 Compartilhar
               </Button>
-              
-              <Button
-                variant="outline"
-                onClick={sharePortfolio}
-                size="sm"
-                className="sm:hidden"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Portfolio Header */}
-      <section className="bg-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Cover Image */}
-            {portfolio.photos.length > 0 && (
-              <div className="mb-8">
-                <img
-                  src={portfolio.photos[0].photoUrl}
-                  alt={portfolio.name}
-                  className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-lg shadow-lg"
-                />
-              </div>
+          <div className="text-center max-w-3xl mx-auto">
+            <Badge variant="secondary" className="mb-4">
+              Portfólio Público
+            </Badge>
+            
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {portfolio.name}
+            </h1>
+            
+            {portfolio.description && (
+              <p className="text-xl text-gray-600 mb-6 leading-relaxed">
+                {portfolio.description}
+              </p>
             )}
             
-            {/* Portfolio Info */}
-            <div className="space-y-4">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                {portfolio.name}
-              </h1>
+            <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+              <div className="flex items-center">
+                <User className="mr-2 h-4 w-4" />
+                <span>{portfolio.userName}</span>
+              </div>
               
-              {portfolio.description && (
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                  {portfolio.description}
-                </p>
-              )}
+              <div className="flex items-center">
+                <Camera className="mr-2 h-4 w-4" />
+                <span>{portfolio.photos.length} fotos</span>
+              </div>
               
-              <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <User className="mr-1 h-4 w-4" />
-                  {portfolio.user.name}
-                </div>
-                <div className="flex items-center">
-                  <Camera className="mr-1 h-4 w-4" />
-                  {portfolio.photos.length} fotos
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="mr-1 h-4 w-4" />
-                  {new Date(portfolio.createdAt).toLocaleDateString('pt-BR')}
-                </div>
+              <div className="flex items-center">
+                <Calendar className="mr-2 h-4 w-4" />
+                <span>{new Date(portfolio.createdAt).toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Photo Gallery */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          {sortedPhotos.length === 0 ? (
-            <div className="text-center py-12">
-              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Este portfólio ainda não possui fotos.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sortedPhotos.map((photo) => (
-                <Card
-                  key={photo.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200"
+      {/* Photos Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {portfolio.photos.length === 0 ? (
+          <div className="text-center py-12">
+            <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Nenhuma foto neste portfólio ainda.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {portfolio.photos
+              .sort((a, b) => a.order - b.order)
+              .map((photo) => (
+                <Card 
+                  key={photo.id} 
+                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow group"
                   onClick={() => openLightbox(photo)}
                 >
-                  <div className="aspect-square relative group">
-                    <img
-                      src={photo.photoUrl}
-                      alt={photo.originalName || `Foto ${photo.id}`}
-                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
-                      <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <CardContent className="p-0">
+                    <div className="aspect-square relative overflow-hidden">
+                      <img
+                        src={photo.photoUrl}
+                        alt={photo.originalName || `Foto ${photo.id}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-300 flex items-center justify-center">
+                        <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
                     </div>
-                  </div>
+                  </CardContent>
                 </Card>
               ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center text-gray-600">
-            <p>Powered by Fottufy - Sistema de Gestão para Fotógrafos</p>
           </div>
-        </div>
-      </footer>
+        )}
+      </div>
 
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-6xl w-full h-full max-h-[90vh] p-0">
+        <DialogContent className="max-w-5xl max-h-[90vh] p-0 bg-black">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Visualização da foto</DialogTitle>
+          </DialogHeader>
+          
           {selectedPhoto && (
-            <div className="relative w-full h-full flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-white">
-                <h3 className="text-lg font-medium truncate">
-                  {selectedPhoto.originalName || `Foto ${selectedPhoto.id}`}
-                </h3>
-                <div className="flex items-center space-x-2">
+            <div className="relative">
+              {/* Close button */}
+              <Button
+                onClick={closeLightbox}
+                variant="ghost"
+                size="sm"
+                className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
+              >
+                ✕
+              </Button>
+              
+              {/* Navigation buttons */}
+              {portfolio && portfolio.photos.length > 1 && (
+                <>
                   <Button
-                    variant="outline"
+                    onClick={() => navigatePhoto('prev')}
+                    variant="ghost"
                     size="sm"
-                    onClick={() => downloadPhoto(selectedPhoto)}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
                   >
-                    <Download className="mr-1 h-4 w-4" />
-                    Download
+                    ←
                   </Button>
-                </div>
-              </div>
-
+                  <Button
+                    onClick={() => navigatePhoto('next')}
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
+                  >
+                    →
+                  </Button>
+                </>
+              )}
+              
               {/* Image */}
-              <div className="flex-1 flex items-center justify-center bg-black p-4">
+              <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh]">
                 <img
                   src={selectedPhoto.photoUrl}
                   alt={selectedPhoto.originalName || `Foto ${selectedPhoto.id}`}
                   className="max-w-full max-h-full object-contain"
                 />
               </div>
-
-              {/* Navigation */}
-              <div className="flex items-center justify-between p-4 bg-white border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const currentIndex = sortedPhotos.findIndex(p => p.id === selectedPhoto.id);
-                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : sortedPhotos.length - 1;
-                    setSelectedPhoto(sortedPhotos[prevIndex]);
-                  }}
-                  disabled={sortedPhotos.length <= 1}
-                >
-                  Anterior
-                </Button>
-                
-                <span className="text-sm text-gray-600">
-                  {sortedPhotos.findIndex(p => p.id === selectedPhoto.id) + 1} de {sortedPhotos.length}
-                </span>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const currentIndex = sortedPhotos.findIndex(p => p.id === selectedPhoto.id);
-                    const nextIndex = currentIndex < sortedPhotos.length - 1 ? currentIndex + 1 : 0;
-                    setSelectedPhoto(sortedPhotos[nextIndex]);
-                  }}
-                  disabled={sortedPhotos.length <= 1}
-                >
-                  Próxima
-                </Button>
+              
+              {/* Footer with photo info and actions */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+                <div className="flex items-center justify-between text-white">
+                  <div>
+                    {selectedPhoto.originalName && (
+                      <p className="font-medium">{selectedPhoto.originalName}</p>
+                    )}
+                    {selectedPhoto.description && (
+                      <p className="text-sm text-gray-300 mt-1">{selectedPhoto.description}</p>
+                    )}
+                  </div>
+                  
+                  <Button
+                    onClick={() => downloadPhoto(selectedPhoto)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/20"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                </div>
               </div>
             </div>
           )}

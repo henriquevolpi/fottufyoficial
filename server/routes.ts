@@ -3305,9 +3305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPublic: portfolio.isPublic,
         createdAt: portfolio.createdAt,
         updatedAt: portfolio.updatedAt,
-        user: {
-          name: portfolio.userName,
-        },
+        userName: portfolio.userName,
         photos
       };
 
