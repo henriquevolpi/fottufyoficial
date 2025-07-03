@@ -382,75 +382,113 @@ export default function PortfolioPublicPage() {
 
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] p-0 bg-black">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 backdrop-blur-md border-0 overflow-hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Visualização da foto</DialogTitle>
           </DialogHeader>
           
           {selectedPhoto && (
-            <div className="relative">
-              {/* Modern Close button */}
-              <Button
-                onClick={closeLightbox}
-                variant="ghost"
-                size="sm"
-                className="absolute top-6 right-6 z-20 text-white/80 hover:text-white hover:bg-white/10 backdrop-blur-sm rounded-full w-12 h-12 p-0 transition-all duration-200"
-              >
-                <X className="h-6 w-6" />
-              </Button>
-              
-              {/* Navigation buttons */}
-              {portfolio && portfolio.photos.length > 1 && (
-                <>
+            <div className="relative w-full h-full flex flex-col">
+              {/* Header com controles */}
+              <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-black/80 to-transparent">
+                <div className="flex justify-between items-center">
+                  <div className="text-white/80 text-sm font-medium">
+                    {portfolio && portfolio.photos.length > 1 && (
+                      <span>
+                        {portfolio.photos.findIndex(p => p.id === selectedPhoto.id) + 1} de {portfolio.photos.length}
+                      </span>
+                    )}
+                  </div>
                   <Button
-                    onClick={() => navigatePhoto('prev')}
+                    onClick={closeLightbox}
                     variant="ghost"
                     size="sm"
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
+                    className="text-white/80 hover:text-white hover:bg-white/10 backdrop-blur-sm rounded-full w-10 h-10 p-0 transition-all duration-200"
                   >
-                    ←
+                    <X className="h-5 w-5" />
                   </Button>
-                  <Button
-                    onClick={() => navigatePhoto('next')}
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
-                  >
-                    →
-                  </Button>
-                </>
-              )}
-              
-              {/* Image */}
-              <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh]">
-                <img
-                  src={selectedPhoto.photoUrl}
-                  alt={selectedPhoto.originalName || `Foto ${selectedPhoto.id}`}
-                  className="max-w-full max-h-full object-contain"
-                />
+                </div>
               </div>
               
-              {/* Footer with photo info and actions */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-                <div className="flex items-center justify-between text-white">
-                  <div>
+              {/* Área principal da imagem */}
+              <div className="flex-1 flex items-center justify-center p-4 pt-16 pb-20">
+                <div className="relative max-w-full max-h-full">
+                  <img
+                    src={selectedPhoto.photoUrl}
+                    alt={selectedPhoto.originalName || `Foto ${selectedPhoto.id}`}
+                    className="max-w-full max-h-[calc(95vh-10rem)] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
+                  
+                  {/* Navegação desktop - nas laterais da imagem */}
+                  {portfolio && portfolio.photos.length > 1 && (
+                    <>
+                      <Button
+                        onClick={() => navigatePhoto('prev')}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute left-[-60px] top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 rounded-full w-12 h-12 p-0 hidden lg:flex items-center justify-center transition-all duration-200"
+                      >
+                        <ArrowLeft className="h-6 w-6" />
+                      </Button>
+                      <Button
+                        onClick={() => navigatePhoto('next')}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-[-60px] top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 rounded-full w-12 h-12 p-0 hidden lg:flex items-center justify-center transition-all duration-200"
+                      >
+                        →
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Footer com informações e controles */}
+              <div className="absolute bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white">
+                  <div className="flex-1 min-w-0">
                     {selectedPhoto.originalName && (
-                      <p className="font-medium">{selectedPhoto.originalName}</p>
+                      <h3 className="font-semibold text-base truncate">{selectedPhoto.originalName}</h3>
                     )}
                     {selectedPhoto.description && (
-                      <p className="text-sm text-gray-300 mt-1">{selectedPhoto.description}</p>
+                      <p className="text-sm text-gray-300 mt-1 line-clamp-2">{selectedPhoto.description}</p>
                     )}
                   </div>
                   
-                  <Button
-                    onClick={() => downloadPhoto(selectedPhoto)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {/* Navegação mobile */}
+                    {portfolio && portfolio.photos.length > 1 && (
+                      <div className="flex lg:hidden gap-1 mr-2">
+                        <Button
+                          onClick={() => navigatePhoto('prev')}
+                          variant="ghost"
+                          size="sm"
+                          className="text-white hover:bg-white/20 rounded-full w-9 h-9 p-0"
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => navigatePhoto('next')}
+                          variant="ghost"
+                          size="sm"
+                          className="text-white hover:bg-white/20 rounded-full w-9 h-9 p-0"
+                        >
+                          →
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <Button
+                      onClick={() => downloadPhoto(selectedPhoto)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-200 px-3 py-2"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
