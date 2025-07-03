@@ -39,6 +39,20 @@
   @apply bg-muted !important;
 }
 
+/* Remover bordas pretas do modal do lightbox */
+[data-radix-dialog-content] {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Garantir que não apareçam bordas nos modais */
+.lightbox-modal [data-radix-dialog-content] {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

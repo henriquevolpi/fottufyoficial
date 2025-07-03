@@ -691,8 +691,6 @@ export default function PortfolioPage() {
                           Editar
                         </Button>
                         
-                        
-                        
                         <Button
                           variant="ghost"
                           size="sm"

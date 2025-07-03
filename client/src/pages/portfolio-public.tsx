@@ -382,7 +382,7 @@ export default function PortfolioPublicPage() {
 
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 backdrop-blur-md border-0 overflow-hidden">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 backdrop-blur-md border-0 overflow-hidden outline-none focus:outline-none shadow-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Visualização da foto</DialogTitle>
           </DialogHeader>
@@ -448,9 +448,6 @@ export default function PortfolioPublicPage() {
               <div className="absolute bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white">
                   <div className="flex-1 min-w-0">
-                    {selectedPhoto.originalName && (
-                      <h3 className="font-semibold text-base truncate">{selectedPhoto.originalName}</h3>
-                    )}
                     {selectedPhoto.description && (
                       <p className="text-sm text-gray-300 mt-1 line-clamp-2">{selectedPhoto.description}</p>
                     )}
