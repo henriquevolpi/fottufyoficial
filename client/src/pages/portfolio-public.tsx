@@ -328,7 +328,7 @@ export default function PortfolioPublicPage() {
             </div>
 
             {/* Masonry Grid Layout */}
-            <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+            <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-3 space-y-3">
               {portfolio.photos
                 .sort((a, b) => a.order - b.order)
                 .map((photo, index) => (
@@ -383,7 +383,7 @@ export default function PortfolioPublicPage() {
       {/* Lightbox Modal - Personalizado sem bordas */}
       {isLightboxOpen && selectedPhoto && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65"
           onClick={closeLightbox}
         >
           <div className="relative max-w-[95vw] max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
@@ -398,7 +398,7 @@ export default function PortfolioPublicPage() {
             {/* Botão X dentro da foto - canto superior direito */}
             <button
               onClick={closeLightbox}
-              className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+              className="absolute top-4 right-4 w-10 h-10 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
             >
               <X className="h-5 w-5" />
             </button>
@@ -409,7 +409,7 @@ export default function PortfolioPublicPage() {
                 {/* Seta esquerda */}
                 <button
                   onClick={() => navigatePhoto('prev')}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -417,7 +417,7 @@ export default function PortfolioPublicPage() {
                 {/* Seta direita */}
                 <button
                   onClick={() => navigatePhoto('next')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm text-xl"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm text-xl"
                 >
                   →
                 </button>
@@ -427,7 +427,7 @@ export default function PortfolioPublicPage() {
             {/* Download button - canto inferior direito */}
             <button
               onClick={() => downloadPhoto(selectedPhoto)}
-              className="absolute bottom-4 right-4 px-4 py-2 bg-black/50 hover:bg-black/70 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm"
+              className="absolute bottom-4 right-4 px-4 py-2 bg-black/10 hover:bg-black/70 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm"
             >
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Download</span>
@@ -435,7 +435,7 @@ export default function PortfolioPublicPage() {
             
             {/* Contador de fotos - canto inferior esquerdo */}
             {portfolio && portfolio.photos.length > 1 && (
-              <div className="absolute bottom-4 left-4 px-3 py-2 bg-black/50 rounded-lg text-white text-sm backdrop-blur-sm">
+              <div className="absolute bottom-4 left-4 px-3 py-2 bg-black/10 rounded-lg text-white text-sm backdrop-blur-sm">
                 {portfolio.photos.findIndex(p => p.id === selectedPhoto.id) + 1} de {portfolio.photos.length}
               </div>
             )}
