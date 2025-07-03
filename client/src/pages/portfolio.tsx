@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical, X, Loader2 } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical, X, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { compressMultiplePortfolioImages, calculateCompressionStats } from "@/lib/portfolioImageCompression";
@@ -25,6 +25,16 @@ interface Portfolio {
   createdAt: string;
   updatedAt: string;
   photos: PortfolioPhoto[];
+  // About Me fields
+  aboutTitle?: string;
+  aboutDescription?: string;
+  aboutProfileImageUrl?: string;
+  aboutContact?: string;
+  aboutEmail?: string;
+  aboutPhone?: string;
+  aboutWebsite?: string;
+  aboutInstagram?: string;
+  aboutEnabled?: boolean;
 }
 
 interface PortfolioPhoto {
@@ -54,9 +64,21 @@ export default function PortfolioPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddPhotosOpen, setIsAddPhotosOpen] = useState(false);
+  const [isAboutMeOpen, setIsAboutMeOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [aboutMeData, setAboutMeData] = useState({
+    aboutTitle: "",
+    aboutDescription: "",
+    aboutProfileImageUrl: "",
+    aboutContact: "",
+    aboutEmail: "",
+    aboutPhone: "",
+    aboutWebsite: "",
+    aboutInstagram: "",
+    aboutEnabled: false
+  });
   const [newPortfolio, setNewPortfolio] = useState({
     name: "",
     description: "",
@@ -228,6 +250,32 @@ export default function PortfolioPage() {
     }
   });
 
+  // Update About Me mutation
+  const updateAboutMeMutation = useMutation({
+    mutationFn: async ({ portfolioId, aboutData }: { portfolioId: number; aboutData: any }) => {
+      const response = await fetch(`/api/portfolios/${portfolioId}/about`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(aboutData)
+      });
+      if (!response.ok) throw new Error('Failed to update about me');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      setIsAboutMeOpen(false);
+      toast({ title: "Informações 'Sobre mim' atualizadas com sucesso!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao atualizar informações", 
+        description: error.message || "Tente novamente",
+        variant: "destructive" 
+      });
+    }
+  });
+
   const handleCreatePortfolio = () => {
     if (!newPortfolio.name.trim()) {
       toast({ title: "Nome do portfólio é obrigatório", variant: "destructive" });
@@ -278,6 +326,31 @@ export default function PortfolioPage() {
     setSelectedPortfolioId(portfolioId);
     setSelectedPhotos([]);
     setIsAddPhotosOpen(true);
+  };
+
+  const openAboutMeModal = (portfolio: Portfolio) => {
+    setEditingPortfolio(portfolio);
+    setAboutMeData({
+      aboutTitle: portfolio.aboutTitle || "",
+      aboutDescription: portfolio.aboutDescription || "",
+      aboutProfileImageUrl: portfolio.aboutProfileImageUrl || "",
+      aboutContact: portfolio.aboutContact || "",
+      aboutEmail: portfolio.aboutEmail || "",
+      aboutPhone: portfolio.aboutPhone || "",
+      aboutWebsite: portfolio.aboutWebsite || "",
+      aboutInstagram: portfolio.aboutInstagram || "",
+      aboutEnabled: portfolio.aboutEnabled || false
+    });
+    setIsAboutMeOpen(true);
+  };
+
+  const handleSaveAboutMe = () => {
+    if (!editingPortfolio) return;
+    
+    updateAboutMeMutation.mutate({
+      portfolioId: editingPortfolio.id,
+      aboutData: aboutMeData
+    });
   };
 
   const openEditModal = (portfolio: Portfolio) => {
@@ -701,6 +774,16 @@ export default function PortfolioPage() {
                           Upload
                         </Button>
                         
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openAboutMeModal(portfolio)}
+                          className="h-8 px-3 text-xs font-medium hover:bg-green-50 hover:text-green-700 transition-colors"
+                        >
+                          <User className="mr-1 h-3 w-3" />
+                          Sobre mim
+                        </Button>
+                        
                         {portfolio.isPublic && (
                           <Button
                             variant="ghost"
@@ -1067,6 +1150,143 @@ export default function PortfolioPage() {
                     <Upload className="mr-2 h-4 w-4" />
                     Atualizar Banner
                   </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* About Me Modal */}
+      <Dialog open={isAboutMeOpen} onOpenChange={setIsAboutMeOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configurar "Sobre mim"</DialogTitle>
+            <DialogDescription>
+              Configure as informações que aparecerão na aba "Sobre mim" do seu portfólio público.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Habilitar Sobre mim */}
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="about-enabled"
+                checked={aboutMeData.aboutEnabled}
+                onCheckedChange={(checked) => setAboutMeData(prev => ({ ...prev, aboutEnabled: checked }))}
+              />
+              <Label htmlFor="about-enabled">Habilitar seção "Sobre mim"</Label>
+            </div>
+            
+            {aboutMeData.aboutEnabled && (
+              <>
+                {/* Título */}
+                <div>
+                  <Label htmlFor="about-title">Título</Label>
+                  <Input
+                    id="about-title"
+                    placeholder="Ex: Sobre João Silva"
+                    value={aboutMeData.aboutTitle}
+                    onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutTitle: e.target.value }))}
+                  />
+                </div>
+                
+                {/* Descrição */}
+                <div>
+                  <Label htmlFor="about-description">Descrição</Label>
+                  <Textarea
+                    id="about-description"
+                    placeholder="Conte um pouco sobre você, sua experiência e seu trabalho..."
+                    rows={4}
+                    value={aboutMeData.aboutDescription}
+                    onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutDescription: e.target.value }))}
+                  />
+                </div>
+                
+                {/* URL da foto de perfil */}
+                <div>
+                  <Label htmlFor="about-profile-image">URL da foto de perfil</Label>
+                  <Input
+                    id="about-profile-image"
+                    placeholder="https://exemplo.com/foto-perfil.jpg"
+                    value={aboutMeData.aboutProfileImageUrl}
+                    onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutProfileImageUrl: e.target.value }))}
+                  />
+                </div>
+                
+                {/* Informações de contato */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="about-contact">Contato</Label>
+                    <Input
+                      id="about-contact"
+                      placeholder="Como entrar em contato"
+                      value={aboutMeData.aboutContact}
+                      onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutContact: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="about-email">E-mail</Label>
+                    <Input
+                      id="about-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={aboutMeData.aboutEmail}
+                      onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutEmail: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="about-phone">Telefone</Label>
+                    <Input
+                      id="about-phone"
+                      placeholder="(11) 99999-9999"
+                      value={aboutMeData.aboutPhone}
+                      onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutPhone: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="about-website">Website</Label>
+                    <Input
+                      id="about-website"
+                      placeholder="https://seusite.com"
+                      value={aboutMeData.aboutWebsite}
+                      onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutWebsite: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                {/* Instagram */}
+                <div>
+                  <Label htmlFor="about-instagram">Instagram</Label>
+                  <Input
+                    id="about-instagram"
+                    placeholder="@seuinstagram"
+                    value={aboutMeData.aboutInstagram}
+                    onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutInstagram: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
+            
+            {/* Botões */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setIsAboutMeOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveAboutMe}
+                disabled={updateAboutMeMutation.isPending}
+              >
+                {updateAboutMeMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar'
                 )}
               </Button>
             </div>
