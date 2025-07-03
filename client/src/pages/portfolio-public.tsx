@@ -51,6 +51,11 @@ export default function PortfolioPublicPage() {
 
   const slug = params.slug;
 
+  // Ensure gallery is always the default tab
+  useEffect(() => {
+    setActiveTab('gallery');
+  }, []);
+
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
