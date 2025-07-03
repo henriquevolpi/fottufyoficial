@@ -27,11 +27,11 @@ export interface PortfolioCompressionResult {
   originalName: string;
 }
 
-// Configuração específica para portfólios - ALTA QUALIDADE
+// Configuração específica para portfólios - QUALIDADE BALANCEADA
 const PORTFOLIO_COMPRESSION_CONFIG: PortfolioCompressionConfig = {
-  maxWidthOrHeight: 1920, // Resolução alta para qualidade fotográfica
-  quality: 0.95,          // Qualidade alta (95%)
-  initialQuality: 0.95,   // Qualidade inicial alta
+  maxWidthOrHeight: 1920, // Resolução alta para qualidade fotográfica  
+  quality: 0.80,          // Qualidade balanceada (80%) para melhor redução
+  initialQuality: 0.80,   // Qualidade inicial balanceada
   useWebWorker: true,     // Worker para não bloquear UI
 };
 
@@ -48,13 +48,34 @@ export async function compressPortfolioImage(
 ): Promise<PortfolioCompressionResult> {
   const originalSize = file.size;
   
+  // Configurações específicas por tipo de arquivo para melhor compressão
+  let adjustedConfig: any = { ...config };
+  
+  if (file.type === 'image/png') {
+    // PNGs precisam de configuração mais agressiva
+    adjustedConfig = {
+      ...config,
+      quality: 0.70,                // Qualidade menor para PNGs
+      fileType: 'image/jpeg',       // Converter PNG para JPEG
+      alwaysKeepResolution: false,
+    };
+  } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+    // JPEGs já são comprimidos, manter configuração balanceada
+    adjustedConfig = {
+      ...config,
+      quality: 0.80,
+      fileType: 'image/jpeg',
+    };
+  }
+  
   console.log(`[Portfolio] Processando imagem: ${file.name}`, {
+    tipoOriginal: file.type,
     tamanhoOriginal: `${(originalSize / 1024 / 1024).toFixed(2)} MB`,
-    configuracoes: config
+    configuracoes: adjustedConfig
   });
 
   try {
-    const compressedFile = await imageCompression(file, config);
+    const compressedFile = await imageCompression(file, adjustedConfig);
     const compressedSize = compressedFile.size;
     const reductionPercentage = ((originalSize - compressedSize) / originalSize) * 100;
 
@@ -73,9 +94,12 @@ export async function compressPortfolioImage(
     };
 
     console.log(`[Portfolio] Imagem processada: ${file.name}`, {
+      tipoOriginal: file.type,
+      tipoFinal: compressedFile.type,
       tamanhoOriginal: `${(originalSize / 1024 / 1024).toFixed(2)} MB`,
       tamanhoFinal: `${(compressedSize / 1024 / 1024).toFixed(2)} MB`,
       reducao: `${reductionPercentage.toFixed(1)}%`,
+      qualidadeUsada: adjustedConfig.quality,
       nomePreservado: result.originalName
     });
 
