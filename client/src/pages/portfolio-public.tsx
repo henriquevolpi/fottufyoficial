@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Calendar, Camera, Download, ExternalLink, Share2, User, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Camera, Download, ExternalLink, Share2, User, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PortfolioPhoto {
@@ -380,126 +380,68 @@ export default function PortfolioPublicPage() {
         )}
       </div>
 
-      {/* Lightbox Modal */}
-      <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent 
-          className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 backdrop-blur-md overflow-hidden"
-          style={{
-            border: 'none',
-            outline: 'none',
-            boxShadow: 'none',
-            background: 'rgba(0, 0, 0, 0.95)'
-          }}
+      {/* Lightbox Modal - Personalizado sem bordas */}
+      {isLightboxOpen && selectedPhoto && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+          onClick={closeLightbox}
         >
-          <DialogHeader className="sr-only">
-            <DialogTitle>Visualização da foto</DialogTitle>
-          </DialogHeader>
-          
-          {selectedPhoto && (
-            <div className="relative w-full h-full flex flex-col">
-              {/* Header com controles */}
-              <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-black/80 to-transparent">
-                <div className="flex justify-between items-center">
-                  <div className="text-white/80 text-sm font-medium">
-                    {portfolio && portfolio.photos.length > 1 && (
-                      <span>
-                        {portfolio.photos.findIndex(p => p.id === selectedPhoto.id) + 1} de {portfolio.photos.length}
-                      </span>
-                    )}
-                  </div>
-                  <Button
-                    onClick={closeLightbox}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/80 hover:text-white hover:bg-white/10 backdrop-blur-sm rounded-full w-10 h-10 p-0 transition-all duration-200"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
+          <div className="relative max-w-[95vw] max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Imagem */}
+            <img
+              src={selectedPhoto.photoUrl}
+              alt="Foto do portfólio"
+              className="max-w-full max-h-full w-auto h-auto object-contain"
+              style={{ maxWidth: '95vw', maxHeight: '95vh' }}
+            />
+            
+            {/* Botão X dentro da foto - canto superior direito */}
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            {/* Navegação - apenas se houver mais de uma foto */}
+            {portfolio && portfolio.photos.length > 1 && (
+              <>
+                {/* Seta esquerda */}
+                <button
+                  onClick={() => navigatePhoto('prev')}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </button>
+                
+                {/* Seta direita */}
+                <button
+                  onClick={() => navigatePhoto('next')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm text-xl"
+                >
+                  →
+                </button>
+              </>
+            )}
+            
+            {/* Download button - canto inferior direito */}
+            <button
+              onClick={() => downloadPhoto(selectedPhoto)}
+              className="absolute bottom-4 right-4 px-4 py-2 bg-black/50 hover:bg-black/70 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download</span>
+            </button>
+            
+            {/* Contador de fotos - canto inferior esquerdo */}
+            {portfolio && portfolio.photos.length > 1 && (
+              <div className="absolute bottom-4 left-4 px-3 py-2 bg-black/50 rounded-lg text-white text-sm backdrop-blur-sm">
+                {portfolio.photos.findIndex(p => p.id === selectedPhoto.id) + 1} de {portfolio.photos.length}
               </div>
-              
-              {/* Área principal da imagem */}
-              <div className="flex-1 flex items-center justify-center p-4 pt-16 pb-20">
-                <div className="relative max-w-full max-h-full">
-                  <img
-                    src={selectedPhoto.photoUrl}
-                    alt={selectedPhoto.originalName || `Foto ${selectedPhoto.id}`}
-                    className="max-w-full max-h-[calc(95vh-10rem)] w-auto h-auto object-contain rounded-lg shadow-2xl"
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
-                  
-                  {/* Navegação desktop - nas laterais da imagem */}
-                  {portfolio && portfolio.photos.length > 1 && (
-                    <>
-                      <Button
-                        onClick={() => navigatePhoto('prev')}
-                        variant="ghost"
-                        size="sm"
-                        className="absolute left-[-60px] top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 rounded-full w-12 h-12 p-0 hidden lg:flex items-center justify-center transition-all duration-200"
-                      >
-                        <ArrowLeft className="h-6 w-6" />
-                      </Button>
-                      <Button
-                        onClick={() => navigatePhoto('next')}
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-[-60px] top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 rounded-full w-12 h-12 p-0 hidden lg:flex items-center justify-center transition-all duration-200"
-                      >
-                        →
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              {/* Footer com informações e controles */}
-              <div className="absolute bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white">
-                  <div className="flex-1 min-w-0">
-                    {selectedPhoto.description && (
-                      <p className="text-sm text-gray-300 mt-1 line-clamp-2">{selectedPhoto.description}</p>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {/* Navegação mobile */}
-                    {portfolio && portfolio.photos.length > 1 && (
-                      <div className="flex lg:hidden gap-1 mr-2">
-                        <Button
-                          onClick={() => navigatePhoto('prev')}
-                          variant="ghost"
-                          size="sm"
-                          className="text-white hover:bg-white/20 rounded-full w-9 h-9 p-0"
-                        >
-                          <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          onClick={() => navigatePhoto('next')}
-                          variant="ghost"
-                          size="sm"
-                          className="text-white hover:bg-white/20 rounded-full w-9 h-9 p-0"
-                        >
-                          →
-                        </Button>
-                      </div>
-                    )}
-                    
-                    <Button
-                      onClick={() => downloadPhoto(selectedPhoto)}
-                      variant="outline"
-                      size="sm"
-                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-200 px-3 py-2"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Download</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
