@@ -4188,9 +4188,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/portfolios/:id/about", authenticate, async (req: Request, res: Response) => {
     try {
       const portfolioId = parseInt(req.params.id);
+      console.log(`[Portfolio About] Updating portfolio ${portfolioId} with data:`, req.body);
       const {
         aboutTitle,
         aboutDescription,
+        aboutProfileImageUrl,
         aboutContact,
         aboutEmail,
         aboutPhone,
@@ -4216,6 +4218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({
           aboutTitle,
           aboutDescription,
+          aboutProfileImageUrl,
           aboutContact,
           aboutEmail,
           aboutPhone,
@@ -4227,6 +4230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(portfolios.id, portfolioId))
         .returning();
 
+      console.log(`[Portfolio About] Successfully updated portfolio ${portfolioId}:`, updatedPortfolio);
       res.json(updatedPortfolio);
     } catch (error) {
       console.error("Error updating portfolio about section:", error);
