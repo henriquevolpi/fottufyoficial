@@ -77,10 +77,8 @@ export default function PortfolioPublicPage() {
         const data = await response.json();
         setPortfolio(data);
         
-        // Se "Sobre mim" estiver habilitado, mostrar essa tab primeiro
-        if (data.aboutEnabled) {
-          setActiveTab('about');
-        }
+        // Always start with gallery tab
+        setActiveTab('gallery');
       } catch (err) {
         console.error("Erro ao buscar portfólio:", err);
         setError("Erro ao carregar portfólio");
