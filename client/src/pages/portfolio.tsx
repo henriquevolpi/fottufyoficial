@@ -839,6 +839,16 @@ export default function PortfolioPage() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => openBannerModal(portfolio.id)}
+                          className="h-8 px-3 text-xs font-medium hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                        >
+                          <Image className="mr-1 h-3 w-3" />
+                          Banner
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => openAboutMeModal(portfolio)}
                           className="h-8 px-3 text-xs font-medium hover:bg-green-50 hover:text-green-700 transition-colors"
                         >
