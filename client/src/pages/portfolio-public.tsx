@@ -325,6 +325,17 @@ export default function PortfolioPublicPage() {
       {portfolio && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <div className="flex justify-center border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('gallery')}
+              className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors duration-200 ${
+                activeTab === 'gallery'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              <Camera className="mr-2 h-5 w-5 inline" />
+              Galeria de Fotos
+            </button>
             {portfolio.aboutEnabled && (
               <button
                 onClick={() => setActiveTab('about')}
@@ -338,17 +349,6 @@ export default function PortfolioPublicPage() {
                 Sobre mim
               </button>
             )}
-            <button
-              onClick={() => setActiveTab('gallery')}
-              className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors duration-200 ${
-                activeTab === 'gallery'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-              }`}
-            >
-              <Camera className="mr-2 h-5 w-5 inline" />
-              Galeria de Fotos
-            </button>
           </div>
         </div>
       )}
