@@ -27,6 +27,16 @@ interface Portfolio {
   updatedAt: string;
   photos: PortfolioPhoto[];
   userName: string;
+  // About Me fields
+  aboutTitle?: string;
+  aboutDescription?: string;
+  aboutProfileImageUrl?: string;
+  aboutContact?: string;
+  aboutEmail?: string;
+  aboutPhone?: string;
+  aboutWebsite?: string;
+  aboutInstagram?: string;
+  aboutEnabled?: boolean;
 }
 
 export default function PortfolioPublicPage() {
@@ -37,6 +47,7 @@ export default function PortfolioPublicPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'about' | 'gallery'>('gallery');
 
   const slug = params.slug;
 
@@ -60,6 +71,11 @@ export default function PortfolioPublicPage() {
         
         const data = await response.json();
         setPortfolio(data);
+        
+        // Se "Sobre mim" estiver habilitado, mostrar essa tab primeiro
+        if (data.aboutEnabled) {
+          setActiveTab('about');
+        }
       } catch (err) {
         console.error("Erro ao buscar portfólio:", err);
         setError("Erro ao carregar portfólio");
@@ -305,8 +321,158 @@ export default function PortfolioPublicPage() {
         )}
       </div>
 
-      {/* Modern Photos Gallery */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Navigation Tabs */}
+      {portfolio && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="flex justify-center border-b border-gray-200">
+            {portfolio.aboutEnabled && (
+              <button
+                onClick={() => setActiveTab('about')}
+                className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors duration-200 ${
+                  activeTab === 'about'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <User className="mr-2 h-5 w-5 inline" />
+                Sobre mim
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('gallery')}
+              className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors duration-200 ${
+                activeTab === 'gallery'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              <Camera className="mr-2 h-5 w-5 inline" />
+              Galeria de Fotos
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* About Me Section */}
+      {portfolio && activeTab === 'about' && portfolio.aboutEnabled && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              {portfolio.aboutTitle || 'Sobre mim'}
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-start">
+            {/* Profile Image */}
+            {portfolio.aboutProfileImageUrl && (
+              <div className="flex justify-center">
+                <div className="relative">
+                  <img
+                    src={portfolio.aboutProfileImageUrl}
+                    alt={portfolio.aboutTitle || 'Foto do fotógrafo'}
+                    className="w-80 h-80 object-cover rounded-2xl shadow-2xl"
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+              </div>
+            )}
+
+            {/* About Content */}
+            <div className={`space-y-6 ${!portfolio.aboutProfileImageUrl ? 'md:col-span-2 text-center' : ''}`}>
+              {portfolio.aboutDescription && (
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    {portfolio.aboutDescription}
+                  </p>
+                </div>
+              )}
+
+              {portfolio.aboutContact && (
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Informações adicionais</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {portfolio.aboutContact}
+                  </p>
+                </div>
+              )}
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-900">Contato</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {portfolio.aboutEmail && (
+                    <a
+                      href={`mailto:${portfolio.aboutEmail}`}
+                      className="flex items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                    >
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <span className="text-blue-600 font-medium">@</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Email</p>
+                        <p className="text-sm text-gray-600">{portfolio.aboutEmail}</p>
+                      </div>
+                    </a>
+                  )}
+
+                  {portfolio.aboutPhone && (
+                    <a
+                      href={`tel:${portfolio.aboutPhone}`}
+                      className="flex items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                    >
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <span className="text-green-600 font-medium">📞</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Telefone</p>
+                        <p className="text-sm text-gray-600">{portfolio.aboutPhone}</p>
+                      </div>
+                    </a>
+                  )}
+
+                  {portfolio.aboutWebsite && (
+                    <a
+                      href={portfolio.aboutWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                    >
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <ExternalLink className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Website</p>
+                        <p className="text-sm text-gray-600 truncate">{portfolio.aboutWebsite}</p>
+                      </div>
+                    </a>
+                  )}
+
+                  {portfolio.aboutInstagram && (
+                    <a
+                      href={`https://instagram.com/${portfolio.aboutInstagram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                    >
+                      <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center mr-3">
+                        <span className="text-pink-600 font-medium">📷</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Instagram</p>
+                        <p className="text-sm text-gray-600">@{portfolio.aboutInstagram.replace('@', '')}</p>
+                      </div>
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photos Gallery */}
+      {portfolio && activeTab === 'gallery' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {portfolio.photos.length === 0 ? (
           <div className="text-center py-24">
             <div className="bg-gray-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
@@ -378,7 +544,8 @@ export default function PortfolioPublicPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Lightbox Modal - Personalizado sem bordas */}
       {isLightboxOpen && selectedPhoto && (

@@ -3525,7 +3525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { slug } = req.params;
 
-      // Get portfolio with user information
+      // Get portfolio with user information and "About Me" data
       const [portfolio] = await db
         .select({
           id: portfolios.id,
@@ -3538,6 +3538,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: portfolios.createdAt,
           updatedAt: portfolios.updatedAt,
           userName: users.name,
+          // About Me fields
+          aboutTitle: portfolios.aboutTitle,
+          aboutDescription: portfolios.aboutDescription,
+          aboutProfileImageUrl: portfolios.aboutProfileImageUrl,
+          aboutContact: portfolios.aboutContact,
+          aboutEmail: portfolios.aboutEmail,
+          aboutPhone: portfolios.aboutPhone,
+          aboutWebsite: portfolios.aboutWebsite,
+          aboutInstagram: portfolios.aboutInstagram,
+          aboutEnabled: portfolios.aboutEnabled,
         })
         .from(portfolios)
         .innerJoin(users, eq(portfolios.userId, users.id))
@@ -4171,6 +4181,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PORTFOLIO SYSTEM ROUTES - NEW FEATURE
   // ===============================
   
+  /**
+   * Update portfolio "About Me" section
+   * PUT /api/portfolios/:id/about
+   */
+  app.put("/api/portfolios/:id/about", authenticate, async (req: Request, res: Response) => {
+    try {
+      const portfolioId = parseInt(req.params.id);
+      const {
+        aboutTitle,
+        aboutDescription,
+        aboutContact,
+        aboutEmail,
+        aboutPhone,
+        aboutWebsite,
+        aboutInstagram,
+        aboutEnabled
+      } = req.body;
+
+      // Check if portfolio belongs to user
+      const [existingPortfolio] = await db
+        .select()
+        .from(portfolios)
+        .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, req.user!.id)))
+        .limit(1);
+
+      if (!existingPortfolio) {
+        return res.status(404).json({ error: "Portfolio not found" });
+      }
+
+      // Update portfolio with "About Me" information
+      const [updatedPortfolio] = await db
+        .update(portfolios)
+        .set({
+          aboutTitle,
+          aboutDescription,
+          aboutContact,
+          aboutEmail,
+          aboutPhone,
+          aboutWebsite,
+          aboutInstagram,
+          aboutEnabled: !!aboutEnabled,
+          updatedAt: new Date()
+        })
+        .where(eq(portfolios.id, portfolioId))
+        .returning();
+
+      res.json(updatedPortfolio);
+    } catch (error) {
+      console.error("Error updating portfolio about section:", error);
+      res.status(500).json({ error: "Failed to update about section" });
+    }
+  });
+
+  /**
+   * Upload profile image for portfolio "About Me" section
+   * POST /api/portfolios/:id/about/profile-image
+   */
+  app.post("/api/portfolios/:id/about/profile-image", authenticate, r2Upload.single('profileImage'), async (req: Request, res: Response) => {
+    try {
+      const portfolioId = parseInt(req.params.id);
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ error: "No profile image uploaded" });
+      }
+
+      // Check if portfolio belongs to user
+      const [existingPortfolio] = await db
+        .select()
+        .from(portfolios)
+        .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, req.user!.id)))
+        .limit(1);
+
+      if (!existingPortfolio) {
+        return res.status(404).json({ error: "Portfolio not found" });
+      }
+
+      // Generate unique filename for profile image
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 12);
+      const extension = getExtensionFromMimeType(file.mimetype);
+      const uniqueFilename = `profile-${timestamp}-${randomString}${extension}`;
+
+      // Process profile image
+      const processedBuffer = await processImage(file.buffer, file.mimetype);
+
+      // Upload to R2
+      const r2Response = await uploadFileToR2(
+        processedBuffer,
+        uniqueFilename,
+        file.mimetype
+      );
+
+      // Update portfolio with profile image URL
+      const [updatedPortfolio] = await db
+        .update(portfolios)
+        .set({ 
+          aboutProfileImageUrl: r2Response.url,
+          updatedAt: new Date() 
+        })
+        .where(eq(portfolios.id, portfolioId))
+        .returning();
+
+      res.json({
+        success: true,
+        profileImageUrl: r2Response.url,
+        portfolio: updatedPortfolio
+      });
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      res.status(500).json({ error: "Failed to upload profile image" });
+    }
+  });
 
 
   return httpServer;

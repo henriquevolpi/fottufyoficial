@@ -305,6 +305,18 @@ export const portfolios = pgTable("portfolios", {
   coverImageUrl: text("cover_image_url"),
   bannerUrl: text("banner_url"),
   isPublic: boolean("is_public").default(true).notNull(),
+  
+  // Campos "Sobre mim"
+  aboutTitle: varchar("about_title", { length: 255 }),
+  aboutDescription: text("about_description"),
+  aboutProfileImageUrl: text("about_profile_image_url"),
+  aboutContact: text("about_contact"),
+  aboutEmail: varchar("about_email", { length: 255 }),
+  aboutPhone: varchar("about_phone", { length: 50 }),
+  aboutWebsite: varchar("about_website", { length: 255 }),
+  aboutInstagram: varchar("about_instagram", { length: 255 }),
+  aboutEnabled: boolean("about_enabled").default(false).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
