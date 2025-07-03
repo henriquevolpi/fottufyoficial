@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { compressMultipleImages } from "@/lib/imageCompression";
+import { compressMultiplePortfolioImages, calculateCompressionStats } from "@/lib/portfolioImageCompression";
+import { uploadPortfolioPhotos, validatePortfolioFiles } from "@/lib/portfolioBatchUpload";
 
 interface Portfolio {
   id: number;
@@ -333,49 +334,61 @@ export default function PortfolioPage() {
       return;
     }
 
+    // Validação específica para portfólios
+    const validation = validatePortfolioFiles(uploadFiles);
+    if (!validation.valid) {
+      toast({ title: validation.error, variant: "destructive" });
+      return;
+    }
+
     try {
       setIsSubmittingPhotos(true);
       setUploadStatus("uploading");
       setUploadPercentage(10);
 
-      // Comprimir imagens usando a mesma lógica do dashboard
+      // Comprimir imagens usando sistema específico para portfólios
       console.log(`[Portfolio] Iniciando compressão de ${uploadFiles.length} imagens`);
       
-      const compressedFiles = await compressMultipleImages(
+      const compressionResults = await compressMultiplePortfolioImages(
         uploadFiles,
-        {
-          maxWidthOrHeight: 970,
-          quality: 0.9,
-          useWebWorker: true,
-        },
-        (processed, total) => {
-          const compressionProgress = 10 + ((processed / total) * 30);
+        (processed: number, total: number) => {
+          const compressionProgress = 10 + ((processed / total) * 40);
           setUploadPercentage(Math.round(compressionProgress));
         }
       );
 
-      setUploadPercentage(40);
-      console.log(`[Portfolio] Compressão concluída: ${compressedFiles.length} imagens`);
-
-      // Fazer upload para o portfólio específico
-      const formData = new FormData();
-      compressedFiles.forEach((file, index) => {
-        formData.append('photos', file, file.name);
+      // Estatísticas de compressão
+      const stats = calculateCompressionStats(compressionResults);
+      console.log(`[Portfolio] Compressão concluída:`, {
+        arquivos: stats.totalFiles,
+        tamanhoOriginal: `${(stats.totalOriginalSize / 1024 / 1024).toFixed(2)} MB`,
+        tamanhoFinal: `${(stats.totalCompressedSize / 1024 / 1024).toFixed(2)} MB`,
+        reducaoMedia: `${stats.averageReduction.toFixed(1)}%`
       });
 
-      const response = await fetch(`/api/portfolios/${selectedPortfolioId}/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
+      setUploadPercentage(50);
+
+      // Upload usando sistema específico de portfólios
+      const compressedFiles = compressionResults.map(result => result.compressedFile);
+      
+      const uploadResult = await uploadPortfolioPhotos({
+        portfolioId: selectedPortfolioId,
+        files: compressedFiles,
+        onProgress: (uploaded: number, total: number) => {
+          const uploadProgress = 50 + ((uploaded / total) * 40);
+          setUploadPercentage(Math.round(uploadProgress));
+        },
+        onError: (error: string) => {
+          console.error('[Portfolio] Erro durante upload:', error);
+          toast({ title: error, variant: "destructive" });
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Falha no upload');
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Falha no upload');
       }
 
-      const result = await response.json();
-      console.log(`[Portfolio] Upload result:`, result);
+      console.log(`[Portfolio] Upload result:`, uploadResult);
       
       setUploadPercentage(100);
       setUploadStatus("completed");
@@ -394,7 +407,7 @@ export default function PortfolioPage() {
       
       toast({ 
         title: "Upload concluído!", 
-        description: `${result.photos?.length || compressedFiles.length} fotos adicionadas ao portfólio` 
+        description: `${uploadResult.photos?.length || compressionResults.length} fotos adicionadas ao portfólio com qualidade superior` 
       });
 
     } catch (error: any) {
