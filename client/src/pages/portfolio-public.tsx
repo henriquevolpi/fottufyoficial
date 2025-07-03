@@ -382,7 +382,15 @@ export default function PortfolioPublicPage() {
 
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 backdrop-blur-md border-0 overflow-hidden outline-none focus:outline-none shadow-none">
+        <DialogContent 
+          className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 backdrop-blur-md overflow-hidden"
+          style={{
+            border: 'none',
+            outline: 'none',
+            boxShadow: 'none',
+            background: 'rgba(0, 0, 0, 0.95)'
+          }}
+        >
           <DialogHeader className="sr-only">
             <DialogTitle>Visualização da foto</DialogTitle>
           </DialogHeader>

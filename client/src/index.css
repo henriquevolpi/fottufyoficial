@@ -39,17 +39,26 @@
   @apply bg-muted !important;
 }
 
-/* Remover bordas pretas do modal do lightbox */
+/* Remover bordas pretas do modal do lightbox - mais específico */
+[data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
 [data-radix-dialog-content] {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  background: transparent !important;
 }
 
-/* Garantir que não apareçam bordas nos modais */
-.lightbox-modal [data-radix-dialog-content] {
-  border: 0 !important;
-  outline: 0 !important;
+/* Forçar transparência no lightbox */
+[data-radix-dialog-content]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[data-radix-dialog-content]:focus-visible {
+  outline: none !important;
   box-shadow: none !important;
 }
 
