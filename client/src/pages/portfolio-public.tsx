@@ -345,13 +345,15 @@ export default function PortfolioPublicPage() {
       {/* Navigation Tabs */}
       {portfolio && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="flex justify-center border-b border-gray-200">
+          <div className={`flex justify-center border-b transition-colors duration-300 ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
             <button
               onClick={() => setActiveTab('gallery')}
               className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors duration-200 ${
                 activeTab === 'gallery'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  : isDarkMode 
+                    ? 'border-transparent text-gray-300 hover:text-white hover:border-gray-500'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
               }`}
             >
               <Camera className="mr-2 h-5 w-5 inline" />
@@ -363,7 +365,9 @@ export default function PortfolioPublicPage() {
                 className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors duration-200 ${
                   activeTab === 'about'
                     ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    : isDarkMode 
+                      ? 'border-transparent text-gray-300 hover:text-white hover:border-gray-500'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
                 <User className="mr-2 h-5 w-5 inline" />
@@ -378,7 +382,7 @@ export default function PortfolioPublicPage() {
       {portfolio && activeTab === 'about' && portfolio.aboutEnabled && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+            <h2 className={`text-3xl md:text-4xl font-bold mb-6 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {portfolio.aboutTitle || 'Sobre mim'}
             </h2>
           </div>
@@ -402,16 +406,16 @@ export default function PortfolioPublicPage() {
             <div className={`space-y-6 ${!portfolio.aboutProfileImageUrl ? 'md:col-span-2 text-center' : ''}`}>
               {portfolio.aboutDescription && (
                 <div className="prose prose-lg max-w-none">
-                  <p className="text-gray-700 leading-relaxed text-lg">
+                  <p className={`leading-relaxed text-lg transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     {portfolio.aboutDescription}
                   </p>
                 </div>
               )}
 
               {portfolio.aboutContact && (
-                <div className="bg-gray-50 rounded-2xl p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Informações adicionais</h3>
-                  <p className="text-gray-700 leading-relaxed">
+                <div className={`rounded-2xl p-6 transition-colors duration-300 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                  <h3 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Informações adicionais</h3>
+                  <p className={`leading-relaxed transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     {portfolio.aboutContact}
                   </p>
                 </div>
@@ -496,20 +500,20 @@ export default function PortfolioPublicPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {portfolio.photos.length === 0 ? (
           <div className="text-center py-24">
-            <div className="bg-gray-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-              <Camera className="h-12 w-12 text-gray-400" />
+            <div className={`rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 transition-colors duration-300 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <Camera className={`h-12 w-12 transition-colors duration-300 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">Galeria em breve</h3>
-            <p className="text-lg text-gray-600 max-w-md mx-auto">Este portfólio está sendo preparado e em breve terá fotos incríveis para você ver.</p>
+            <h3 className={`text-2xl font-semibold mb-4 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Galeria em breve</h3>
+            <p className={`text-lg max-w-md mx-auto transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Este portfólio está sendo preparado e em breve terá fotos incríveis para você ver.</p>
           </div>
         ) : (
           <div className="space-y-8">
             {/* Gallery Header */}
             <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <h2 className={`text-3xl md:text-4xl font-bold mb-4 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Galeria de Fotos
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className={`text-lg max-w-2xl mx-auto transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Explore {portfolio.photos.length} fotografias cuidadosamente selecionadas
               </p>
             </div>
@@ -552,8 +556,8 @@ export default function PortfolioPublicPage() {
             </div>
 
             {/* Gallery Footer */}
-            <div className="text-center pt-12 border-t border-gray-200">
-              <p className="text-gray-600 mb-6">Gostou do que viu?</p>
+            <div className={`text-center pt-12 border-t transition-colors duration-300 ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+              <p className={`mb-6 transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Gostou do que viu?</p>
               <Button 
                 onClick={sharePortfolio}
                 size="lg"
