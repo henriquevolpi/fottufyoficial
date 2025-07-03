@@ -692,15 +692,7 @@ export default function PortfolioPage() {
                           Editar
                         </Button>
                         
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openAddPhotosModal(portfolio.id)}
-                          className="h-8 px-3 text-xs font-medium hover:bg-green-50 hover:text-green-700 transition-colors"
-                        >
-                          <Plus className="mr-1 h-3 w-3" />
-                          Fotos
-                        </Button>
+                        
                         
                         <Button
                           variant="ghost"
