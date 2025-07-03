@@ -533,7 +533,7 @@ export default function PortfolioPage() {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h1 className="text-4xl font-light tracking-tight text-gray-900">Portfólios</h1>
+              <h1 className="text-4xl tracking-tight text-gray-900 font-semibold">Portfólios</h1>
               <p className="text-gray-600 font-light">
                 Organize suas melhores fotos em coleções elegantes
               </p>
@@ -591,7 +591,6 @@ export default function PortfolioPage() {
           </div>
         </div>
       </div>
-
       {/* Conteúdo principal */}
       <div className="container mx-auto px-6 py-8">
         {portfolios.length === 0 ? (
@@ -724,7 +723,6 @@ export default function PortfolioPage() {
           </div>
         )}
       </div>
-
       {/* Edit Portfolio Modal */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent>
@@ -769,7 +767,6 @@ export default function PortfolioPage() {
           )}
         </DialogContent>
       </Dialog>
-
       {/* Add Photos Modal */}
       <Dialog open={isAddPhotosOpen} onOpenChange={setIsAddPhotosOpen}>
         <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] flex flex-col">
@@ -861,7 +858,6 @@ export default function PortfolioPage() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Upload Photos Modal */}
       <Dialog open={isUploadModalOpen} onOpenChange={closeUploadModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] flex flex-col">
@@ -997,7 +993,6 @@ export default function PortfolioPage() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Banner Upload Modal */}
       <Dialog open={isBannerModalOpen} onOpenChange={closeBannerModal}>
         <DialogContent className="max-w-md">
