@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, ArrowRight, Calendar, Camera, Download, ExternalLink, Share2, User, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Camera, Download, ExternalLink, Moon, Share2, Sun, User, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PortfolioPhoto {
@@ -48,6 +48,7 @@ export default function PortfolioPublicPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'about' | 'gallery'>('gallery');
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const slug = params.slug;
 
@@ -55,6 +56,15 @@ export default function PortfolioPublicPage() {
   useEffect(() => {
     setActiveTab('gallery');
   }, []);
+
+  // Apply dark mode to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -200,16 +210,16 @@ export default function PortfolioPublicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-slate-50 to-white'}`}>
       {/* Modern Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200">
+      <nav className={`sticky top-0 z-50 backdrop-blur-sm border-b transition-colors duration-300 ${isDarkMode ? 'bg-gray-900/90 border-gray-700' : 'bg-white/90 border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <Button 
               onClick={() => window.history.back()} 
               variant="ghost" 
               size="sm"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className={`transition-colors ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar
@@ -217,10 +227,18 @@ export default function PortfolioPublicPage() {
             
             <div className="flex items-center space-x-3">
               <Button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                variant="outline" 
+                size="sm"
+                className={`inline-flex items-center transition-all duration-200 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-200' : 'bg-white hover:bg-gray-50 border-gray-300'}`}
+              >
+                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Button 
                 onClick={sharePortfolio}
                 variant="outline" 
                 size="sm"
-                className="inline-flex items-center bg-white hover:bg-gray-50 border-gray-300 transition-all duration-200"
+                className={`inline-flex items-center transition-all duration-200 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-200' : 'bg-white hover:bg-gray-50 border-gray-300'}`}
               >
                 <Share2 className="mr-2 h-4 w-4" />
                 Compartilhar
