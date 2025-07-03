@@ -99,6 +99,9 @@ export default function PortfolioPage() {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  
+  // Estado para upload de foto de perfil
+  const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -330,6 +333,7 @@ export default function PortfolioPage() {
 
   const openAboutMeModal = (portfolio: Portfolio) => {
     setEditingPortfolio(portfolio);
+    setSelectedPortfolioId(portfolio.id); // Necessário para upload da foto de perfil
     setAboutMeData({
       aboutTitle: portfolio.aboutTitle || "",
       aboutDescription: portfolio.aboutDescription || "",
@@ -596,6 +600,64 @@ export default function PortfolioPage() {
       });
     } finally {
       setIsUploadingBanner(false);
+    }
+  };
+
+  // Profile image upload function
+  const handleProfileImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedPortfolioId) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione apenas arquivos de imagem",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingProfileImage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+
+      const response = await fetch(`/api/portfolios/${selectedPortfolioId}/about/profile-image`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Falha no upload da foto de perfil');
+      }
+
+      const result = await response.json();
+
+      // Atualizar o estado local
+      setAboutMeData(prev => ({ 
+        ...prev, 
+        aboutProfileImageUrl: result.profileImageUrl 
+      }));
+
+      toast({ 
+        title: "Foto de perfil atualizada!", 
+        description: "A foto foi enviada com sucesso" 
+      });
+
+    } catch (error: any) {
+      console.error("Erro no upload da foto de perfil:", error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Tente novamente",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingProfileImage(false);
+      // Limpar o input
+      event.target.value = '';
     }
   };
 
@@ -1203,15 +1265,67 @@ export default function PortfolioPage() {
                   />
                 </div>
                 
-                {/* URL da foto de perfil */}
-                <div>
-                  <Label htmlFor="about-profile-image">URL da foto de perfil</Label>
-                  <Input
-                    id="about-profile-image"
-                    placeholder="https://exemplo.com/foto-perfil.jpg"
-                    value={aboutMeData.aboutProfileImageUrl}
-                    onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutProfileImageUrl: e.target.value }))}
-                  />
+                {/* Foto de perfil - Upload ou URL */}
+                <div className="space-y-4">
+                  <Label>Foto de perfil</Label>
+                  
+                  {/* Preview da foto atual */}
+                  {aboutMeData.aboutProfileImageUrl && (
+                    <div className="flex items-center gap-4">
+                      <img 
+                        src={aboutMeData.aboutProfileImageUrl} 
+                        alt="Foto de perfil atual"
+                        className="w-20 h-20 object-cover rounded-full border"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAboutMeData(prev => ({ ...prev, aboutProfileImageUrl: '' }))}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remover
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Upload de arquivo */}
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('profile-image-upload')?.click()}
+                        disabled={isUploadingProfileImage}
+                      >
+                        {isUploadingProfileImage ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Enviar foto
+                          </>
+                        )}
+                      </Button>
+                      <span className="text-sm text-gray-500 self-center">ou</span>
+                    </div>
+                    <Input
+                      id="about-profile-image-url"
+                      placeholder="https://exemplo.com/foto-perfil.jpg"
+                      value={aboutMeData.aboutProfileImageUrl}
+                      onChange={(e) => setAboutMeData(prev => ({ ...prev, aboutProfileImageUrl: e.target.value }))}
+                    />
+                    <input
+                      id="profile-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageUpload}
+                      className="hidden"
+                    />
+                  </div>
                 </div>
                 
                 {/* Informações de contato */}
