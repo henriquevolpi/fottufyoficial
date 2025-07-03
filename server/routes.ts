@@ -2921,6 +2921,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPublic: portfolios.isPublic,
           createdAt: portfolios.createdAt,
           updatedAt: portfolios.updatedAt,
+          // About Me fields
+          aboutTitle: portfolios.aboutTitle,
+          aboutDescription: portfolios.aboutDescription,
+          aboutProfileImageUrl: portfolios.aboutProfileImageUrl,
+          aboutContact: portfolios.aboutContact,
+          aboutEmail: portfolios.aboutEmail,
+          aboutPhone: portfolios.aboutPhone,
+          aboutWebsite: portfolios.aboutWebsite,
+          aboutInstagram: portfolios.aboutInstagram,
+          aboutEnabled: portfolios.aboutEnabled,
         })
         .from(portfolios)
         .where(eq(portfolios.userId, req.user!.id))
@@ -3602,6 +3612,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: portfolio.createdAt,
         updatedAt: portfolio.updatedAt,
         userName: portfolio.userName,
+        // About Me fields
+        aboutTitle: portfolio.aboutTitle,
+        aboutDescription: portfolio.aboutDescription,
+        aboutProfileImageUrl: portfolio.aboutProfileImageUrl,
+        aboutContact: portfolio.aboutContact,
+        aboutEmail: portfolio.aboutEmail,
+        aboutPhone: portfolio.aboutPhone,
+        aboutWebsite: portfolio.aboutWebsite,
+        aboutInstagram: portfolio.aboutInstagram,
+        aboutEnabled: portfolio.aboutEnabled,
         photos
       };
 
