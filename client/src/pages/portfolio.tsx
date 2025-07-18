@@ -86,6 +86,7 @@ export default function PortfolioPage() {
   });
   
   // Estados para upload direto de fotos
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadPreviews, setUploadPreviews] = useState<string[]>([]);
@@ -365,6 +366,46 @@ export default function PortfolioPage() {
   const handleDeletePhoto = (portfolioId: number, photoId: number) => {
     if (confirm("Tem certeza que deseja remover esta foto do portfólio?")) {
       deletePhotoMutation.mutate({ portfolioId, photoId });
+    }
+  };
+
+  const handleDeletePortfolioPhoto = async (photoId: number) => {
+    if (!confirm("Tem certeza que deseja remover esta foto do portfólio?")) {
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/api/portfolios/photos/${photoId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Atualizar o estado local removendo a foto
+        setEditingPortfolio(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            photos: prev.photos.filter(photo => photo.id !== photoId)
+          };
+        });
+
+        // Invalidar e refetch dos dados
+        await queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+
+        toast({
+          title: "Foto removida",
+          description: "A foto foi removida do portfólio com sucesso"
+        });
+      } else {
+        throw new Error('Falha ao remover foto');
+      }
+    } catch (error: any) {
+      console.error('Erro ao remover foto:', error);
+      toast({
+        title: "Erro ao remover foto",
+        description: error.message || "Tente novamente",
+        variant: "destructive"
+      });
     }
   };
 
@@ -909,25 +950,7 @@ export default function PortfolioPage() {
                           Editar
                         </Button>
                         
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openUploadModal(portfolio.id)}
-                          className="h-8 px-3 text-xs font-medium hover:bg-purple-50 hover:text-purple-700 transition-colors"
-                        >
-                          <Upload className="mr-1 h-3 w-3" />
-                          Upload
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openBannerModal(portfolio.id)}
-                          className="h-8 px-3 text-xs font-medium hover:bg-orange-50 hover:text-orange-700 transition-colors"
-                        >
-                          <Image className="mr-1 h-3 w-3" />
-                          Banner
-                        </Button>
+
 
                         <Button
                           variant="ghost"
@@ -961,37 +984,137 @@ export default function PortfolioPage() {
       </div>
       {/* Edit Portfolio Modal */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Editar Portfólio</DialogTitle>
+            <DialogDescription>
+              Gerencie as informações e fotos do seu portfólio
+            </DialogDescription>
           </DialogHeader>
           {editingPortfolio && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-name">Nome do Portfólio</Label>
-                <Input
-                  id="edit-name"
-                  value={editingPortfolio.name}
-                  onChange={(e) => setEditingPortfolio(prev => prev ? { ...prev, name: e.target.value } : null)}
-                />
+            <div className="flex flex-col flex-1 min-h-0 space-y-6">
+              {/* Informações básicas */}
+              <div className="flex-shrink-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-name">Nome do Portfólio</Label>
+                    <Input
+                      id="edit-name"
+                      value={editingPortfolio.name}
+                      onChange={(e) => setEditingPortfolio(prev => prev ? { ...prev, name: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 pt-6">
+                    <Switch
+                      id="edit-isPublic"
+                      checked={editingPortfolio.isPublic}
+                      onCheckedChange={(checked) => setEditingPortfolio(prev => prev ? { ...prev, isPublic: checked } : null)}
+                    />
+                    <Label htmlFor="edit-isPublic">Portfólio público</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-description">Descrição</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editingPortfolio.description || ""}
+                    onChange={(e) => setEditingPortfolio(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="edit-description">Descrição</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editingPortfolio.description || ""}
-                  onChange={(e) => setEditingPortfolio(prev => prev ? { ...prev, description: e.target.value } : null)}
-                />
+
+              {/* Seção de gerenciamento de fotos */}
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex-shrink-0 mb-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">Fotos do Portfólio</h3>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          setSelectedPortfolioId(editingPortfolio.id);
+                          setIsAddPhotosOpen(true);
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        Adicionar da Galeria
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setSelectedPortfolioId(editingPortfolio.id);
+                          setIsUploadModalOpen(true);
+                        }}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Upload className="mr-1 h-4 w-4" />
+                        Upload Novas
+                      </Button>
+                      <Button
+                        onClick={() => openBannerModal(editingPortfolio.id)}
+                        size="sm"
+                        variant="outline"
+                        className="border-orange-200 text-orange-700 hover:bg-orange-50"
+                      >
+                        <Image className="mr-1 h-4 w-4" />
+                        Banner
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {editingPortfolio.photos.length} de 40 fotos • Clique para excluir fotos
+                  </p>
+                </div>
+
+                {/* Grade de fotos existentes */}
+                <div className="flex-1 overflow-y-auto">
+                  {editingPortfolio.photos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                      {editingPortfolio.photos.map((photo: PortfolioPhoto) => (
+                        <div
+                          key={photo.id}
+                          className="relative group cursor-pointer"
+                        >
+                          <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
+                            <img
+                              src={photo.photoUrl}
+                              alt={photo.originalName}
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          </div>
+                          {/* Botão de exclusão */}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeletePortfolioPhoto(photo.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                          {/* Indicador de ordem */}
+                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
+                            {photo.order + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg">
+                      <div className="text-center">
+                        <Image className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-600">Nenhuma foto adicionada</p>
+                        <p className="text-xs text-gray-500">Use os botões acima para adicionar fotos</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="edit-isPublic"
-                  checked={editingPortfolio.isPublic}
-                  onCheckedChange={(checked) => setEditingPortfolio(prev => prev ? { ...prev, isPublic: checked } : null)}
-                />
-                <Label htmlFor="edit-isPublic">Portfólio público</Label>
-              </div>
-              <div className="flex justify-end space-x-2">
+
+              {/* Botões de ação */}
+              <div className="flex-shrink-0 flex justify-end space-x-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setIsEditOpen(false)}>
                   Cancelar
                 </Button>

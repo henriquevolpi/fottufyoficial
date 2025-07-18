@@ -3331,6 +3331,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
+   * Delete individual portfolio photo
+   * DELETE /api/portfolios/photos/:photoId
+   */
+  app.delete("/api/portfolios/photos/:photoId", authenticate, async (req: Request, res: Response) => {
+    try {
+      const photoId = parseInt(req.params.photoId);
+
+      // First, check if photo exists and belongs to user's portfolio
+      const [existingPhoto] = await db
+        .select({
+          id: portfolioPhotos.id,
+          portfolioId: portfolioPhotos.portfolioId,
+          userId: portfolios.userId
+        })
+        .from(portfolioPhotos)
+        .innerJoin(portfolios, eq(portfolioPhotos.portfolioId, portfolios.id))
+        .where(eq(portfolioPhotos.id, photoId))
+        .limit(1);
+
+      if (!existingPhoto) {
+        return res.status(404).json({ error: "Photo not found" });
+      }
+
+      if (existingPhoto.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Delete photo
+      await db
+        .delete(portfolioPhotos)
+        .where(eq(portfolioPhotos.id, photoId));
+
+      // Update portfolio's updated timestamp
+      await db
+        .update(portfolios)
+        .set({ updatedAt: new Date() })
+        .where(eq(portfolios.id, existingPhoto.portfolioId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting portfolio photo:", error);
+      res.status(500).json({ error: "Failed to delete photo" });
+    }
+  });
+
+  /**
    * Upload photos directly to portfolio
    * POST /api/portfolios/:id/upload
    */
