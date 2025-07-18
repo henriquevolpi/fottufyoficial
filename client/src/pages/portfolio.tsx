@@ -882,7 +882,7 @@ export default function PortfolioPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {portfolios.map((portfolio: Portfolio) => (
               <div key={portfolio.id} className="group">
-                <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm hover:shadow-2xl border border-gray-200/50 overflow-hidden transition-all duration-300 transform hover:-translate-y-2">
+                <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl border-2 border-gray-300/80 hover:border-blue-300/60 overflow-hidden transition-all duration-300 transform hover:-translate-y-2">
                   {/* Imagem do card */}
                   <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
                     {portfolio.photos.length > 0 ? (
