@@ -42,6 +42,11 @@ export const users = pgTable("users", {
   
   // Campo para rastrear o último login do usuário
   lastLoginAt: timestamp("last_login_at"),
+  
+  // Campos para controle de portfólios (separado do sistema de dashboard)
+  portfolioLimit: integer("portfolio_limit").default(4), // Limite de portfólios para contas ativas
+  usedPortfolios: integer("used_portfolios").default(0), // Quantidade de portfólios criados
+  portfolioPhotoLimit: integer("portfolio_photo_limit").default(40), // Limite de fotos por portfólio
 });
 
 // Relations for users
@@ -60,6 +65,9 @@ export const insertUserSchema = createInsertSchema(users).omit({
   subscriptionEndDate: true,
   stripeCustomerId: true,
   stripeSubscriptionId: true,
+  portfolioLimit: true,
+  usedPortfolios: true,
+  portfolioPhotoLimit: true,
 });
 
 // Definição dos planos disponíveis

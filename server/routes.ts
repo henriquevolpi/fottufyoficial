@@ -2992,6 +2992,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Portfolio name is required" });
       }
 
+      // Check portfolio limit for the user
+      const canCreatePortfolio = await checkPortfolioLimit(req.user!.id);
+      if (!canCreatePortfolio) {
+        // Get user info for error message
+        const [user] = await db.select().from(users).where(eq(users.id, req.user!.id)).limit(1);
+        const limit = user?.[0]?.portfolioLimit || 4;
+        const used = user?.[0]?.usedPortfolios || 0;
+        
+        return res.status(400).json({ 
+          error: `Limite de portfólios atingido. Sua conta permite ${limit} portfólios (${used} utilizados). Para criar mais portfólios, entre em contato com o suporte.` 
+        });
+      }
+
       // Generate unique slug from name
       const baseSlug = name
         .toLowerCase()
@@ -3026,6 +3039,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPublic: isPublic ?? true,
         })
         .returning();
+
+      // Update portfolio usage counter
+      await updatePortfolioUsage(req.user!.id, 1);
 
       res.status(201).json({
         ...newPortfolio,
@@ -3118,6 +3134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .delete(portfolios)
         .where(eq(portfolios.id, portfolioId));
 
+      // Decrement portfolio usage counter
+      await updatePortfolioUsage(req.user!.id, -1);
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting portfolio:", error);
@@ -3147,6 +3166,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!existingPortfolio) {
         return res.status(404).json({ error: "Portfolio not found" });
+      }
+
+      // Check photo limit for the portfolio
+      const photoLimit = await checkPortfolioPhotoLimit(portfolioId);
+      const photosToAdd = photoUrls.length;
+      
+      if (!photoLimit.allowed || (photoLimit.currentCount + photosToAdd) > photoLimit.limit) {
+        return res.status(400).json({ 
+          error: `Limite de fotos por portfólio atingido. Este portfólio permite ${photoLimit.limit} fotos (${photoLimit.currentCount} utilizadas). Tentativa de adicionar ${photosToAdd} fotos excederia o limite.` 
+        });
       }
 
       // Get current max order
@@ -3327,6 +3356,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!existingPortfolio) {
         return res.status(404).json({ error: "Portfolio not found" });
+      }
+
+      // Check photo limit for the portfolio
+      const photoLimit = await checkPortfolioPhotoLimit(portfolioId);
+      const photosToUpload = files.length;
+      
+      if (!photoLimit.allowed || (photoLimit.currentCount + photosToUpload) > photoLimit.limit) {
+        return res.status(400).json({ 
+          error: `Limite de fotos por portfólio atingido. Este portfólio permite ${photoLimit.limit} fotos (${photoLimit.currentCount} utilizadas). Tentativa de adicionar ${photosToUpload} fotos excederia o limite.` 
+        });
       }
 
       console.log(`[Portfolio Upload] Processing ${files.length} photos for portfolio ${portfolioId}`);
@@ -4200,6 +4239,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===============================
   // PORTFOLIO SYSTEM ROUTES - NEW FEATURE
   // ===============================
+  
+  // Portfolio limit validation functions
+  async function checkPortfolioLimit(userId: number): Promise<boolean> {
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user.length) return false;
+    
+    const userRecord = user[0];
+    const portfolioLimit = userRecord.portfolioLimit || 4;
+    const usedPortfolios = userRecord.usedPortfolios || 0;
+    
+    return usedPortfolios < portfolioLimit;
+  }
+  
+  async function checkPortfolioPhotoLimit(portfolioId: number): Promise<{ allowed: boolean; currentCount: number; limit: number }> {
+    // Get portfolio and user info
+    const [portfolio] = await db.select().from(portfolios).where(eq(portfolios.id, portfolioId)).limit(1);
+    if (!portfolio) return { allowed: false, currentCount: 0, limit: 0 };
+    
+    const [user] = await db.select().from(users).where(eq(users.id, portfolio.userId)).limit(1);
+    if (!user) return { allowed: false, currentCount: 0, limit: 0 };
+    
+    // Count current photos in portfolio
+    const photoCount = await db.select({ count: count() }).from(portfolioPhotos).where(eq(portfolioPhotos.portfolioId, portfolioId));
+    const currentCount = photoCount[0]?.count || 0;
+    
+    const limit = user.portfolioPhotoLimit || 40;
+    
+    return {
+      allowed: currentCount < limit,
+      currentCount,
+      limit
+    };
+  }
+  
+  async function updatePortfolioUsage(userId: number, increment: number = 1): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        usedPortfolios: sql`${users.usedPortfolios} + ${increment}` 
+      })
+      .where(eq(users.id, userId));
+  }
   
   /**
    * Update portfolio "About Me" section

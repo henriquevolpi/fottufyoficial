@@ -676,9 +676,16 @@ export default function PortfolioPage() {
             
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 rounded-full px-6 py-3 font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <Button 
+                  disabled={portfolios.length >= 4}
+                  className={`border-0 rounded-full px-6 py-3 font-medium transition-all duration-200 transform shadow-lg ${
+                    portfolios.length >= 4 
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:scale-105 hover:shadow-xl"
+                  }`}
+                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Novo Portfólio
+                  {portfolios.length >= 4 ? "Limite atingido" : "Novo Portfólio"}
                 </Button>
               </DialogTrigger>
           <DialogContent>
@@ -728,6 +735,82 @@ export default function PortfolioPage() {
       </div>
       {/* Conteúdo principal */}
       <div className="container mx-auto px-6 py-8">
+        {/* Card de informações sobre limites */}
+        <div className="mb-8">
+          <Card className={`border-blue-200/50 ${
+            portfolios.length >= 4 
+              ? "bg-gradient-to-r from-red-50 to-orange-50 border-red-200/50" 
+              : portfolios.length === 3 
+                ? "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200/50"
+                : "bg-gradient-to-r from-blue-50 to-indigo-50"
+          }`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    portfolios.length >= 4 
+                      ? "bg-red-100" 
+                      : portfolios.length === 3 
+                        ? "bg-yellow-100"
+                        : "bg-blue-100"
+                  }`}>
+                    <Settings className={`h-6 w-6 ${
+                      portfolios.length >= 4 
+                        ? "text-red-600" 
+                        : portfolios.length === 3 
+                          ? "text-yellow-600"
+                          : "text-blue-600"
+                    }`} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Limites de Portfólio</h3>
+                    <p className="text-gray-600 text-sm">
+                      {portfolios.length >= 4 
+                        ? "Limite máximo atingido" 
+                        : portfolios.length === 3 
+                          ? "Próximo do limite (1 restante)"
+                          : "Controle de uso para contas ativas"
+                      }
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-2xl font-bold ${
+                    portfolios.length >= 4 
+                      ? "text-red-600" 
+                      : portfolios.length === 3 
+                        ? "text-yellow-600"
+                        : "text-gray-900"
+                  }`}>
+                    {portfolios.length} / 4
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Portfólios criados
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Limite por portfólio:</span>
+                  <span className="font-semibold text-gray-900">40 fotos de até 4MB cada</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Status da conta:</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                    Ativa
+                  </Badge>
+                </div>
+                {portfolios.length >= 4 && (
+                  <div className="mt-3 p-3 bg-red-100 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700 font-medium">
+                      Você atingiu o limite de 4 portfólios. Para criar novos portfólios, exclua um existente.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         {portfolios.length === 0 ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center max-w-md mx-auto">
