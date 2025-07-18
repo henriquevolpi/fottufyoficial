@@ -375,8 +375,12 @@ export default function PortfolioPage() {
     }
 
     try {
-      const response = await apiRequest(`/api/portfolios/photos/${photoId}`, {
-        method: 'DELETE'
+      const response = await fetch(`/api/portfolios/photos/${photoId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
@@ -397,7 +401,8 @@ export default function PortfolioPage() {
           description: "A foto foi removida do portfólio com sucesso"
         });
       } else {
-        throw new Error('Falha ao remover foto');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Falha ao remover foto');
       }
     } catch (error: any) {
       console.error('Erro ao remover foto:', error);
