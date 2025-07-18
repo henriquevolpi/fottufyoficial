@@ -714,7 +714,7 @@ export default function PortfolioPage() {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h1 className="text-4xl tracking-tight text-gray-900 font-semibold">Portfólios</h1>
+              <h1 className="text-4xl tracking-tight text-gray-900 font-black">Portfólios</h1>
               <p className="text-gray-600 font-light">
                 Organize suas melhores fotos em coleções elegantes
               </p>
