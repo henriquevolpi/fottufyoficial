@@ -872,7 +872,7 @@ export default function PortfolioPage() {
                   <div className="p-6">
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-xl font-light text-gray-900 mb-2 tracking-tight">{portfolio.name}</h3>
+                        <h3 className="text-xl text-gray-900 mb-2 tracking-tight font-bold">{portfolio.name}</h3>
                         {portfolio.description && (
                           <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
                             {portfolio.description}
@@ -1311,7 +1311,6 @@ export default function PortfolioPage() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* About Me Modal */}
       <Dialog open={isAboutMeOpen} onOpenChange={setIsAboutMeOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
