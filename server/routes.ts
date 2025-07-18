@@ -3338,11 +3338,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const photoId = parseInt(req.params.photoId);
 
-      // First, check if photo exists and belongs to user's portfolio
+      // First, get complete photo information including photoUrl for R2 deletion
       const [existingPhoto] = await db
         .select({
           id: portfolioPhotos.id,
           portfolioId: portfolioPhotos.portfolioId,
+          photoUrl: portfolioPhotos.photoUrl,
           userId: portfolios.userId
         })
         .from(portfolioPhotos)
@@ -3358,10 +3359,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Delete photo
+      console.log(`[Portfolio] Deleting photo ID ${photoId} for user ${req.user!.id}`);
+      console.log(`[Portfolio] Photo URL to delete from R2: ${existingPhoto.photoUrl}`);
+
+      // Extract filename from photoUrl for R2 deletion
+      let r2Key = null;
+      if (existingPhoto.photoUrl) {
+        // Extract filename from URL like "https://cdn.fottufy.com/1751425760363-m0qr4g0z3r.jpg"
+        const urlParts = existingPhoto.photoUrl.split('/');
+        r2Key = urlParts[urlParts.length - 1]; // Get the last part (filename)
+      }
+
+      // Delete photo from database first
       await db
         .delete(portfolioPhotos)
         .where(eq(portfolioPhotos.id, photoId));
+
+      console.log(`[Portfolio] Photo ${photoId} deleted from database`);
+
+      // Delete photo from R2 storage if we have a valid key
+      if (r2Key && r2Key.trim() !== '') {
+        try {
+          const { deleteFileFromR2 } = await import('./r2');
+          console.log(`[Portfolio] Attempting to delete R2 object: ${r2Key}`);
+          
+          await deleteFileFromR2(r2Key);
+          console.log(`[Portfolio] Successfully deleted ${r2Key} from R2 storage`);
+        } catch (r2Error) {
+          console.error(`[Portfolio] Failed to delete ${r2Key} from R2:`, r2Error);
+          // Don't fail the entire operation if R2 deletion fails
+        }
+      } else {
+        console.log(`[Portfolio] No valid R2 key extracted from photoUrl: ${existingPhoto.photoUrl}`);
+      }
 
       // Update portfolio's updated timestamp
       await db
