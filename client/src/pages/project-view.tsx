@@ -26,7 +26,8 @@ import {
   Maximize,
   ChevronLeft,
   ChevronRight,
-  MessageCircle
+  MessageCircle,
+  Plus
 } from "lucide-react";
 import {
   Dialog,
@@ -948,107 +949,100 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Modal para visualização da imagem em tamanho completo */}
-      <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
-        <DialogContent className="max-w-screen-lg w-full p-1 bg-black/90 border-gray-800">
-          <DialogTitle className="sr-only">Visualização de Imagem</DialogTitle>
-          <DialogDescription className="sr-only">
-            Visualize a foto em tamanho completo e navegue pela galeria do projeto
-          </DialogDescription>
-          {/* Botão de fechar */}
-          <div className="absolute right-2 top-2 z-10">
+      {/* Lightbox Modal - Estilo personalizado igual ao portfolio público */}
+      {imageModalOpen && project.photos[currentPhotoIndex] && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65"
+          onClick={() => setImageModalOpen(false)}
+        >
+          <div className="relative max-w-[95vw] max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Imagem com watermark */}
+            <WatermarkOverlay 
+              enabled={project.showWatermark === true} 
+              className="relative"
+            >
+              <img
+                src={
+                  project.photos[currentPhotoIndex].url && 
+                  !project.photos[currentPhotoIndex].url.includes('project-photos') 
+                    ? project.photos[currentPhotoIndex].url 
+                    : `https://cdn.fottufy.com/${project.photos[currentPhotoIndex].filename}`
+                }
+                alt="Foto do projeto"
+                className="max-w-full max-h-full w-auto h-auto object-contain"
+                style={{ maxWidth: '95vw', maxHeight: '95vh' }}
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.jpg';
+                }}
+                onContextMenu={e => e.preventDefault()}
+              />
+            </WatermarkOverlay>
+            
+            {/* Botão X dentro da foto - canto superior direito */}
             <button
               onClick={() => setImageModalOpen(false)}
-              className="rounded-full bg-black/70 text-white p-2 hover:bg-black"
+              className="absolute top-4 right-4 w-10 h-10 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
             >
               <X className="h-5 w-5" />
             </button>
-          </div>
-          
-          {/* Botão de navegação anterior */}
-          {project.photos.length > 1 && (
-            <button
-              onClick={goToPrevPhoto}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black z-20"
-              aria-label="Foto anterior"
-            >
-              <ChevronLeft className="h-8 w-8" />
-            </button>
-          )}
-          
-          {/* Botão de navegação próxima */}
-          {project.photos.length > 1 && (
-            <button
-              onClick={goToNextPhoto}
-              className="absolute right-12 top-1/2 transform -translate-y-1/2 rounded-full bg-black/70 text-white p-2 hover:bg-black z-20"
-              aria-label="Próxima foto"
-            >
-              <ChevronRight className="h-8 w-8" />
-            </button>
-          )}
-          
-          {/* Conteúdo do Modal - Estrutura Flexível */}
-          <div className="flex flex-col items-center h-full pt-4">
-            {/* Container da Imagem */}
-            <div className="flex-1 w-full flex items-center justify-center max-h-[65vh] overflow-hidden mb-4">
-              {project.photos[currentPhotoIndex] && (
-                <WatermarkOverlay 
-                  enabled={project.showWatermark === true} 
-                  className="relative w-full h-full flex items-center justify-center"
-                >
-                  <img
-                    src={
-                      project.photos[currentPhotoIndex].url && 
-                      !project.photos[currentPhotoIndex].url.includes('project-photos') 
-                        ? project.photos[currentPhotoIndex].url 
-                        : `https://cdn.fottufy.com/${project.photos[currentPhotoIndex].filename}`
-                    }
-                    alt="Photo"
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder.jpg';
-                    }}
-                    onContextMenu={e => e.preventDefault()}
-                  />
-                </WatermarkOverlay>
-              )}
-            </div>
             
-            {/* Botão de seleção dentro do modal - Posicionado mais abaixo e longe da imagem */}
-            {project.photos[currentPhotoIndex] && (
-              <div className="w-full flex justify-center py-6">
-                <Button 
-                  variant={selectedPhotos.has(project.photos[currentPhotoIndex].id) ? "default" : "outline"}
-                  size="lg"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePhotoSelection(project.photos[currentPhotoIndex].id);
-                  }}
-                  disabled={isFinalized}
-                  className={`px-8 py-6 text-lg font-medium rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${
-                    selectedPhotos.has(project.photos[currentPhotoIndex].id) 
-                      ? "bg-primary hover:bg-primary/90 text-white ring-4 ring-primary/20" 
-                      : "bg-white text-gray-800 hover:bg-gray-100 border-2 border-primary/80"
-                  }`}
+            {/* Navegação - apenas se houver mais de uma foto */}
+            {project.photos.length > 1 && (
+              <>
+                {/* Seta esquerda */}
+                <button
+                  onClick={goToPrevPhoto}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
                 >
-                  {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
-                    <>
-                      <Check className="mr-2 h-5 w-5" /> Selecionado
-                    </>
-                  ) : (
-                    "Selecionar"
-                  )}
-                </Button>
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                
+                {/* Seta direita */}
+                <button
+                  onClick={goToNextPhoto}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+            
+            {/* Botão de seleção - canto inferior direito */}
+            {!isFinalized && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePhotoSelection(project.photos[currentPhotoIndex].id);
+                }}
+                className={`absolute bottom-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm ${
+                  selectedPhotos.has(project.photos[currentPhotoIndex].id)
+                    ? 'bg-green-600/80 hover:bg-green-700/80'
+                    : 'bg-black/10 hover:bg-black/70'
+                }`}
+              >
+                {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span className="hidden sm:inline">Selecionado</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Selecionar</span>
+                  </>
+                )}
+              </button>
+            )}
+            
+            {/* Contador de fotos - canto inferior esquerdo */}
+            {project.photos.length > 1 && (
+              <div className="absolute bottom-4 left-4 px-3 py-2 bg-black/10 rounded-lg text-white text-sm backdrop-blur-sm">
+                {currentPhotoIndex + 1} de {project.photos.length}
               </div>
             )}
           </div>
-          
-          {/* Contador de fotos - Movido para lado esquerdo para evitar sobreposição com botões */}
-          <div className="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
-            {currentPhotoIndex + 1} / {project.photos.length}
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }
