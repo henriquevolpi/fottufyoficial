@@ -829,13 +829,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 </div>
 
                 {/* Comment Button */}
-                <div className="border-t pt-3">
+                <div className="border-t pt-3" onClick={(e) => e.stopPropagation()}>
                   {selectedPhotos.has(photo.id) ? (
                     <Button
                       variant="ghost"
                       size="sm"
                       className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                      onClick={() => toggleCommentSection(photo.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCommentSection(photo.id);
+                      }}
                     >
                       <MessageCircle className="mr-2 h-4 w-4" />
                       {photoComments[photo.id] && photoComments[photo.id].length > 0 
@@ -860,7 +863,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
 
                 {/* Expanded Comment Section - Only for selected photos */}
                 {expandedCommentPhoto === photo.id && selectedPhotos.has(photo.id) && (
-                  <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2">
+                  <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2" onClick={(e) => e.stopPropagation()}>
                     {/* Comment Text Area */}
                     <div>
                       <Textarea
