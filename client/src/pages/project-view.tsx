@@ -1014,10 +1014,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   e.stopPropagation();
                   togglePhotoSelection(project.photos[currentPhotoIndex].id);
                 }}
-                className={`absolute bottom-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm ${
+                className={`absolute bottom-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm shadow-lg ${
                   selectedPhotos.has(project.photos[currentPhotoIndex].id)
                     ? 'bg-green-600/80 hover:bg-green-700/80'
-                    : 'bg-black/10 hover:bg-black/70'
+                    : 'bg-blue-800/70 hover:bg-blue-900/80'
                 }`}
               >
                 {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
