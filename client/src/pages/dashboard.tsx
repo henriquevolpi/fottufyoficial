@@ -1679,40 +1679,40 @@ export default function Dashboard() {
           <div className="absolute bottom-0 right-1/3 w-80 h-80 bg-purple-400 rounded-full blur-3xl"></div>
         </div>
         
-        <div className="relative container mx-auto px-6 py-16">
+        <div className="relative container mx-auto px-6 py-8">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 mb-8 bg-gradient-to-br from-white to-slate-100 rounded-3xl shadow-2xl shadow-slate-200/50 border border-white/60">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-white to-slate-100 rounded-2xl shadow-xl shadow-slate-200/40 border border-white/60">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
             
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[0.9]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3 leading-tight">
               <span className="block bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                 Bem-vindo de volta
               </span>
-              <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mt-2">
+              <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mt-1">
                 {user?.name?.split(' ')[0] || 'Fotógrafo'}
               </span>
             </h1>
             
-            <p className="text-xl sm:text-2xl text-slate-600 mb-8 font-light max-w-2xl mx-auto leading-relaxed">
-              Sua plataforma profissional para gerenciar projetos fotográficos com elegância e sofisticação.
+            <p className="text-base sm:text-lg text-slate-600 mb-6 font-light max-w-2xl mx-auto leading-relaxed">
+              Sua plataforma profissional para gerenciar projetos fotográficos com elegância.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
-              <div className="flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-                <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-                <span className="text-slate-700 font-medium">Sistema Online</span>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-white/60">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span className="text-slate-700 font-medium text-sm">Sistema Online</span>
               </div>
               
-              <div className="flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-white/60">
+                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
                 </svg>
-                <span className="text-slate-700 font-medium">Última atualização: Hoje</span>
+                <span className="text-slate-700 font-medium text-sm">Atualizado hoje</span>
               </div>
             </div>
           </div>
