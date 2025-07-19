@@ -1724,7 +1724,7 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent">Recomende a Fottufy a um amigo <3</p>
+            <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent">Recomende a Fottufy a um amigo ❤️</p>
             <p className="text-lg text-slate-600 leading-relaxed">
               Ajude-nos a crescer recomendando a Fottufy a um amigo fotógrafo! ❤️
             </p>
