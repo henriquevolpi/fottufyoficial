@@ -459,22 +459,24 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button 
             variant="outline" 
             size="sm"
-            className="flex-1 text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl py-2.5 transition-all duration-200"
+            className="flex-1 text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl py-2.5 px-2 sm:px-3 transition-all duration-200 min-w-0"
             onClick={() => setLocation(`/project/${project.id}`)}
           >
-            <ArrowUpRight className="h-4 w-4 mr-2" />
-            Ver Detalhes
+            <ArrowUpRight className="h-4 w-4 mr-1 sm:mr-2 flex-shrink-0" />
+            <span className="hidden sm:inline">Ver Detalhes</span>
+            <span className="sm:hidden">Detalhes</span>
           </Button>
           
           <Button
             size="sm"
             className={`
-              flex-1 text-sm font-semibold text-white shadow-lg
+              flex-1 text-xs sm:text-sm font-semibold text-white shadow-lg
               bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
               hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
               hover:scale-105 hover:shadow-xl
-              rounded-xl py-2.5 transition-all duration-300 
+              rounded-xl py-2.5 px-2 sm:px-3 transition-all duration-300 
               border border-blue-500/20
+              min-w-0 truncate
             `}
             onClick={(e) => {
               e.stopPropagation();
@@ -486,8 +488,9 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
               });
             }}
           >
-            <LinkIcon className="h-4 w-4 mr-2" />
-            Link do Cliente
+            <LinkIcon className="h-4 w-4 mr-1 sm:mr-2 flex-shrink-0" />
+            <span className="hidden sm:inline">Link do Cliente</span>
+            <span className="sm:hidden">Link</span>
           </Button>
         </div>
       </CardFooter>
