@@ -1736,8 +1736,8 @@ export default function Dashboard() {
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
             {/* Layout com abas e botão na esquerda */}
             <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex justify-start w-full lg:w-auto overflow-x-auto">
-                <TabsList className="inline-flex bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50 min-w-fit">
+              <div className="flex justify-start w-full lg:w-auto overflow-x-auto lg:overflow-x-visible">
+                <TabsList className="inline-flex bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50 min-w-fit lg:min-w-0">
                   <TabsTrigger value="all" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Todos</TabsTrigger>
                   <TabsTrigger value="pending" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Pendentes</TabsTrigger>
                   <TabsTrigger value="reviewed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Revisados</TabsTrigger>
