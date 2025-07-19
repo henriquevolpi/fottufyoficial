@@ -70,6 +70,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import fottufinhopng from "@assets/fottufinhopng.webp";
+
 // Dados fictícios para projetos
 const PROJETOS_EXEMPLO = [
   {
@@ -1677,7 +1679,7 @@ export default function Dashboard() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex items-center justify-center gap-4 mb-4">
               <img
-                src="/fottufinho.webp"
+                src={fottufinhopng}
                 alt="Fottufinho Mascote"
                 className="w-12 h-12 rounded-xl shadow-lg"
               />
