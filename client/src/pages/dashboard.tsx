@@ -1618,12 +1618,7 @@ export default function Dashboard() {
                 <span className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 bg-clip-text text-transparent">Fottu</span>
                 <span className="bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">fy</span>
               </h1>
-              <img
-                src="/fottufinho.webp"
-                alt="Fottufinho Mascote"
-                className="h-8 w-8 rounded-full ring-2 ring-blue-100 shadow-sm"
-                style={{marginTop: '-2px'}}
-              />
+              
             </div>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto">
