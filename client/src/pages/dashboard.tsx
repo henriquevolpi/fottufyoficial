@@ -446,12 +446,11 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-xl px-4 py-2.5 font-semibold transition-all duration-200 border border-red-100"
+            className="text-xs text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-lg px-2 py-1.5 font-medium transition-all duration-200 border border-red-100"
             onClick={() => setShowDeleteConfirm(true)}
             aria-label="Excluir projeto"
           >
-            <X className="h-4 w-4 mr-2" />
-            Excluir
+            <X className="h-3 w-3" />
           </Button>
         </div>
         
