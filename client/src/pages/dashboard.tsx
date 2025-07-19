@@ -1670,7 +1670,6 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
-      
       {/* Banner Cinematográfico Moderno */}
       <div className="relative overflow-hidden bg-gradient-to-r from-white via-slate-50/90 to-white">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30"></div>
@@ -1707,7 +1706,6 @@ export default function Dashboard() {
         {/* Decorative bottom wave */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200/60 to-transparent"></div>
       </div>
-      
       <main className="container mx-auto py-12 px-6">
         {/* Banner Image - Temporarily hidden */}
         {/* <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0">
@@ -1726,9 +1724,7 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-              Estamos sempre buscando melhorar!
-            </p>
+            <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent">Recomende a Fottufy a um amigo <3</p>
             <p className="text-lg text-slate-600 leading-relaxed">
               Ajude-nos a crescer recomendando a Fottufy a um amigo fotógrafo! ❤️
             </p>
@@ -1907,7 +1903,6 @@ export default function Dashboard() {
           </Tabs>
         </div>
       </main>
-      
       {/* Seção de redefinição de senha discreta no rodapé */}
       <div className="border-t border-slate-200/60 pt-8 pb-12 mt-12 bg-white/30 backdrop-blur-sm">
         <div className="container max-w-7xl mx-auto px-6">
@@ -1933,114 +1928,111 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      
       {/* Modal for uploading new projects */}
       <UploadModal 
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onUpload={handleProjectCreated}
       />
-
       {/* Modal for changing password */}
       <ChangePasswordModal
         open={changePasswordModalOpen}
         onClose={() => setChangePasswordModalOpen(false)}
       />
-
       {/* Comments Modal */}
-              <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-                  <DialogHeader>
-                    <DialogTitle
-                      className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent"
-                    >
-                      Comentários do Projeto
-                    </DialogTitle>
-                    <DialogDescription className="text-base mt-1">
-              Visualize e gerencie comentários dos clientes nas fotos
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto">
-            {commentsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2">Carregando comentários...</span>
+      <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle
+              className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent"
+            >
+              Comentários do Projeto
+            </DialogTitle>
+            <DialogDescription className="text-base mt-1">
+      Visualize e gerencie comentários dos clientes nas fotos
+    </DialogDescription>
+  </DialogHeader>
+  
+  <div className="flex-1 overflow-y-auto">
+    {commentsLoading ? (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Carregando comentários...</span>
+      </div>
+    ) : comments.length === 0 ? (
+      <div className="text-center py-8">
+        <MessageCircle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum comentário ainda</h3>
+        <p className="text-gray-500">
+          Os comentários dos clientes aparecerão aqui quando eles interagirem com as fotos.
+        </p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {comments.map((comment) => (
+          <div key={comment.id} className="border rounded-lg p-4 bg-gray-50">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                  <MessageCircle className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Cliente</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                  </p>
+                </div>
               </div>
-            ) : comments.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageCircle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum comentário ainda</h3>
-                <p className="text-gray-500">
-                  Os comentários dos clientes aparecerão aqui quando eles interagirem com as fotos.
-                </p>
+              {!comment.isViewed && (
+                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                  Novo
+                </span>
+              )}
+            </div>
+            
+            {comment.photoId && comment.photoUrl && (
+              <div className="flex items-start space-x-3 mb-3 p-3 bg-white rounded border">
+                <div className="flex-shrink-0">
+                  <img 
+                    src={comment.photoUrl} 
+                    alt={comment.photoOriginalName || comment.photoFilename || 'Foto'} 
+                    className="w-16 h-16 object-cover rounded border"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {comment.photoOriginalName || comment.photoFilename || 'Arquivo sem nome'}
+                  </p>
+                  <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+                    "{comment.comment}"
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="border rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <MessageCircle className="h-4 w-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Cliente</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(comment.createdAt).toLocaleString('pt-BR')}
-                          </p>
-                        </div>
-                      </div>
-                      {!comment.isViewed && (
-                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                          Novo
-                        </span>
-                      )}
-                    </div>
-                    
-                    {comment.photoId && comment.photoUrl && (
-                      <div className="flex items-start space-x-3 mb-3 p-3 bg-white rounded border">
-                        <div className="flex-shrink-0">
-                          <img 
-                            src={comment.photoUrl} 
-                            alt={comment.photoOriginalName || comment.photoFilename || 'Foto'} 
-                            className="w-16 h-16 object-cover rounded border"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {comment.photoOriginalName || comment.photoFilename || 'Arquivo sem nome'}
-                          </p>
-                          <p className="text-sm text-gray-700 mt-2 leading-relaxed">
-                            "{comment.comment}"
-                          </p>
-                        </div>
-                      </div>
-                    )}
+            )}
 
-                    {!comment.photoId && (
-                      <div className="mb-3">
-                        <p className="text-sm text-gray-700 bg-white p-3 rounded border">
-                          {comment.comment}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+            {!comment.photoId && (
+              <div className="mb-3">
+                <p className="text-sm text-gray-700 bg-white p-3 rounded border">
+                  {comment.comment}
+                </p>
               </div>
             )}
           </div>
+        ))}
+      </div>
+    )}
+  </div>
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setCommentsModalOpen(false)}
-            >
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+  <DialogFooter>
+    <Button 
+      variant="outline" 
+      onClick={() => setCommentsModalOpen(false)}
+    >
+      Fechar
+    </Button>
+  </DialogFooter>
+</DialogContent>
+</Dialog>
     </div>
   );
 }
