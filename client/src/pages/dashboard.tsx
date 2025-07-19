@@ -450,7 +450,8 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             onClick={() => setShowDeleteConfirm(true)}
             aria-label="Excluir projeto"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3 mr-1" />
+            Excluir
           </Button>
         </div>
         
