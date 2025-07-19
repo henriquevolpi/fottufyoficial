@@ -1722,9 +1722,7 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent">Recomende a Fottufy a um amigo ❤️</p>
-            <p className="text-lg text-slate-600 leading-relaxed">
-              Ajude-nos a crescer recomendando a Fottufy a um amigo fotógrafo! ❤️
-            </p>
+            <p className="text-lg leading-relaxed font-medium text-[#080707]">Dica da semana: Clientes relatam ter um aumento significativo nas vendas de fotos adicionais mandando as fotos pré-editadas com presets para a seleção!</p>
           </div>
         </div>
 
