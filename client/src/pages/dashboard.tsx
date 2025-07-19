@@ -1594,55 +1594,60 @@ export default function Dashboard() {
   }, [currentTab, searchQuery, projects]);
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="container mx-auto py-4 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
+        <div className="container mx-auto py-6 px-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-2xl font-bold m-0 p-0">
-                <span className="text-blue-600">Fottu</span>
-                <span className="text-gray-900">fy</span>
+            <div className="flex items-center space-x-3">
+              <h1 className="text-3xl font-black tracking-tight m-0 p-0">
+                <span className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 bg-clip-text text-transparent">Fottu</span>
+                <span className="bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">fy</span>
               </h1>
               <img
                 src="/fottufinho.webp"
                 alt="Fottufinho Mascote"
-                className="h-7 w-7 rounded-full"
+                className="h-8 w-8 rounded-full ring-2 ring-blue-100 shadow-sm"
                 style={{marginTop: '-2px'}}
               />
             </div>
             
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto">
               <Button
                 onClick={() => setUploadModalOpen(true)}
                 className={`
                   w-full sm:w-auto
                   flex items-center justify-center
-                  bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400
-                  text-white font-bold
-                  rounded-full shadow-md
-                  px-6 py-2
-                  transition-all duration-200
-                  hover:from-rose-700 hover:via-pink-600 hover:to-rose-500
-                  hover:scale-[1.04]
-                  focus:outline-none focus:ring-2 focus:ring-rose-400
-                  text-base
+                  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
+                  text-white font-semibold
+                  rounded-xl shadow-lg shadow-blue-500/25
+                  px-8 py-3
+                  transition-all duration-300
+                  hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
+                  hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30
+                  focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
+                  text-base border border-blue-500/20
                 `}
               >
                 <PlusCircle className="h-5 w-5 mr-2" />
                 Novo Projeto
               </Button>
               
-              <div className="flex items-center border-t sm:border-t-0 sm:border-l pt-4 sm:pt-0 pl-0 sm:pl-4 mt-2 sm:mt-0 w-full sm:w-auto">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 shrink-0">
-                  <span className="text-gray-700 font-medium">
+              <div className="flex items-center border-t sm:border-t-0 sm:border-l border-slate-200/60 pt-4 sm:pt-0 pl-0 sm:pl-6 mt-2 sm:mt-0 w-full sm:w-auto">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-4 shrink-0 shadow-lg">
+                  <span className="text-white font-bold text-lg">
                     {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                   </span>
                 </div>
-                <div className="flex-grow mr-2">
-                  <p className="font-medium truncate">{user?.name || "User"}</p>
-                  <p className="text-gray-500 text-sm truncate">{user?.email}</p>
+                <div className="flex-grow mr-4">
+                  <p className="font-semibold text-slate-800 truncate text-lg">{user?.name || "User"}</p>
+                  <p className="text-slate-500 text-sm truncate">{user?.email}</p>
                 </div>
-                <Button variant="outline" onClick={handleLogout} size="sm" className="shrink-0">
+                <Button 
+                  variant="outline" 
+                  onClick={handleLogout} 
+                  size="sm" 
+                  className="shrink-0 border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400 rounded-lg px-4 py-2"
+                >
                   Logout
                 </Button>
               </div>
@@ -1651,7 +1656,7 @@ export default function Dashboard() {
         </div>
       </header>
       
-      <main className="container mx-auto py-8 px-4">
+      <main className="container mx-auto py-12 px-6">
         {/* Banner Image - Temporarily hidden */}
         {/* <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0">
           <img 
@@ -1662,15 +1667,17 @@ export default function Dashboard() {
         </div> */}
 
         {/* Aviso de novidades */}
-        <div className="mt-6 mb-4 px-5 py-4 bg-gray-50 rounded-xl shadow flex items-start gap-4">
-          <svg className="w-6 h-6 text-blue-500 mt-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-          </svg>
+        <div className="mt-0 mb-8 px-8 py-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/70 to-blue-50/70 backdrop-blur-sm rounded-2xl border border-blue-100/50 shadow-lg shadow-blue-500/5 flex items-start gap-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shrink-0">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+            </svg>
+          </div>
           <div>
-            <p className="font-semibold mb-1 text-lg bg-gradient-to-r from-blue-900 via-blue-500 to-blue-400 bg-clip-text text-transparent">
-              Estamos Sempre buscando melhorar!
+            <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
+              Estamos sempre buscando melhorar!
             </p>
-            <p className="text-base bg-gradient-to-r from-blue-700 via-blue-400 to-blue-800 bg-clip-text text-transparent">
+            <p className="text-lg text-slate-600 leading-relaxed">
               Ajude-nos a crescer recomendando a Fottufy a um amigo fotógrafo! ❤️
             </p>
           </div>
@@ -1681,53 +1688,60 @@ export default function Dashboard() {
         
         <Statistics setLocation={setLocation} />
         
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-900 via-blue-600 to-blue-300 bg-clip-text text-transparent">
-              Meus projetos
-            </h2>
+        <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white/20 p-8 mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2">
+                Meus Projetos
+              </h2>
+              <p className="text-slate-600 text-lg">Gerencie seus projetos fotográficos com elegância</p>
+            </div>
             
-            <div className="flex items-center w-full sm:w-auto gap-2">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="flex items-center w-full sm:w-auto gap-3">
+              <div className="relative flex-1 sm:w-80">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <Input 
-                  placeholder="Search projects..."
-                  className="pl-10"
+                  placeholder="Buscar projetos..."
+                  className="pl-12 pr-4 py-3 rounded-xl border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm text-lg shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               
-              <Button variant="outline" size="icon" className="shrink-0">
-                <Filter className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="shrink-0 h-12 w-12 rounded-xl border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm"
+              >
+                <Filter className="h-5 w-5 text-slate-600" />
               </Button>
             </div>
           </div>
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="mb-6 flex w-full scrollbar-none bg-transparent text-lg">
-                <TabsTrigger value="all" className="flex-shrink-0 text-lg">Todos</TabsTrigger>
-                <TabsTrigger value="pending" className="flex-shrink-0 text-lg">Pendentes</TabsTrigger>
-                <TabsTrigger value="reviewed" className="flex-shrink-0 text-lg">Revisados</TabsTrigger>
-                <TabsTrigger value="completed" className="flex-shrink-0 text-lg">Finalizados</TabsTrigger>
+            <TabsList className="mb-8 flex w-full bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50">
+                <TabsTrigger value="all" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Todos</TabsTrigger>
+                <TabsTrigger value="pending" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Pendentes</TabsTrigger>
+                <TabsTrigger value="reviewed" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Revisados</TabsTrigger>
+                <TabsTrigger value="completed" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Finalizados</TabsTrigger>
             </TabsList>
             
             {/* Duplicate Novo Projeto button centered below tabs */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-8">
               <Button
                 onClick={() => setUploadModalOpen(true)}
                 className={`
                   w-full sm:w-auto
                   flex items-center justify-center
-                  bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400
-                  text-white font-bold
-                  rounded-full shadow-md
-                  px-6 py-2
-                  transition-all duration-200
-                  hover:from-rose-700 hover:via-pink-600 hover:to-rose-500
-                  hover:scale-[1.04]
-                  focus:outline-none focus:ring-2 focus:ring-rose-400
-                  text-base
+                  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
+                  text-white font-semibold
+                  rounded-xl shadow-lg shadow-blue-500/25
+                  px-8 py-3
+                  transition-all duration-300
+                  hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
+                  hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30
+                  focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
+                  text-base border border-blue-500/20
                 `}
               >
                 <PlusCircle className="h-5 w-5 mr-2" />
@@ -1837,24 +1851,24 @@ export default function Dashboard() {
       </main>
       
       {/* Seção de redefinição de senha discreta no rodapé */}
-      <div className="border-t pt-4 pb-8 mt-8">
-        <div className="container max-w-7xl mx-auto">
+      <div className="border-t border-slate-200/60 pt-8 pb-12 mt-12 bg-white/30 backdrop-blur-sm">
+        <div className="container max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-slate-600 font-medium">
               © {new Date().getFullYear()} Fottufy. Todos os direitos reservados.
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-4">
+            <div className="mt-6 md:mt-0 flex space-x-6">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="text-sm text-primary hover:text-primary/80 flex items-center p-0 h-auto"
+                className="text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center p-2 h-auto rounded-lg font-medium transition-all duration-200"
                 onClick={() => setChangePasswordModalOpen(true)}
               >
-                <Key className="h-3.5 w-3.5 mr-1" />
+                <Key className="h-4 w-4 mr-2" />
                 Alterar minha senha
               </Button>
-              <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-muted-foreground/80 flex items-center">
-                <HelpCircle className="h-3.5 w-3.5 mr-1" />
+              <Link to="/forgot-password" className="text-sm text-slate-600 hover:text-blue-600 flex items-center p-2 rounded-lg hover:bg-blue-50 transition-all duration-200 font-medium">
+                <HelpCircle className="h-4 w-4 mr-2" />
                 Esqueceu sua senha?
               </Link>
             </div>
