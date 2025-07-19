@@ -1679,26 +1679,26 @@ export default function Dashboard() {
           <div className="absolute bottom-0 right-1/3 w-80 h-80 bg-purple-400 rounded-full blur-3xl"></div>
         </div>
         
-        <div className="relative container mx-auto px-6 py-8">
+        <div className="relative container mx-auto px-6 py-6">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 mb-6 bg-gradient-to-br from-white to-slate-100 rounded-full shadow-2xl shadow-slate-200/50 border border-white/60">
+            <div className="flex items-center justify-center gap-4 mb-4">
               <img
                 src="/fottufinho.webp"
                 alt="Fottufinho Mascote"
-                className="w-16 h-16 rounded-full ring-2 ring-white shadow-sm"
+                className="w-12 h-12 rounded-xl shadow-lg"
               />
+              
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
+                <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                  Bem-vindo de volta, 
+                </span>
+                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent ml-2">
+                  {user?.name?.split(' ')[0] || 'Fotógrafo'}
+                </span>
+              </h1>
             </div>
             
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3 leading-tight">
-              <span className="block bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                Bem-vindo de volta
-              </span>
-              <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mt-1">
-                {user?.name?.split(' ')[0] || 'Fotógrafo'}
-              </span>
-            </h1>
-            
-            <p className="text-base sm:text-lg text-slate-600 font-light max-w-2xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 font-light max-w-2xl mx-auto leading-relaxed">
               Sua plataforma profissional para gerenciar projetos fotográficos com elegância.
             </p>
           </div>
