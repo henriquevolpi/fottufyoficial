@@ -344,59 +344,71 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
   };
   
   return (
-        <Card className="overflow-hidden hover:shadow-[0_4px_15px_0_rgba(30,58,138,0.70)] transition-shadow">
-      <CardHeader className="p-4">
+        <Card className="overflow-hidden bg-white/70 backdrop-blur-sm border-0 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-blue-200/30 transition-all duration-300 hover:scale-[1.02] rounded-2xl">
+      <CardHeader className="p-6 pb-4">
         <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="tracking-tight font-bold text-[24px]">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
-            <CardDescription className="text-sm mt-1">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
+          <div className="flex-1">
+            <CardTitle className="text-xl font-bold text-slate-800 mb-2 leading-tight">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
+            <CardDescription className="text-slate-600 font-medium">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
           </div>
-          <Badge className={getStatusColor(status)}>
+          <Badge className={`${getStatusColor(status)} rounded-full px-3 py-1 text-xs font-semibold border-0 shadow-sm`}>
             {getStatusDisplayName(status)}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="flex items-center text-sm text-gray-500 mt-2">
-          <Calendar className="h-4 w-4 mr-1" />
-          <span>{formatDate(project?.data || new Date().toISOString())}</span>
-        </div>
-        <div className="flex justify-between mt-3">
-          <div className="flex items-center text-sm">
-            <Camera className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project?.photos?.length || project?.fotos || 0} photos</span>
+      <CardContent className="px-6 pb-4">
+        <div className="flex items-center text-sm text-slate-500 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center mr-3">
+            <Calendar className="h-4 w-4 text-blue-600" />
           </div>
-          <div className="flex items-center text-sm">
-            <FileText className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{project?.selectedPhotos?.length || project?.selecionadas || 0} selected</span>
+          <span className="font-medium">{formatDate(project?.data || new Date().toISOString())}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center text-sm bg-slate-50 rounded-lg p-3">
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mr-3">
+              <Camera className="h-4 w-4 text-green-600" />
+            </div>
+            <div>
+              <div className="font-bold text-slate-800">{project?.photos?.length || project?.fotos || 0}</div>
+              <div className="text-xs text-slate-500">fotos</div>
+            </div>
+          </div>
+          <div className="flex items-center text-sm bg-slate-50 rounded-lg p-3">
+            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
+              <FileText className="h-4 w-4 text-purple-600" />
+            </div>
+            <div>
+              <div className="font-bold text-slate-800">{project?.selectedPhotos?.length || project?.selecionadas || 0}</div>
+              <div className="text-xs text-slate-500">selecionadas</div>
+            </div>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2 justify-between">
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {/* Comments button - moved to first position */}
+      <CardFooter className="p-6 pt-4 flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2 w-full">
+          {/* Comments button */}
           <Button 
             variant="ghost" 
             size="sm"
-            className="text-xs text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-full px-4 py-2 font-medium transition-colors"
+            className="text-xs text-purple-700 bg-purple-50 hover:bg-purple-100 hover:text-purple-800 rounded-xl px-4 py-2.5 font-semibold transition-all duration-200 border border-purple-100"
             onClick={(e) => {
               e.stopPropagation();
               onViewComments?.(project.id);
             }}
           >
-            <MessageCircle className="h-3 w-3 mr-1" />
+            <MessageCircle className="h-4 w-4 mr-2" />
             Comentários
           </Button>
           
-          {/* View selections button - available for projects with selections */}
+          {/* View selections button */}
           {(project.selectedPhotos?.length > 0 || project.selecionadas > 0) && (
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-xs text-green-600 bg-green-50 hover:bg-green-100 rounded-full px-4 py-2 font-medium transition-colors"
+              className="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 rounded-xl px-4 py-2.5 font-semibold transition-all duration-200 border border-emerald-100"
               onClick={handleViewSelections}
             >
-              <FileText className="h-3 w-3 mr-1" />
+              <FileText className="h-4 w-4 mr-2" />
               Ver Seleções
             </Button>
           )}
@@ -405,9 +417,9 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button 
             variant="ghost" 
             size="sm"
-            className={`text-xs rounded-full px-4 py-2 font-medium transition-colors ${project.showWatermark !== false 
-              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
-              : 'text-gray-500 bg-gray-50 hover:bg-gray-100'
+            className={`text-xs rounded-xl px-4 py-2.5 font-semibold transition-all duration-200 border ${project.showWatermark !== false 
+              ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 border-blue-100' 
+              : 'text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border-slate-200'
             }`}
             onClick={handleToggleWatermark}
             disabled={isTogglingWatermark}
@@ -415,51 +427,54 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           >
             {isTogglingWatermark ? (
               <>
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processando...
               </>
             ) : (
               <>
                 {project.showWatermark !== false ? (
-                  <Shield className="h-3 w-3 mr-1" />
+                  <Shield className="h-4 w-4 mr-2" />
                 ) : (
-                  <ShieldOff className="h-3 w-3 mr-1" />
+                  <ShieldOff className="h-4 w-4 mr-2" />
                 )}
                 Marca d'água
               </>
             )}
           </Button>
           
-          {/* Delete project button - moved to last position and made smaller */}
+          {/* Delete project button */}
           <Button
             variant="ghost"
-            size="icon"
-            className="text-red-500 bg-red-50 hover:bg-red-100 rounded-full p-1 transition-colors"
+            size="sm"
+            className="text-xs text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-xl px-4 py-2.5 font-semibold transition-all duration-200 border border-red-100"
             onClick={() => setShowDeleteConfirm(true)}
-            aria-label="Excluir"
+            aria-label="Excluir projeto"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4 mr-2" />
+            Excluir
           </Button>
         </div>
         
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+        <div className="flex gap-3 w-full">
           <Button 
             variant="outline" 
             size="sm"
-            className="text-xs flex-grow sm:flex-grow-0"
+            className="flex-1 text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl py-2.5 transition-all duration-200"
             onClick={() => setLocation(`/project/${project.id}`)}
           >
+            <ArrowUpRight className="h-4 w-4 mr-2" />
             Ver Detalhes
-            <ArrowUpRight className="h-3 w-3 ml-1" />
           </Button>
           
           <Button
-            variant="ghost"
             size="sm"
             className={`
-              text-xs text-white font-bold shadow-sm flex-grow sm:flex-grow-0 rounded-md transition-colors
-              bg-gradient-to-r from-[#2563eb] to-[#93c5fd]
-              hover:from-[#3b82f6] hover:to-[#60a5fa]
+              flex-1 text-sm font-semibold text-white shadow-lg
+              bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
+              hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
+              hover:scale-105 hover:shadow-xl
+              rounded-xl py-2.5 transition-all duration-300 
+              border border-blue-500/20
             `}
             onClick={(e) => {
               e.stopPropagation();
@@ -471,12 +486,9 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
               });
             }}
           >
+            <LinkIcon className="h-4 w-4 mr-2" />
             Link do Cliente
-            <LinkIcon className="h-3 w-3 ml-1 text-white" />
           </Button>
-          
-
-
         </div>
       </CardFooter>
       
@@ -1772,16 +1784,17 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : filteredProjects.length === 0 ? (
-                <div className="text-center py-12 border border-dashed rounded-lg">
-                  <Camera className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">No projects found</h3>
-                  <p className="text-gray-500 mb-6">
+                <div className="text-center py-16 bg-white/60 backdrop-blur-sm rounded-2xl border-0 shadow-lg shadow-slate-200/50">
+                  <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+                    <Camera className="h-10 w-10 text-blue-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-3">Nenhum projeto encontrado</h3>
+                  <p className="text-slate-600 mb-8 text-lg max-w-md mx-auto leading-relaxed">
                     {searchQuery 
-                      ? "Try adjusting your filters or search terms" 
-                      : "Start by creating your first photo project"
+                      ? "Tente ajustar seus filtros ou termos de pesquisa para encontrar seus projetos" 
+                      : "Comece criando seu primeiro projeto fotográfico e organize suas fotos com elegância"
                     }
                   </p>
-
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1821,15 +1834,15 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : filteredProjects.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed rounded-lg">
-                    <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Clock className="h-6 w-6 text-gray-400" />
+                  <div className="text-center py-16 bg-white/60 backdrop-blur-sm rounded-2xl border-0 shadow-lg shadow-slate-200/50">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
+                      <Clock className="h-10 w-10 text-amber-600" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">
-                      No {getStatusFilter(tab)} projects
+                    <h3 className="text-2xl font-bold text-slate-800 mb-3">
+                      Nenhum projeto {getStatusFilter(tab)}
                     </h3>
-                    <p className="text-gray-500 mb-4">
-                      Projects will appear here when they are marked as {getStatusFilter(tab)}.
+                    <p className="text-slate-600 mb-8 text-lg max-w-md mx-auto leading-relaxed">
+                      Os projetos aparecerão aqui quando forem marcados como {getStatusFilter(tab)}.
                     </p>
                   </div>
                 ) : (
