@@ -1731,36 +1731,39 @@ export default function Dashboard() {
           </div>
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
-            <div className="mb-8 flex justify-center">
-              <TabsList className="inline-flex bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50">
-                <TabsTrigger value="all" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Todos</TabsTrigger>
-                <TabsTrigger value="pending" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Pendentes</TabsTrigger>
-                <TabsTrigger value="reviewed" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Revisados</TabsTrigger>
-                <TabsTrigger value="completed" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Finalizados</TabsTrigger>
-              </TabsList>
-            </div>
-            
-            {/* Duplicate Novo Projeto button centered below tabs */}
-            <div className="flex justify-center mb-8">
-              <Button
-                onClick={() => setUploadModalOpen(true)}
-                className={`
-                  w-full sm:w-auto
-                  flex items-center justify-center
-                  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
-                  text-white font-semibold
-                  rounded-xl shadow-lg shadow-blue-500/25
-                  px-8 py-3
-                  transition-all duration-300
-                  hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
-                  hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
-                  text-base border border-blue-500/20
-                `}
-              >
-                <PlusCircle className="h-5 w-5 mr-2" />
-                Novo Projeto
-              </Button>
+            {/* Layout com abas e botão na esquerda */}
+            <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex justify-start">
+                <TabsList className="inline-flex bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50">
+                  <TabsTrigger value="all" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Todos</TabsTrigger>
+                  <TabsTrigger value="pending" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Pendentes</TabsTrigger>
+                  <TabsTrigger value="reviewed" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Revisados</TabsTrigger>
+                  <TabsTrigger value="completed" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Finalizados</TabsTrigger>
+                </TabsList>
+              </div>
+              
+              {/* Botão Novo Projeto ao lado das abas em telas grandes, embaixo em mobile */}
+              <div className="flex justify-start lg:justify-end">
+                <Button
+                  onClick={() => setUploadModalOpen(true)}
+                  className={`
+                    w-full lg:w-auto
+                    flex items-center justify-center
+                    bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
+                    text-white font-semibold
+                    rounded-xl shadow-lg shadow-blue-500/25
+                    px-8 py-3
+                    transition-all duration-300
+                    hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
+                    hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30
+                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
+                    text-base border border-blue-500/20
+                  `}
+                >
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  Novo Projeto
+                </Button>
+              </div>
             </div>
             
             <TabsContent value="all" className="mt-0">
