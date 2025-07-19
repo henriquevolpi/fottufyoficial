@@ -1731,12 +1731,14 @@ export default function Dashboard() {
           </div>
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="mb-8 flex w-full bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50">
-                <TabsTrigger value="all" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Todos</TabsTrigger>
-                <TabsTrigger value="pending" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Pendentes</TabsTrigger>
-                <TabsTrigger value="reviewed" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Revisados</TabsTrigger>
-                <TabsTrigger value="completed" className="flex-shrink-0 text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Finalizados</TabsTrigger>
-            </TabsList>
+            <div className="mb-8 flex justify-center">
+              <TabsList className="inline-flex bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50">
+                <TabsTrigger value="all" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Todos</TabsTrigger>
+                <TabsTrigger value="pending" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Pendentes</TabsTrigger>
+                <TabsTrigger value="reviewed" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Revisados</TabsTrigger>
+                <TabsTrigger value="completed" className="text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-6 py-3 transition-all duration-200">Finalizados</TabsTrigger>
+              </TabsList>
+            </div>
             
             {/* Duplicate Novo Projeto button centered below tabs */}
             <div className="flex justify-center mb-8">
