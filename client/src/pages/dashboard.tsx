@@ -906,7 +906,7 @@ function UploadModal({
               Criar Novo Projeto
             </span>
           </DialogTitle>
-          <DialogDescription className="text-sm mt-1 text-black font-semibold px-2 py-1 rounded-sm bg-[#000000]">
+          <DialogDescription className="text-sm mt-1 text-black font-semibold px-2 py-1 rounded-sm bg-[#1f450a]">
             Aceitamos fotos apenas abaixo de 2mb cada, para conforto dos clientes ❤️ / Envie no máximo lotes de 400 fotos, para evitar erros no upload 📸
           </DialogDescription>
         </DialogHeader>
