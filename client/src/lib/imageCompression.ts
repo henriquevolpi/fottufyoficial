@@ -45,7 +45,7 @@ function suggestGarbageCollection(): void {
  */
 const DEFAULT_COMPRESSION_OPTIONS = {
   maxWidthOrHeight: 970, // Largura máxima em pixels
-  useWebWorker: true, // Usar web worker para não bloquear a UI
+  useWebWorker: typeof Worker !== 'undefined', // Verificar se Web Worker está disponível
   quality: 0.9, // Qualidade 90%
   fileType: undefined as string | undefined, // Manter o tipo original do arquivo
   initialQuality: 0.9, // Qualidade inicial
@@ -94,8 +94,35 @@ export async function compressImage(
     return compressedFile;
   } catch (error) {
     console.error(`[Frontend] Erro ao processar imagem ${file.name}:`, error);
-    // Em caso de erro, retornar o arquivo original
-    console.log(`[Frontend] Retornando arquivo original devido ao erro`);
+    
+    // Verificar se é erro de memória ou tamanho
+    const errorMsg = error instanceof Error ? error.message.toLowerCase() : '';
+    if (errorMsg.includes('memory') || errorMsg.includes('heap') || errorMsg.includes('worker')) {
+      console.warn(`[Frontend] Erro de memória detectado para ${file.name} - tentando sem Web Worker`);
+      
+      // Tentar novamente sem Web Worker se o erro foi relacionado à memória
+      try {
+        const fallbackOptions = {
+          ...DEFAULT_COMPRESSION_OPTIONS,
+          useWebWorker: false,
+          quality: 0.8, // Reduzir qualidade para economizar memória
+        };
+        
+        const fallbackBlob = await imageCompression(file, fallbackOptions);
+        const fallbackFile = new File([fallbackBlob], file.name, {
+          type: file.type,
+          lastModified: Date.now(),
+        });
+        
+        console.log(`[Frontend] Fallback bem-sucedido para ${file.name}`);
+        return fallbackFile;
+      } catch (fallbackError) {
+        console.error(`[Frontend] Fallback também falhou para ${file.name}:`, fallbackError);
+      }
+    }
+    
+    // Em último caso, retornar o arquivo original
+    console.log(`[Frontend] Retornando arquivo original devido ao erro: ${file.name}`);
     return file;
   }
 }

@@ -21,8 +21,8 @@ interface UploadProtectionState {
 }
 
 const STORAGE_KEY = 'fottufy_upload_state';
-const INACTIVITY_THRESHOLD = 15000; // 15 segundos
-const EMERGENCY_OVERLAY_DELAY = 10000; // 10 segundos
+const INACTIVITY_THRESHOLD = 8000; // 8 segundos (reduzido para detecção mais rápida)
+const EMERGENCY_OVERLAY_DELAY = 6000; // 6 segundos (reduzido para resposta mais rápida)
 
 export function useUploadProtection() {
   const [state, setState] = useState<UploadProtectionState>(() => {
@@ -42,12 +42,17 @@ export function useUploadProtection() {
   const [showEmergencyOverlay, setShowEmergencyOverlay] = useState(false);
   const [isUIResponsive, setIsUIResponsive] = useState(true);
 
-  // Persistir estado no localStorage
+  // Persistir estado no localStorage com tratamento de erro
   useEffect(() => {
-    if (state.isActive) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+    try {
+      if (state.isActive) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (error) {
+      // Navegadores podem ter localStorage desabilitado ou com quota excedida
+      console.warn('Não foi possível usar localStorage para estado de upload:', error);
     }
   }, [state]);
 

@@ -132,6 +132,16 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       xhr.open('POST', `/api/projects/${projectId}/photos/upload`, true);
       // Incluir cookies para autenticação
       xhr.withCredentials = true;
+      
+      // Adicionar timeout para evitar uploads travados (30 segundos por lote)
+      xhr.timeout = 30000;
+      
+      // Tratar timeout
+      xhr.ontimeout = () => {
+        setUploadStatus('idle');
+        reject(new Error('Upload excedeu o tempo limite. Tente novamente com menos fotos.'));
+      };
+      
       xhr.send(formData);
     });
   }
@@ -190,9 +200,28 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         // Usar apenas os arquivos válidos (já filtrados)
         const batchFiles = validFiles.slice(startIndex, endIndex);
         
-        // Comprimir todos os arquivos do lote atual em paralelo
-        const compressPromises = batchFiles.map(file => processFile(file));
-        const compressedFiles = await Promise.all(compressPromises);
+        // Comprimir arquivos em grupos menores para evitar sobrecarga de memória
+        const compressedFiles = [];
+        const COMPRESS_CHUNK_SIZE = 5; // Processar apenas 5 imagens por vez
+        
+        console.log(`Comprimindo lote ${batchIndex + 1}: ${batchFiles.length} imagens em chunks de ${COMPRESS_CHUNK_SIZE}`);
+        
+        for (let chunkStart = 0; chunkStart < batchFiles.length; chunkStart += COMPRESS_CHUNK_SIZE) {
+          const chunk = batchFiles.slice(chunkStart, chunkStart + COMPRESS_CHUNK_SIZE);
+          const chunkNumber = Math.floor(chunkStart / COMPRESS_CHUNK_SIZE) + 1;
+          const totalChunks = Math.ceil(batchFiles.length / COMPRESS_CHUNK_SIZE);
+          
+          console.log(`Processando chunk ${chunkNumber}/${totalChunks} do lote ${batchIndex + 1}`);
+          
+          const chunkPromises = chunk.map(file => processFile(file));
+          const chunkCompressed = await Promise.all(chunkPromises);
+          compressedFiles.push(...chunkCompressed);
+          
+          // Pequena pausa entre chunks para não travar a UI e mostrar progresso
+          if (chunkStart + COMPRESS_CHUNK_SIZE < batchFiles.length) {
+            await new Promise(resolve => setTimeout(resolve, 200)); // Aumentado para 200ms
+          }
+        }
         
         console.log(`Lote ${batchIndex + 1} comprimido, enviando para o servidor...`);
         
@@ -221,13 +250,15 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       
       // Clear localStorage for this project to avoid cache issues
       try {
-        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-        const filteredProjects = storedProjects.filter((p: any) => 
-          p.id.toString() !== projectId.toString());
-        localStorage.setItem('projects', JSON.stringify(filteredProjects));
-        console.log('Cleared localStorage cache for project', projectId);
+        if (typeof Storage !== 'undefined' && localStorage) {
+          const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+          const filteredProjects = storedProjects.filter((p: any) => 
+            p.id.toString() !== projectId.toString());
+          localStorage.setItem('projects', JSON.stringify(filteredProjects));
+          console.log('Cleared localStorage cache for project', projectId);
+        }
       } catch (err) {
-        console.error('Failed to clear localStorage:', err);
+        console.warn('Failed to clear localStorage (storage may be disabled):', err);
       }
       
       // Chamar callback de sucesso se fornecido
