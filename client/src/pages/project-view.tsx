@@ -324,9 +324,27 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       // Atualizar state com dados do projeto
       setProject(adaptedProject);
       
+      // Carregar seleções temporárias do localStorage (tem prioridade sobre as seleções do servidor)
+      const tempSelections = loadTempSelections();
+      
       // Inicializar seleções de forma mais eficiente (evitar travamento em projetos grandes)
       const preSelectedPhotos = new Set<string>();
-      if (adaptedProject.photos && adaptedProject.photos.length > 0) {
+      
+      // Se há seleções temporárias, usar elas como base
+      if (tempSelections.size > 0) {
+        console.log(`Usando ${tempSelections.size} seleções temporárias para projeto ${projectId}`);
+        // Validar se as fotos selecionadas temporariamente ainda existem no projeto
+        tempSelections.forEach(photoId => {
+          const photoExists = adaptedProject.photos.some(p => p.id === photoId);
+          if (photoExists) {
+            preSelectedPhotos.add(photoId);
+          } else {
+            console.warn(`Foto ${photoId} estava selecionada temporariamente mas não existe mais no projeto`);
+          }
+        });
+        setSelectedPhotos(preSelectedPhotos);
+      } else if (adaptedProject.photos && adaptedProject.photos.length > 0) {
+        // Usar seleções do servidor se não há seleções temporárias
         // Para projetos grandes, usar requestIdleCallback para não travar a UI
         if (adaptedProject.photos.length > 50) {
           // Processar em lotes pequenos para não bloquear a thread principal
@@ -441,7 +459,54 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
   }, [currentImageUrl]);
   
-  // Alternar seleção de foto com debounce para evitar múltiplos setState
+  // Salvar seleções temporárias no localStorage
+  const saveTempSelections = useCallback((selections: Set<string>) => {
+    if (!projectId) return;
+    
+    try {
+      const tempKey = `temp_selections_${projectId}`;
+      const selectionsArray = Array.from(selections);
+      localStorage.setItem(tempKey, JSON.stringify(selectionsArray));
+      console.log(`Seleções temporárias salvas para projeto ${projectId}:`, selectionsArray.length, 'fotos');
+    } catch (error) {
+      console.error('Erro ao salvar seleções temporárias:', error);
+    }
+  }, [projectId]);
+
+  // Carregar seleções temporárias do localStorage
+  const loadTempSelections = useCallback((): Set<string> => {
+    if (!projectId) return new Set();
+    
+    try {
+      const tempKey = `temp_selections_${projectId}`;
+      const storedSelections = localStorage.getItem(tempKey);
+      
+      if (storedSelections) {
+        const selectionsArray = JSON.parse(storedSelections);
+        console.log(`Seleções temporárias carregadas para projeto ${projectId}:`, selectionsArray.length, 'fotos');
+        return new Set(selectionsArray);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar seleções temporárias:', error);
+    }
+    
+    return new Set();
+  }, [projectId]);
+
+  // Limpar seleções temporárias do localStorage
+  const clearTempSelections = useCallback(() => {
+    if (!projectId) return;
+    
+    try {
+      const tempKey = `temp_selections_${projectId}`;
+      localStorage.removeItem(tempKey);
+      console.log(`Seleções temporárias limpas para projeto ${projectId}`);
+    } catch (error) {
+      console.error('Erro ao limpar seleções temporárias:', error);
+    }
+  }, [projectId]);
+
+  // Alternar seleção de foto com persistência automática
   const togglePhotoSelection = useCallback((photoId: string) => {
     if (isFinalized) return; // Impedir seleção se o projeto estiver finalizado
     
@@ -452,9 +517,13 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       } else {
         newSelected.add(photoId);
       }
+      
+      // Salvar automaticamente no localStorage
+      saveTempSelections(newSelected);
+      
       return newSelected;
     });
-  }, [isFinalized]);
+  }, [isFinalized, saveTempSelections]);
   
   // Abrir modal com a imagem em tamanho completo (com otimização de memória)
   const openImageModal = useCallback((url: string, photoIndex: number, event: React.MouseEvent) => {
@@ -597,6 +666,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         if (response.ok) {
           console.log('Seleção finalizada com sucesso via API');
           
+          // Limpar seleções temporárias do localStorage
+          clearTempSelections();
+          
           // Simular uma pequena demora para melhorar UX
           await new Promise(resolve => setTimeout(resolve, 1000));
           
@@ -653,6 +725,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       updatedProject.selecionadas = selectedPhotos.size;
       updatedProject.status = "finalizado";
       updatedProject.finalizado = true;
+      
+      // Limpar seleções temporárias do localStorage
+      clearTempSelections();
       
       // Simular uma pequena demora para melhorar UX
       await new Promise(resolve => setTimeout(resolve, 1000));
