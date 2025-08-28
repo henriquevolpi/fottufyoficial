@@ -816,11 +816,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   Cliente: {project.cliente}
                 </p>
                 <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-center md:justify-start">
-                  <Badge className={`text-sm px-4 py-2 w-fit ${
-                    project.status === 'finalizado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {project.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}
-                  </Badge>
                   <span className="text-white/80 text-sm">
                     {new Date(project.data).toLocaleDateString('pt-BR')}
                   </span>
