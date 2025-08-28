@@ -87,24 +87,24 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 222.2 84% 11%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --accent: 223 47% 11%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 223 47% 11%;
+    --input: 223 47% 11%;
     --ring: 224.3 76.3% 48%;
   }
 }
@@ -116,4 +116,206 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+}
+
+/* Dark mode specific overrides */
+.dark .min-h-screen {
+  background: linear-gradient(135deg, hsl(224, 71%, 4%) 0%, hsl(223, 47%, 6%) 50%, hsl(224, 71%, 4%) 100%);
+}
+
+.dark header {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+.dark .bg-white\/80,
+.dark .bg-white\/70 {
+  background: rgba(15, 23, 42, 0.9) !important;
+}
+
+.dark .text-slate-800 {
+  color: hsl(213, 31%, 91%) !important;
+}
+
+.dark .text-slate-600 {
+  color: hsl(215.4, 16.3%, 56.9%) !important;
+}
+
+.dark .text-slate-500 {
+  color: hsl(215.4, 16.3%, 46.9%) !important;
+}
+
+.dark .bg-slate-50 {
+  background: hsl(223, 47%, 11%) !important;
+}
+
+.dark .bg-slate-100\/60 {
+  background: rgba(30, 41, 59, 0.6) !important;
+}
+
+.dark .border-slate-200 {
+  border-color: hsl(223, 47%, 11%) !important;
+}
+
+.dark .border-slate-200\/60 {
+  border-color: rgba(51, 65, 85, 0.6) !important;
+}
+
+.dark .bg-gradient-to-r.from-slate-50.via-white.to-blue-50 {
+  background: linear-gradient(90deg, hsl(223, 47%, 8%) 0%, hsl(224, 71%, 6%) 50%, hsl(223, 47%, 8%) 100%) !important;
+}
+
+.dark .bg-gradient-to-r.from-blue-50\/70.via-indigo-50\/70.to-blue-50\/70 {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.7) 0%, rgba(51, 65, 85, 0.7) 50%, rgba(30, 41, 59, 0.7) 100%) !important;
+}
+
+.dark .bg-green-100 {
+  background: hsl(142, 76%, 15%) !important;
+}
+
+.dark .bg-purple-100 {
+  background: hsl(270, 76%, 15%) !important;
+}
+
+.dark .bg-blue-50 {
+  background: hsl(217, 91%, 10%) !important;
+}
+
+.dark .bg-red-50 {
+  background: hsl(0, 84%, 15%) !important;
+}
+
+.dark .bg-emerald-50 {
+  background: hsl(142, 76%, 10%) !important;
+}
+
+.dark .text-green-600 {
+  color: hsl(142, 76%, 65%) !important;
+}
+
+.dark .text-purple-600 {
+  color: hsl(270, 76%, 65%) !important;
+}
+
+.dark .text-blue-700 {
+  color: hsl(217, 91%, 70%) !important;
+}
+
+.dark .text-red-600 {
+  color: hsl(0, 84%, 70%) !important;
+}
+
+.dark .text-emerald-700 {
+  color: hsl(142, 76%, 70%) !important;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background: hsl(223, 47%, 18%) !important;
+}
+
+.dark .hover\:bg-blue-100:hover {
+  background: hsl(217, 91%, 15%) !important;
+}
+
+.dark .hover\:bg-red-100:hover {
+  background: hsl(0, 84%, 20%) !important;
+}
+
+.dark .hover\:bg-emerald-100:hover {
+  background: hsl(142, 76%, 15%) !important;
+}
+
+.dark .border-blue-100 {
+  border-color: hsl(217, 91%, 20%) !important;
+}
+
+.dark .border-red-100 {
+  border-color: hsl(0, 84%, 25%) !important;
+}
+
+.dark .border-emerald-100 {
+  border-color: hsl(142, 76%, 20%) !important;
+}
+
+.dark .shadow-blue-500\/25 {
+  box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .text-\[\#080707\] {
+  color: hsl(213, 31%, 85%) !important;
+}
+
+.dark .shadow-\[0_0_15px_rgba\(0\,0\,0\,0\.1\)\] {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .hover\:shadow-\[0_0_25px_rgba\(0\,0\,0\,0\.15\)\]:hover {
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Tab styling for dark mode */
+.dark .data-\[state\=active\]\:bg-white[data-state=active] {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+.dark .data-\[state\=active\]\:text-blue-700[data-state=active] {
+  color: hsl(217, 91%, 70%) !important;
+}
+
+/* Input styling for dark mode */
+.dark input {
+  background: hsl(223, 47%, 11%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+  color: hsl(213, 31%, 91%) !important;
+}
+
+.dark input::placeholder {
+  color: hsl(215.4, 16.3%, 46.9%) !important;
+}
+
+/* Scrollbar styling for dark mode */
+.dark::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark::-webkit-scrollbar-track {
+  background: hsl(224, 71%, 8%);
+}
+
+.dark::-webkit-scrollbar-thumb {
+  background: hsl(223, 47%, 20%);
+  border-radius: 4px;
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  background: hsl(223, 47%, 30%);
+}
+
+/* Theme toggle button styling */
+.dark .border-slate-300 {
+  border-color: hsl(223, 47%, 20%) !important;
+}
+
+.dark .text-slate-600 {
+  color: hsl(215.4, 16.3%, 56.9%) !important;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+.dark .hover\:border-slate-400:hover {
+  border-color: hsl(223, 47%, 30%) !important;
 }
