@@ -99,6 +99,29 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Detectar orientação da imagem de capa
+  useEffect(() => {
+    if (project?.photos && project.photos.length > 0) {
+      const coverPhoto = project.photos[0];
+      const coverPhotoUrl = coverPhoto.url && !coverPhoto.url.includes('project-photos') 
+        ? coverPhoto.url 
+        : `https://cdn.fottufy.com/${coverPhoto.filename}`;
+        
+      const img = new Image();
+      img.onload = () => {
+        if (img.width > img.height) {
+          setCoverImageOrientation('landscape');
+        } else {
+          setCoverImageOrientation('portrait');
+        }
+      };
+      img.onerror = () => {
+        setCoverImageOrientation('portrait'); // fallback
+      };
+      img.src = coverPhotoUrl;
+    }
+  }, [project?.photos]);
+
   // Carrega comentários apenas quando necessário (não todos de uma vez)
   // useEffect removido para melhor performance - comentários são carregados sob demanda
 
@@ -782,7 +805,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     );
   }
   
-  // Pegar a primeira foto para usar como capa
+  // Pegar a primeira foto para usar como capa - só depois de verificar que project existe
   const coverPhoto = project.photos && project.photos.length > 0 ? project.photos[0] : null;
   const coverPhotoUrl = coverPhoto 
     ? (coverPhoto.url && !coverPhoto.url.includes('project-photos') 
@@ -790,27 +813,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         : `https://cdn.fottufy.com/${coverPhoto.filename}`)
     : null;
 
-  // Detectar orientação da imagem de capa
-  useEffect(() => {
-    if (coverPhotoUrl) {
-      const img = new Image();
-      img.onload = () => {
-        if (img.width > img.height) {
-          setCoverImageOrientation('landscape');
-        } else {
-          setCoverImageOrientation('portrait');
-        }
-      };
-      img.onerror = () => {
-        setCoverImageOrientation('portrait'); // fallback
-      };
-      img.src = coverPhotoUrl;
-    }
-  }, [coverPhotoUrl]);
-
   // Definir altura da capa baseado na orientação
   const coverHeight = coverImageOrientation === 'landscape' ? 'h-64' : 'h-96';
-
+  
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Hero Section com Capa */}
