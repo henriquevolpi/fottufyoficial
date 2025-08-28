@@ -781,22 +781,65 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     );
   }
   
+  // Pegar a primeira foto para usar como capa
+  const coverPhoto = project.photos && project.photos.length > 0 ? project.photos[0] : null;
+  const coverPhotoUrl = coverPhoto 
+    ? (coverPhoto.url && !coverPhoto.url.includes('project-photos') 
+        ? coverPhoto.url 
+        : `https://cdn.fottufy.com/${coverPhoto.filename}`)
+    : null;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Header */}
-        <header className="bg-gradient-to-r from-blue-50 via-white to-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center">
-              <div>
-                <h1 className="font-extrabold text-[39px] bg-gradient-to-r from-blue-800 to-blue-300 bg-clip-text text-transparent">
+      {/* Hero Section com Capa */}
+      {coverPhotoUrl && (
+        <div className="relative h-80 overflow-hidden">
+          {/* Background com desfoque */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center transform scale-110"
+            style={{
+              backgroundImage: `url(${coverPhotoUrl})`,
+              filter: 'blur(3px)'
+            }}
+          />
+          {/* Overlay escuro */}
+          <div className="absolute inset-0 bg-black/50" />
+          
+          {/* Conteúdo sobre a capa */}
+          <div className="relative z-10 h-full flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+              <div className="text-center md:text-left">
+                <h1 className="font-extrabold text-[48px] md:text-[56px] text-white drop-shadow-lg">
                   {project.nome}
                 </h1>
-                <p className="text-gray-600 text-[15px]">Cliente: {project.cliente}</p>
+                <p className="text-white/90 text-[18px] md:text-[20px] mt-2 drop-shadow-md">
+                  Cliente: {project.cliente}
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-center md:justify-start">
+                  <Badge className={`text-sm px-4 py-2 w-fit ${
+                    project.status === 'finalizado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {project.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}
+                  </Badge>
+                  <span className="text-white/80 text-sm">
+                    {new Date(project.data).toLocaleDateString('pt-BR')}
+                  </span>
+                  <span className="text-white/80 text-sm">
+                    {project.fotos} fotos
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Header com Ações */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             
-            <div className="mt-4 md:mt-0 flex items-center">
+            <div className="mt-4 md:mt-0 flex items-center ml-auto">
               {isFinalized ? (
                 <div className="flex items-center space-x-2">
                   <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1 flex items-center">
