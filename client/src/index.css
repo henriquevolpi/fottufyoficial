@@ -667,3 +667,40 @@
 .dark .font-medium.text-slate-600 {
   color: hsl(215.4, 16.3%, 56.9%) !important;
 }
+
+/* Banner cinematográfico modo noturno */
+.dark .bg-gradient-to-r.from-white.via-slate-50\/90.to-white {
+  background: linear-gradient(90deg, hsl(223, 47%, 8%) 0%, hsl(224, 71%, 6%) 50%, hsl(223, 47%, 8%) 100%) !important;
+}
+
+.dark .bg-gradient-to-r.from-blue-50\/30.via-transparent.to-purple-50\/30 {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.3) 0%, transparent 50%, rgba(51, 65, 85, 0.3) 100%) !important;
+}
+
+/* Texto "Bem-vindo de volta" no banner */
+.dark .bg-gradient-to-r.from-slate-900.via-slate-800.to-slate-900 {
+  background: linear-gradient(90deg, hsl(213, 31%, 95%) 0%, hsl(213, 31%, 91%) 50%, hsl(213, 31%, 95%) 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
+/* Preservar a cor do nome do cliente (azul-indigo-purple) - não alterar */
+
+/* Texto da descrição no banner */
+.dark .text-slate-600.font-light {
+  color: hsl(215.4, 16.3%, 70%) !important;
+}
+
+/* Linha decorativa do fundo do banner */
+.dark .bg-gradient-to-r.from-transparent.via-slate-200\/60.to-transparent {
+  background: linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, 0.3) 50%, transparent 100%) !important;
+}
+
+/* Efeitos de blur coloridos no banner */
+.dark .bg-blue-400 {
+  background: hsl(217, 91%, 30%) !important;
+}
+
+.dark .bg-purple-400 {
+  background: hsl(270, 91%, 30%) !important;
+}
