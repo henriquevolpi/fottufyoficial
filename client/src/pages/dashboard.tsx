@@ -1770,7 +1770,7 @@ export default function Dashboard() {
               <h2 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2">
                 Meus Projetos
               </h2>
-              <p className="text-slate-600 text-lg">Gerencie seus projetos fotográficos com elegância</p>
+              <p className="text-lg text-[#000000]">Gerencie seus projetos fotográficos com elegância</p>
             </div>
             
             <div className="flex items-center w-full sm:w-auto gap-3">
