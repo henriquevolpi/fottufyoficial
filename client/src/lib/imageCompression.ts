@@ -37,6 +37,24 @@ function suggestGarbageCollection(): void {
       // Ignorar se gc não estiver disponível
     }
   }
+  
+  // ✅ SEGURANÇA: Força cleanup de recursos não utilizados se possível
+  if (typeof window !== 'undefined' && window.performance && window.performance.memory) {
+    const memInfo = (window.performance as any).memory;
+    // Se uso de heap > 80%, sugerir cleanup mais agressivo
+    if (memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.8) {
+      // Cleanup mais agressivo com setTimeout para não bloquear UI
+      setTimeout(() => {
+        if ((window as any).gc) {
+          try {
+            (window as any).gc();
+          } catch (e) {
+            // Ignorar
+          }
+        }
+      }, 500);
+    }
+  }
 }
 
 /**

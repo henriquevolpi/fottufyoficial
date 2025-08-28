@@ -172,7 +172,14 @@ async function uploadProjectBatch(
     };
     
     xhr.onerror = () => {
-      resolve({ success: false, message: "Erro de rede" });
+      // ✅ SEGURANÇA: Erro mais específico baseado no contexto de rede
+      let errorMessage = "Erro de rede";
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        errorMessage = "Sem conexão com a internet - verifique sua rede";
+      } else {
+        errorMessage = "Falha na conexão com o servidor - tente novamente";
+      }
+      resolve({ success: false, message: errorMessage });
     };
     
     xhr.open("POST", "/api/projects", true);

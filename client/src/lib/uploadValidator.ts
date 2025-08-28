@@ -122,11 +122,16 @@ function validateMemory(files: File[], device: any): UploadRisk[] {
 function validateFiles(files: File[]): UploadRisk[] {
   const risks: UploadRisk[] = [];
   
-  // Verificar tipos de arquivo
-  const invalidFiles = files.filter(file => 
-    !file.type.startsWith('image/') || 
-    !['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)
-  );
+  // ✅ SEGURANÇA: Verificação mais robusta de tipos de arquivo
+  const invalidFiles = files.filter(file => {
+    // Verificar se file.type existe (alguns browsers antigos podem não ter)
+    if (!file.type) {
+      return true; // Considerar inválido se não há type
+    }
+    
+    return !file.type.startsWith('image/') || 
+           !['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type.toLowerCase());
+  });
   
   if (invalidFiles.length > 0) {
     const uniqueTypes = invalidFiles.reduce((types: string[], file) => {

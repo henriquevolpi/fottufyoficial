@@ -69,11 +69,14 @@ export function detectDevice(): DeviceInfo {
     browser = 'samsung';
   }
   
-  // Detectar se é navegador incorporado
+  // ✅ SEGURANÇA: Detecção mais completa de navegadores incorporados
   const isEmbeddedBrowser = 
-    /fbav|instagram|twitter|linkedin|wechat|line/.test(userAgent) ||
+    /fbav|instagram|twitter|linkedin|wechat|line|tiktok|telegram|snapchat/.test(userAgent) ||
     userAgent.includes('webview') ||
-    userAgent.includes('app');
+    userAgent.includes('app') ||
+    userAgent.includes('inapp') ||
+    /; wv\)/.test(userAgent) || // WebView pattern mais comum
+    userAgent.includes('micromessenger'); // WeChat browser
   
   // Estimar RAM baseado em device
   let estimatedRAM: DeviceInfo['estimatedRAM'] = 'unknown';
@@ -140,12 +143,16 @@ export function detectBrowserCapabilities(): BrowserCapabilities {
     capabilities.supportsBlobURLs = false;
   }
   
-  // Testar FormData com muitos arquivos (teste básico)
+  // ✅ SEGURANÇA: Teste mais robusto de FormData com cleanup
   try {
     const testFormData = new FormData();
-    for (let i = 0; i < 100; i++) {
+    // Teste mais realista com diferentes tipos de dados
+    for (let i = 0; i < 50; i++) {
       testFormData.append(`test${i}`, 'test');
     }
+    // Teste com blob pequeno para simular arquivo
+    const testBlob = new Blob(['test'], { type: 'image/jpeg' });
+    testFormData.append('testFile', testBlob, 'test.jpg');
     capabilities.supportsLargeFormData = true;
   } catch (e) {
     capabilities.supportsLargeFormData = false;

@@ -156,7 +156,16 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
           }, delay);
         } else {
           setUploadStatus('idle');
-          reject(new Error(`Falha na conexão após ${MAX_RETRIES + 1} tentativas. Verifique sua internet.`));
+          
+          // ✅ SEGURANÇA: Erro mais específico baseado no contexto
+          let errorMessage = `Falha na conexão após ${MAX_RETRIES + 1} tentativas.`;
+          if (navigator.onLine === false) {
+            errorMessage += " Você está offline. Verifique sua conexão.";
+          } else {
+            errorMessage += " Verifique sua internet ou tente com menos fotos.";
+          }
+          
+          reject(new Error(errorMessage));
         }
       };
       
@@ -211,6 +220,15 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
           critical: true, 
           warning: false, 
           message: "Seu navegador não suporta upload de arquivos. Atualize para a versão mais recente." 
+        };
+      }
+      
+      // ✅ SEGURANÇA: Verificar suporte adicional para FormData (mais robusto)
+      if (!window.FormData || typeof XMLHttpRequest === 'undefined') {
+        return { 
+          critical: true, 
+          warning: false, 
+          message: "Navegador incompatível detectado. Use Chrome, Firefox, Safari ou Edge atualizado." 
         };
       }
       
@@ -291,6 +309,15 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         const previewFile = await processFile(validFiles[0])
         const previewUrl = URL.createObjectURL(previewFile)
         setPreview(previewUrl)
+        
+        // ✅ SEGURANÇA: Cleanup automático do preview após 30 segundos para evitar memory leak
+        setTimeout(() => {
+          try {
+            URL.revokeObjectURL(previewUrl);
+          } catch (e) {
+            // Ignorar erros de cleanup
+          }
+        }, 30000);
       }
 
       // Processar todos os arquivos válidos
@@ -405,11 +432,22 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       });
       
       // Limpar preview após upload bem-sucedido
+      if (preview) {
+        try {
+          URL.revokeObjectURL(preview);
+        } catch (e) {
+          // Ignorar erros de cleanup
+        }
+      }
       setPreview(null)
       
-      // Clear localStorage for this project to avoid cache issues
+      // ✅ SEGURANÇA: Clear localStorage com verificação mais robusta
       try {
-        if (typeof Storage !== 'undefined' && localStorage) {
+        if (typeof Storage !== 'undefined' && localStorage && localStorage.getItem) {
+          // Teste se localStorage está realmente funcionando
+          localStorage.setItem('__test__', 'test');
+          localStorage.removeItem('__test__');
+          
           const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
           const filteredProjects = storedProjects.filter((p: any) => 
             p.id.toString() !== projectId.toString());
@@ -417,7 +455,7 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
           console.log('Cleared localStorage cache for project', projectId);
         }
       } catch (err) {
-        console.warn('Failed to clear localStorage (storage may be disabled):', err);
+        console.warn('Failed to clear localStorage (storage may be disabled or quota exceeded):', err);
       }
       
       // Chamar callback de sucesso se fornecido
