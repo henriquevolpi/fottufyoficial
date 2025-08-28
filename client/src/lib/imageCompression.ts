@@ -80,6 +80,20 @@ export async function compressImage(
   options: Partial<typeof DEFAULT_COMPRESSION_OPTIONS> = {}
 ): Promise<File> {
   try {
+    // 🛡️ VERIFICAÇÃO CRÍTICA DE MEMÓRIA ANTES DE PROCESSAR
+    const memInfo = (window.performance as any)?.memory;
+    if (memInfo && memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.88) {
+      console.warn(`🚨 Memory pressure detected before processing ${file.name}`);
+      // Força limpeza antes de continuar
+      if ((window as any).gc) {
+        try {
+          (window as any).gc();
+          // Espera um pouco para limpeza completar
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (e) {}
+      }
+    }
+    
     // Mesclar opções padrão com opções customizadas
     const compressionOptions = {
       ...DEFAULT_COMPRESSION_OPTIONS,
@@ -91,6 +105,9 @@ export async function compressImage(
       tamanhoOriginal: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       configuracoes: compressionOptions,
     });
+
+    // 🛡️ YIELD THREAD: Micro pausa antes de operação pesada
+    await new Promise(resolve => setTimeout(resolve, 5));
 
     // Comprimir/redimensionar a imagem
     const compressedBlob = await imageCompression(file, compressionOptions);

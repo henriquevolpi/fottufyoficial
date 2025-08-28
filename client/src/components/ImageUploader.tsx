@@ -1,8 +1,9 @@
 // client/src/components/ImageUploader.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import imageCompression from 'browser-image-compression'
 import { useToast } from "@/hooks/use-toast";
+import { getMemoryStatus, detectDeviceCapacity, smartPause, isSafeToContinue, UIResponsivenessMonitor } from '@/lib/whiteScreenProtection';
 
 interface ImageUploaderProps {
   projectId: string | number;
@@ -20,6 +21,16 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
   const [uploadPercentage, setUploadPercentage] = useState(0)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'completed'>('idle')
   const { toast } = useToast()
+  
+  // 🛡️ SISTEMA DE MONITORAMENTO ANTI-TELA BRANCA
+  const [uiMonitor] = useState(new UIResponsivenessMonitor())
+  
+  useEffect(() => {
+    return () => {
+      // Cleanup do monitor quando componente é desmontado
+      uiMonitor.stop();
+    };
+  }, [uiMonitor]);
   
   // ✨ FUNÇÃO OTIMIZADA PARA CÁLCULO DE PROGRESSO
   function calculateOptimizedProgress(
@@ -207,6 +218,42 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
     const filesArray = Array.from(files);
     
+    // 🛡️ PROTEÇÃO CRÍTICA CONTRA TELA BRANCA
+    // 1. Detectar memory pressure antes de iniciar
+    const memoryInfo = (window.performance as any)?.memory;
+    if (memoryInfo && memoryInfo.usedJSHeapSize > memoryInfo.totalJSHeapSize * 0.85) {
+      toast({
+        title: "Memória insuficiente",
+        description: "Feche outras abas ou reduza o número de fotos para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 2. Usar detecção inteligente de capacidade do dispositivo
+    const deviceCapacity = detectDeviceCapacity();
+    
+    if (filesArray.length > deviceCapacity.estimatedMaxSafeFiles) {
+      toast({
+        title: "Muitas fotos selecionadas",
+        description: `Para evitar travamentos, selecione no máximo ${deviceCapacity.estimatedMaxSafeFiles} fotos por vez neste dispositivo.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 3. Iniciar monitoramento de UI responsiveness
+    uiMonitor.start((isResponsive) => {
+      if (!isResponsive) {
+        console.warn('🚨 UI UNRESPONSIVE: Sistema de emergência ativado');
+        toast({
+          title: "Sistema sobrecarregado",
+          description: "Upload pausado para evitar travamento. Aguarde...",
+          variant: "default",
+        });
+      }
+    });
+    
     // ✨ VALIDAÇÃO PRÉVIA DE CAPACIDADE DO DISPOSITIVO
     function checkDeviceCapability(fileCount: number): { critical: boolean; warning: boolean; message: string } {
       // Detectar tipo de dispositivo aproximadamente
@@ -320,6 +367,18 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         }, 30000);
       }
 
+      // 🛡️ PROTEÇÃO ADICIONAL: Verificar memory antes de processar lotes grandes
+      if (validFiles.length > 20) {
+        const memInfo = (window.performance as any)?.memory;
+        if (memInfo && memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.8) {
+          toast({
+            title: "Memória limitada detectada",
+            description: "Processando em modo conservativo para evitar travamentos.",
+            variant: "default",
+          });
+        }
+      }
+
       // Processar todos os arquivos válidos
       let totalUploaded = 0;
       let totalBatches = Math.ceil(validFiles.length / BATCH_SIZE);
@@ -353,13 +412,24 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
           
           console.log(`Processando chunk ${chunkNumber}/${totalChunks} do lote ${batchIndex + 1}`);
           
+          // 🛡️ VERIFICAÇÃO CRÍTICA DE SEGURANÇA
+          if (!isSafeToContinue()) {
+            console.warn('🚨 UNSAFE TO CONTINUE: Pausando processamento...');
+            toast({
+              title: "Sistema sobrecarregado",
+              description: "Pausando para evitar travamento...",
+              variant: "default",
+            });
+            await smartPause(); // Pausa inteligente baseada no status do sistema
+          }
+          
           const chunkPromises = chunk.map(file => processFile(file));
           const chunkCompressed = await Promise.all(chunkPromises);
           compressedFiles.push(...chunkCompressed);
           
-          // Pequena pausa entre chunks para não travar a UI e mostrar progresso
+          // 🛡️ PAUSA INTELIGENTE: Baseada no status real do sistema
           if (chunkStart + COMPRESS_CHUNK_SIZE < batchFiles.length) {
-            await new Promise(resolve => setTimeout(resolve, 200)); // Aumentado para 200ms
+            await smartPause(); // Pausa adaptável ao contexto
           }
         }
         
@@ -470,6 +540,9 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         variant: "destructive",
       });
     } finally {
+      // 🛡️ PARAR MONITORAMENTO E LIMPAR RECURSOS
+      uiMonitor.stop();
+      
       // Definir status como 'completed' por um momento antes de desativar o carregamento
       // para que o usuário possa ver a mensagem "Upload completado!"
       setUploadStatus('completed')
