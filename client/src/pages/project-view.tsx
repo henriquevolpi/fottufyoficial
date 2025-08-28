@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -93,26 +93,21 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [expandedCommentPhoto, setExpandedCommentPhoto] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Carrega comentários existentes quando o projeto é carregado
-  useEffect(() => {
-    if (project?.photos) {
-      project.photos.forEach(photo => {
-        loadPhotoComments(photo.id);
-      });
-    }
-  }, [project?.id]);
+  // Carrega comentários apenas quando necessário (não todos de uma vez)
+  // useEffect removido para melhor performance - comentários são carregados sob demanda
 
   // Função para alternar visualização dos comentários
-  const toggleCommentSection = (photoId: string) => {
+  const toggleCommentSection = useCallback((photoId: string) => {
     if (expandedCommentPhoto === photoId) {
       setExpandedCommentPhoto(null);
     } else {
       setExpandedCommentPhoto(photoId);
-      // Carrega comentários quando expande a seção
+      // Carrega comentários quando expande a seção (lazy loading)
       loadPhotoComments(photoId);
     }
-  };
+  }, [expandedCommentPhoto]);
 
   // Mutation para criar comentário
   const createCommentMutation = useMutation({
@@ -141,19 +136,38 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     },
   });
 
-  // Função para carregar comentários de uma foto específica
-  const loadPhotoComments = async (photoId: string) => {
+  // Função para carregar comentários de uma foto específica com timeout
+  const loadPhotoComments = useCallback(async (photoId: string) => {
     try {
-      const response = await apiRequest("GET", `/api/photos/${photoId}/comments`);
-      const comments = await response.json();
-      setPhotoComments(prev => ({
-        ...prev,
-        [photoId]: comments
-      }));
+      // Verificar se já foi carregado para evitar requests duplicados
+      if (photoComments[photoId]) {
+        return;
+      }
+      
+      // AbortController para timeout de comentarios
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      const response = await fetch(`/api/photos/${photoId}/comments`, {
+        signal: controller.signal,
+        credentials: 'include',
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const comments = await response.json();
+        setPhotoComments(prev => ({
+          ...prev,
+          [photoId]: comments
+        }));
+      }
     } catch (error) {
-      console.error("Erro ao carregar comentários da foto:", error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error("Erro ao carregar comentários da foto:", error);
+      }
     }
-  };
+  }, [photoComments]);
 
   // Função para enviar comentário
   const handleSubmitComment = (photoId: string) => {
@@ -239,7 +253,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   };
 
   // Função para carregar dados do projeto - Definida fora do useEffect para poder ser reutilizada
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -251,15 +265,32 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       
       console.log('Buscando projeto com ID:', projectId);
       
-      // Fazer fetch diretamente da API com cache busting para garantir dados atualizados
-      const response = await fetch(`/api/projects/${projectId}`, {
-        credentials: 'include', // envia cookies para autenticação
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+      // Cancelar requisição anterior se existir
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Criar novo AbortController para timeout e cancelamento
+      abortControllerRef.current = new AbortController();
+      const timeoutId = setTimeout(() => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
         }
-      });
+      }, 30000); // 30 segundos de timeout
+      
+      try {
+        // Fazer fetch diretamente da API com cache busting e timeout
+        const response = await fetch(`/api/projects/${projectId}`, {
+          credentials: 'include', // envia cookies para autenticação
+          signal: abortControllerRef.current.signal,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        clearTimeout(timeoutId);
       
       console.log('Status da resposta API:', response.status);
       
@@ -293,45 +324,107 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       // Atualizar state com dados do projeto
       setProject(adaptedProject);
       
-      // Inicializar seleções
+      // Inicializar seleções de forma mais eficiente (evitar travamento em projetos grandes)
       const preSelectedPhotos = new Set<string>();
-      if (adaptedProject.photos) {
-        adaptedProject.photos.forEach(photo => {
-          if (photo.selected) {
-            preSelectedPhotos.add(photo.id);
-          }
-        });
+      if (adaptedProject.photos && adaptedProject.photos.length > 0) {
+        // Para projetos grandes, usar requestIdleCallback para não travar a UI
+        if (adaptedProject.photos.length > 50) {
+          // Processar em lotes pequenos para não bloquear a thread principal
+          const processPhotosInBatches = (photos: any[], startIndex = 0) => {
+            const batchSize = 20;
+            const endIndex = Math.min(startIndex + batchSize, photos.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+              if (photos[i].selected) {
+                preSelectedPhotos.add(photos[i].id);
+              }
+            }
+            
+            if (endIndex < photos.length) {
+              // Usar setTimeout para dar uma pausa à thread principal
+              setTimeout(() => processPhotosInBatches(photos, endIndex), 0);
+            } else {
+              // Processamento concluído, atualizar state
+              setSelectedPhotos(new Set(preSelectedPhotos));
+            }
+          };
+          
+          processPhotosInBatches(adaptedProject.photos);
+        } else {
+          // Para projetos pequenos, processar normalmente
+          adaptedProject.photos.forEach(photo => {
+            if (photo.selected) {
+              preSelectedPhotos.add(photo.id);
+            }
+          });
+          setSelectedPhotos(preSelectedPhotos);
+        }
+      } else {
+        setSelectedPhotos(preSelectedPhotos);
       }
       
-      setSelectedPhotos(preSelectedPhotos);
+      // selectedPhotos já foi definido acima baseado no tamanho do projeto
       setIsFinalized(!!adaptedProject.finalizado);
       
-      // Remover este projeto do localStorage para evitar usar dados desatualizados
-      try {
-        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-        const filteredProjects = storedProjects.filter((p: any) => p.id.toString() !== projectId.toString());
-        localStorage.setItem('projects', JSON.stringify(filteredProjects));
-        console.log('Removido projeto do localStorage para garantir dados atualizados');
-      } catch (storageError) {
-        console.error('Erro ao limpar localStorage:', storageError);
+        // Remover este projeto do localStorage para evitar usar dados desatualizados
+        try {
+          const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+          const filteredProjects = storedProjects.filter((p: any) => p.id.toString() !== projectId.toString());
+          localStorage.setItem('projects', JSON.stringify(filteredProjects));
+          console.log('Removido projeto do localStorage para garantir dados atualizados');
+        } catch (storageError) {
+          console.error('Erro ao limpar localStorage:', storageError);
+        }
+        
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        throw fetchError;
       }
       
     } catch (error) {
       console.error('Erro ao carregar projeto:', error);
-      toast({
-        title: "Erro ao carregar projeto",
-        description: "Não foi possível encontrar o projeto solicitado. Verifique se o link está correto.",
-        variant: "destructive",
-      });
+      
+      // Error handling melhorado
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.log('Requisição cancelada ou timeout');
+          toast({
+            title: "Tempo limite excedido",
+            description: "A conexão está lenta. Tente novamente.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erro ao carregar projeto",
+            description: "Não foi possível encontrar o projeto solicitado. Verifique se o link está correto.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Erro ao carregar projeto",
+          description: "Não foi possível encontrar o projeto solicitado. Verifique se o link está correto.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, toast]);
   
   // Carregar dados do projeto ao montar o componente
   useEffect(() => {
     loadProject();
-  }, [projectId, toast, user]);
+  }, [loadProject]);
+  
+  // Cleanup: cancelar requisições pendentes ao desmontar
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
   
   // Alternar seleção de foto
   const togglePhotoSelection = (photoId: string) => {
@@ -348,8 +441,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     });
   };
   
-  // Abrir modal com a imagem em tamanho completo
-  const openImageModal = (url: string, photoIndex: number, event: React.MouseEvent) => {
+  // Abrir modal com a imagem em tamanho completo (com otimização de memória)
+  const openImageModal = useCallback((url: string, photoIndex: number, event: React.MouseEvent) => {
     event.stopPropagation(); // Impedir que o clique propague para o Card (que faria a seleção da foto)
     
     // Get the photo from the current project
@@ -364,7 +457,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     
     setCurrentPhotoIndex(photoIndex);
     setImageModalOpen(true);
-  };
+  }, [project?.photos]);
   
   // Navegar para a próxima foto no modal
   const goToNextPhoto = () => {
