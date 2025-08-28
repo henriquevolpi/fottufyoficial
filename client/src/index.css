@@ -622,3 +622,48 @@
 .dark *[style*="color: #000"] {
   color: hsl(213, 31%, 91%) !important;
 }
+
+/* Specific fixes for dashboard elements */
+/* Banner no topo */
+.dark .bg-gradient-to-r.from-blue-50\/70.via-indigo-50\/70.to-blue-50\/70 {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.7) 0%, rgba(51, 65, 85, 0.7) 50%, rgba(30, 41, 59, 0.7) 100%) !important;
+}
+
+/* Subtitle "Gerencie seus projetos fotográficos com elegância" */
+.dark .text-slate-600 {
+  color: hsl(215.4, 16.3%, 56.9%) !important;
+}
+
+/* Button "Ver Detalhes" text color */
+.dark .text-slate-700 {
+  color: hsl(213, 31%, 85%) !important;
+}
+
+/* Banner text content */
+.dark .text-\[\#080707\] {
+  color: hsl(213, 31%, 91%) !important;
+}
+
+/* Banner background specific override */
+.dark .backdrop-blur-sm {
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+/* Card button text improvements */
+.dark .border-slate-200.hover\:bg-slate-50 {
+  color: hsl(213, 31%, 85%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+}
+
+.dark .hover\:border-slate-300:hover {
+  border-color: hsl(223, 47%, 30%) !important;
+}
+
+/* More specific text overrides */
+.dark p.text-slate-600 {
+  color: hsl(215.4, 16.3%, 56.9%) !important;
+}
+
+.dark .font-medium.text-slate-600 {
+  color: hsl(215.4, 16.3%, 56.9%) !important;
+}
