@@ -30,7 +30,9 @@ import {
   MessageCircle,
   Eye,
   Check,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Moon,
+  Sun
 } from "lucide-react";
 import { 
   Tabs, 
@@ -1278,6 +1280,28 @@ export default function Dashboard() {
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  
+  // Theme state and logic
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'light';
+    }
+    return 'light';
+  });
+
+  // Initialize theme on mount
+  useEffect(() => {
+    const isDark = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [theme]);
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
 
   // Query for project comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery<PhotoComment[]>({
@@ -1654,6 +1678,15 @@ export default function Dashboard() {
                   <p className="font-semibold text-slate-800 truncate text-lg">{user?.name || "User"}</p>
                   <p className="text-slate-500 text-sm truncate">{user?.email}</p>
                 </div>
+                <Button 
+                  variant="outline" 
+                  onClick={toggleTheme} 
+                  size="sm" 
+                  className="shrink-0 mr-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400 rounded-lg px-3 py-2"
+                  title={`Alternar para modo ${theme === 'light' ? 'escuro' : 'claro'}`}
+                >
+                  {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={handleLogout} 
