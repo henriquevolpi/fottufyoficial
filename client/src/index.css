@@ -319,3 +319,306 @@
 .dark .hover\:border-slate-400:hover {
   border-color: hsl(223, 47%, 30%) !important;
 }
+
+/* Modal and Dialog styling for dark mode */
+.dark .bg-background {
+  background: hsl(224, 71%, 4%) !important;
+}
+
+.dark .bg-white {
+  background: hsl(223, 47%, 8%) !important;
+}
+
+.dark .bg-gray-50 {
+  background: hsl(223, 47%, 11%) !important;
+}
+
+.dark .bg-gray-100 {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+.dark .text-gray-500 {
+  color: hsl(215.4, 16.3%, 46.9%) !important;
+}
+
+.dark .text-gray-600 {
+  color: hsl(215.4, 16.3%, 56.9%) !important;
+}
+
+.dark .text-gray-800 {
+  color: hsl(213, 31%, 91%) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: hsl(223, 47%, 20%) !important;
+}
+
+/* Progress bars */
+.dark .bg-gray-200 {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+/* Badge styling */
+.dark .bg-green-100.text-green-800 {
+  background: hsl(142, 76%, 15%) !important;
+  color: hsl(142, 76%, 80%) !important;
+}
+
+.dark .bg-blue-100.text-blue-800 {
+  background: hsl(217, 91%, 15%) !important;
+  color: hsl(217, 91%, 80%) !important;
+}
+
+.dark .bg-yellow-100.text-yellow-800 {
+  background: hsl(45, 93%, 15%) !important;
+  color: hsl(45, 93%, 80%) !important;
+}
+
+.dark .bg-red-100.text-red-800 {
+  background: hsl(0, 84%, 15%) !important;
+  color: hsl(0, 84%, 80%) !important;
+}
+
+.dark .bg-purple-100.text-purple-800 {
+  background: hsl(270, 76%, 15%) !important;
+  color: hsl(270, 76%, 80%) !important;
+}
+
+/* Skeleton loaders */
+.dark .animate-pulse {
+  background: linear-gradient(90deg, hsl(223, 47%, 15%) 25%, hsl(223, 47%, 20%) 50%, hsl(223, 47%, 15%) 75%) !important;
+  background-size: 200% 100% !important;
+}
+
+/* Toast notifications */
+.dark .bg-card {
+  background: hsl(223, 47%, 8%) !important;
+}
+
+/* Table styling if any */
+.dark .bg-slate-100 {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+/* Specific text colors */
+.dark .text-black {
+  color: hsl(213, 31%, 91%) !important;
+}
+
+/* Button hover states */
+.dark .hover\:text-slate-700:hover {
+  color: hsl(213, 31%, 80%) !important;
+}
+
+.dark .hover\:text-blue-800:hover {
+  color: hsl(217, 91%, 80%) !important;
+}
+
+.dark .hover\:text-red-700:hover {
+  color: hsl(0, 84%, 75%) !important;
+}
+
+.dark .hover\:text-emerald-800:hover {
+  color: hsl(142, 76%, 75%) !important;
+}
+
+/* Focus states */
+.dark .focus\:border-blue-400:focus {
+  border-color: hsl(217, 91%, 50%) !important;
+}
+
+.dark .focus\:ring-blue-400\/20:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Form elements */
+.dark select {
+  background: hsl(223, 47%, 11%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+  color: hsl(213, 31%, 91%) !important;
+}
+
+.dark textarea {
+  background: hsl(223, 47%, 11%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+  color: hsl(213, 31%, 91%) !important;
+}
+
+/* Specific component overrides */
+.dark .shadow-slate-200\/50 {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-blue-200\/30 {
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Additional text overrides */
+.dark .text-slate-400 {
+  color: hsl(215.4, 16.3%, 40%) !important;
+}
+
+/* Dialog specific */
+.dark [data-radix-dialog-content] {
+  background: hsl(223, 47%, 8%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+  color: hsl(213, 31%, 91%) !important;
+}
+
+/* Popover */
+.dark [data-radix-popover-content] {
+  background: hsl(223, 47%, 8%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+  color: hsl(213, 31%, 91%) !important;
+}
+
+/* Menu items */
+.dark [data-radix-menu-item] {
+  color: hsl(213, 31%, 91%) !important;
+}
+
+.dark [data-radix-menu-item]:hover {
+  background: hsl(223, 47%, 15%) !important;
+}
+
+/* Tabs content */
+.dark [data-radix-tabs-content] {
+  background: transparent !important;
+}
+
+/* Additional background overrides */
+.dark .bg-opacity-80 {
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+/* Backdrop blur elements */
+.dark .backdrop-blur-sm {
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+.dark .backdrop-blur-md {
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+/* Special cases for project cards and upload modal */
+.dark .bg-white\/80 {
+  background: rgba(15, 23, 42, 0.9) !important;
+}
+
+.dark .bg-white\/90 {
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+
+.dark .bg-white\/95 {
+  background: rgba(15, 23, 42, 0.98) !important;
+}
+
+/* Tooltip styling */
+.dark .tooltip {
+  background: hsl(223, 47%, 8%) !important;
+  color: hsl(213, 31%, 91%) !important;
+  border-color: hsl(223, 47%, 20%) !important;
+}
+
+/* File upload area */
+.dark .border-dashed {
+  border-color: hsl(223, 47%, 30%) !important;
+}
+
+.dark .bg-gray-50 {
+  background: hsl(223, 47%, 8%) !important;
+}
+
+/* Specific classes that might be missed */
+.dark .ring-slate-200 {
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.3) !important;
+}
+
+.dark .divide-slate-200 > * + * {
+  border-color: hsl(223, 47%, 20%) !important;
+}
+
+/* Hover effects for cards */
+.dark .hover\:shadow-2xl:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Loading states */
+.dark .opacity-50 {
+  opacity: 0.7 !important;
+}
+
+/* Gradient text fixes */
+.dark .bg-clip-text {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
+.dark .text-transparent {
+  color: transparent !important;
+}
+
+/* Progress indicator */
+.dark .bg-blue-600 {
+  background: hsl(217, 91%, 60%) !important;
+}
+
+/* Status indicators */
+.dark .w-2.h-2.rounded-full {
+  filter: brightness(1.3) !important;
+}
+
+/* Additional button states */
+.dark .disabled\:opacity-50:disabled {
+  opacity: 0.4 !important;
+}
+
+.dark .disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed !important;
+}
+
+/* Search input specific */
+.dark .pl-12 {
+  background: hsl(223, 47%, 11%) !important;
+}
+
+/* Icon colors */
+.dark .text-slate-400 {
+  color: hsl(215.4, 16.3%, 50%) !important;
+}
+
+/* Alert/notification styling */
+.dark .border-l-4 {
+  border-left-color: hsl(217, 91%, 60%) !important;
+}
+
+/* Checkbox and radio styles */
+.dark input[type="checkbox"],
+.dark input[type="radio"] {
+  background: hsl(223, 47%, 11%) !important;
+  border-color: hsl(223, 47%, 30%) !important;
+}
+
+.dark input[type="checkbox"]:checked,
+.dark input[type="radio"]:checked {
+  background: hsl(217, 91%, 60%) !important;
+  border-color: hsl(217, 91%, 60%) !important;
+}
+
+/* Additional utility overrides */
+.dark .space-y-4 > * + * {
+  border-top-color: hsl(223, 47%, 20%) !important;
+}
+
+/* Final catch-all for any missed white backgrounds */
+.dark *[style*="background-color: white"],
+.dark *[style*="background-color: #ffffff"],
+.dark *[style*="background-color: #fff"] {
+  background-color: hsl(223, 47%, 8%) !important;
+}
+
+.dark *[style*="color: black"],
+.dark *[style*="color: #000000"],
+.dark *[style*="color: #000"] {
+  color: hsl(213, 31%, 91%) !important;
+}
