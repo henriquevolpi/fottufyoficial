@@ -939,7 +939,7 @@ function UploadModal({
               )}
             />
             
-            <FormField
+            {/* FormField
               control={form.control}
               name="clientEmail"
               render={({ field }) => (
@@ -951,7 +951,7 @@ function UploadModal({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
             
             <FormField
               control={form.control}
