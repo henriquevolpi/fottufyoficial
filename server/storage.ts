@@ -925,6 +925,7 @@ export class MemStorage implements IStorage {
       status: "Completed" // Changed from "reviewed" to "Completed" for photographer dashboard
     };
     
+    
     // Step 3: Update the photos to mark selected ones
     if (updatedProject.photos) {
       updatedProject.photos = updatedProject.photos.map(photo => ({

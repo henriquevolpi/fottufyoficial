@@ -226,7 +226,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         originalName: p.originalName || p.filename || 'photo.jpg',
         selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
       })) : [],
-      finalizado: project.status === "Completed" || project.finalizado,
+      finalizado: project.status === "Completed" || project.status === "finalizado" || project.finalizado,
       showWatermark: project.showWatermark
     };
     
