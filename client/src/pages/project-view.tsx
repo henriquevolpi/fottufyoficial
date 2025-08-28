@@ -13,6 +13,13 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { PhotoComment, InsertPhotoComment } from "@shared/schema";
+
+// Declaração global para persistência
+declare global {
+  interface Window {
+    __FOTTUFY_TEMP_SELECTIONS__?: Record<string, any>;
+  }
+}
 import { 
   Check, 
   Loader2, 
@@ -324,14 +331,33 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       // Atualizar state com dados do projeto
       setProject(adaptedProject);
       
-      // Carregar seleções temporárias do localStorage (tem prioridade sobre as seleções do servidor)
-      const tempSelections = loadTempSelections();
+      // Verificar se o projeto está finalizado ANTES de carregar seleções temporárias
+      const isProjectFinalized = adaptedProject.status === "Completed" || adaptedProject.status === "finalizado" || adaptedProject.finalizado;
+      
+      // Atualizar estado de finalização
+      setIsFinalized(isProjectFinalized);
+      
+      if (isProjectFinalized) {
+        console.log(`🔒 Projeto ${projectId} está FINALIZADO - seleções bloqueadas`);
+      } else {
+        console.log(`🔓 Projeto ${projectId} está ABERTO - seleções permitidas`);
+      }
+      
+      // Carregar seleções temporárias apenas se o projeto NÃO estiver finalizado
+      let tempSelections = new Set<string>();
+      if (!isProjectFinalized) {
+        tempSelections = loadTempSelections();
+      } else {
+        console.log(`Projeto ${projectId} está finalizado - seleções temporárias ignoradas`);
+        // Limpar seleções temporárias se existirem para projetos finalizados
+        clearTempSelections();
+      }
       
       // Inicializar seleções de forma mais eficiente (evitar travamento em projetos grandes)
       const preSelectedPhotos = new Set<string>();
       
-      // Se há seleções temporárias, usar elas como base
-      if (tempSelections.size > 0) {
+      // Se há seleções temporárias E projeto não está finalizado, usar elas como base
+      if (tempSelections.size > 0 && !isProjectFinalized) {
         console.log(`Usando ${tempSelections.size} seleções temporárias para projeto ${projectId}`);
         // Validar se as fotos selecionadas temporariamente ainda existem no projeto
         tempSelections.forEach(photoId => {
@@ -439,7 +465,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   useEffect(() => {
     if (!projectId) return;
     
-    const tempKey = `fottufy_temp_selections_${projectId}`;
+    const tempKey = `fottufy_selections_${projectId}`;
     
     // Listener para mudanças no localStorage entre abas
     const handleStorageChange = (e: StorageEvent) => {
@@ -447,7 +473,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         try {
           const data = JSON.parse(e.newValue);
           if (data.selections && Array.isArray(data.selections)) {
-            const newSelections = new Set(data.selections);
+            const newSelections = new Set<string>(data.selections);
             setSelectedPhotos(newSelections);
             console.log(`🔄 Seleções sincronizadas de outra aba para projeto ${projectId}:`, data.selections.length, 'fotos');
           }
@@ -490,157 +516,107 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
   }, [currentImageUrl]);
   
-  // Salvar seleções temporárias com sistema robusto de persistência
+  // Sistema de persistência simplificado e confiável
   const saveTempSelections = useCallback((selections: Set<string>) => {
-    if (!projectId) return;
+    if (!projectId || !selections) return;
     
-    const tempKey = `fottufy_temp_selections_${projectId}`;
+    const tempKey = `fottufy_selections_${projectId}`;
     const selectionsArray = Array.from(selections);
+    
     const dataToSave = {
       projectId: projectId.toString(),
       selections: selectionsArray,
       timestamp: Date.now(),
-      url: window.location.href
+      version: "1.0"
     };
     
     try {
-      // Tentativa 1: localStorage
-      localStorage.setItem(tempKey, JSON.stringify(dataToSave));
-      console.log(`✅ Seleções salvas no localStorage para projeto ${projectId}:`, selectionsArray.length, 'fotos');
+      const dataString = JSON.stringify(dataToSave);
+      localStorage.setItem(tempKey, dataString);
       
-      // Backup no sessionStorage
-      sessionStorage.setItem(tempKey, JSON.stringify(dataToSave));
-      
-      // Verificar se realmente foi salvo
-      const verification = localStorage.getItem(tempKey);
-      if (!verification) {
-        throw new Error('LocalStorage não disponível');
+      // Verificar se foi salvo corretamente
+      const saved = localStorage.getItem(tempKey);
+      if (saved && saved === dataString) {
+        console.log(`✅ ${selectionsArray.length} seleções salvas para projeto ${projectId}`);
+      } else {
+        throw new Error('Falha na verificação de salvamento');
       }
       
     } catch (error) {
-      console.error('❌ Erro ao salvar no localStorage:', error);
+      console.error('❌ Erro ao salvar seleções:', error);
       
-      // Fallback 1: sessionStorage apenas
+      // Fallback para sessionStorage
       try {
         sessionStorage.setItem(tempKey, JSON.stringify(dataToSave));
-        console.log(`⚠️ Usando sessionStorage como fallback para projeto ${projectId}`);
+        console.log(`⚠️ Seleções salvas no sessionStorage para projeto ${projectId}`);
       } catch (sessionError) {
-        console.error('❌ Erro também no sessionStorage:', sessionError);
-        
-        // Fallback 2: variável global temporária
-        if (typeof window !== 'undefined') {
-          window.__FOTTUFY_TEMP_SELECTIONS__ = window.__FOTTUFY_TEMP_SELECTIONS__ || {};
-          window.__FOTTUFY_TEMP_SELECTIONS__[tempKey] = dataToSave;
-          console.log(`⚠️ Usando variável global como último recurso para projeto ${projectId}`);
-        }
+        console.error('❌ Erro no sessionStorage também:', sessionError);
       }
     }
   }, [projectId]);
 
-  // Carregar seleções temporárias com sistema robusto de recuperação
+  // Sistema simplificado de recuperação de seleções
   const loadTempSelections = useCallback((): Set<string> => {
     if (!projectId) return new Set();
     
-    const tempKey = `fottufy_temp_selections_${projectId}`;
+    const tempKey = `fottufy_selections_${projectId}`;
     
-    // Tentativa 1: localStorage
+    // Tentar localStorage primeiro
     try {
-      const storedData = localStorage.getItem(tempKey);
-      if (storedData) {
-        const data = JSON.parse(storedData);
-        console.log(`✅ Seleções carregadas do localStorage para projeto ${projectId}:`, data.selections?.length || 0, 'fotos');
-        
-        // Validar estrutura de dados
-        if (data.selections && Array.isArray(data.selections)) {
-          // Mostrar notificação apenas se houver seleções para recuperar
+      const stored = localStorage.getItem(tempKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data.selections && Array.isArray(data.selections) && data.projectId === projectId.toString()) {
+          console.log(`✅ ${data.selections.length} seleções recuperadas para projeto ${projectId}`);
+          
+          // Mostrar notificação de recuperação
           if (data.selections.length > 0) {
             setTimeout(() => {
               toast({
                 title: "Seleções recuperadas",
-                description: `${data.selections.length} fotos selecionadas anteriormente foram restauradas.`,
-                duration: 3000,
+                description: `${data.selections.length} fotos selecionadas foram restauradas.`,
+                duration: 4000,
               });
-            }, 1000); // Delay para evitar conflito com outras notificações
+            }, 1500);
           }
+          
           return new Set(data.selections);
         }
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar do localStorage:', error);
+      console.error('❌ Erro no localStorage:', error);
     }
     
-    // Tentativa 2: sessionStorage
+    // Fallback para sessionStorage
     try {
-      const sessionData = sessionStorage.getItem(tempKey);
-      if (sessionData) {
-        const data = JSON.parse(sessionData);
-        console.log(`⚠️ Seleções carregadas do sessionStorage para projeto ${projectId}:`, data.selections?.length || 0, 'fotos');
-        
+      const sessionStored = sessionStorage.getItem(tempKey);
+      if (sessionStored) {
+        const data = JSON.parse(sessionStored);
         if (data.selections && Array.isArray(data.selections)) {
+          console.log(`⚠️ ${data.selections.length} seleções recuperadas do sessionStorage`);
           return new Set(data.selections);
         }
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar do sessionStorage:', error);
+      console.error('❌ Erro no sessionStorage:', error);
     }
     
-    // Tentativa 3: variável global
-    try {
-      if (typeof window !== 'undefined' && window.__FOTTUFY_TEMP_SELECTIONS__) {
-        const globalData = window.__FOTTUFY_TEMP_SELECTIONS__[tempKey];
-        if (globalData && globalData.selections && Array.isArray(globalData.selections)) {
-          console.log(`⚠️ Seleções carregadas da variável global para projeto ${projectId}:`, globalData.selections.length, 'fotos');
-          return new Set(globalData.selections);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erro ao carregar da variável global:', error);
-    }
-    
-    // Tentativa 4: localStorage com chave antiga (compatibilidade)
-    try {
-      const oldKey = `temp_selections_${projectId}`;
-      const oldData = localStorage.getItem(oldKey);
-      if (oldData) {
-        const selectionsArray = JSON.parse(oldData);
-        if (Array.isArray(selectionsArray)) {
-          console.log(`⚠️ Seleções carregadas da chave antiga para projeto ${projectId}:`, selectionsArray.length, 'fotos');
-          return new Set(selectionsArray);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erro ao carregar chave antiga:', error);
-    }
-    
-    console.log(`ℹ️ Nenhuma seleção temporária encontrada para projeto ${projectId}`);
+    console.log(`ℹ️ Nenhuma seleção salva encontrada para projeto ${projectId}`);
     return new Set();
-  }, [projectId]);
+  }, [projectId, toast]);
 
-  // Limpar seleções temporárias de todas as fontes de armazenamento
+  // Limpar seleções salvas
   const clearTempSelections = useCallback(() => {
     if (!projectId) return;
     
-    const tempKey = `fottufy_temp_selections_${projectId}`;
-    const oldKey = `temp_selections_${projectId}`;
+    const tempKey = `fottufy_selections_${projectId}`;
     
     try {
-      // Limpar localStorage
       localStorage.removeItem(tempKey);
-      localStorage.removeItem(oldKey); // Chave antiga para compatibilidade
-      
-      // Limpar sessionStorage
       sessionStorage.removeItem(tempKey);
-      sessionStorage.removeItem(oldKey);
-      
-      // Limpar variável global
-      if (typeof window !== 'undefined' && window.__FOTTUFY_TEMP_SELECTIONS__) {
-        delete window.__FOTTUFY_TEMP_SELECTIONS__[tempKey];
-        delete window.__FOTTUFY_TEMP_SELECTIONS__[oldKey];
-      }
-      
-      console.log(`✅ Seleções temporárias limpas de todas as fontes para projeto ${projectId}`);
+      console.log(`🗑️ Seleções removidas para projeto ${projectId}`);
     } catch (error) {
-      console.error('❌ Erro ao limpar seleções temporárias:', error);
+      console.error('❌ Erro ao limpar seleções:', error);
     }
   }, [projectId]);
 
