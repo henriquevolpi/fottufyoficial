@@ -425,6 +425,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         abortControllerRef.current.abort();
       }
       
+      // Cancelar auto-save pendente
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
       // Limpar URLs de objetos e blobs para evitar memory leaks
       if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
         URL.revokeObjectURL(currentImageUrl);
@@ -441,7 +446,40 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     };
   }, [currentImageUrl]);
   
-  // Alternar seleção de foto com debounce para evitar múltiplos setState
+  // Referência para o timer de debounce do auto-save
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Função para salvar automaticamente as seleções com debounce
+  const autoSaveSelections = useCallback(async (newSelectedPhotos: Set<string>) => {
+    if (!project) return;
+    
+    try {
+      const selectedIds = Array.from(newSelectedPhotos);
+      
+      console.log(`Auto-salvando seleção para projeto ${projectId} com ${selectedIds.length} fotos`);
+      
+      const response = await fetch(`/api/v2/photos/select`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          projectId: project.id,
+          photoIds: selectedIds 
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Erro ao auto-salvar seleção:', response.status);
+      } else {
+        console.log('Seleção auto-salva com sucesso');
+      }
+    } catch (error) {
+      console.error('Erro ao auto-salvar seleções:', error);
+    }
+  }, [project, projectId]);
+
+  // Alternar seleção de foto com auto-save automático
   const togglePhotoSelection = useCallback((photoId: string) => {
     // Verificação dupla para garantir que projetos finalizados não possam ser editados
     const isProjectFinalized = isFinalized || 
@@ -460,9 +498,20 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       } else {
         newSelected.add(photoId);
       }
+      
+      // Cancelar auto-save anterior se houver
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      // Agendar auto-save com delay de 1 segundo
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        autoSaveSelections(newSelected);
+      }, 1000);
+      
       return newSelected;
     });
-  }, [isFinalized]);
+  }, [isFinalized, autoSaveSelections]);
   
   // Abrir modal com a imagem em tamanho completo (com otimização de memória)
   const openImageModal = useCallback((url: string, photoIndex: number, event: React.MouseEvent) => {
