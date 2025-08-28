@@ -27,7 +27,9 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircle,
-  Plus
+  Plus,
+  Filter,
+  FilterX
 } from "lucide-react";
 import {
   Dialog,
@@ -91,6 +93,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
   const [photoComments, setPhotoComments] = useState<Record<string, any[]>>({});
   const [expandedCommentPhoto, setExpandedCommentPhoto] = useState<string | null>(null);
+  const [showOnlySelected, setShowOnlySelected] = useState(false);
   
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -849,6 +852,29 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <Clock className="w-4 h-4 mr-1" />
                     {selectedPhotos.size} de {project.photos.length} fotos selecionadas
                   </Badge>
+                  
+                  {/* Botão de filtro */}
+                  {selectedPhotos.size > 0 && (
+                    <Button
+                      variant={showOnlySelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowOnlySelected(!showOnlySelected)}
+                      className="flex items-center"
+                    >
+                      {showOnlySelected ? (
+                        <>
+                          <FilterX className="w-4 h-4 mr-1" />
+                          Mostrar Todas
+                        </>
+                      ) : (
+                        <>
+                          <Filter className="w-4 h-4 mr-1" />
+                          Apenas Selecionadas
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
                   <div className="space-x-2">
                     <Button 
                       size="sm"
@@ -931,7 +957,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         ) : null}
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {project.photos.map((photo, index) => (
+          {project.photos
+            .filter(photo => showOnlySelected ? selectedPhotos.has(photo.id) : true)
+            .map((photo) => {
+              const originalIndex = project.photos.findIndex(p => p.id === photo.id);
+              return (
             <Card
               key={photo.id}
               className={`overflow-hidden group cursor-pointer transition ${
@@ -957,7 +987,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 >
                   <div 
                     className="w-full h-full"
-                    onClick={(e) => openImageModal(photo.url, index, e)}
+                    onClick={(e) => openImageModal(photo.url, originalIndex, e)}
                   >
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200 z-20">
                       <Maximize className="h-6 w-6 text-white" />
@@ -1105,7 +1135,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 )}
               </CardContent>
             </Card>
-          ))}
+          );})}
+        
         </div>
       </main>
       {/* Confirmation Dialog */}
