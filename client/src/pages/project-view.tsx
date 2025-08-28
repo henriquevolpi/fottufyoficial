@@ -94,6 +94,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [photoComments, setPhotoComments] = useState<Record<string, any[]>>({});
   const [expandedCommentPhoto, setExpandedCommentPhoto] = useState<string | null>(null);
   const [showOnlySelected, setShowOnlySelected] = useState(false);
+  const [coverImageOrientation, setCoverImageOrientation] = useState<'landscape' | 'portrait' | 'loading'>('loading');
   
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -789,11 +790,32 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         : `https://cdn.fottufy.com/${coverPhoto.filename}`)
     : null;
 
+  // Detectar orientação da imagem de capa
+  useEffect(() => {
+    if (coverPhotoUrl) {
+      const img = new Image();
+      img.onload = () => {
+        if (img.width > img.height) {
+          setCoverImageOrientation('landscape');
+        } else {
+          setCoverImageOrientation('portrait');
+        }
+      };
+      img.onerror = () => {
+        setCoverImageOrientation('portrait'); // fallback
+      };
+      img.src = coverPhotoUrl;
+    }
+  }, [coverPhotoUrl]);
+
+  // Definir altura da capa baseado na orientação
+  const coverHeight = coverImageOrientation === 'landscape' ? 'h-64' : 'h-96';
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Hero Section com Capa */}
       {coverPhotoUrl && (
-        <div className="relative h-96 overflow-hidden">
+        <div className={`relative ${coverHeight} overflow-hidden`}>
           {/* Background com desfoque */}
           <div 
             className="absolute inset-0 bg-cover bg-center transform scale-110"
