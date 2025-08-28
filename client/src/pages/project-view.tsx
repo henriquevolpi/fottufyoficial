@@ -443,7 +443,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   
   // Alternar seleção de foto com debounce para evitar múltiplos setState
   const togglePhotoSelection = useCallback((photoId: string) => {
-    if (isFinalized) return; // Impedir seleção se o projeto estiver finalizado
+    // Verificação dupla para garantir que projetos finalizados não possam ser editados
+    const isProjectFinalized = isFinalized || 
+                              project?.status === "finalizado" || 
+                              project?.status === "Completed" || 
+                              project?.finalizado === true;
+    
+    if (isProjectFinalized) {
+      return; // Impedir seleção se o projeto estiver finalizado
+    }
     
     setSelectedPhotos(prevSelected => {
       const newSelected = new Set(prevSelected);
@@ -880,7 +888,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               className={`overflow-hidden group cursor-pointer transition ${
                 isFinalized ? 'opacity-80' : 'hover:shadow-md'
               } ${selectedPhotos.has(photo.id) ? 'ring-2 ring-primary' : ''}`}
-              onClick={() => togglePhotoSelection(photo.id)}
+              onClick={() => {
+                const isProjectFinalized = isFinalized || 
+                                          project?.status === "finalizado" || 
+                                          project?.status === "Completed" || 
+                                          project?.finalizado === true;
+                if (!isProjectFinalized) {
+                  togglePhotoSelection(photo.id);
+                }
+              }}
             >
               <div className="relative h-64">
                 {/* Debug info - will show in development only */}
@@ -934,7 +950,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         ? " bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 text-white font-semibold border-none shadow"
                         : "")
                     }
-                    disabled={isFinalized}
+                    disabled={isFinalized || project?.status === "finalizado" || project?.status === "Completed" || project?.finalizado === true}
                   >
                     {selectedPhotos.has(photo.id) ? (
                       <>
