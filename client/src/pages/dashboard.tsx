@@ -346,7 +346,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
   };
   
   return (
-        <Card className="overflow-hidden bg-white/70 backdrop-blur-sm border-0 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:shadow-blue-200/25 transition-all duration-300 hover:scale-[1.02] rounded-2xl">
+        <Card className="overflow-hidden bg-white/70 backdrop-blur-sm border-0 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300 hover:scale-[1.02] rounded-2xl">
       <CardHeader className="p-6 pb-4">
         <div className="flex justify-between items-start">
           <div className="flex-1">
