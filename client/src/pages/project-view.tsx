@@ -238,7 +238,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         url: ensureValidImageUrl(p.url),
         filename: p.filename || 'photo.jpg',
         originalName: p.originalName || p.filename || 'photo.jpg',
-        selected: project.selectedPhotos ? project.selectedPhotos.includes(p.id) : p.selected || false
+        selected: p.selected !== undefined ? p.selected : (project.selectedPhotos ? project.selectedPhotos.includes(p.id) : false)
       })) : [],
       finalizado: project.status === "Completed" || project.status === "finalizado" || project.finalizado,
       showWatermark: project.showWatermark
