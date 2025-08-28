@@ -20,6 +20,56 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
   const [uploadPercentage, setUploadPercentage] = useState(0)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'completed'>('idle')
   const { toast } = useToast()
+  
+  // ✨ FUNÇÃO OTIMIZADA PARA CÁLCULO DE PROGRESSO
+  function calculateOptimizedProgress(
+    loaded: number, 
+    total: number, 
+    batchIndex: number, 
+    totalBatches: number, 
+    batchSize: number,
+    currentPercentage: number
+  ): { percentage: number; smooth: boolean } {
+    // Calcular progresso base do lote atual
+    const rawBatchProgress = total > 0 ? (loaded / total) * 100 : 0;
+    
+    // Aplicar suavização inteligente baseada no tamanho do lote
+    let batchProgress = rawBatchProgress;
+    if (batchSize > 50) {
+      // Para lotes grandes, progresso mais suave com boost inicial
+      batchProgress = Math.max(5, rawBatchProgress * 1.1);
+    } else if (batchSize > 20) {
+      // Para lotes médios, progresso padrão
+      batchProgress = Math.max(3, rawBatchProgress);
+    } else {
+      // Para lotes pequenos, progresso mais rápido
+      batchProgress = Math.max(10, rawBatchProgress * 1.2);
+    }
+    
+    // Limitar progresso do lote a 95% para feedback visual
+    batchProgress = Math.min(batchProgress, 95);
+    
+    // Calcular contribuição de cada lote ao progresso total
+    const batchWeight = 100 / totalBatches;
+    const completedBatchesProgress = batchIndex * batchWeight;
+    const currentBatchContribution = (batchProgress / 100) * batchWeight;
+    
+    // Calcular progresso total
+    let totalProgress = completedBatchesProgress + currentBatchContribution;
+    
+    // Garantir progressão sempre crescente (anti-travamento visual)
+    if (totalProgress <= currentPercentage && loaded > 0) {
+      totalProgress = currentPercentage + 0.5; // Incremento pequeno mas perceptível
+    }
+    
+    // Arredondar e limitar
+    const finalPercentage = Math.min(Math.round(totalProgress), 95);
+    
+    return {
+      percentage: finalPercentage,
+      smooth: batchSize > 30 // Usar animação suave para lotes grandes
+    };
+  }
 
   // Função para processar um arquivo e comprimí-lo
   async function processFile(file: File) {
@@ -33,7 +83,8 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
   }
 
   // Função para enviar um lote de arquivos para a API com XMLHttpRequest para acompanhar o progresso
-  async function uploadBatch(compressedFiles: File[], batchIndex: number, totalBatches: number): Promise<any> {
+  async function uploadBatch(compressedFiles: File[], batchIndex: number, totalBatches: number, retryCount = 0): Promise<any> {
+    const MAX_RETRIES = 2; // Máximo 2 tentativas adicionais
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
@@ -46,54 +97,20 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       // Definir callbacks para acompanhar o progresso com modificações anti-travamento
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          // Definir um progresso mínimo de partida - evitar parecer travado
-          let batchProgress = 15; // Começamos em 15% para feedback imediato
-
-          // Se o upload realmente começou (mais de 3%)
-          if (event.loaded > 0.03 * event.total) {
-            // Com boost para lotes grandes (mais de 30 arquivos num lote)
-            const loteBoost = compressedFiles.length > 30 ? 1.5 : 1.2;
-            batchProgress = Math.round((event.loaded / event.total) * 100 * loteBoost);
-            
-            // Limitar ao máximo de 95% por lote
-            batchProgress = Math.min(batchProgress, 95);
-          }
-
-          // Boost para arquivos grandes 
-          if (compressedFiles.length > 50 && batchProgress < 20) {
-            batchProgress = 20; // Começamos em 20% para lotes muito grandes
-          }
-          
-          // Cada lote representa uma parte do progresso total,
-          // mas adicionamos um peso extra ao lote atual para feedback
-          const batchWeight = 100 / totalBatches;
-          
-          // Para muitos arquivos, aplicamos um boost inicial
-          // e garantimos que a barra sempre avance
-          const boostInicial = compressedFiles.length > 100 ? 10 : 5;
-          
-          // Calcular progresso total com boost
-          const completedBatchesProgress = batchIndex * batchWeight;
-          const currentBatchContribution = (batchProgress / 100) * batchWeight;
-          
-          // Sempre começar com pelo menos 5% mesmo para carregamentos grandes
-          let totalProgress = Math.min(
-            Math.max(boostInicial, Math.round(completedBatchesProgress + currentBatchContribution)),
-            95 // Limitamos a 95% até que esteja realmente completo
+          // ✨ SISTEMA OTIMIZADO DE CÁLCULO DE PROGRESSO
+          const progressInfo = calculateOptimizedProgress(
+            event.loaded, 
+            event.total, 
+            batchIndex, 
+            totalBatches, 
+            compressedFiles.length,
+            uploadPercentage
           );
           
-          // Técnica anti-travamento: se o progresso não avançou, forçar incremento
-          // para dar feedback visual ao usuário
-          const currentPercentage = uploadPercentage;
-          if (totalProgress <= currentPercentage && event.loaded > 0) {
-            totalProgress = currentPercentage + 1;
-          }
-          
-          // Mover a barra gradualmente
-          setUploadPercentage(totalProgress);
+          setUploadPercentage(progressInfo.percentage);
           setUploadStatus('uploading');
           
-          console.log(`Lote ${batchIndex+1}/${totalBatches}: ${batchProgress}% - Progresso total: ${totalProgress}%`);
+          console.log(`Lote ${batchIndex+1}/${totalBatches}: ${progressInfo.percentage}% - Upload em progresso`);
         }
       };
       
@@ -124,9 +141,23 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         }
       };
       
-      xhr.onerror = () => {
-        setUploadStatus('idle');
-        reject(new Error('Erro de conexão durante o upload.'));
+      xhr.onerror = async () => {
+        console.warn(`Erro de rede no lote ${batchIndex + 1}, tentativa ${retryCount + 1}`);
+        
+        if (retryCount < MAX_RETRIES) {
+          // Aguardar antes de tentar novamente (backoff exponencial)
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          console.log(`Tentando novamente em ${delay}ms...`);
+          
+          setTimeout(() => {
+            uploadBatch(compressedFiles, batchIndex, totalBatches, retryCount + 1)
+              .then(resolve)
+              .catch(reject);
+          }, delay);
+        } else {
+          setUploadStatus('idle');
+          reject(new Error(`Falha na conexão após ${MAX_RETRIES + 1} tentativas. Verifique sua internet.`));
+        }
       };
       
       xhr.open('POST', `/api/projects/${projectId}/photos/upload`, true);
@@ -137,9 +168,23 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       xhr.timeout = 30000;
       
       // Tratar timeout
-      xhr.ontimeout = () => {
-        setUploadStatus('idle');
-        reject(new Error('Upload excedeu o tempo limite. Tente novamente com menos fotos.'));
+      xhr.ontimeout = async () => {
+        console.warn(`Timeout no lote ${batchIndex + 1}, tentativa ${retryCount + 1}`);
+        
+        if (retryCount < MAX_RETRIES) {
+          // Para timeout, aumentamos o tempo limite na próxima tentativa
+          const delay = 2000; // 2 segundos de espera
+          console.log(`Timeout - tentando novamente em ${delay}ms...`);
+          
+          setTimeout(() => {
+            uploadBatch(compressedFiles, batchIndex, totalBatches, retryCount + 1)
+              .then(resolve)
+              .catch(reject);
+          }, delay);
+        } else {
+          setUploadStatus('idle');
+          reject(new Error(`Upload excedeu tempo limite após ${MAX_RETRIES + 1} tentativas. Tente com menos fotos.`));
+        }
       };
       
       xhr.send(formData);
@@ -152,6 +197,71 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
 
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
     const filesArray = Array.from(files);
+    
+    // ✨ VALIDAÇÃO PRÉVIA DE CAPACIDADE DO DISPOSITIVO
+    function checkDeviceCapability(fileCount: number): { critical: boolean; warning: boolean; message: string } {
+      // Detectar tipo de dispositivo aproximadamente
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isLowMemoryDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      // Verificar suporte a File API
+      if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+        return { 
+          critical: true, 
+          warning: false, 
+          message: "Seu navegador não suporta upload de arquivos. Atualize para a versão mais recente." 
+        };
+      }
+      
+      // Dispositivos móveis com muitos arquivos
+      if (isMobile && fileCount > 50) {
+        return { 
+          critical: false, 
+          warning: true, 
+          message: `Upload de ${fileCount} fotos em dispositivos móveis pode ser lento. Considere dividir em grupos menores.` 
+        };
+      }
+      
+      // Dispositivos com baixa memória
+      if (isLowMemoryDevice && fileCount > 30) {
+        return { 
+          critical: false, 
+          warning: true, 
+          message: "Dispositivo com memória limitada detectado. Upload pode demorar mais que o normal." 
+        };
+      }
+      
+      // Safari com muitos arquivos
+      if (isSafari && fileCount > 100) {
+        return { 
+          critical: false, 
+          warning: true, 
+          message: "Safari detectado com muitas imagens. Para melhor performance, limite a 50 fotos por upload." 
+        };
+      }
+      
+      return { critical: false, warning: false, message: "" };
+    }
+    
+    const deviceCapability = checkDeviceCapability(filesArray.length);
+    if (deviceCapability.critical) {
+      toast({
+        title: "Dispositivo não compatível",
+        description: deviceCapability.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (deviceCapability.warning) {
+      console.warn('Aviso de capacidade:', deviceCapability.message);
+      toast({
+        title: "Aviso de performance",
+        description: deviceCapability.message,
+        variant: "default",
+      });
+    }
     
     // Verificar arquivos acima de 2MB
     const oversizedFiles = filesArray.filter(file => file.size > MAX_FILE_SIZE);
@@ -188,7 +298,10 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       let totalBatches = Math.ceil(validFiles.length / BATCH_SIZE);
       console.log(`Iniciando upload de ${validFiles.length} arquivos em ${totalBatches} lotes de até ${BATCH_SIZE} fotos cada.`);
 
-      // Dividir arquivos em lotes e processar cada lote
+      // Dividir arquivos em lotes e processar cada lote com recuperação de falhas
+      const failedBatches = [];
+      let successfulBatches = 0;
+      
       for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
         // Calcular o intervalo do lote atual
         const startIndex = batchIndex * BATCH_SIZE;
@@ -225,15 +338,61 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
         
         console.log(`Lote ${batchIndex + 1} comprimido, enviando para o servidor...`);
         
-        // Enviar o lote atual passando o índice e o número total de lotes
-        const result = await uploadBatch(compressedFiles, batchIndex, totalBatches);
+        // Enviar o lote atual com tratamento de falhas
+        try {
+          const result = await uploadBatch(compressedFiles, batchIndex, totalBatches);
+          
+          // Atualizar o contador de progresso
+          const batchUploaded = result.files?.length || result.totalUploaded || batchSize;
+          totalUploaded += batchUploaded;
+          successfulBatches++;
+          setUploadProgress(prev => ({ ...prev, current: totalUploaded }));
+          
+          console.log(`✅ Lote ${batchIndex + 1} enviado com sucesso: ${batchUploaded} arquivos`);
+        } catch (error) {
+          console.error(`❌ Falha no lote ${batchIndex + 1}:`, error);
+          
+          // Armazenar lote que falhou para tentativa posterior
+          failedBatches.push({
+            batchIndex,
+            files: compressedFiles,
+            error: error instanceof Error ? error.message : 'Erro desconhecido'
+          });
+          
+          // Continuar com próximos lotes mesmo se um falhar
+          console.log(`Continuando com próximo lote...`);
+        }
+      }
+      
+      // Tentar reenviar lotes que falharam (uma tentativa adicional)
+      if (failedBatches.length > 0) {
+        console.log(`\n🔄 Tentando reenviar ${failedBatches.length} lotes que falharam...`);
         
-        // Atualizar o contador de progresso
-        const batchUploaded = result.files?.length || result.totalUploaded || batchSize;
-        totalUploaded += batchUploaded;
-        setUploadProgress(prev => ({ ...prev, current: totalUploaded }));
-        
-        console.log(`Lote ${batchIndex + 1} enviado com sucesso: ${batchUploaded} arquivos`);
+        for (const failedBatch of failedBatches) {
+          try {
+            console.log(`Reenviando lote ${failedBatch.batchIndex + 1}...`);
+            const result = await uploadBatch(failedBatch.files, failedBatch.batchIndex, totalBatches);
+            
+            const batchUploaded = result.files?.length || result.totalUploaded || failedBatch.files.length;
+            totalUploaded += batchUploaded;
+            successfulBatches++;
+            setUploadProgress(prev => ({ ...prev, current: totalUploaded }));
+            
+            console.log(`✅ Lote ${failedBatch.batchIndex + 1} reenviado com sucesso!`);
+          } catch (retryError) {
+            console.error(`❌ Falha definitiva no lote ${failedBatch.batchIndex + 1}:`, retryError);
+            
+            // Mostrar toast para lotes que falharam definitivamente
+            toast({
+              title: `Lote ${failedBatch.batchIndex + 1} falhou`,
+              description: `${failedBatch.files.length} fotos não foram enviadas. Tente novamente.`,
+              variant: "destructive",
+            });
+          }
+          
+          // Pausa entre reenvios
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
 
       console.log('Upload concluído com sucesso:', totalUploaded, 'arquivos');
