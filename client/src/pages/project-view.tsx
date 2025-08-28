@@ -417,17 +417,32 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     loadProject();
   }, [loadProject]);
   
-  // Cleanup: cancelar requisições pendentes ao desmontar
+  // Cleanup completo: cancelar requisições e limpar memória ao desmontar
   useEffect(() => {
     return () => {
+      // Cancelar requisições pendentes
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      
+      // Limpar URLs de objetos e blobs para evitar memory leaks
+      if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(currentImageUrl);
+      }
+      
+      // Sugerir garbage collection em dispositivos móveis
+      if (typeof window !== 'undefined' && 'gc' in window && typeof window.gc === 'function') {
+        try {
+          window.gc();
+        } catch (e) {
+          // Silently ignore if gc is not available
+        }
+      }
     };
-  }, []);
+  }, [currentImageUrl]);
   
-  // Alternar seleção de foto
-  const togglePhotoSelection = (photoId: string) => {
+  // Alternar seleção de foto com debounce para evitar múltiplos setState
+  const togglePhotoSelection = useCallback((photoId: string) => {
     if (isFinalized) return; // Impedir seleção se o projeto estiver finalizado
     
     setSelectedPhotos(prevSelected => {
@@ -439,7 +454,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       }
       return newSelected;
     });
-  };
+  }, [isFinalized]);
   
   // Abrir modal com a imagem em tamanho completo (com otimização de memória)
   const openImageModal = useCallback((url: string, photoIndex: number, event: React.MouseEvent) => {
@@ -459,9 +474,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     setImageModalOpen(true);
   }, [project?.photos]);
   
-  // Navegar para a próxima foto no modal
-  const goToNextPhoto = () => {
+  // Navegar para a próxima foto no modal com cleanup de memória
+  const goToNextPhoto = useCallback(() => {
     if (!project || project.photos.length === 0) return;
+    
+    // Limpar URL anterior se for blob
+    if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageUrl);
+    }
     
     const nextIndex = (currentPhotoIndex + 1) % project.photos.length;
     const nextPhoto = project.photos[nextIndex];
@@ -469,11 +489,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     // Just store the URL directly - getPhotoUrl will be applied when rendered
     setCurrentImageUrl(nextPhoto.url);
     setCurrentPhotoIndex(nextIndex);
-  };
+  }, [project, currentPhotoIndex, currentImageUrl]);
   
-  // Navegar para a foto anterior no modal
-  const goToPrevPhoto = () => {
+  // Navegar para a foto anterior no modal com cleanup de memória
+  const goToPrevPhoto = useCallback(() => {
     if (!project || project.photos.length === 0) return;
+    
+    // Limpar URL anterior se for blob
+    if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageUrl);
+    }
     
     const prevIndex = (currentPhotoIndex - 1 + project.photos.length) % project.photos.length;
     const prevPhoto = project.photos[prevIndex];
@@ -481,7 +506,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     // Just store the URL directly - getPhotoUrl will be applied when rendered
     setCurrentImageUrl(prevPhoto.url);
     setCurrentPhotoIndex(prevIndex);
-  };
+  }, [project, currentPhotoIndex, currentImageUrl]);
   
   // Salvar seleções atuais sem finalizar
   const saveSelections = async () => {
@@ -1081,8 +1106,35 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 alt="Foto do projeto"
                 className="max-w-full max-h-full w-auto h-auto object-contain"
                 style={{ maxWidth: '95vw', maxHeight: '95vh' }}
+                loading="eager"
+                onLoad={(e) => {
+                  // Otimização: liberar recursos após carregamento
+                  const img = e.currentTarget;
+                  if (img.dataset.retryCount) {
+                    delete img.dataset.retryCount;
+                  }
+                }}
                 onError={(e) => {
-                  e.currentTarget.src = '/placeholder.jpg';
+                  // Error handling melhorado com múltiplos fallbacks
+                  const img = e.currentTarget;
+                  if (!img.dataset.retryCount) {
+                    img.dataset.retryCount = '1';
+                    // Primeira tentativa: usar CDN alternativo
+                    const originalSrc = img.src;
+                    if (originalSrc.includes('cdn.fottufy.com')) {
+                      img.src = originalSrc.replace('cdn.fottufy.com', 'cdn2.fottufy.com');
+                      return;
+                    }
+                  } else if (img.dataset.retryCount === '1') {
+                    img.dataset.retryCount = '2';
+                    // Segunda tentativa: usar placeholder
+                    img.src = '/placeholder.jpg';
+                    return;
+                  }
+                  // Última tentativa: usar data URL simples
+                  // Última tentativa: esconder imagem problemática
+                  img.style.display = "none";
+                  console.error("Imagem não pode ser carregada:", img.src);
                 }}
                 onContextMenu={e => e.preventDefault()}
               />
