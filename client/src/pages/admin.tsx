@@ -45,6 +45,7 @@ import {
   FilterIcon,
   KeyIcon,
   Loader2,
+  Mail,
   PencilIcon,
   PlusIcon,
   SearchIcon,
@@ -494,6 +495,24 @@ export default function Admin() {
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to reset password",
         variant: "destructive"
+      });
+    }
+  };
+
+  const handleResendWelcomeEmail = async (user: any) => {
+    try {
+      const response = await apiRequest("POST", `/api/users/${user.id}/resend-welcome-email`, {});
+      
+      toast({
+        title: "Email enviado",
+        description: `Email de acesso reenviado para ${user.email}`,
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao reenviar email de acesso. Tente novamente.",
+        variant: "destructive",
       });
     }
   };
@@ -1738,15 +1757,24 @@ export default function Admin() {
               </div>
               
               <div className="space-y-4 pt-4">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <Button 
                     variant="outline" 
-                    onClick={() => setEditUserDialogOpen(false)}
+                    onClick={() => editingUser && handleResendWelcomeEmail(editingUser)}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
                   >
-                    Cancel
+                    <Mail className="mr-2 h-4 w-4" />
+                    Resend Welcome Email
                   </Button>
                   
-                  <div className="space-x-2">
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setEditUserDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    
                     <Button 
                       onClick={handleToggleUserStatus}
                       disabled={editForm.status === editingUser.status}
