@@ -228,7 +228,7 @@ export default function Admin() {
               <AlertDialogDescription>
                 Esta ação irá converter automaticamente para plano "free" todos os usuários com:
                 <br/>
-                • Assinaturas vencidas há mais de 3 dias
+                • Assinaturas vencidas (IMEDIATO - sem tolerância)
                 <br/>
                 • Sem registro de pagamento recente
                 <br/>
@@ -902,7 +902,7 @@ export default function Admin() {
                             {subscriptionAnalytics.analytics.pendingCancellations}
                           </div>
                           <p className="text-xs text-yellow-600 mt-1">
-                            Período de graça de 3 dias
+                            Processamento imediato
                           </p>
                         </CardContent>
                       </Card>
@@ -1330,7 +1330,7 @@ export default function Admin() {
                             <h4 className="font-medium text-orange-800 mb-2">Critérios de Verificação:</h4>
                             <ul className="text-sm text-orange-700 space-y-1">
                               <li>• Usuários em planos pagos (não "free")</li>
-                              <li>• Data de vencimento já passou há mais de 3 dias</li>
+                              <li>• Data de vencimento já passou (IMEDIATO - sem tolerância)</li>
                               <li>• Não há registro de pagamento recente via webhook</li>
                               <li>• Não são ativações manuais recentes (últimos 30 dias)</li>
                             </ul>

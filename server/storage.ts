@@ -2342,21 +2342,21 @@ export class DatabaseStorage implements IStorage {
           (now.getTime() - new Date(user.subscriptionEndDate!).getTime()) / (1000 * 60 * 60 * 24)
         );
         
-        // Se venceu há mais de 3 dias, é candidato a downgrade
-        if (daysSinceExpiry > 3) {
+        // Se venceu (qualquer quantidade de dias), é candidato a downgrade imediato
+        if (daysSinceExpiry > 0) {
           // Verificar se não houve pagamento recente
           const hasRecentPayment = user.lastEvent && 
             user.lastEvent.type === 'purchase.approved' && 
             new Date(user.lastEvent.timestamp) > sevenDaysAgo;
             
           if (!hasRecentPayment) {
-            console.log(`[EXPIRED-CHECK] Usuário ${user.email}: venceu há ${daysSinceExpiry} dias, sem pagamento recente`);
+            console.log(`[EXPIRED-CHECK] Usuário ${user.email}: venceu há ${daysSinceExpiry} dias, sem pagamento recente - DOWNGRADE IMEDIATO`);
             return true;
           } else {
             console.log(`[EXPIRED-CHECK] Usuário ${user.email}: tem pagamento recente, mantendo ativo`);
           }
         } else {
-          console.log(`[EXPIRED-CHECK] Usuário ${user.email}: venceu há apenas ${daysSinceExpiry} dias, dentro do período de tolerância`);
+          console.log(`[EXPIRED-CHECK] Usuário ${user.email}: ainda não venceu (${daysSinceExpiry} dias)`);
         }
         
         return false;
