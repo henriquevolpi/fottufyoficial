@@ -10,7 +10,7 @@ import {
 import { analyzeSubscriptionStatus, canUserUpload, checkAdvancedUploadLimit, type SubscriptionAnalysis } from "./integrations/hotmart";
 import { nanoid } from "nanoid";
 import { db } from "./db";
-import { eq, and, desc, asc, count, inArray, sql, lt, ne, gte, isNull, or } from "drizzle-orm";
+import { eq, and, desc, asc, count, inArray, sql, lt, ne, gte, isNull, or, not } from "drizzle-orm";
 
 // Memory storage implementation
 import session from "express-session";
@@ -2314,7 +2314,7 @@ export class DatabaseStorage implements IStorage {
             // Não é plano gratuito
             ne(users.planType, 'free'),
             // Tem data de fim de assinatura definida
-            isNull(users.subscriptionEndDate).not(),
+            not(isNull(users.subscriptionEndDate)),
             // Data de fim já passou
             lt(users.subscriptionEndDate, now),
             // Status não é 'active' (para evitar conflitos)
