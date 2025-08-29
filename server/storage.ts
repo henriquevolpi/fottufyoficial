@@ -319,6 +319,8 @@ export interface IStorage {
   cancelPendingDowngrade(userId: number): Promise<User | undefined>;
   getUsersWithExpiredDowngrades(): Promise<User[]>;
   processExpiredDowngrades(): Promise<number>;
+  getUsersWithExpiredSubscriptionsNeedsDowngrade(): Promise<User[]>;
+  processExpiredSubscriptionsWithoutPayment(): Promise<number>;
   
   // Upload management methods
   checkUploadLimit(userId: number, count: number): Promise<boolean>;
@@ -1046,6 +1048,16 @@ export class MemStorage implements IStorage {
 
   async processExpiredDowngrades(): Promise<number> {
     console.log(`MemStorage: processExpiredDowngrades não implementado`);
+    return 0;
+  }
+
+  async getUsersWithExpiredSubscriptionsNeedsDowngrade(): Promise<User[]> {
+    console.log(`MemStorage: getUsersWithExpiredSubscriptionsNeedsDowngrade não implementado`);
+    return [];
+  }
+
+  async processExpiredSubscriptionsWithoutPayment(): Promise<number> {
+    console.log(`MemStorage: processExpiredSubscriptionsWithoutPayment não implementado`);
     return 0;
   }
 
@@ -2282,6 +2294,131 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== SISTEMA DE DOWNGRADE AUTOMÁTICO ====================
+
+  /**
+   * Identifica usuários com assinaturas vencidas sem pagamento detectado
+   * Critérios: plano pago + subscriptionEndDate vencida + sem pagamento recente
+   */
+  async getUsersWithExpiredSubscriptionsNeedsDowngrade(): Promise<User[]> {
+    try {
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+      
+      // Buscar usuários com critérios específicos
+      const expiredUsers = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            // Não é plano gratuito
+            ne(users.planType, 'free'),
+            // Tem data de fim de assinatura definida
+            isNull(users.subscriptionEndDate).not(),
+            // Data de fim já passou
+            lt(users.subscriptionEndDate, now),
+            // Status não é 'active' (para evitar conflitos)
+            ne(users.subscriptionStatus, 'active'),
+            // Não é ativação manual recente (menos de 30 dias)
+            or(
+              isNull(users.isManualActivation),
+              eq(users.isManualActivation, false),
+              and(
+                eq(users.isManualActivation, true),
+                lt(users.manualActivationDate, thirtyDaysAgo)
+              )
+            ),
+            // Não tem downgrade pendente já agendado
+            isNull(users.pendingDowngradeDate)
+          )
+        );
+
+      console.log(`[EXPIRED-CHECK] Encontrados ${expiredUsers.length} usuários com assinaturas vencidas que precisam de análise`);
+      
+      // Filtrar adicionalmente por critérios de segurança
+      const usersNeedingDowngrade = expiredUsers.filter(user => {
+        // Calcular dias desde o vencimento
+        const daysSinceExpiry = Math.floor(
+          (now.getTime() - new Date(user.subscriptionEndDate!).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        // Se venceu há mais de 3 dias, é candidato a downgrade
+        if (daysSinceExpiry > 3) {
+          // Verificar se não houve pagamento recente
+          const hasRecentPayment = user.lastEvent && 
+            user.lastEvent.type === 'purchase.approved' && 
+            new Date(user.lastEvent.timestamp) > sevenDaysAgo;
+            
+          if (!hasRecentPayment) {
+            console.log(`[EXPIRED-CHECK] Usuário ${user.email}: venceu há ${daysSinceExpiry} dias, sem pagamento recente`);
+            return true;
+          } else {
+            console.log(`[EXPIRED-CHECK] Usuário ${user.email}: tem pagamento recente, mantendo ativo`);
+          }
+        } else {
+          console.log(`[EXPIRED-CHECK] Usuário ${user.email}: venceu há apenas ${daysSinceExpiry} dias, dentro do período de tolerância`);
+        }
+        
+        return false;
+      });
+      
+      console.log(`[EXPIRED-CHECK] ${usersNeedingDowngrade.length} usuários precisam de downgrade por assinatura vencida`);
+      return usersNeedingDowngrade;
+      
+    } catch (error) {
+      console.error("Erro ao buscar usuários com assinaturas vencidas:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Processa usuários com assinaturas vencidas sem pagamento e faz downgrade para free
+   */
+  async processExpiredSubscriptionsWithoutPayment(): Promise<number> {
+    try {
+      const expiredUsers = await this.getUsersWithExpiredSubscriptionsNeedsDowngrade();
+      let processedCount = 0;
+      
+      console.log(`[EXPIRED-DOWNGRADE] Iniciando processamento de ${expiredUsers.length} usuários com assinaturas vencidas`);
+      
+      for (const user of expiredUsers) {
+        try {
+          const originalPlan = user.planType;
+          const daysSinceExpiry = Math.floor(
+            (new Date().getTime() - new Date(user.subscriptionEndDate!).getTime()) / (1000 * 60 * 60 * 24)
+          );
+          
+          console.log(`[EXPIRED-DOWNGRADE] Processando usuário ${user.email}: ${originalPlan} -> free (venceu há ${daysSinceExpiry} dias)`);
+          
+          // Fazer downgrade para plano gratuito
+          await this.updateUserSubscription(user.id, 'free');
+          
+          // Atualizar status e informações
+          await this.updateUser(user.id, {
+            subscriptionStatus: 'expired_no_payment',
+            originalPlanBeforeDowngrade: originalPlan,
+            lastEvent: {
+              type: 'auto_downgrade_expired_no_payment',
+              timestamp: new Date().toISOString(),
+            },
+          });
+          
+          console.log(`[EXPIRED-DOWNGRADE] Usuário ${user.email} convertido para plano gratuito (assinatura vencida há ${daysSinceExpiry} dias)`);
+          processedCount++;
+          
+        } catch (userError) {
+          console.error(`[EXPIRED-DOWNGRADE] Erro ao processar usuário ${user.email}:`, userError);
+        }
+      }
+      
+      console.log(`[EXPIRED-DOWNGRADE] Processamento concluído: ${processedCount} usuários convertidos para plano gratuito`);
+      return processedCount;
+      
+    } catch (error) {
+      console.error("Erro ao processar assinaturas vencidas:", error);
+      return 0;
+    }
+  }
 
   async processExpiredDowngrades(): Promise<number> {
     try {

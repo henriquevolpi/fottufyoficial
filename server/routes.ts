@@ -1418,6 +1418,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add user" });
     }
   });
+
+  // Check and process expired subscriptions without payment
+  app.post("/api/admin/process-expired-subscriptions", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log(`[EXPIRED-ADMIN] Verificação de assinaturas vencidas iniciada por admin: ${req.user?.email}`);
+      
+      // Primeiro, buscar usuários que precisam de downgrade
+      const expiredUsers = await storage.getUsersWithExpiredSubscriptionsNeedsDowngrade();
+      
+      if (expiredUsers.length === 0) {
+        return res.json({
+          success: true,
+          message: "Nenhum usuário com assinatura vencida encontrado",
+          usersProcessed: 0,
+          details: []
+        });
+      }
+      
+      // Mostrar detalhes dos usuários encontrados
+      const details = expiredUsers.map(user => {
+        const daysSinceExpiry = Math.floor(
+          (new Date().getTime() - new Date(user.subscriptionEndDate!).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        return {
+          email: user.email,
+          planType: user.planType,
+          subscriptionEndDate: user.subscriptionEndDate,
+          daysSinceExpiry,
+          subscriptionStatus: user.subscriptionStatus,
+          lastEvent: user.lastEvent
+        };
+      });
+      
+      // Processar os usuários (fazer downgrade)
+      const processedCount = await storage.processExpiredSubscriptionsWithoutPayment();
+      
+      res.json({
+        success: true,
+        message: `Processamento concluído: ${processedCount} usuários convertidos para plano gratuito`,
+        usersFound: expiredUsers.length,
+        usersProcessed: processedCount,
+        details
+      });
+      
+    } catch (error) {
+      console.error("Erro ao processar assinaturas vencidas:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno ao processar assinaturas vencidas" 
+      });
+    }
+  });
+
+  // Get expired subscriptions preview (without processing)
+  app.get("/api/admin/expired-subscriptions-preview", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log(`[EXPIRED-PREVIEW] Visualização de assinaturas vencidas solicitada por admin: ${req.user?.email}`);
+      
+      const expiredUsers = await storage.getUsersWithExpiredSubscriptionsNeedsDowngrade();
+      
+      const preview = expiredUsers.map(user => {
+        const daysSinceExpiry = Math.floor(
+          (new Date().getTime() - new Date(user.subscriptionEndDate!).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        return {
+          email: user.email,
+          name: user.name,
+          planType: user.planType,
+          subscriptionEndDate: user.subscriptionEndDate,
+          daysSinceExpiry,
+          subscriptionStatus: user.subscriptionStatus,
+          isManualActivation: user.isManualActivation,
+          lastEvent: user.lastEvent ? {
+            type: user.lastEvent.type,
+            timestamp: user.lastEvent.timestamp
+          } : null
+        };
+      });
+      
+      res.json({
+        success: true,
+        count: expiredUsers.length,
+        users: preview
+      });
+      
+    } catch (error) {
+      console.error("Erro ao buscar preview de assinaturas vencidas:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno ao buscar assinaturas vencidas" 
+      });
+    }
+  });
   
   // Get user by ID (admin or self)
   app.get("/api/users/:id", authenticate, async (req: Request, res: Response) => {

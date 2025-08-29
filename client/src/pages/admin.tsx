@@ -64,9 +64,199 @@ interface AdminUserFilters {
   searchQuery?: string;
 }
 
+
 export default function Admin() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
+  
+  // Componente para visualizar assinaturas vencidas
+  const ExpiredSubscriptionsPreviewButton = () => {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [previewData, setPreviewData] = useState<any>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const fetchPreview = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/admin/expired-subscriptions-preview', {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Falha ao buscar preview das assinaturas vencidas');
+        }
+        
+        const data = await response.json();
+        setPreviewData(data);
+        setIsDialogOpen(true);
+        
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: error instanceof Error ? error.message : "Erro desconhecido",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <>
+        <Button
+          onClick={fetchPreview}
+          variant="outline"
+          disabled={isLoading}
+          className="text-orange-700 border-orange-300 hover:bg-orange-100"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <SearchIcon className="h-4 w-4 mr-2" />
+          )}
+          Visualizar Candidatos
+        </Button>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>
+                Assinaturas Vencidas Sem Pagamento ({previewData?.count || 0})
+              </DialogTitle>
+              <DialogDescription>
+                Usuários identificados para possível downgrade automático
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-96">
+              <div className="space-y-3">
+                {previewData?.users?.map((user: any, index: number) => (
+                  <div key={index} className="bg-orange-50 p-3 rounded border border-orange-100">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{user.email}</p>
+                        <p className="text-sm text-gray-600">{user.name} • Plano: {user.planType}</p>
+                        {user.isManualActivation && (
+                          <p className="text-xs text-blue-600">Ativação manual detectada</p>
+                        )}
+                      </div>
+                      <div className="text-right text-sm">
+                        <p className="text-orange-600 font-medium">{user.daysSinceExpiry} dias vencido</p>
+                        {user.subscriptionEndDate && (
+                          <p className="text-gray-500">Venceu: {new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR')}</p>
+                        )}
+                        <p className="text-xs text-gray-600 mt-1">Status: {user.subscriptionStatus}</p>
+                      </div>
+                    </div>
+                    {user.lastEvent && (
+                      <div className="mt-2 text-xs text-gray-600">
+                        Último evento: {user.lastEvent.type} em {new Date(user.lastEvent.timestamp).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
+                  </div>
+                )) || (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">Nenhum usuário encontrado para downgrade</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  };
+
+  // Componente para processar assinaturas vencidas
+  const ExpiredSubscriptionsProcessButton = ({ onProcessComplete }: { onProcessComplete: () => void }) => {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+    const processExpiredSubscriptions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiRequest('POST', '/api/admin/process-expired-subscriptions', {});
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Falha ao processar assinaturas vencidas');
+        }
+        
+        const result = await response.json();
+        
+        toast({
+          title: "Processamento Concluído",
+          description: result.message,
+          duration: 5000
+        });
+
+        // Refresh analytics data
+        onProcessComplete();
+        setConfirmDialogOpen(false);
+        
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: error instanceof Error ? error.message : "Erro desconhecido",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <>
+        <Button
+          onClick={() => setConfirmDialogOpen(true)}
+          disabled={isLoading}
+          className="bg-red-600 hover:bg-red-700 text-white"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <XCircleIcon className="h-4 w-4 mr-2" />
+          )}
+          Processar Downgrades
+        </Button>
+
+        <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Processamento de Downgrades</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação irá converter automaticamente para plano "free" todos os usuários com:
+                <br/>
+                • Assinaturas vencidas há mais de 3 dias
+                <br/>
+                • Sem registro de pagamento recente
+                <br/>
+                • Não são ativações manuais recentes
+                <br/><br/>
+                <strong>Esta ação não pode ser desfeita automaticamente.</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isLoading}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={processExpiredSubscriptions}
+                disabled={isLoading}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Confirmar Processamento
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  };
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
@@ -1122,6 +1312,34 @@ export default function Admin() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Painel de Verificação de Assinaturas Vencidas */}
+                    <Card className="bg-orange-50 border-orange-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg text-orange-700">Verificação de Assinaturas Vencidas</CardTitle>
+                        <CardDescription className="text-orange-600">
+                          Identificar clientes com assinaturas vencidas sem pagamento detectado para downgrade automático
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="bg-white rounded-lg p-4 border border-orange-200">
+                            <h4 className="font-medium text-orange-800 mb-2">Critérios de Verificação:</h4>
+                            <ul className="text-sm text-orange-700 space-y-1">
+                              <li>• Usuários em planos pagos (não "free")</li>
+                              <li>• Data de vencimento já passou há mais de 3 dias</li>
+                              <li>• Não há registro de pagamento recente via webhook</li>
+                              <li>• Não são ativações manuais recentes (últimos 30 dias)</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <ExpiredSubscriptionsPreviewButton />
+                            <ExpiredSubscriptionsProcessButton onProcessComplete={refetchAnalytics} />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
