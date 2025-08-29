@@ -71,7 +71,7 @@ export function useUploadProtection() {
           setShowEmergencyOverlay(true);
         }
       }
-    }, 5000);
+    }, 3000); // Reduzido para 3 segundos para detecção mais rápida
 
     return () => clearInterval(checkInterval);
   }, [state.isActive, state.lastActivity]);

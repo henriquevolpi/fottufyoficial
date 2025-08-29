@@ -82,8 +82,8 @@ export async function compressImage(
   try {
     // 🛡️ VERIFICAÇÃO CRÍTICA DE MEMÓRIA ANTES DE PROCESSAR
     const memInfo = (window.performance as any)?.memory;
-    if (memInfo && memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.88) {
-      console.warn(`🚨 Memory pressure detected before processing ${file.name}`);
+    if (memInfo && memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.85) {
+      console.warn(`🚨 Memory pressure detected before processing ${file.name} - ${((memInfo.usedJSHeapSize / memInfo.totalJSHeapSize) * 100).toFixed(1)}% used`);
       // Força limpeza antes de continuar
       if ((window as any).gc) {
         try {
@@ -104,6 +104,7 @@ export async function compressImage(
     console.log(`[Frontend] Processando imagem: ${file.name}`, {
       tamanhoOriginal: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       configuracoes: compressionOptions,
+      memoryStatus: memInfo ? `${((memInfo.usedJSHeapSize / memInfo.totalJSHeapSize) * 100).toFixed(1)}%` : 'unknown'
     });
 
     // 🛡️ YIELD THREAD: Micro pausa antes de operação pesada

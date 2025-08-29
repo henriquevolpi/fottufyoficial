@@ -93,22 +93,22 @@ function validateMemory(files: File[], device: any): UploadRisk[] {
   // Estimar uso de memória (arquivo original + comprimido + buffers)
   const estimatedMemoryMB = totalSizeMB * 2.5;
   
-  if (device.type === 'mobile' && estimatedMemoryMB > 100) {
+  if (device.type === 'mobile' && estimatedMemoryMB > 80) {
     risks.push({
-      level: 'high',
+      level: estimatedMemoryMB > 150 ? 'high' : 'medium',
       category: 'memory',
       message: 'Muitas fotos para dispositivo móvel',
-      recommendation: 'Reduza para menos de 50 fotos por vez',
+      recommendation: estimatedMemoryMB > 150 ? 'Reduza para menos de 30 fotos por vez' : 'Reduza para menos de 50 fotos por vez',
       technical: `Memória estimada: ${estimatedMemoryMB.toFixed(0)}MB`
     });
   }
   
-  if (estimatedMemoryMB > 500) {
+  if (estimatedMemoryMB > 400) {
     risks.push({
-      level: 'critical',
+      level: estimatedMemoryMB > 600 ? 'critical' : 'high',
       category: 'memory',
       message: 'Volume de fotos muito alto',
-      recommendation: 'Divida em uploads menores (máximo 100 fotos)',
+      recommendation: estimatedMemoryMB > 600 ? 'Divida em uploads menores (máximo 50 fotos)' : 'Divida em uploads menores (máximo 80 fotos)',
       technical: `Memória estimada: ${estimatedMemoryMB.toFixed(0)}MB`
     });
   }
