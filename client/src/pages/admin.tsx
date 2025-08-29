@@ -141,6 +141,21 @@ export default function Admin() {
     }
   });
   
+  // Subscription Analytics Query
+  const {
+    data: subscriptionAnalytics,
+    isLoading: isLoadingAnalytics,
+    refetch: refetchAnalytics
+  } = useQuery({
+    queryKey: ['/api/admin/subscriptions/analytics'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/subscriptions/analytics');
+      if (!response.ok) throw new Error('Failed to fetch subscription analytics');
+      return response.json();
+    },
+    enabled: activeTab === 'subscriptions'
+  });
+  
   // Atualiza o estado temporário quando o filtro por plano muda através dos cards
   const updateTempFiltersFromPlanClick = (planType?: string) => {
     setTempFilters({...filters, planType});
@@ -401,10 +416,14 @@ export default function Admin() {
         <main className="flex-1 bg-gray-50">
         <div className="container mx-auto py-6 px-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-2">
+            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3">
               <TabsTrigger value="users" className="flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2" />
                 Users Management
+              </TabsTrigger>
+              <TabsTrigger value="subscriptions" className="flex items-center">
+                <BarChart className="h-4 w-4 mr-2" />
+                Subscriptions
               </TabsTrigger>
               <TabsTrigger value="stats" className="flex items-center">
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
@@ -613,6 +632,257 @@ export default function Admin() {
                         )}
                       </TableBody>
                     </Table>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="subscriptions" className="space-y-4">
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Subscription Analytics</h2>
+                    <p className="text-gray-600">Monitor subscription status, payments, and user access</p>
+                  </div>
+                  <Button
+                    onClick={() => refetchAnalytics()}
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoadingAnalytics}
+                  >
+                    {isLoadingAnalytics ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Refresh Data"
+                    )}
+                  </Button>
+                </div>
+                
+                {isLoadingAnalytics ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {[...Array(8)].map((_, i) => (
+                        <Card key={i} className="p-4">
+                          <Skeleton className="h-4 w-20 mb-2" />
+                          <Skeleton className="h-8 w-16 mb-1" />
+                          <Skeleton className="h-3 w-24" />
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ) : subscriptionAnalytics ? (
+                  <div className="space-y-6">
+                    {/* Overview Metrics */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="bg-green-50 border-green-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-green-700">Active Subscriptions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-green-900">
+                            {subscriptionAnalytics.analytics.activeSubscriptions}
+                          </div>
+                          <p className="text-xs text-green-600 mt-1">
+                            {((subscriptionAnalytics.analytics.activeSubscriptions / subscriptionAnalytics.analytics.totalUsers) * 100).toFixed(1)}% of total users
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-red-50 border-red-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-red-700">Expired Subscriptions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-red-900">
+                            {subscriptionAnalytics.analytics.expiredSubscriptions}
+                          </div>
+                          <p className="text-xs text-red-600 mt-1">
+                            Require immediate attention
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-yellow-50 border-yellow-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-yellow-700">Pending Cancellations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-yellow-900">
+                            {subscriptionAnalytics.analytics.pendingCancellations}
+                          </div>
+                          <p className="text-xs text-yellow-600 mt-1">
+                            3-day grace period
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-orange-50 border-orange-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-orange-700">Critical Expirations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-orange-900">
+                            {subscriptionAnalytics.analytics.criticalExpirations}
+                          </div>
+                          <p className="text-xs text-orange-600 mt-1">
+                            Expire within 7 days
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-blue-50 border-blue-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-blue-700">Upcoming Expirations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-blue-900">
+                            {subscriptionAnalytics.analytics.upcomingExpirations}
+                          </div>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Expire within 30 days
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-purple-50 border-purple-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-purple-700">Paid Without Payment</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-purple-900">
+                            {subscriptionAnalytics.analytics.paidUsersWithoutPayment}
+                          </div>
+                          <p className="text-xs text-purple-600 mt-1">
+                            Access but no payment
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-green-50 border-green-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-green-700">This Month Payments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-green-900">
+                            {subscriptionAnalytics.analytics.monthlyPayments}
+                          </div>
+                          <p className="text-xs text-green-600 mt-1">
+                            vs {subscriptionAnalytics.analytics.lastMonthPayments} last month
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-gray-50 border-gray-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-gray-700">Free Users</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {subscriptionAnalytics.analytics.freeUsers}
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            Potential conversions
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {/* Plan Distribution */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Plan Distribution</CardTitle>
+                        <CardDescription>Current subscription plan breakdown</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                          {Object.entries(subscriptionAnalytics.analytics.planDistribution).map(([plan, count]) => (
+                            <div key={plan} className="text-center p-3 bg-gray-50 rounded-lg">
+                              <div className="text-2xl font-bold text-gray-900">{count}</div>
+                              <div className="text-sm text-gray-600 capitalize">{plan.replace('_', ' ')}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Quick Actions */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Quick Actions</CardTitle>
+                        <CardDescription>View detailed user lists by subscription status</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                          {subscriptionAnalytics.analytics.expiredSubscriptions > 0 && (
+                            <Button 
+                              variant="outline" 
+                              className="h-auto p-4 flex flex-col items-start border-red-200 hover:bg-red-50"
+                              onClick={() => {
+                                // TODO: Navigate to expired users list
+                                console.log('View expired subscriptions');
+                              }}
+                            >
+                              <div className="font-semibold text-red-700">Expired Subscriptions</div>
+                              <div className="text-sm text-red-600 mt-1">
+                                {subscriptionAnalytics.analytics.expiredSubscriptions} users need attention
+                              </div>
+                            </Button>
+                          )}
+                          
+                          {subscriptionAnalytics.analytics.pendingCancellations > 0 && (
+                            <Button 
+                              variant="outline" 
+                              className="h-auto p-4 flex flex-col items-start border-yellow-200 hover:bg-yellow-50"
+                              onClick={() => {
+                                // TODO: Navigate to pending cancellations list
+                                console.log('View pending cancellations');
+                              }}
+                            >
+                              <div className="font-semibold text-yellow-700">Pending Cancellations</div>
+                              <div className="text-sm text-yellow-600 mt-1">
+                                {subscriptionAnalytics.analytics.pendingCancellations} users in grace period
+                              </div>
+                            </Button>
+                          )}
+                          
+                          {subscriptionAnalytics.analytics.criticalExpirations > 0 && (
+                            <Button 
+                              variant="outline" 
+                              className="h-auto p-4 flex flex-col items-start border-orange-200 hover:bg-orange-50"
+                              onClick={() => {
+                                // TODO: Navigate to critical expirations list
+                                console.log('View critical expirations');
+                              }}
+                            >
+                              <div className="font-semibold text-orange-700">Critical Expirations</div>
+                              <div className="text-sm text-orange-600 mt-1">
+                                {subscriptionAnalytics.analytics.criticalExpirations} expire within 7 days
+                              </div>
+                            </Button>
+                          )}
+                          
+                          {subscriptionAnalytics.analytics.paidUsersWithoutPayment > 0 && (
+                            <Button 
+                              variant="outline" 
+                              className="h-auto p-4 flex flex-col items-start border-purple-200 hover:bg-purple-50"
+                              onClick={() => {
+                                // TODO: Navigate to paid without payment list
+                                console.log('View paid without payment');
+                              }}
+                            >
+                              <div className="font-semibold text-purple-700">Access Without Payment</div>
+                              <div className="text-sm text-purple-600 mt-1">
+                                {subscriptionAnalytics.analytics.paidUsersWithoutPayment} need verification
+                              </div>
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Unable to load subscription analytics</p>
                   </div>
                 )}
               </div>

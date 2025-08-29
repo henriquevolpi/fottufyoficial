@@ -2867,6 +2867,269 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== Admin Subscription Analytics Routes ====================
+  
+  /**
+   * Painel de análise de assinaturas para administradores
+   * Fornece métricas sobre pagamentos, atrasos e status de assinaturas
+   */
+  app.get("/api/admin/subscriptions/analytics", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Buscar todos os usuários
+      const allUsers = await storage.getUsers();
+      
+      // Inicializar contadores e listas
+      const analytics = {
+        totalUsers: allUsers.length,
+        activeSubscriptions: 0,
+        expiredSubscriptions: 0,
+        pendingCancellations: 0,
+        freeUsers: 0,
+        paidUsersWithoutPayment: 0,
+        upcomingExpirations: 0, // próximos 30 dias
+        criticalExpirations: 0, // próximos 7 days
+        planDistribution: {} as Record<string, number>,
+        monthlyPayments: 0, // este mês
+        lastMonthPayments: 0
+      };
+      
+      const usersByCategory = {
+        expired: [] as any[],
+        pendingCancellation: [] as any[],
+        paidWithoutPayment: [] as any[],
+        upcomingExpiration: [] as any[],
+        criticalExpiration: [] as any[]
+      };
+      
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      
+      // Analisar cada usuário
+      for (const user of allUsers) {
+        // Distribuição de planos
+        const planType = user.planType || 'free';
+        analytics.planDistribution[planType] = (analytics.planDistribution[planType] || 0) + 1;
+        
+        // Contar usuários gratuitos
+        if (planType === 'free') {
+          analytics.freeUsers++;
+          continue;
+        }
+        
+        // Análise avançada da assinatura usando o sistema novo
+        const subscriptionAnalysis = await storage.verifyUserSubscriptionStatus(user.id);
+        const analysis = subscriptionAnalysis.analysis;
+        
+        // Categorizar por status
+        if (analysis.isExpired) {
+          analytics.expiredSubscriptions++;
+          usersByCategory.expired.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            planType: user.planType,
+            status: analysis.statusReason,
+            recommendations: analysis.recommendations
+          });
+        } else if (analysis.isPendingCancellation) {
+          analytics.pendingCancellations++;
+          usersByCategory.pendingCancellation.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            planType: user.planType,
+            status: analysis.statusReason,
+            daysLeft: analysis.daysUntilExpiry,
+            recommendations: analysis.recommendations
+          });
+        } else if (analysis.isActive) {
+          analytics.activeSubscriptions++;
+          
+          // Verificar expirações próximas
+          if (analysis.daysUntilExpiry !== null) {
+            if (analysis.daysUntilExpiry <= 7) {
+              analytics.criticalExpirations++;
+              usersByCategory.criticalExpiration.push({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                planType: user.planType,
+                daysLeft: analysis.daysUntilExpiry,
+                status: analysis.statusReason
+              });
+            } else if (analysis.daysUntilExpiry <= 30) {
+              analytics.upcomingExpirations++;
+              usersByCategory.upcomingExpiration.push({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                planType: user.planType,
+                daysLeft: analysis.daysUntilExpiry,
+                status: analysis.statusReason
+              });
+            }
+          }
+        }
+        
+        // Verificar usuários pagos sem pagamento
+        if (user.subscriptionStatus !== 'active' && planType !== 'free') {
+          analytics.paidUsersWithoutPayment++;
+          usersByCategory.paidWithoutPayment.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            planType: user.planType,
+            subscriptionStatus: user.subscriptionStatus,
+            lastEvent: user.lastEvent
+          });
+        }
+        
+        // Contar pagamentos do mês (baseado em subscriptionStartDate)
+        if (user.subscriptionStartDate) {
+          const subDate = new Date(user.subscriptionStartDate);
+          if (subDate.getMonth() === currentMonth && subDate.getFullYear() === currentYear) {
+            analytics.monthlyPayments++;
+          }
+          if (subDate.getMonth() === lastMonth && subDate.getFullYear() === lastMonthYear) {
+            analytics.lastMonthPayments++;
+          }
+        }
+      }
+      
+      console.log(`Admin: Analytics de assinaturas geradas - ${analytics.totalUsers} usuários analisados`);
+      
+      res.json({
+        analytics,
+        usersByCategory,
+        generatedAt: now.toISOString()
+      });
+      
+    } catch (error) {
+      console.error("Erro ao gerar analytics de assinatura:", error);
+      res.status(500).json({ message: "Erro interno ao gerar analytics" });
+    }
+  });
+  
+  /**
+   * Lista detalhada de usuários por categoria de assinatura
+   */
+  app.get("/api/admin/subscriptions/users/:category", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { category } = req.params;
+      const { page = 1, limit = 50 } = req.query;
+      
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const offset = (pageNum - 1) * limitNum;
+      
+      const allUsers = await storage.getUsers();
+      let filteredUsers: any[] = [];
+      
+      // Filtrar usuários por categoria
+      for (const user of allUsers) {
+        if (user.planType === 'free' && category !== 'free') continue;
+        
+        const subscriptionAnalysis = await storage.verifyUserSubscriptionStatus(user.id);
+        const analysis = subscriptionAnalysis.analysis;
+        
+        let matchesCategory = false;
+        let categoryData: any = {};
+        
+        switch (category) {
+          case 'expired':
+            matchesCategory = analysis.isExpired;
+            categoryData = { reason: analysis.statusReason, recommendations: analysis.recommendations };
+            break;
+            
+          case 'pending-cancellation':
+            matchesCategory = analysis.isPendingCancellation;
+            categoryData = { 
+              reason: analysis.statusReason, 
+              daysLeft: analysis.daysUntilExpiry,
+              recommendations: analysis.recommendations 
+            };
+            break;
+            
+          case 'upcoming-expiration':
+            matchesCategory = analysis.daysUntilExpiry !== null && analysis.daysUntilExpiry <= 30 && analysis.daysUntilExpiry > 7;
+            categoryData = { 
+              daysLeft: analysis.daysUntilExpiry,
+              reason: analysis.statusReason 
+            };
+            break;
+            
+          case 'critical-expiration':
+            matchesCategory = analysis.daysUntilExpiry !== null && analysis.daysUntilExpiry <= 7;
+            categoryData = { 
+              daysLeft: analysis.daysUntilExpiry,
+              reason: analysis.statusReason 
+            };
+            break;
+            
+          case 'paid-without-payment':
+            matchesCategory = user.planType !== 'free' && user.subscriptionStatus !== 'active';
+            categoryData = { 
+              subscriptionStatus: user.subscriptionStatus,
+              lastEvent: user.lastEvent,
+              reason: analysis.statusReason 
+            };
+            break;
+            
+          case 'free':
+            matchesCategory = user.planType === 'free';
+            break;
+            
+          case 'active':
+            matchesCategory = analysis.isActive && !analysis.isPendingCancellation;
+            categoryData = { 
+              daysLeft: analysis.daysUntilExpiry,
+              reason: analysis.statusReason 
+            };
+            break;
+        }
+        
+        if (matchesCategory) {
+          filteredUsers.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            planType: user.planType,
+            subscriptionStatus: user.subscriptionStatus,
+            createdAt: user.createdAt,
+            usedUploads: user.usedUploads,
+            uploadLimit: user.uploadLimit,
+            ...categoryData
+          });
+        }
+      }
+      
+      // Paginação
+      const total = filteredUsers.length;
+      const paginatedUsers = filteredUsers.slice(offset, offset + limitNum);
+      
+      console.log(`Admin: Lista de usuários categoria '${category}' - ${paginatedUsers.length}/${total} usuários`);
+      
+      res.json({
+        users: paginatedUsers,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum)
+        },
+        category,
+        generatedAt: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error(`Erro ao buscar usuários da categoria ${req.params.category}:`, error);
+      res.status(500).json({ message: "Erro interno ao buscar usuários" });
+    }
+  });
+
   // ==================== Email Test Route ====================
   
   /**
