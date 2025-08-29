@@ -5,6 +5,9 @@ import {
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
+
+// Import enhanced access control functions
+import { analyzeSubscriptionStatus, canUserUpload, checkAdvancedUploadLimit, type SubscriptionAnalysis } from "./integrations/hotmart";
 import { nanoid } from "nanoid";
 import { db } from "./db";
 import { eq, and, desc, asc, count, inArray, sql, lt, ne, gte, isNull, or } from "drizzle-orm";
@@ -321,6 +324,24 @@ export interface IStorage {
   checkUploadLimit(userId: number, count: number): Promise<boolean>;
   updateUploadUsage(userId: number, addCount: number): Promise<User | undefined>;
   syncUsedUploads(userId: number): Promise<User | undefined>;
+  
+  // Enhanced access control with subscription analysis
+  checkAdvancedAccessControl(userId: number, uploadCount?: number): Promise<{
+    allowed: boolean;
+    reason: string;
+    analysis: any;
+    uploadInfo?: {
+      current: number;
+      limit: number;
+      available: number;
+      planType: string;
+    };
+  }>;
+  verifyUserSubscriptionStatus(userId: number): Promise<{
+    isActive: boolean;
+    analysis: any;
+    recommendations: string[];
+  }>;
   
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -1511,6 +1532,79 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao sincronizar contagem de uploads:", error);
       return undefined;
+    }
+  }
+
+  // Enhanced access control methods
+  async checkAdvancedAccessControl(userId: number, uploadCount: number = 0): Promise<{
+    allowed: boolean;
+    reason: string;
+    analysis: SubscriptionAnalysis;
+    uploadInfo?: {
+      current: number;
+      limit: number;
+      available: number;
+      planType: string;
+    };
+  }> {
+    try {
+      const result = await checkAdvancedUploadLimit(userId, uploadCount);
+      return {
+        allowed: result.allowed,
+        reason: result.reason,
+        analysis: result.analysis,
+        uploadInfo: result.uploadInfo
+      };
+    } catch (error) {
+      console.error("Erro na verificação avançada de acesso:", error);
+      return {
+        allowed: false,
+        reason: "Erro interno na verificação de acesso",
+        analysis: {
+          isActive: false,
+          isExpired: true,
+          isPendingCancellation: false,
+          daysUntilExpiry: null,
+          statusReason: "Erro na verificação",
+          recommendations: ["Tente novamente ou contate o suporte"]
+        }
+      };
+    }
+  }
+
+  async verifyUserSubscriptionStatus(userId: number): Promise<{
+    isActive: boolean;
+    analysis: SubscriptionAnalysis;
+    recommendations: string[];
+  }> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) {
+        throw new Error("Usuário não encontrado");
+      }
+
+      const analysis = analyzeSubscriptionStatus(user);
+      const accessInfo = canUserUpload(user);
+
+      return {
+        isActive: accessInfo.allowed,
+        analysis,
+        recommendations: analysis.recommendations
+      };
+    } catch (error) {
+      console.error("Erro na verificação de status de assinatura:", error);
+      return {
+        isActive: false,
+        analysis: {
+          isActive: false,
+          isExpired: true,
+          isPendingCancellation: false,
+          daysUntilExpiry: null,
+          statusReason: "Erro na verificação de status",
+          recommendations: ["Verificar conectividade", "Contatar suporte"]
+        },
+        recommendations: ["Tente novamente", "Contate o suporte"]
+      };
     }
   }
 

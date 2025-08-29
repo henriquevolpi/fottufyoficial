@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { SUBSCRIPTION_PLANS } from '@shared/schema';
-import { InsertUser } from '@shared/schema';
+import { InsertUser, type User } from '@shared/schema';
 import { storage } from '../storage';
 import { randomBytes } from 'crypto';
 import { sendEmail } from '../utils/sendEmail';
@@ -79,16 +79,26 @@ export function generateRandomPassword(length = 12): string {
 
 // Função para validar a assinatura da Hotmart (deve ser implementada com a chave correta)
 export function validateHotmartSignature(payload: string, signature: string, secret: string): boolean {
-  // Se não houver um secret configurado, pular a validação (inseguro!)
+  // SEGURANÇA MELHORADA: Só permitir webhooks sem validação em ambiente de desenvolvimento
   if (!secret) {
-    console.warn("HOTMART_WEBHOOK_SECRET não configurado. Pulando validação da assinatura!");
-    return true;
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("[DEV] HOTMART_WEBHOOK_SECRET não configurado. Validação pulada apenas em desenvolvimento!");
+      return true;
+    } else {
+      console.error("[SECURITY] HOTMART_WEBHOOK_SECRET é obrigatório em produção!");
+      throw new Error("Webhook secret é obrigatório em produção");
+    }
   }
 
-  const hmac = crypto.createHmac('sha256', secret);
-  const calculatedSignature = hmac.update(payload).digest('hex');
-  
-  return calculatedSignature === signature;
+  try {
+    const hmac = crypto.createHmac('sha256', secret);
+    const calculatedSignature = hmac.update(payload).digest('hex');
+    
+    return calculatedSignature === signature;
+  } catch (error) {
+    console.error("Erro na validação da assinatura Hotmart:", error);
+    return false;
+  }
 }
 
 /**
@@ -517,6 +527,186 @@ function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
   return null;
 }
 
+/**
+ * Sistema robusto de análise de status de assinatura
+ * Implementa verificações completas para determinar se uma assinatura está ativa, inativa ou expirada
+ */
+export interface SubscriptionAnalysis {
+  isActive: boolean;
+  isExpired: boolean;
+  isPendingCancellation: boolean;
+  daysUntilExpiry: number | null;
+  statusReason: string;
+  recommendations: string[];
+}
+
+/**
+ * Analisa detalhadamente o status da assinatura de um usuário
+ */
+export function analyzeSubscriptionStatus(user: User): SubscriptionAnalysis {
+  const now = new Date();
+  const result: SubscriptionAnalysis = {
+    isActive: false,
+    isExpired: false,
+    isPendingCancellation: false,
+    daysUntilExpiry: null,
+    statusReason: '',
+    recommendations: []
+  };
+
+  // 1. Verificar se o usuário possui um plano pago
+  if (!user.planType || user.planType === 'free') {
+    result.statusReason = 'Usuário possui plano gratuito';
+    result.recommendations.push('Considerar upgrade para plano pago');
+    return result;
+  }
+
+  // 2. Verificar status da assinatura
+  if (user.subscriptionStatus !== 'active') {
+    if (user.subscriptionStatus === 'pending_cancellation') {
+      result.isPendingCancellation = true;
+      result.statusReason = 'Assinatura em processo de cancelamento (período de tolerância de 3 dias)';
+      result.recommendations.push('Regularizar pagamento para manter acesso');
+    } else {
+      result.statusReason = `Status da assinatura: ${user.subscriptionStatus || 'indefinido'}`;
+      result.recommendations.push('Verificar status da assinatura na Hotmart');
+    }
+    return result;
+  }
+
+  // 3. Verificar data de expiração (se definida)
+  if (user.subscriptionEndDate) {
+    const endDate = new Date(user.subscriptionEndDate);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    result.daysUntilExpiry = diffDays;
+    
+    if (diffDays <= 0) {
+      result.isExpired = true;
+      result.statusReason = `Assinatura expirou em ${endDate.toLocaleDateString()}`;
+      result.recommendations.push('Renovar assinatura imediatamente');
+      result.recommendations.push('Contatar suporte se houve renovação automática');
+      return result;
+    } else if (diffDays <= 7) {
+      result.statusReason = `Assinatura expira em ${diffDays} dias`;
+      result.recommendations.push('Verificar renovação automática');
+      result.recommendations.push('Preparar backup dos projetos');
+    } else if (diffDays <= 30) {
+      result.statusReason = `Assinatura expira em ${diffDays} dias`;
+      result.recommendations.push('Considerar renovação antecipada');
+    } else {
+      result.statusReason = `Assinatura ativa, expira em ${diffDays} dias`;
+    }
+  }
+
+  // 4. Verificar downgrade pendente
+  if (user.pendingDowngradeDate) {
+    const downgradeDate = new Date(user.pendingDowngradeDate);
+    const diffTime = downgradeDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 0) {
+      result.statusReason = 'Downgrade pendente vencido - será processado automaticamente';
+      result.recommendations.push('Regularizar pagamento urgentemente');
+      result.recommendations.push('Entrar em contato com suporte');
+    } else {
+      result.isPendingCancellation = true;
+      result.statusReason = `Downgrade agendado para ${diffDays} dias (motivo: ${user.pendingDowngradeReason || 'não especificado'})`;
+      result.recommendations.push(`Você tem ${diffDays} dias para regularizar o pagamento`);
+      result.recommendations.push('Verificar problema de pagamento na Hotmart');
+    }
+  }
+
+  // 5. Se chegou até aqui, a assinatura está ativa
+  if (!result.isExpired && !result.statusReason) {
+    result.isActive = true;
+    result.statusReason = 'Assinatura ativa e funcionando normalmente';
+  }
+
+  return result;
+}
+
+/**
+ * Verifica se um usuário pode fazer uploads com base na análise completa da assinatura
+ */
+export function canUserUpload(user: User): { allowed: boolean; reason: string; analysis: SubscriptionAnalysis } {
+  const analysis = analyzeSubscriptionStatus(user);
+  
+  // Se a assinatura estiver ativa (mesmo com expiração próxima), permitir
+  if (analysis.isActive || analysis.isPendingCancellation) {
+    return { 
+      allowed: true, 
+      reason: 'Acesso autorizado', 
+      analysis 
+    };
+  }
+  
+  // Se expirou ou está inativa, bloquear
+  return { 
+    allowed: false, 
+    reason: analysis.statusReason, 
+    analysis 
+  };
+}
+
+/**
+ * Verifica limite de uploads com análise avançada
+ */
+export async function checkAdvancedUploadLimit(userId: number, uploadCount: number): Promise<{
+  allowed: boolean;
+  reason: string;
+  analysis: SubscriptionAnalysis;
+  uploadInfo: {
+    current: number;
+    limit: number;
+    available: number;
+    planType: string;
+  };
+}> {
+  const user = await storage.getUser(userId);
+  if (!user) {
+    throw new Error('Usuário não encontrado');
+  }
+
+  const analysis = analyzeSubscriptionStatus(user);
+  const uploadAccess = canUserUpload(user);
+  
+  const uploadInfo = {
+    current: user.usedUploads || 0,
+    limit: user.uploadLimit || 0,
+    available: Math.max(0, (user.uploadLimit || 0) - (user.usedUploads || 0)),
+    planType: user.planType || 'free'
+  };
+
+  // Primeiro verificar se o usuário tem acesso geral
+  if (!uploadAccess.allowed) {
+    return {
+      allowed: false,
+      reason: `Acesso negado: ${uploadAccess.reason}`,
+      analysis,
+      uploadInfo
+    };
+  }
+
+  // Verificar limite de uploads
+  if (uploadInfo.available < uploadCount) {
+    return {
+      allowed: false,
+      reason: `Limite de ${uploadInfo.limit} uploads atingido (${uploadInfo.current} utilizados)`,
+      analysis,
+      uploadInfo
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: 'Upload autorizado',
+    analysis,
+    uploadInfo
+  };
+}
+
 // Mapeamento de eventos da Hotmart para nomes normalizados
 const EVENT_MAP: Record<string, string> = {
   // Compra aprovada - variações
@@ -604,7 +794,83 @@ const EVENT_MAP: Record<string, string> = {
 };
 
 /**
- * Processa webhooks da Hotmart
+ * Sistema de controle de idempotência para webhooks
+ * Evita o processamento duplo do mesmo evento
+ */
+interface WebhookProcessingRecord {
+  transactionId: string;
+  eventType: string;
+  email: string;
+  processedAt: Date;
+  result: string;
+}
+
+// Cache simples em memória para controle de idempotência (em produção, usar Redis ou banco)
+const processedWebhooks = new Map<string, WebhookProcessingRecord>();
+
+/**
+ * Gera uma chave única para identificar o webhook
+ */
+function generateWebhookKey(payload: HotmartWebhookPayload, event: string, email: string): string {
+  // Tentar extrair ID da transação para idempotência
+  const transactionId = 
+    payload.data?.purchase?.transaction ||
+    payload.data?.subscription?.subscriber ||
+    payload.data?.product?.id ||
+    `${email}_${event}_${Date.now()}`;
+    
+  return `${event}_${email}_${transactionId}`.replace(/[^a-zA-Z0-9_]/g, '_');
+}
+
+/**
+ * Verifica se o webhook já foi processado (idempotência)
+ */
+function isWebhookAlreadyProcessed(key: string, payload: HotmartWebhookPayload): boolean {
+  const existing = processedWebhooks.get(key);
+  
+  if (!existing) {
+    return false;
+  }
+  
+  // Verificar se foi processado recentemente (24 horas)
+  const hoursSinceProcessed = (Date.now() - existing.processedAt.getTime()) / (1000 * 60 * 60);
+  
+  if (hoursSinceProcessed > 24) {
+    // Remover registro antigo
+    processedWebhooks.delete(key);
+    return false;
+  }
+  
+  console.log(`[IDEMPOTENCY] Webhook já processado: ${key} em ${existing.processedAt.toISOString()}`);
+  return true;
+}
+
+/**
+ * Marca o webhook como processado
+ */
+function markWebhookAsProcessed(key: string, payload: HotmartWebhookPayload, event: string, email: string, result: string): void {
+  const transactionId = 
+    payload.data?.purchase?.transaction ||
+    payload.data?.subscription?.subscriber ||
+    'unknown';
+    
+  processedWebhooks.set(key, {
+    transactionId,
+    eventType: event,
+    email,
+    processedAt: new Date(),
+    result
+  });
+  
+  // Limpeza automática: manter apenas os últimos 1000 registros
+  if (processedWebhooks.size > 1000) {
+    const oldestKeys = Array.from(processedWebhooks.keys()).slice(0, 100);
+    oldestKeys.forEach(key => processedWebhooks.delete(key));
+  }
+}
+
+/**
+ * Processa webhooks da Hotmart com melhorias de segurança e robustez
  * 
  * Esta função implementa:
  * 1. Normalização de eventos com suporte a múltiplos formatos (PURCHASE_APPROVED, SUBSCRIPTION_CANCELLATION, etc.)
@@ -612,11 +878,13 @@ const EVENT_MAP: Record<string, string> = {
  * 3. Detecção e rejeição de planos de teste
  * 4. Processamento de eventos de cancelamento mesmo sem ID de oferta válido
  * 5. Criação de usuários automaticamente para novos clientes
+ * 6. Controle de idempotência para evitar processamento duplo
+ * 7. Análise avançada de status de assinatura
  * 
  * @param payload O payload recebido do webhook da Hotmart
  * @returns Objeto com status de sucesso e mensagem
  */
-export async function processHotmartWebhook(payload: HotmartWebhookPayload): Promise<{ success: boolean, message: string }> {
+export async function processHotmartWebhook(payload: HotmartWebhookPayload): Promise<{ success: boolean, message: string, analysis?: SubscriptionAnalysis }> {
   try {
     // Verificar se o payload é válido
     if (!payload) {
@@ -676,6 +944,17 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
     }
     
     console.log(`Hotmart: Processando evento ${event} para email: ${email}`);
+    
+    // CONTROLE DE IDEMPOTÊNCIA: Verificar se o webhook já foi processado
+    const webhookKey = generateWebhookKey(payload, event, email);
+    
+    if (isWebhookAlreadyProcessed(webhookKey, payload)) {
+      console.log(`[IDEMPOTENCY] Webhook duplicado ignorado: ${webhookKey}`);
+      return { 
+        success: true, 
+        message: 'Webhook já processado anteriormente (idempotência)' 
+      };
+    }
     
     // Verificar se já existe um usuário com este email
     let user = await storage.getUserByEmail(email);
@@ -780,7 +1059,19 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             console.error('Erro ao enviar email com dados de acesso:', emailError);
           }
         }
-        return { success: true, message: 'Plano ativado com sucesso' };
+        
+        // Marcar webhook como processado com sucesso
+        markWebhookAsProcessed(webhookKey, payload, event, email, 'PLANO_ATIVADO');
+        
+        // Analisar status da assinatura do usuário final
+        const userFinal = await storage.getUser(user.id);
+        const analysis = userFinal ? analyzeSubscriptionStatus(userFinal) : undefined;
+        
+        return { 
+          success: true, 
+          message: 'Plano ativado com sucesso',
+          analysis 
+        };
         
       case 'purchase.refunded':
       case 'purchase.chargeback':
@@ -805,19 +1096,60 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           });
           
           console.log(`[DOWNGRADE] Usuário ${email} tem 3 dias para regularizar o pagamento antes do downgrade automático`);
-          return { success: true, message: 'Downgrade agendado para 3 dias - período de tolerância ativado' };
+          
+          // Marcar webhook como processado com sucesso
+          markWebhookAsProcessed(webhookKey, payload, event, email, 'DOWNGRADE_AGENDADO');
+          
+          // Analisar status da assinatura atualizada
+          const userUpdated = await storage.getUser(user.id);
+          const analysis = userUpdated ? analyzeSubscriptionStatus(userUpdated) : undefined;
+          
+          return { 
+            success: true, 
+            message: 'Downgrade agendado para 3 dias - período de tolerância ativado',
+            analysis 
+          };
         } else {
           console.log(`Hotmart: Usuário não encontrado para o email ${email}, nada a fazer`);
+          
+          // Marcar webhook como processado (falha por usuário não encontrado)
+          markWebhookAsProcessed(webhookKey, payload, event, email, 'USUARIO_NAO_ENCONTRADO');
+          
           return { success: false, message: 'Usuário não encontrado' };
         }
         
       default:
         console.log(`Hotmart: Evento não processado: ${event}`);
+        
+        // Marcar webhook como processado (evento não suportado)
+        markWebhookAsProcessed(webhookKey, payload, event, email, 'EVENTO_NAO_SUPORTADO');
+        
         return { success: false, message: `Evento não suportado: ${event}` };
     }
   } catch (error: any) {
     console.error('Erro ao processar webhook da Hotmart:', error);
     const errorMessage = error.message || 'Erro desconhecido';
+    
+    // Em caso de erro, ainda marcar como processado para evitar loops infinitos
+    // Só se tivermos informações suficientes
+    try {
+      if (payload && payload.event) {
+        let email = '';
+        // Tentar extrair email básico para marcação de erro
+        if (payload.email) email = payload.email;
+        else if (payload.data?.email) email = payload.data.email;
+        else if (payload.buyer?.email) email = payload.buyer.email;
+        
+        if (email) {
+          const event = payload.event;
+          const webhookKey = generateWebhookKey(payload, event, email);
+          markWebhookAsProcessed(webhookKey, payload, event, email, `ERRO: ${errorMessage}`);
+        }
+      }
+    } catch (markingError) {
+      console.error('Erro ao marcar webhook como processado após falha:', markingError);
+    }
+    
     return { success: false, message: `Erro interno: ${errorMessage}` };
   }
 }

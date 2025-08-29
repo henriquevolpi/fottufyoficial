@@ -2814,19 +2814,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const signature = req.headers['x-hotmart-signature'] as string;
       const webhookSecret = process.env.HOTMART_WEBHOOK_SECRET || '';
       
-      // Verificar assinatura (se configurada)
+      // Verificar assinatura com segurança aprimorada
       if (signature && webhookSecret) {
         const rawBody = JSON.stringify(req.body);
-        const isValid = validateHotmartSignature(rawBody, signature, webhookSecret);
         
-        if (!isValid) {
-          console.warn("Assinatura inválida no webhook da Hotmart");
-          return res.status(401).json({ message: "Assinatura inválida" });
+        try {
+          const isValid = validateHotmartSignature(rawBody, signature, webhookSecret);
+          
+          if (!isValid) {
+            console.warn("[SECURITY] Assinatura inválida no webhook da Hotmart");
+            return res.status(401).json({ message: "Assinatura inválida" });
+          }
+          console.log("[SECURITY] Assinatura validada com sucesso");
+        } catch (validationError: any) {
+          console.error("[SECURITY] Erro na validação da assinatura:", validationError.message);
+          return res.status(500).json({ message: "Erro na validação de segurança" });
         }
       } else {
-        // Avisar se a verificação de assinatura estiver desativada
-        console.warn("Verificação de assinatura da Hotmart desativada - HOTMART_WEBHOOK_SECRET não configurado");
-        console.log("Para maior segurança, defina a variável HOTMART_WEBHOOK_SECRET com a chave compartilhada da Hotmart");
+        // Segurança aprimorada: só permitir em desenvolvimento
+        if (process.env.NODE_ENV === 'production') {
+          console.error("[SECURITY] Webhook rejeitado: HOTMART_WEBHOOK_SECRET obrigatório em produção");
+          return res.status(403).json({ message: "Configuração de segurança obrigatória em produção" });
+        }
+        console.warn("[DEV] Verificação de assinatura desativada - apenas em desenvolvimento");
       }
       
       // Processar o payload do webhook
