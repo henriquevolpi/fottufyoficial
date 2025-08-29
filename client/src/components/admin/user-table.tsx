@@ -286,10 +286,6 @@ export default function UserTable({ users, filter }: UserTableProps) {
                         <Eye className="mr-2 h-4 w-4" />
                         <span>View Projects</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleResendWelcomeEmail(user)}>
-                        <Mail className="mr-2 h-4 w-4" />
-                        <span>Resend Welcome Email</span>
-                      </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => handleDeleteClick(user)}
                         className="text-red-600"
@@ -365,13 +361,24 @@ export default function UserTable({ users, filter }: UserTableProps) {
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
+          <DialogFooter className="flex justify-between">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => editUser && handleResendWelcomeEmail(editUser)}
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Resend Welcome Email
             </Button>
-            <Button type="button" onClick={handleSaveEdit}>
-              Save changes
-            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSaveEdit}>
+                Save changes
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
