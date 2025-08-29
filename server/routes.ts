@@ -2890,7 +2890,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         criticalExpirations: 0, // próximos 7 days
         planDistribution: {} as Record<string, number>,
         monthlyPayments: 0, // este mês
-        lastMonthPayments: 0
+        lastMonthPayments: 0,
+        // Novas métricas detalhadas
+        recentPayments: 0, // últimos 7 dias
+        usersWithPaymentIssues: 0,
+        manualActivations: 0,
+        overdueSubscriptions: 0 // assinaturas vencidas há mais de 7 dias
       };
       
       const usersByCategory = {
@@ -2898,7 +2903,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pendingCancellation: [] as any[],
         paidWithoutPayment: [] as any[],
         upcomingExpiration: [] as any[],
-        criticalExpiration: [] as any[]
+        criticalExpiration: [] as any[],
+        // Novas categorias detalhadas
+        recentPayments: [] as any[],
+        paymentIssues: [] as any[],
+        manualActivations: [] as any[],
+        overdueSubscriptions: [] as any[]
       };
       
       const now = new Date();
@@ -2906,6 +2916,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentYear = now.getFullYear();
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      
+      // Datas de referência para análises
+      const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
       
       // Analisar cada usuário
       for (const user of allUsers) {
@@ -2974,37 +2988,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        // Verificar usuários pagos sem pagamento
+        // Verificar usuários com problemas de pagamento (análise avançada)
+        let hasPaymentIssue = false;
+        let issueDetails = '';
+        
+        // Caso 1: Plano pago ativo mas sem histórico de pagamento
+        if (user.subscriptionStatus === 'active' && planType !== 'free') {
+          if (!user.lastEvent || ![
+            'purchase.approved',
+            'subscription.charged_successfully',
+            'PLANO_ATIVADO'
+          ].includes(user.lastEvent.type)) {
+            hasPaymentIssue = true;
+            issueDetails = 'Plano ativo sem histórico de pagamento confirmado via webhook';
+          }
+        }
+        
+        // Caso 2: Status inativo mas ainda tem plano pago
         if (user.subscriptionStatus !== 'active' && planType !== 'free') {
+          hasPaymentIssue = true;
+          issueDetails = 'Plano pago mas status da assinatura não ativo';
+        }
+        
+        // Caso 3: Último evento indica cancelamento mas ainda tem acesso
+        if (user.lastEvent && [
+          'purchase.refunded',
+          'purchase.chargeback',
+          'purchase.canceled',
+          'subscription.canceled',
+          'DOWNGRADE_AGENDADO'
+        ].includes(user.lastEvent.type) && user.subscriptionStatus === 'active') {
+          hasPaymentIssue = true;
+          issueDetails = `Último evento foi ${user.lastEvent.type} mas usuário ainda ativo`;
+        }
+        
+        if (hasPaymentIssue) {
           analytics.paidUsersWithoutPayment++;
+          analytics.usersWithPaymentIssues++;
+          
           usersByCategory.paidWithoutPayment.push({
             id: user.id,
             name: user.name,
             email: user.email,
             planType: user.planType,
             subscriptionStatus: user.subscriptionStatus,
-            lastEvent: user.lastEvent
+            subscriptionStartDate: user.subscriptionStartDate?.toISOString(),
+            subscriptionEndDate: user.subscriptionEndDate?.toISOString(),
+            lastEvent: user.lastEvent,
+            issueDetails,
+            isManualActivation: user.isManualActivation || false,
+            manualActivationDate: user.manualActivationDate?.toISOString(),
+            daysSinceLastEvent: user.lastEvent && user.lastEvent.timestamp ? 
+              Math.floor((now.getTime() - new Date(user.lastEvent.timestamp).getTime()) / (24 * 60 * 60 * 1000)) : null
+          });
+          
+          // Também adicionar à categoria de problemas de pagamento
+          usersByCategory.paymentIssues.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            planType: user.planType,
+            subscriptionStatus: user.subscriptionStatus,
+            issueDetails,
+            lastEvent: user.lastEvent,
+            daysSinceLastEvent: user.lastEvent && user.lastEvent.timestamp ? 
+              Math.floor((now.getTime() - new Date(user.lastEvent.timestamp).getTime()) / (24 * 60 * 60 * 1000)) : null
           });
         }
         
-        // Contar pagamentos do mês (baseado em subscriptionStartDate)
-        if (user.subscriptionStartDate) {
-          const subDate = new Date(user.subscriptionStartDate);
-          if (subDate.getMonth() === currentMonth && subDate.getFullYear() === currentYear) {
-            analytics.monthlyPayments++;
+        // Detectar ativações manuais
+        if (user.isManualActivation) {
+          analytics.manualActivations++;
+          usersByCategory.manualActivations.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            planType: user.planType,
+            manualActivationDate: user.manualActivationDate?.toISOString(),
+            manualActivationBy: user.manualActivationBy,
+            subscriptionEndDate: user.subscriptionEndDate?.toISOString(),
+            daysActive: user.manualActivationDate ? 
+              Math.floor((now.getTime() - user.manualActivationDate.getTime()) / (24 * 60 * 60 * 1000)) : null
+          });
+        }
+        
+        // Detectar assinaturas muito vencidas (mais de 7 dias)
+        if (user.subscriptionEndDate && user.subscriptionEndDate < now) {
+          const daysOverdue = Math.floor((now.getTime() - user.subscriptionEndDate.getTime()) / (24 * 60 * 60 * 1000));
+          if (daysOverdue > 7) {
+            analytics.overdueSubscriptions++;
+            usersByCategory.overdueSubscriptions.push({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              planType: user.planType,
+              subscriptionEndDate: user.subscriptionEndDate.toISOString(),
+              daysOverdue,
+              lastEvent: user.lastEvent
+            });
           }
-          if (subDate.getMonth() === lastMonth && subDate.getFullYear() === lastMonthYear) {
-            analytics.lastMonthPayments++;
+        }
+        
+        // Contar pagamentos baseado no lastEvent (mais preciso)
+        if (user.lastEvent && user.lastEvent.timestamp) {
+          const eventDate = new Date(user.lastEvent.timestamp);
+          
+          // Verificar se foi um evento de pagamento aprovado
+          const isPaymentEvent = [
+            'purchase.approved',
+            'subscription.charged_successfully',
+            'PLANO_ATIVADO'
+          ].includes(user.lastEvent.type);
+          
+          if (isPaymentEvent) {
+            if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
+              analytics.monthlyPayments++;
+            }
+            if (eventDate.getMonth() === lastMonth && eventDate.getFullYear() === lastMonthYear) {
+              analytics.lastMonthPayments++;
+            }
+            
+            // Verificar pagamentos recentes (7 dias)
+            if (eventDate >= sevenDaysAgo) {
+              analytics.recentPayments++;
+              usersByCategory.recentPayments.push({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                planType: user.planType,
+                paymentDate: eventDate.toISOString(),
+                eventType: user.lastEvent.type,
+                daysAgo: Math.floor((now.getTime() - eventDate.getTime()) / (24 * 60 * 60 * 1000))
+              });
+            }
           }
         }
       }
       
       console.log(`Admin: Analytics de assinaturas geradas - ${analytics.totalUsers} usuários analisados`);
+      console.log(`Admin: Encontrados ${analytics.usersWithPaymentIssues} usuários com problemas de pagamento`);
+      console.log(`Admin: ${analytics.recentPayments} pagamentos recentes (7 dias)`);
+      console.log(`Admin: ${analytics.overdueSubscriptions} assinaturas vencidas há mais de 7 dias`);
+      console.log(`Admin: ${analytics.manualActivations} ativações manuais pelo admin`);
       
       res.json({
         analytics,
         usersByCategory,
-        generatedAt: now.toISOString()
+        generatedAt: now.toISOString(),
+        summary: {
+          totalAnalyzed: analytics.totalUsers,
+          categoriesCount: {
+            expired: usersByCategory.expired.length,
+            pendingCancellation: usersByCategory.pendingCancellation.length,
+            paymentIssues: usersByCategory.paymentIssues.length,
+            recentPayments: usersByCategory.recentPayments.length,
+            manualActivations: usersByCategory.manualActivations.length,
+            overdueSubscriptions: usersByCategory.overdueSubscriptions.length,
+            criticalExpiration: usersByCategory.criticalExpiration.length,
+            upcomingExpiration: usersByCategory.upcomingExpiration.length
+          },
+          healthMetrics: {
+            paymentSuccessRate: analytics.totalUsers > 0 ? 
+              ((analytics.activeSubscriptions + analytics.recentPayments) / (analytics.totalUsers - analytics.freeUsers) * 100).toFixed(1) + '%' : '0%',
+            issueRate: analytics.totalUsers > 0 ? 
+              (analytics.usersWithPaymentIssues / analytics.totalUsers * 100).toFixed(1) + '%' : '0%',
+            monthlyGrowth: analytics.lastMonthPayments > 0 ? 
+              (((analytics.monthlyPayments - analytics.lastMonthPayments) / analytics.lastMonthPayments) * 100).toFixed(1) + '%' : 'N/A'
+          }
+        }
       });
       
     } catch (error) {
