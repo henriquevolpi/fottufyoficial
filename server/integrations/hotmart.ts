@@ -541,6 +541,57 @@ export interface SubscriptionAnalysis {
 }
 
 /**
+ * Verifica se um downgrade é seguro e justificado
+ * Adiciona camada de proteção contra downgrades incorretos
+ */
+function isSafeToDowngrade(user: User, event: string): { safe: boolean; reason: string } {
+  // Verificação 1: Usuário já no plano gratuito
+  if (!user.planType || user.planType === 'free') {
+    return { safe: false, reason: 'Usuário já possui plano gratuito' };
+  }
+  
+  // Verificação 2: Ativação manual recente (menos de 30 dias)
+  if (user.isManualActivation && user.manualActivationDate) {
+    const daysSinceManualActivation = Math.floor(
+      (new Date().getTime() - new Date(user.manualActivationDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    if (daysSinceManualActivation < 30) {
+      return { 
+        safe: false, 
+        reason: `Ativação manual recente (${daysSinceManualActivation} dias) - não fazer downgrade automático` 
+      };
+    }
+  }
+  
+  // Verificação 3: Pagamento muito recente (menos de 24 horas)
+  if (user.lastEvent && user.lastEvent.type === 'purchase.approved') {
+    const hoursSinceLastPayment = Math.floor(
+      (new Date().getTime() - new Date(user.lastEvent.timestamp).getTime()) / (1000 * 60 * 60)
+    );
+    
+    if (hoursSinceLastPayment < 24) {
+      return { 
+        safe: false, 
+        reason: `Pagamento muito recente (${hoursSinceLastPayment} horas) - possível conflito de webhooks` 
+      };
+    }
+  }
+  
+  // Verificação 4: Para eventos críticos, sempre é seguro
+  if (event === 'purchase.refunded' || event === 'purchase.chargeback') {
+    return { safe: true, reason: 'Evento crítico confirmado - downgrade justificado' };
+  }
+  
+  // Verificação 5: Para cancelamentos, verificar se há pending downgrade
+  if (event === 'purchase.canceled' || event === 'subscription.canceled') {
+    return { safe: true, reason: 'Cancelamento confirmado - agendar downgrade com tolerância' };
+  }
+  
+  return { safe: true, reason: 'Verificações de segurança aprovadas' };
+}
+
+/**
  * Analisa detalhadamente o status da assinatura de um usuário
  */
 export function analyzeSubscriptionStatus(user: User): SubscriptionAnalysis {
@@ -571,6 +622,12 @@ export function analyzeSubscriptionStatus(user: User): SubscriptionAnalysis {
       result.statusReason = 'Assinatura em processo de cancelamento (período de tolerância de 3 dias)';
       result.recommendations.push('Regularizar pagamento para manter acesso');
       return result; // Não definir como ativa, mas permitir pending_cancellation
+    } else if (user.subscriptionStatus === 'payment_failed') {
+      result.isExpired = true;
+      result.statusReason = 'Assinatura desativada por falha crítica de pagamento (reembolso ou chargeback)';
+      result.recommendations.push('Entrar em contato com o suporte para reativar assinatura');
+      result.recommendations.push('Verificar método de pagamento e efetuar nova compra se necessário');
+      return result;
     } else {
       result.statusReason = `Status da assinatura: ${user.subscriptionStatus || 'indefinido'}`;
       result.recommendations.push('Verificar status da assinatura na Hotmart');
@@ -1089,37 +1146,99 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
       case 'purchase.canceled':
       case 'subscription.canceled':
         if (user) {
-          console.log(`[DOWNGRADE] Agendando downgrade com tolerância de 3 dias para usuário: ${email} (evento: ${event})`);
+          // VERIFICAÇÃO DE SEGURANÇA: Verificar se o downgrade é seguro e justificado
+          const safetyCheck = isSafeToDowngrade(user, event);
           
-          // Armazenar o plano atual antes do downgrade
-          const currentPlan = user.planType || 'free';
+          if (!safetyCheck.safe) {
+            console.log(`[SEGURANÇA] Downgrade cancelado para ${email}: ${safetyCheck.reason}`);
+            markWebhookAsProcessed(webhookKey, payload, event, email, 'DOWNGRADE_CANCELADO_SEGURANCA');
+            
+            return { 
+              success: true, 
+              message: `Downgrade cancelado por segurança: ${safetyCheck.reason}` 
+            };
+          }
           
-          // Agendar downgrade com 3 dias de tolerância (em vez de fazer downgrade imediato)
-          await storage.schedulePendingDowngrade(user.id, event, currentPlan);
+          console.log(`[SEGURANÇA] Downgrade aprovado para ${email}: ${safetyCheck.reason}`);
           
-          // Atualizar apenas o status da assinatura para indicar problema
-          await storage.updateUser(user.id, {
-            subscriptionStatus: 'pending_cancellation', // Status especial para indicar que está em período de tolerância
-            lastEvent: {
-              type: event,
-              timestamp: new Date().toISOString(),
-            },
-          });
+          // Verificar se é um evento que requer downgrade imediato (falha crítica de pagamento)
+          const criticalPaymentFailure = event === 'purchase.refunded' || event === 'purchase.chargeback';
           
-          console.log(`[DOWNGRADE] Usuário ${email} tem 3 dias para regularizar o pagamento antes do downgrade automático`);
-          
-          // Marcar webhook como processado com sucesso
-          markWebhookAsProcessed(webhookKey, payload, event, email, 'DOWNGRADE_AGENDADO');
-          
-          // Analisar status da assinatura atualizada
-          const userUpdated = await storage.getUser(user.id);
-          const analysis = userUpdated ? analyzeSubscriptionStatus(userUpdated) : undefined;
-          
-          return { 
-            success: true, 
-            message: 'Downgrade agendado para 3 dias - período de tolerância ativado',
-            analysis 
-          };
+          if (criticalPaymentFailure) {
+            // DOWNGRADE IMEDIATO: Reembolso e chargeback são falhas críticas
+            console.log(`[DOWNGRADE CRÍTICO] Processando downgrade imediato para usuário: ${email} (evento crítico: ${event})`);
+            
+            const currentPlan = user.planType || 'free';
+            
+            // Fazer downgrade imediato para plano gratuito
+            await storage.updateUserSubscription(user.id, 'free');
+              
+              // Atualizar status e informações
+              await storage.updateUser(user.id, {
+                subscriptionStatus: 'payment_failed', // Status específico para falha de pagamento
+                originalPlanBeforeDowngrade: currentPlan, // Salvar plano original para possível restauração
+                lastEvent: {
+                  type: `immediate_downgrade_${event}`,
+                  timestamp: new Date().toISOString(),
+                },
+              });
+              
+              console.log(`[DOWNGRADE CRÍTICO] Usuário ${email} convertido para plano gratuito imediatamente. Plano anterior: ${currentPlan}`);
+              
+              // Marcar webhook como processado
+              markWebhookAsProcessed(webhookKey, payload, event, email, 'DOWNGRADE_IMEDIATO');
+              
+              const userUpdated = await storage.getUser(user.id);
+              const analysis = userUpdated ? analyzeSubscriptionStatus(userUpdated) : undefined;
+              
+              return { 
+                success: true, 
+                message: `Downgrade imediato realizado - falha crítica de pagamento detectada (${event})`,
+                analysis 
+              };
+          } else {
+            // TOLERÂNCIA DE 3 DIAS: Cancelamentos simples mantêm período de tolerância
+            console.log(`[DOWNGRADE] Agendando downgrade com tolerância de 3 dias para usuário: ${email} (evento: ${event})`);
+            
+            const currentPlan = user.planType || 'free';
+            
+            // Verificação de segurança: só agendar downgrade se não for plano "free"
+            if (currentPlan !== 'free') {
+              // Agendar downgrade com 3 dias de tolerância
+              await storage.schedulePendingDowngrade(user.id, event, currentPlan);
+              
+              // Atualizar apenas o status da assinatura para indicar problema
+              await storage.updateUser(user.id, {
+                subscriptionStatus: 'pending_cancellation', // Status especial para período de tolerância
+                lastEvent: {
+                  type: event,
+                  timestamp: new Date().toISOString(),
+                },
+              });
+              
+              console.log(`[DOWNGRADE] Usuário ${email} tem 3 dias para regularizar o pagamento antes do downgrade automático`);
+              
+              // Marcar webhook como processado com sucesso
+              markWebhookAsProcessed(webhookKey, payload, event, email, 'DOWNGRADE_AGENDADO');
+              
+              const userUpdated = await storage.getUser(user.id);
+              const analysis = userUpdated ? analyzeSubscriptionStatus(userUpdated) : undefined;
+              
+              return { 
+                success: true, 
+                message: 'Downgrade agendado para 3 dias - período de tolerância ativado',
+                analysis 
+              };
+            } else {
+              console.log(`[DOWNGRADE] Usuário ${email} já possui plano gratuito, nenhuma ação necessária`);
+              markWebhookAsProcessed(webhookKey, payload, event, email, 'JA_PLANO_GRATUITO');
+              
+              return { 
+                success: true, 
+                message: 'Usuário já possui plano gratuito'
+              };
+            }
+          }
         } else {
           console.log(`Hotmart: Usuário não encontrado para o email ${email}, nada a fazer`);
           
