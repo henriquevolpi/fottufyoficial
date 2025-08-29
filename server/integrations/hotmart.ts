@@ -553,6 +553,9 @@ export function analyzeSubscriptionStatus(user: User): SubscriptionAnalysis {
     statusReason: '',
     recommendations: []
   };
+  
+  // DEBUG: Log para debugar problemas
+  console.log(`[DEBUG] Analisando usuário ${user.email}: planType=${user.planType}, subscriptionStatus=${user.subscriptionStatus}, subscriptionEndDate=${user.subscriptionEndDate}`);
 
   // 1. Verificar se o usuário possui um plano pago
   if (!user.planType || user.planType === 'free') {
@@ -567,11 +570,12 @@ export function analyzeSubscriptionStatus(user: User): SubscriptionAnalysis {
       result.isPendingCancellation = true;
       result.statusReason = 'Assinatura em processo de cancelamento (período de tolerância de 3 dias)';
       result.recommendations.push('Regularizar pagamento para manter acesso');
+      return result; // Não definir como ativa, mas permitir pending_cancellation
     } else {
       result.statusReason = `Status da assinatura: ${user.subscriptionStatus || 'indefinido'}`;
       result.recommendations.push('Verificar status da assinatura na Hotmart');
+      return result;
     }
-    return result;
   }
 
   // 3. Verificar data de expiração (se definida)
@@ -589,15 +593,22 @@ export function analyzeSubscriptionStatus(user: User): SubscriptionAnalysis {
       result.recommendations.push('Contatar suporte se houve renovação automática');
       return result;
     } else if (diffDays <= 7) {
+      result.isActive = true; // CORREÇÃO: Definir como ativa mesmo próxima do vencimento
       result.statusReason = `Assinatura expira em ${diffDays} dias`;
       result.recommendations.push('Verificar renovação automática');
       result.recommendations.push('Preparar backup dos projetos');
     } else if (diffDays <= 30) {
+      result.isActive = true; // CORREÇÃO: Assinatura ativa
       result.statusReason = `Assinatura expira em ${diffDays} dias`;
       result.recommendations.push('Considerar renovação antecipada');
     } else {
+      result.isActive = true; // CORREÇÃO: Assinatura ativa
       result.statusReason = `Assinatura ativa, expira em ${diffDays} dias`;
     }
+  } else {
+    // Se não há data de expiração definida, mas status é active, considerar ativa
+    result.isActive = true;
+    result.statusReason = 'Assinatura ativa (sem data de expiração definida)';
   }
 
   // 4. Verificar downgrade pendente

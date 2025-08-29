@@ -20,7 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -853,9 +854,47 @@ export default function Admin() {
                             <div className="border border-red-200 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-3">
                                 <h3 className="font-semibold text-red-700">Assinaturas Expiradas ({subscriptionAnalytics.usersByCategory.expired.length})</h3>
-                                <Button size="sm" variant="outline" className="text-red-600 border-red-200">
-                                  Ver Todos
-                                </Button>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="text-red-600 border-red-200">
+                                      Ver Todos
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                    <DialogHeader>
+                                      <DialogTitle>Assinaturas Expiradas ({subscriptionAnalytics.usersByCategory.expired.length})</DialogTitle>
+                                      <DialogDescription>
+                                        Usuários com assinaturas vencidas que precisam de atenção imediata
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <ScrollArea className="h-96">
+                                      <div className="space-y-2">
+                                        {subscriptionAnalytics.usersByCategory.expired.map((user: any, index: number) => (
+                                          <div key={index} className="bg-red-50 p-3 rounded border border-red-100">
+                                            <div className="flex justify-between items-start">
+                                              <div>
+                                                <p className="font-medium text-gray-900">{user.email}</p>
+                                                <p className="text-sm text-gray-600">{user.name} • Plano: {user.planType}</p>
+                                              </div>
+                                              <div className="text-right text-sm">
+                                                <p className="text-red-600 font-medium">{user.daysExpired} dias expirado</p>
+                                                {user.subscriptionEndDate && (
+                                                  <p className="text-gray-500">Venceu: {new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR')}</p>
+                                                )}
+                                              </div>
+                                            </div>
+                                            {user.lastEvent && (
+                                              <div className="mt-2 text-xs text-gray-600">
+                                                Último evento: {user.lastEvent.type} 
+                                                {user.daysSinceLastPayment && ` (${user.daysSinceLastPayment} dias atrás)`}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </ScrollArea>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                               <div className="space-y-2 max-h-64 overflow-y-auto">
                                 {subscriptionAnalytics.usersByCategory.expired.slice(0, 5).map((user, index) => (
@@ -889,9 +928,52 @@ export default function Admin() {
                             <div className="border border-purple-200 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-3">
                                 <h3 className="font-semibold text-purple-700">Problemas de Pagamento ({subscriptionAnalytics.usersByCategory.paidWithoutPayment.length})</h3>
-                                <Button size="sm" variant="outline" className="text-purple-600 border-purple-200">
-                                  Ver Todos
-                                </Button>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="text-purple-600 border-purple-200">
+                                      Ver Todos
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                    <DialogHeader>
+                                      <DialogTitle>Problemas de Pagamento ({subscriptionAnalytics.usersByCategory.paidWithoutPayment.length})</DialogTitle>
+                                      <DialogDescription>
+                                        Usuários com planos ativos mas sem registro de pagamento via webhook
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <ScrollArea className="h-96">
+                                      <div className="space-y-2">
+                                        {subscriptionAnalytics.usersByCategory.paidWithoutPayment.map((user: any, index: number) => (
+                                          <div key={index} className="bg-purple-50 p-3 rounded border border-purple-100">
+                                            <div className="flex justify-between items-start">
+                                              <div>
+                                                <p className="font-medium text-gray-900">{user.email}</p>
+                                                <p className="text-sm text-gray-600">{user.name} • Plano: {user.planType}</p>
+                                              </div>
+                                              <div className="text-right text-sm">
+                                                <p className="text-purple-600 font-medium">{user.subscriptionStatus}</p>
+                                                {user.isManualActivation && (
+                                                  <p className="text-orange-600 text-xs">Ativação Manual</p>
+                                                )}
+                                              </div>
+                                            </div>
+                                            {user.issueDetails && (
+                                              <div className="mt-2 text-xs text-purple-700 bg-purple-100 p-2 rounded">
+                                                {user.issueDetails}
+                                              </div>
+                                            )}
+                                            {user.lastEvent && (
+                                              <div className="mt-1 text-xs text-gray-600">
+                                                Último webhook: {user.lastEvent.type}
+                                                {user.daysSinceLastEvent && ` (${user.daysSinceLastEvent} dias)`}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </ScrollArea>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                               <div className="space-y-2 max-h-64 overflow-y-auto">
                                 {subscriptionAnalytics.usersByCategory.paidWithoutPayment.slice(0, 5).map((user, index) => (
@@ -930,9 +1012,39 @@ export default function Admin() {
                             <div className="border border-green-200 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-3">
                                 <h3 className="font-semibold text-green-700">Pagamentos Recentes ({subscriptionAnalytics.usersByCategory.recentPayments.length})</h3>
-                                <Button size="sm" variant="outline" className="text-green-600 border-green-200">
-                                  Ver Todos
-                                </Button>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="text-green-600 border-green-200">
+                                      Ver Todos
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                    <DialogHeader>
+                                      <DialogTitle>Pagamentos Recentes ({subscriptionAnalytics.usersByCategory.recentPayments?.length || 0})</DialogTitle>
+                                      <DialogDescription>
+                                        Usuários que realizaram pagamentos nos últimos 7 dias
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <ScrollArea className="h-96">
+                                      <div className="space-y-2">
+                                        {subscriptionAnalytics.usersByCategory.recentPayments?.map((user: any, index: number) => (
+                                          <div key={index} className="bg-green-50 p-3 rounded border border-green-100">
+                                            <div className="flex justify-between items-center">
+                                              <div>
+                                                <p className="font-medium text-gray-900">{user.email}</p>
+                                                <p className="text-sm text-gray-600">{user.planType} • {user.eventType}</p>
+                                              </div>
+                                              <div className="text-right text-sm">
+                                                <p className="text-green-600 font-medium">{user.daysAgo} dias atrás</p>
+                                                <p className="text-gray-500 text-xs">{new Date(user.paymentDate).toLocaleDateString('pt-BR')}</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )) || <p className="text-gray-500 text-center py-4">Nenhum pagamento recente encontrado</p>}
+                                      </div>
+                                    </ScrollArea>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                               <div className="space-y-2 max-h-48 overflow-y-auto">
                                 {subscriptionAnalytics.usersByCategory.recentPayments.slice(0, 3).map((user, index) => (
@@ -958,9 +1070,39 @@ export default function Admin() {
                             <div className="border border-cyan-200 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-3">
                                 <h3 className="font-semibold text-cyan-700">Ativações Manuais pelo Admin ({subscriptionAnalytics.usersByCategory.manualActivations.length})</h3>
-                                <Button size="sm" variant="outline" className="text-cyan-600 border-cyan-200">
-                                  Ver Todos
-                                </Button>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="text-cyan-600 border-cyan-200">
+                                      Ver Todos
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                    <DialogHeader>
+                                      <DialogTitle>Ativações Manuais ({subscriptionAnalytics.usersByCategory.manualActivations?.length || 0})</DialogTitle>
+                                      <DialogDescription>
+                                        Usuários ativados manualmente pelo administrador do sistema
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <ScrollArea className="h-96">
+                                      <div className="space-y-2">
+                                        {subscriptionAnalytics.usersByCategory.manualActivations?.map((user: any, index: number) => (
+                                          <div key={index} className="bg-cyan-50 p-3 rounded border border-cyan-100">
+                                            <div className="flex justify-between items-center">
+                                              <div>
+                                                <p className="font-medium text-gray-900">{user.email}</p>
+                                                <p className="text-sm text-gray-600">{user.planType}</p>
+                                              </div>
+                                              <div className="text-right text-sm">
+                                                <p className="text-cyan-600 font-medium">{user.daysActive} dias ativo</p>
+                                                <p className="text-gray-500 text-xs">Por: {user.manualActivationBy}</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )) || <p className="text-gray-500 text-center py-4">Nenhuma ativação manual encontrada</p>}
+                                      </div>
+                                    </ScrollArea>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                               <div className="space-y-2 max-h-48 overflow-y-auto">
                                 {subscriptionAnalytics.usersByCategory.manualActivations.slice(0, 3).map((user, index) => (
