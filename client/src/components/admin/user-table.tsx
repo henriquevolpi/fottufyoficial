@@ -36,7 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { FileEdit, MoreVertical, Trash2, Eye } from "lucide-react";
+import { FileEdit, MoreVertical, Trash2, Eye, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -172,6 +172,24 @@ export default function UserTable({ users, filter }: UserTableProps) {
     });
   };
 
+  const handleResendWelcomeEmail = async (user: User) => {
+    try {
+      const response = await apiRequest("POST", `/api/users/${user.id}/resend-welcome-email`, {});
+      
+      toast({
+        title: "Email enviado",
+        description: `Email de acesso reenviado para ${user.email}`,
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao reenviar email de acesso. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -267,6 +285,10 @@ export default function UserTable({ users, filter }: UserTableProps) {
                       <DropdownMenuItem onClick={() => handleViewProjects(user.id)}>
                         <Eye className="mr-2 h-4 w-4" />
                         <span>View Projects</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleResendWelcomeEmail(user)}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        <span>Resend Welcome Email</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => handleDeleteClick(user)}

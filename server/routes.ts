@@ -37,6 +37,7 @@ import { db } from "./db";
 import { eq, and, or, not, desc, count, sql } from "drizzle-orm";
 import { processImage } from "./imageProcessor";
 import { sendEmail } from "./utils/sendEmail";
+import { sendWelcomeEmail } from "./utils/welcomeEmail";
 
 // Função helper para extensões de arquivo
 function getExtensionFromMimeType(mimetype: string): string {
@@ -1729,6 +1730,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "User deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Resend welcome email to user (admin only)
+  app.post("/api/users/:id/resend-welcome-email", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Generate a temporary password for the email (user can reset it)
+      const tempPassword = Math.random().toString(36).slice(-8);
+      
+      // Send welcome email with temporary password
+      const emailResult = await sendWelcomeEmail(user.email, user.name, tempPassword);
+      
+      if (!emailResult.success) {
+        return res.status(500).json({ 
+          message: "Failed to send welcome email",
+          error: emailResult.message 
+        });
+      }
+      
+      res.json({ 
+        message: "Welcome email resent successfully",
+        email: user.email,
+        tempPassword: tempPassword
+      });
+    } catch (error) {
+      console.error("Error resending welcome email:", error);
+      res.status(500).json({ message: "Failed to resend welcome email" });
     }
   });
   
