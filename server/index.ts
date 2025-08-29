@@ -7,6 +7,8 @@ import fs from "fs";
 import { nanoid } from "nanoid";
 import { testConnection, pool, startDbHealthCheck } from "./db";
 import { storage as dbStorage } from "./storage";
+// Import backup system
+import { initializeBackupScheduler } from "./backup/backup-scheduler";
 // Import necessary environment variables
 import dotenv from "dotenv";
 // Carregar variáveis de ambiente do arquivo .env
@@ -426,6 +428,22 @@ app.use((req, res, next) => {
     console.log('[SESSION-CLEANUP] Sistema de limpeza automática iniciado - verificação a cada 6 horas');
     console.log('[DOWNGRADE] Sistema automático de downgrade iniciado - verificação a cada hora');
     console.log('[ADM] Sistema de controle manual ADM iniciado - verificação a cada hora (34 dias)');
+    
+    // ==================== SISTEMA DE BACKUP AUTOMÁTICO ====================
+    // Inicializar sistema de backup se as credenciais estão configuradas
+    try {
+      if (process.env.GOOGLE_DRIVE_CLIENT_ID && 
+          process.env.GOOGLE_DRIVE_CLIENT_SECRET && 
+          process.env.GOOGLE_DRIVE_REFRESH_TOKEN) {
+        const backupScheduler = initializeBackupScheduler();
+        backupScheduler.start();
+        console.log('[BACKUP] Sistema de backup automático iniciado - execução diária às 3:00 AM');
+      } else {
+        console.log('[BACKUP] Sistema de backup não configurado - variáveis de ambiente Google Drive não encontradas');
+      }
+    } catch (error: any) {
+      console.error('[BACKUP] Erro ao inicializar sistema de backup:', error.message);
+    }
     // ====================================================================
     
     // Converter bytes para MB para facilitar a leitura
