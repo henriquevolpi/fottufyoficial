@@ -1,112 +1,198 @@
-import cron from 'node-cron';
-import { createBackupSystem } from './database-backup';
-
 /**
- * Sistema de agendamento de backups automáticos
- * Funciona em qualquer plataforma: Replit, Render, VPS, etc.
- * 
- * Configurações de agendamento:
- * - Padrão: Todo dia às 3:00 AM
- * - Customizável via variável de ambiente BACKUP_CRON_SCHEDULE
+ * Sistema de Agendamento de Backup Automático
+ * Configura backup local + email usando node-cron
+ * 100% automático, sem necessidade de credenciais externas
  */
 
+import cron from 'node-cron';
+import { AutomaticBackupSystem } from './automatic-backup-system';
+
 class BackupScheduler {
-  private backupSystem: any;
-  private cronJob: any;
+  private backupSystem: AutomaticBackupSystem;
+  private scheduledTask: cron.ScheduledTask | null = null;
   private isRunning = false;
 
   constructor() {
-    try {
-      this.backupSystem = createBackupSystem();
-      console.log('[BACKUP-SCHEDULER] Sistema de backup inicializado');
-    } catch (error: any) {
-      console.error('[BACKUP-SCHEDULER] ❌ Erro ao inicializar:', error.message);
-      throw error;
-    }
+    this.backupSystem = new AutomaticBackupSystem();
   }
 
   /**
-   * Inicia agendamento automático
+   * Inicia o agendamento de backup diário (3:00 AM)
    */
-  start() {
+  start(): void {
     if (this.isRunning) {
       console.log('[BACKUP-SCHEDULER] ⚠️ Agendamento já está rodando');
       return;
     }
 
-    // Configuração do agendamento (padrão: todo dia às 3:00 AM)
-    const schedule = process.env.BACKUP_CRON_SCHEDULE || '0 3 * * *';
+    const cronSchedule = process.env.BACKUP_CRON_SCHEDULE || '0 3 * * *';
     
-    console.log(`[BACKUP-SCHEDULER] 📅 Configurando agendamento: ${schedule}`);
-    console.log(`[BACKUP-SCHEDULER] ⏰ Próximo backup: ${this.getNextRunTime(schedule)}`);
+    console.log(`[BACKUP-SCHEDULER] 📅 AGENDANDO BACKUP AUTOMÁTICO: ${cronSchedule}`);
+    console.log('[BACKUP-SCHEDULER] 🎯 Sistema: Local + Email (100% automático)');
+    
+    this.scheduledTask = cron.schedule(cronSchedule, async () => {
+      console.log('\n[BACKUP-SCHEDULER] 🚀 EXECUTANDO BACKUP AUTOMÁTICO AGENDADO');
+      console.log('[BACKUP-SCHEDULER] ' + '='.repeat(60));
+      
+      try {
+        const result = await this.backupSystem.executeFullBackup();
+        
+        if (result.success) {
+          console.log('\n[BACKUP-SCHEDULER] ✅ BACKUP AUTOMÁTICO CONCLUÍDO COM SUCESSO');
+          if (result.localBackup?.success) {
+            console.log(`[BACKUP-SCHEDULER] 📁 Local: ${result.localBackup.size}`);
+          }
+          if (result.emailBackup?.success) {
+            console.log(`[BACKUP-SCHEDULER] 📧 Email: ${result.emailBackup.size}`);
+          }
+          console.log(`[BACKUP-SCHEDULER] ⏱️ Tempo: ${((result.totalTime || 0) / 1000).toFixed(2)}s`);
 
-    this.cronJob = cron.schedule(schedule, async () => {
-      await this.executeScheduledBackup();
+          // Log de sucesso
+          this.logBackupSuccess(result);
+        } else {
+          console.error('\n[BACKUP-SCHEDULER] ❌ FALHA NO BACKUP AUTOMÁTICO');
+          if (result.localBackup?.error) {
+            console.error(`[BACKUP-SCHEDULER] 📁 Local: ${result.localBackup.error}`);
+          }
+          if (result.emailBackup?.error) {
+            console.error(`[BACKUP-SCHEDULER] 📧 Email: ${result.emailBackup.error}`);
+          }
+
+          // Log de falha
+          this.logBackupFailure(`Local: ${result.localBackup?.error || 'OK'}, Email: ${result.emailBackup?.error || 'OK'}`);
+        }
+
+        const nextRun = this.getNextRunTime();
+        console.log(`[BACKUP-SCHEDULER] ⏰ Próximo backup: ${nextRun}`);
+
+      } catch (error: any) {
+        console.error('\n[BACKUP-SCHEDULER] ❌ ERRO CRÍTICO NO BACKUP AUTOMÁTICO:', error.message);
+        this.logBackupFailure(error.message);
+      }
+      
+      console.log('[BACKUP-SCHEDULER] ' + '='.repeat(60));
     }, {
       scheduled: false,
-      timezone: 'America/Sao_Paulo' // Adjust to your timezone
+      timezone: 'America/Sao_Paulo'
     });
 
-    this.cronJob.start();
+    this.scheduledTask.start();
     this.isRunning = true;
-    
-    console.log('[BACKUP-SCHEDULER] ✅ Agendamento automático iniciado');
+
+    console.log('[BACKUP-SCHEDULER] ✅ Scheduler de backup iniciado com sucesso');
+    console.log('[BACKUP-SCHEDULER] 📋 Funcionalidades ativas:');
+    console.log('[BACKUP-SCHEDULER]    • Backup local com rotação (7 dias)');
+    console.log('[BACKUP-SCHEDULER]    • Backup por email automático');
+    console.log('[BACKUP-SCHEDULER]    • Limpeza automática de arquivos temporários');
   }
 
   /**
    * Para o agendamento
    */
-  stop() {
-    if (this.cronJob) {
-      this.cronJob.stop();
+  stop(): void {
+    if (this.scheduledTask) {
+      this.scheduledTask.stop();
+      this.scheduledTask = null;
       this.isRunning = false;
-      console.log('[BACKUP-SCHEDULER] 🛑 Agendamento interrompido');
+      console.log('[BACKUP-SCHEDULER] ⏹️ Scheduler de backup interrompido');
     }
   }
 
   /**
-   * Executa backup agendado
+   * Executa backup manual completo para teste
    */
-  private async executeScheduledBackup() {
-    console.log('[BACKUP-SCHEDULER] 🔄 Executando backup agendado...');
+  async executeManualBackup(): Promise<{ success: boolean; message: string; details?: any }> {
+    console.log('\n[BACKUP-SCHEDULER] 🔧 EXECUTANDO BACKUP MANUAL...');
     
     try {
-      const result = await this.backupSystem.performBackup();
+      const result = await this.backupSystem.executeFullBackup();
       
-      if (result.success) {
-        console.log(`[BACKUP-SCHEDULER] ✅ ${result.message}`);
-        
-        // Log para monitoramento
-        this.logBackupSuccess(result);
-      } else {
-        console.error(`[BACKUP-SCHEDULER] ❌ ${result.message}`);
-        
-        // Log para monitoramento de falhas
-        this.logBackupFailure(result.message);
-      }
-      
-    } catch (error: any) {
-      console.error('[BACKUP-SCHEDULER] ❌ Erro no backup agendado:', error.message);
-      this.logBackupFailure(error.message);
-    }
+      const message = result.success 
+        ? `Backup concluído em ${((result.totalTime || 0) / 1000).toFixed(2)}s`
+        : 'Falha no backup';
 
-    const nextRun = this.getNextRunTime();
-    console.log(`[BACKUP-SCHEDULER] ⏰ Próximo backup: ${nextRun}`);
-  }
-
-  /**
-   * Executa backup manual (para testes)
-   */
-  async executeManualBackup(): Promise<{ success: boolean; message: string }> {
-    console.log('[BACKUP-SCHEDULER] 🔧 Executando backup manual...');
-    
-    try {
-      const result = await this.backupSystem.performBackup();
-      return result;
+      return {
+        success: result.success,
+        message,
+        details: result
+      };
     } catch (error: any) {
       return {
         success: false,
-        message: `Erro no backup manual: ${error.message}`
+        message: `Erro crítico: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * Executa apenas backup local para teste
+   */
+  async executeLocalBackupOnly(): Promise<{ success: boolean; message: string }> {
+    console.log('\n[BACKUP-SCHEDULER] 📁 EXECUTANDO BACKUP LOCAL...');
+    
+    try {
+      const result = await this.backupSystem.executeLocalBackup();
+      
+      return {
+        success: result.success,
+        message: result.success 
+          ? `Backup local: ${result.localBackup?.size}`
+          : `Erro: ${result.localBackup?.error}`
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Erro: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * Executa apenas backup por email para teste
+   */
+  async executeEmailBackupOnly(): Promise<{ success: boolean; message: string }> {
+    console.log('\n[BACKUP-SCHEDULER] 📧 EXECUTANDO BACKUP POR EMAIL...');
+    
+    try {
+      const result = await this.backupSystem.executeEmailBackup();
+      
+      return {
+        success: result.success,
+        message: result.success 
+          ? `Backup por email: ${result.emailBackup?.size}`
+          : `Erro: ${result.emailBackup?.error}`
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Erro: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * Testa todos os sistemas
+   */
+  async testBackupSystems(): Promise<{
+    success: boolean;
+    systems: { local: boolean; email: boolean; database: boolean };
+    statistics?: any;
+  }> {
+    console.log('\n[BACKUP-SCHEDULER] 🔍 TESTANDO SISTEMAS DE BACKUP...');
+    
+    try {
+      const systems = await this.backupSystem.testSystems();
+      const statistics = await this.backupSystem.getBackupStatistics();
+      
+      return {
+        success: Object.values(systems).some(Boolean),
+        systems,
+        statistics
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        systems: { local: false, email: false, database: false }
       };
     }
   }
@@ -117,7 +203,6 @@ class BackupScheduler {
   private getNextRunTime(schedule?: string): string {
     const cronSchedule = schedule || process.env.BACKUP_CRON_SCHEDULE || '0 3 * * *';
     
-    // Parse básico do cron para estimar próxima execução
     const parts = cronSchedule.split(' ');
     if (parts.length >= 5) {
       const minute = parts[0];
@@ -130,7 +215,6 @@ class BackupScheduler {
       next.setHours(hour === '*' ? now.getHours() : parseInt(hour));
       next.setSeconds(0);
       
-      // Se o horário já passou hoje, agenda para amanhã
       if (next <= now) {
         next.setDate(next.getDate() + 1);
       }
@@ -142,22 +226,24 @@ class BackupScheduler {
   }
 
   /**
-   * Log de backup bem-sucedido (para monitoramento)
+   * Log de backup bem-sucedido
    */
   private logBackupSuccess(result: any) {
     const logEntry = {
       timestamp: new Date().toISOString(),
       status: 'SUCCESS',
-      message: result.message,
-      driveFileId: result.driveFileId,
+      localBackup: result.localBackup?.success || false,
+      emailBackup: result.emailBackup?.success || false,
+      totalTime: result.totalTime,
+      localSize: result.localBackup?.size,
+      emailSize: result.emailBackup?.size
     };
     
-    // Em produção, você poderia enviar isso para um sistema de monitoramento
     console.log('[BACKUP-LOG]', JSON.stringify(logEntry));
   }
 
   /**
-   * Log de backup com falha (para monitoramento)
+   * Log de backup com falha
    */
   private logBackupFailure(message: string) {
     const logEntry = {
@@ -166,19 +252,31 @@ class BackupScheduler {
       message: message,
     };
     
-    // Em produção, você poderia enviar isso para um sistema de monitoramento
-    // ou enviar notificação por email/slack
     console.error('[BACKUP-LOG]', JSON.stringify(logEntry));
   }
 
   /**
-   * Status do agendamento
+   * Verifica status do scheduler
    */
-  getStatus() {
+  getStatus(): {
+    isRunning: boolean;
+    schedule: string;
+    nextRun: string;
+    systemType: string;
+    features: string[];
+    timezone: string;
+  } {
     return {
       isRunning: this.isRunning,
       schedule: process.env.BACKUP_CRON_SCHEDULE || '0 3 * * *',
       nextRun: this.isRunning ? this.getNextRunTime() : 'Agendamento parado',
+      systemType: 'Local + Email',
+      features: [
+        'Backup local com rotação automática',
+        'Backup por email automático', 
+        'Limpeza de arquivos temporários',
+        '100% sem credenciais externas'
+      ],
       timezone: 'America/Sao_Paulo'
     };
   }

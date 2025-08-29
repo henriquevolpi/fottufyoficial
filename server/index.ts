@@ -430,19 +430,19 @@ app.use((req, res, next) => {
     console.log('[ADM] Sistema de controle manual ADM iniciado - verificação a cada hora (34 dias)');
     
     // ==================== SISTEMA DE BACKUP AUTOMÁTICO ====================
-    // Inicializar sistema de backup se as credenciais estão configuradas
+    // Inicializar sistema de backup automático (Local + Email)
+    // 100% automático, sem necessidade de credenciais externas
     try {
-      if (process.env.GOOGLE_DRIVE_CLIENT_ID && 
-          process.env.GOOGLE_DRIVE_CLIENT_SECRET && 
-          process.env.GOOGLE_DRIVE_REFRESH_TOKEN) {
-        const backupScheduler = initializeBackupScheduler();
-        backupScheduler.start();
-        console.log('[BACKUP] Sistema de backup automático iniciado - execução diária às 3:00 AM');
-      } else {
-        console.log('[BACKUP] Sistema de backup não configurado - variáveis de ambiente Google Drive não encontradas');
-      }
+      const backupScheduler = initializeBackupScheduler();
+      backupScheduler.start();
+      console.log('[BACKUP] ✅ Sistema de backup automático iniciado');
+      console.log('[BACKUP] 📁 Backup local: /home/runner/workspace/backups (rotação 7 dias)');
+      console.log('[BACKUP] 📧 Backup por email: Resend configurado');
+      console.log('[BACKUP] ⏰ Execução diária: 3:00 AM (configurável)');
+      console.log('[BACKUP] 🎯 Sistema: Local + Email (100% automático)');
     } catch (error: any) {
-      console.error('[BACKUP] Erro ao inicializar sistema de backup:', error.message);
+      console.error('[BACKUP] ❌ Erro ao inicializar sistema de backup:', error.message);
+      console.error('[BACKUP] ⚠️ Backups automáticos desabilitados');
     }
     // ====================================================================
     
