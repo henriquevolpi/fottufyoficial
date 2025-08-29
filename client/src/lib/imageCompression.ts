@@ -26,34 +26,61 @@ function cleanupCanvas(canvas: HTMLCanvasElement | null): void {
 }
 
 /**
- * Função para sugerir garbage collection se disponível
- * Usado para otimizar memória durante processamento de lotes grandes
+ * Função OTIMIZADA para limpeza agressiva de memória
+ * Mais frequente e inteligente para dispositivos limitados
  */
-function suggestGarbageCollection(): void {
-  if (typeof window !== 'undefined' && (window as any).gc) {
-    try {
-      setTimeout(() => (window as any).gc(), 100);
-    } catch (e) {
-      // Ignorar se gc não estiver disponível
-    }
-  }
+function aggressiveMemoryCleanup(forced: boolean = false): void {
+  if (typeof window === 'undefined') return;
   
-  // ✅ SEGURANÇA: Força cleanup de recursos não utilizados se possível
-  if (typeof window !== 'undefined' && window.performance && window.performance.memory) {
-    const memInfo = (window.performance as any).memory;
-    // Se uso de heap > 80%, sugerir cleanup mais agressivo
-    if (memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.8) {
-      // Cleanup mais agressivo com setTimeout para não bloquear UI
+  try {
+    const memInfo = (window.performance as any)?.memory;
+    let shouldClean = forced;
+    let cleanupLevel = 'normal';
+    
+    if (memInfo) {
+      const usage = memInfo.usedJSHeapSize / memInfo.totalJSHeapSize;
+      
+      if (usage > 0.55) { // Muito mais conservador
+        shouldClean = true;
+        cleanupLevel = usage > 0.75 ? 'aggressive' : 'moderate';
+      }
+    }
+    
+    if (shouldClean) {
+      // Limpeza imediata se crítico
+      if (cleanupLevel === 'aggressive' && (window as any).gc) {
+        try {
+          (window as any).gc();
+          console.log(`🧹 Limpeza agressiva executada - memória: ${(memInfo?.usedJSHeapSize / memInfo?.totalJSHeapSize * 100 || 0).toFixed(1)}%`);
+        } catch (e) {}
+      }
+      
+      // Limpeza com delay para não bloquear UI
+      const delay = cleanupLevel === 'aggressive' ? 50 : 200;
       setTimeout(() => {
         if ((window as any).gc) {
           try {
             (window as any).gc();
-          } catch (e) {
-            // Ignorar
-          }
+          } catch (e) {}
         }
-      }, 500);
+        
+        // Forçar limpeza de event listeners e observers órfãos
+        if (cleanupLevel === 'aggressive') {
+          // Cleanup de possíveis leaks
+          try {
+            const images = document.querySelectorAll('img[src^="blob:"]');
+            images.forEach(img => {
+              const src = img.getAttribute('src');
+              if (src && src.startsWith('blob:')) {
+                URL.revokeObjectURL(src);
+              }
+            });
+          } catch (e) {}
+        }
+      }, delay);
     }
+  } catch (error) {
+    console.warn('Erro na limpeza de memória:', error);
   }
 }
 
@@ -127,6 +154,9 @@ export async function compressImage(
       nomePreservado: compressedFile.name,
     });
 
+    // 🧹 LIMPEZA: Nullificar referência ao arquivo original para GC
+    file = null as any;
+    
     return compressedFile;
   } catch (error) {
     console.error(`[Frontend] Erro ao processar imagem ${file.name}:`, error);
@@ -164,7 +194,36 @@ export async function compressImage(
 }
 
 /**
- * Processa múltiplas imagens em lotes pequenos para evitar travamento do navegador
+ * OTIMIZADO: Calcula tamanho de lote dinâmico baseado no tamanho real dos arquivos
+ * Evita sobrecarga de memória em dispositivos limitados
+ */
+function calculateDynamicBatchSize(files: File[], startIndex: number, maxBatchSizeMB: number = 25): number {
+  let currentBatchSize = 0;
+  let currentBatchSizeMB = 0;
+  
+  for (let i = startIndex; i < files.length; i++) {
+    const fileSizeMB = files[i].size / 1024 / 1024;
+    
+    // Se adicionar este arquivo excederia o limite, parar aqui
+    if (currentBatchSizeMB + fileSizeMB > maxBatchSizeMB && currentBatchSize > 0) {
+      break;
+    }
+    
+    currentBatchSize++;
+    currentBatchSizeMB += fileSizeMB;
+    
+    // Limite absoluto de segurança (mesmo para arquivos pequenos)
+    if (currentBatchSize >= 50) {
+      break;
+    }
+  }
+  
+  // Garantir pelo menos 1 arquivo por lote
+  return Math.max(currentBatchSize, 1);
+}
+
+/**
+ * Processa múltiplas imagens em lotes DINÂMICOS para evitar travamento do navegador
  * @param files Array de arquivos de imagem
  * @param options Opções de compressão (opcional)
  * @param onProgress Callback de progresso (opcional)
@@ -176,18 +235,37 @@ export async function compressMultipleImages(
   onProgress?: (processed: number, total: number) => void
 ): Promise<File[]> {
   const results: File[] = [];
-  const batchSize = 30; // Processar 30 imagens por lote
   
-  console.log(`[Frontend] Iniciando processamento de ${files.length} imagens em lotes de ${batchSize}`);
+  // 📊 CALCULAR TAMANHO MÁXIMO DE LOTE BASEADO NO DISPOSITIVO
+  const totalSizeMB = files.reduce((acc, file) => acc + file.size, 0) / 1024 / 1024;
+  let maxBatchSizeMB = 25; // Padrão conservador
   
-  // Processar em lotes pequenos
-  for (let batchStart = 0; batchStart < files.length; batchStart += batchSize) {
-    const batchEnd = Math.min(batchStart + batchSize, files.length);
+  // Detectar limitações do dispositivo
+  try {
+    const { getRecommendedUploadSettings } = await import('./deviceDetection');
+    const settings = getRecommendedUploadSettings();
+    maxBatchSizeMB = settings.maxBatchSizeMB;
+  } catch (e) {
+    console.warn('Não foi possível detectar configurações do dispositivo, usando padrão conservador');
+  }
+  
+  console.log(`[Frontend] 📊 Processamento DINÂMICO: ${files.length} imagens (${totalSizeMB.toFixed(1)}MB total), max ${maxBatchSizeMB}MB por lote`);
+  
+  // Processar em lotes dinâmicos baseados em tamanho
+  let batchStart = 0;
+  let batchNumber = 1;
+  
+  while (batchStart < files.length) {
+    const dynamicBatchSize = calculateDynamicBatchSize(files, batchStart, maxBatchSizeMB);
+    const batchEnd = Math.min(batchStart + dynamicBatchSize, files.length);
     const batch = files.slice(batchStart, batchEnd);
     
-    console.log(`[Frontend] Processando lote ${Math.floor(batchStart/batchSize) + 1}/${Math.ceil(files.length/batchSize)} - ${batch.length} imagens`);
+    const batchSizeMB = batch.reduce((acc, file) => acc + file.size, 0) / 1024 / 1024;
+    const totalBatches = Math.ceil(files.length / (dynamicBatchSize || 1));
     
-    // Processar este lote
+    console.log(`[Frontend] 🔄 Lote ${batchNumber}/${Math.ceil(files.length/dynamicBatchSize)} - ${batch.length} imagens (${batchSizeMB.toFixed(1)}MB)`);
+    
+    // Processar este lote dinâmico
     for (let i = 0; i < batch.length; i++) {
       const file = batch[i];
       const globalIndex = batchStart + i;
@@ -205,8 +283,32 @@ export async function compressMultipleImages(
       }
       
       try {
-        const compressedFile = await compressImage(file, options);
-        results.push(compressedFile);
+        // 🧠 COMPRESSÃO INTELIGENTE: Pular arquivos já pequenos
+        const fileSizeMB = file.size / 1024 / 1024;
+        let processedFile: File;
+        
+        if (fileSizeMB < 0.8) {
+          // Arquivo já pequeno (< 800KB), pular compressão
+          console.log(`[Frontend] 🌐 Pulando compressão: ${file.name} já é pequeno (${fileSizeMB.toFixed(2)}MB)`);
+          processedFile = file;
+        } else {
+          // Comprimir apenas se valer a pena
+          const compressedFile = await compressImage(file, options);
+          
+          // Verificar se a compressão realmente reduziu significativamente
+          const reduction = (file.size - compressedFile.size) / file.size;
+          if (reduction > 0.15) {
+            // Redução > 15%, usar comprimido
+            processedFile = compressedFile;
+            console.log(`[Frontend] ✅ Compressão efetiva: ${file.name} (${(reduction * 100).toFixed(1)}% menor)`);
+          } else {
+            // Redução insignificante, usar original
+            processedFile = file;
+            console.log(`[Frontend] ⏭️ Compressão ineficaz: ${file.name} (apenas ${(reduction * 100).toFixed(1)}% menor)`);
+          }
+        }
+        
+        results.push(processedFile);
         
         // Callback de progresso
         if (onProgress) {
@@ -224,18 +326,43 @@ export async function compressMultipleImages(
       }
     }
     
-    // Limpeza de memória entre lotes para evitar acúmulo de recursos
+    // 🧹 LIMPEZA AGRESSIVA entre lotes - CRÍTICO para dispositivos limitados
     if (batchEnd < files.length) {
-      console.log(`[Frontend] Pausando 500ms entre lotes para liberar memória...`);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const remainingBatches = Math.ceil((files.length - batchEnd) / dynamicBatchSize);
+      console.log(`[Frontend] Pausando para limpeza entre lotes... (${remainingBatches} lotes restantes)`);
       
-      // Sugerir garbage collection usando função utilitária
-      suggestGarbageCollection();
-      console.log(`[Frontend] Garbage collection sugerida entre lotes`);
+      // Limpeza imediata e forçada
+      aggressiveMemoryCleanup(true);
+      
+      // Pausa adaptativa baseada na memória
+      const memInfo = (window.performance as any)?.memory;
+      let pauseTime = 300; // Pausa base reduzida
+      
+      if (memInfo) {
+        const usage = memInfo.usedJSHeapSize / memInfo.totalJSHeapSize;
+        if (usage > 0.70) {
+          pauseTime = 800; // Pausa longa para recuperação crítica
+        } else if (usage > 0.55) {
+          pauseTime = 500; // Pausa média
+        }
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, pauseTime));
+      
+      // Segunda limpeza após pausa
+      aggressiveMemoryCleanup(false);
+      console.log(`[Frontend] Limpeza completa - pausando ${pauseTime}ms`);
     }
+    
+    // Próximo lote
+    batchStart = batchEnd;
+    batchNumber++;
   }
   
-  console.log(`[Frontend] Processamento concluído: ${results.length} arquivos processados em ${Math.ceil(files.length/batchSize)} lotes`);
+  console.log(`[Frontend] ✅ Processamento DINÂMICO concluído: ${results.length} arquivos em ${batchNumber-1} lotes variáveis`);
+  
+  // Limpeza final agressiva
+  aggressiveMemoryCleanup(true);
   return results;
 }
 

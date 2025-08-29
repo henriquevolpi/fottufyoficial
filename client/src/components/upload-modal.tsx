@@ -96,29 +96,67 @@ export default function UploadModal({
   // Sistema de analytics e detecção (100% seguro)
   const analytics = useUploadAnalytics();
 
-  // Função para liberar URLs de preview e limpar memória
-  const cleanupPreviewUrls = (urlsToCleanup: string[]) => {
-    urlsToCleanup.forEach(url => {
-      if (url.startsWith('blob:')) {
-        URL.revokeObjectURL(url);
+  // 🧹 SISTEMA DE LIMPEZA AGRESSIVA OTIMIZADO
+  const aggressiveCleanup = (options: {
+    urls?: string[];
+    files?: File[];
+    formData?: FormData[];
+    forced?: boolean;
+  } = {}) => {
+    try {
+      // Limpeza de URLs de preview
+      if (options.urls) {
+        options.urls.forEach(url => {
+          if (url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+          }
+        });
+        options.urls.length = 0;
       }
-    });
-  };
-
-  // Função para limpar referências de arquivos e liberar memória
-  const cleanupFileReferences = (filesToCleanup: File[]) => {
-    // Forçar liberação das referências
-    filesToCleanup.length = 0;
-    
-    // Sugerir garbage collection se disponível (apenas para debug)
-    if (typeof window !== 'undefined' && (window as any).gc) {
-      try {
-        setTimeout(() => (window as any).gc(), 100);
-      } catch (e) {
-        // Ignorar erro se gc não estiver disponível
+      
+      // Limpeza de referências de arquivos
+      if (options.files) {
+        options.files.forEach((file, index) => {
+          options.files![index] = null as any;
+        });
+        options.files.length = 0;
       }
+      
+      // 🆕 LIMPEZA DE FORMDATA - CRÍTICO
+      if (options.formData) {
+        options.formData.forEach((fd, index) => {
+          try {
+            // FormData não tem método clear, mas podemos nullificar a referência
+            options.formData![index] = null as any;
+          } catch (e) {}
+        });
+        options.formData.length = 0;
+      }
+      
+      // Garbage collection forçado se crítico ou solicitado
+      if (options.forced || typeof window !== 'undefined') {
+        const memInfo = (window.performance as any)?.memory;
+        const shouldForceGC = options.forced || (memInfo && memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.60);
+        
+        if (shouldForceGC && (window as any).gc) {
+          try {
+            // GC imediato para casos críticos
+            if (options.forced) {
+              (window as any).gc();
+            }
+            // GC com delay para não bloquear UI
+            setTimeout(() => (window as any).gc(), 50);
+          } catch (e) {}
+        }
+      }
+    } catch (error) {
+      console.warn('Erro na limpeza agressiva:', error);
     }
   };
+  
+  // Manter funções antigas para compatibilidade
+  const cleanupPreviewUrls = (urls: string[]) => aggressiveCleanup({ urls });
+  const cleanupFileReferences = (files: File[]) => aggressiveCleanup({ files, forced: true });
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),

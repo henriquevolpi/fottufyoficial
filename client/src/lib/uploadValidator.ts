@@ -83,32 +83,54 @@ export function validateUpload(files: File[]): UploadValidation {
 }
 
 /**
- * Validação de memória disponível
+ * Validação de memória disponível - OTIMIZADA para dispositivos antigos
  */
 function validateMemory(files: File[], device: any): UploadRisk[] {
   const risks: UploadRisk[] = [];
   const totalSize = files.reduce((acc, file) => acc + file.size, 0);
   const totalSizeMB = totalSize / 1024 / 1024;
   
-  // Estimar uso de memória (arquivo original + comprimido + buffers)
-  const estimatedMemoryMB = totalSizeMB * 2.5;
+  // Estimar uso de memória com fator mais realista baseado no device
+  let memoryMultiplier = 2.5; // Padrão desktop moderno
   
-  if (device.type === 'mobile' && estimatedMemoryMB > 80) {
-    risks.push({
-      level: estimatedMemoryMB > 150 ? 'high' : 'medium',
-      category: 'memory',
-      message: 'Muitas fotos para dispositivo móvel',
-      recommendation: estimatedMemoryMB > 150 ? 'Reduza para menos de 30 fotos por vez' : 'Reduza para menos de 50 fotos por vez',
-      technical: `Memória estimada: ${estimatedMemoryMB.toFixed(0)}MB`
-    });
+  if (device.estimatedRAM === 'low') {
+    memoryMultiplier = 4.0; // Dispositivos antigos precisam muito mais overhead
+  } else if (device.type === 'mobile') {
+    memoryMultiplier = 3.2; // Móbil tem menos eficiência
   }
   
-  if (estimatedMemoryMB > 400) {
+  const estimatedMemoryMB = totalSizeMB * memoryMultiplier;
+  
+  // VALIDAÇÕES MAIS RIGOROSAS PARA DISPOSITIVOS LIMITADOS
+  if (device.estimatedRAM === 'low') {
+    if (estimatedMemoryMB > 25) { // Muito mais conservador
+      risks.push({
+        level: 'critical',
+        category: 'memory',
+        message: 'Dispositivo antigo com muitas fotos',
+        recommendation: 'Reduza para máximo 5-8 fotos por vez',
+        technical: `Memória estimada: ${estimatedMemoryMB.toFixed(0)}MB (dispositivo limitado)`
+      });
+    }
+  } else if (device.type === 'mobile') {
+    if (estimatedMemoryMB > 60) {
+      risks.push({
+        level: estimatedMemoryMB > 120 ? 'high' : 'medium',
+        category: 'memory',
+        message: 'Muitas fotos para dispositivo móvel',
+        recommendation: estimatedMemoryMB > 120 ? 'Reduza para menos de 15 fotos por vez' : 'Reduza para menos de 25 fotos por vez',
+        technical: `Memória estimada: ${estimatedMemoryMB.toFixed(0)}MB`
+      });
+    }
+  }
+  
+  // Validação geral mais conservadora
+  if (estimatedMemoryMB > 200) {
     risks.push({
-      level: estimatedMemoryMB > 600 ? 'critical' : 'high',
+      level: estimatedMemoryMB > 350 ? 'critical' : 'high',
       category: 'memory',
       message: 'Volume de fotos muito alto',
-      recommendation: estimatedMemoryMB > 600 ? 'Divida em uploads menores (máximo 50 fotos)' : 'Divida em uploads menores (máximo 80 fotos)',
+      recommendation: estimatedMemoryMB > 350 ? 'Divida em uploads menores (máximo 25 fotos)' : 'Divida em uploads menores (máximo 40 fotos)',
       technical: `Memória estimada: ${estimatedMemoryMB.toFixed(0)}MB`
     });
   }
@@ -276,28 +298,35 @@ function validateDevice(device: any, fileCount: number): UploadRisk[] {
 }
 
 /**
- * Calcula o número máximo seguro de arquivos
+ * Calcula o número máximo seguro de arquivos - OTIMIZADO
  */
 function calculateMaxSafeFiles(device: any, capabilities: any): number {
-  let maxFiles = 200; // Padrão desktop
+  let maxFiles = 200; // Padrão desktop moderno
   
-  if (device.type === 'mobile') {
-    maxFiles = 50;
+  // AJUSTES BASEADOS EM RAM ESTIMADA (mais importante que tipo)
+  if (device.estimatedRAM === 'low') {
+    maxFiles = 8; // Drasticamente reduzido para dispositivos antigos
+  } else if (device.estimatedRAM === 'medium') {
+    maxFiles = device.type === 'mobile' ? 25 : 60;
+  } else if (device.type === 'mobile') {
+    maxFiles = 40; // Mesmo móbil moderno tem limitações
   }
   
-  if (device.type === 'tablet') {
-    maxFiles = 100;
+  // Reduções específicas para casos problemáticos
+  if (device.isEmbeddedBrowser) {
+    maxFiles = Math.min(maxFiles, 5); // Navegadores incorporados são muito limitados
+  }
+  
+  if (device.browser === 'safari' && device.type === 'mobile') {
+    maxFiles = Math.min(maxFiles, Math.floor(maxFiles * 0.6)); // Safari móvel é problemático
   }
   
   if (!capabilities.supportsWebWorker) {
-    maxFiles = Math.floor(maxFiles * 0.7);
+    maxFiles = Math.floor(maxFiles * 0.5); // Sem Web Worker é muito mais limitado
   }
   
-  if (device.os === 'ios' && device.version < 14) {
-    maxFiles = Math.min(maxFiles, 30);
-  }
-  
-  return maxFiles;
+  // Garantir mínimo absoluto
+  return Math.max(maxFiles, 3);
 }
 
 /**

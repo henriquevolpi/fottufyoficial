@@ -78,22 +78,33 @@ export function detectDevice(): DeviceInfo {
     /; wv\)/.test(userAgent) || // WebView pattern mais comum
     userAgent.includes('micromessenger'); // WeChat browser
   
-  // Estimar RAM baseado em device
+  // Estimar RAM baseado em device - OTIMIZADO para dispositivos antigos
   let estimatedRAM: DeviceInfo['estimatedRAM'] = 'unknown';
   if (type === 'mobile') {
     if (os === 'ios') {
-      // iPhones antigos geralmente têm menos RAM
-      if (/iphone\s+os\s+[1-9]|iphone\s+os\s+1[0-3]/.test(userAgent)) {
-        estimatedRAM = 'low';
+      // iPhones antigos geralmente têm menos RAM - detectar versões críticas
+      if (/iphone\s+os\s+[1-9]|iphone\s+os\s+1[0-2]/.test(userAgent)) {
+        estimatedRAM = 'low'; // iOS 12 e anteriores
+      } else if (/iphone\s+os\s+13/.test(userAgent)) {
+        estimatedRAM = 'medium'; // iOS 13 ainda limitado
+      } else {
+        estimatedRAM = 'medium'; // iOS 14+ melhor mas ainda móvel
+      }
+    } else if (os === 'android') {
+      // Android com detecção mais granular
+      if (/android\s+[1-7]/.test(userAgent) || userAgent.includes('android 8.0')) {
+        estimatedRAM = 'low'; // Android 8.0 e anteriores
       } else {
         estimatedRAM = 'medium';
       }
-    } else if (os === 'android') {
-      // Android é mais variado, assumir médio por padrão
-      estimatedRAM = 'medium';
     }
   } else {
-    estimatedRAM = 'high';
+    // Desktop também pode ter limitações dependendo do navegador
+    if (browser === 'safari' || /chrome\/[1-5][0-9]/.test(userAgent)) {
+      estimatedRAM = 'medium'; // Safari ou Chrome antigo no desktop
+    } else {
+      estimatedRAM = 'high';
+    }
   }
   
   return {
@@ -237,13 +248,15 @@ export function logEnvironmentInfo(): void {
 }
 
 /**
- * Retorna configurações recomendadas baseadas no ambiente
+ * Retorna configurações recomendadas baseadas no ambiente - OTIMIZADO
  */
 export function getRecommendedUploadSettings(): {
   batchSize: number;
   quality: number;
   useWebWorker: boolean;
   maxFileSize: number;
+  maxBatchSizeMB: number;
+  memoryThreshold: number;
   warnings: string[];
 } {
   const device = detectDevice();
@@ -255,27 +268,47 @@ export function getRecommendedUploadSettings(): {
     quality: 0.9,
     useWebWorker: true,
     maxFileSize: 10 * 1024 * 1024, // 10MB
+    maxBatchSizeMB: 50, // Novo: limite por tamanho total
+    memoryThreshold: 0.85, // Padrão desktop moderno
     warnings: [] as string[]
   };
   
-  // Ajustar baseado no device (apenas recomendações, não força)
+  // AJUSTES CRÍTICOS PARA DISPOSITIVOS LIMITADOS
   if (device.estimatedRAM === 'low') {
-    settings.batchSize = 10;
-    settings.quality = 0.8;
-    settings.warnings.push('Dispositivo com pouca memória detectado - considere uploads menores');
+    settings.batchSize = 8; // Reduzido drasticamente
+    settings.quality = 0.7; // Qualidade menor
+    settings.maxBatchSizeMB = 15; // Máximo 15MB por lote
+    settings.memoryThreshold = 0.55; // Muito mais conservador
+    settings.warnings.push('Dispositivo antigo detectado - configurações otimizadas aplicadas');
+  } else if (device.estimatedRAM === 'medium') {
+    settings.batchSize = 18;
+    settings.quality = 0.85;
+    settings.maxBatchSizeMB = 30;
+    settings.memoryThreshold = device.type === 'mobile' ? 0.65 : 0.75;
+  }
+  
+  // Ajustes específicos para navegadores problemáticos
+  if (device.browser === 'safari' && device.type === 'mobile') {
+    settings.batchSize = Math.min(settings.batchSize, 12);
+    settings.memoryThreshold = Math.min(settings.memoryThreshold, 0.60);
+    settings.warnings.push('Safari móvel detectado - configurações conservadoras aplicadas');
   }
   
   if (device.isEmbeddedBrowser) {
-    settings.warnings.push('Navegador incorporado detectado - para melhor experiência, use o navegador nativo');
+    settings.batchSize = Math.min(settings.batchSize, 5);
+    settings.memoryThreshold = Math.min(settings.memoryThreshold, 0.50);
+    settings.warnings.push('Navegador incorporado - modo ultra-conservador ativado');
   }
   
   if (!capabilities.supportsWebWorker) {
     settings.useWebWorker = false;
-    settings.warnings.push('Web Workers não suportados - processamento será mais lento');
+    settings.batchSize = Math.floor(settings.batchSize * 0.6);
+    settings.warnings.push('Web Workers não suportados - batch reduzido');
   }
   
   if (connection.isSlowConnection) {
-    settings.warnings.push('Conexão lenta detectada - upload pode demorar mais');
+    settings.batchSize = Math.min(settings.batchSize, 10);
+    settings.warnings.push('Conexão lenta - batch reduzido para evitar timeouts');
   }
   
   return settings;
