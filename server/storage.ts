@@ -2315,10 +2315,8 @@ export class DatabaseStorage implements IStorage {
             ne(users.planType, 'free'),
             // Tem data de fim de assinatura definida
             not(isNull(users.subscriptionEndDate)),
-            // Data de fim já passou
+            // Data de fim já passou (este é o critério principal)
             lt(users.subscriptionEndDate, now),
-            // Status não é 'active' (para evitar conflitos)
-            ne(users.subscriptionStatus, 'active'),
             // Não é ativação manual recente (menos de 30 dias)
             or(
               isNull(users.isManualActivation),
