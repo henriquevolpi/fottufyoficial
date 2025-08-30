@@ -74,7 +74,7 @@ export default function LandingPage() {
             
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
               Pare de enviar fotos por WhatsApp, Google Drive ou WeTransfer. 
-              Crie galerias profissionais onde seus clientes escolhem e baixam as fotos favoritas.
+              Crie galerias protegidas com seu logo onde clientes veem mas não conseguem copiar suas fotos.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -142,7 +142,7 @@ export default function LandingPage() {
                   <div className="mt-6 flex justify-center">
                     <Button className="bg-blue-600 hover:bg-blue-700">
                       <Heart className="mr-2 h-4 w-4" />
-                      Baixar Selecionadas (12)
+                      Solicitar Selecionadas (12)
                     </Button>
                   </div>
                 </div>
@@ -217,10 +217,10 @@ export default function LandingPage() {
               <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full">
                 <h3 className="text-2xl font-bold mb-4 text-gray-900">3. Cliente Escolhe</h3>
                 <p className="text-gray-600 mb-6">
-                  Seu cliente navega, seleciona e baixa as fotos favoritas de forma simples e intuitiva.
+                  Seu cliente navega e seleciona as fotos favoritas com marca d'água de proteção.
                 </p>
                 <div className="text-sm text-green-600 font-medium">
-                  ❤️ Seleção por favoritos • 📥 Download direto
+                  ❤️ Seleção por favoritos • 🛡️ Proteção com logo
                 </div>
               </div>
             </div>
@@ -236,7 +236,7 @@ export default function LandingPage() {
               Tudo que você precisa em um só lugar
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Recursos pensados para facilitar seu trabalho e impressionar seus clientes
+              Recursos pensados para proteger suas fotos e impressionar seus clientes
             </p>
           </div>
 
@@ -270,9 +270,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
                   <Shield className="h-6 w-6 text-purple-600 group-hover:text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Segurança Total</h3>
+                <h3 className="text-xl font-bold mb-3">Proteção com Logo</h3>
                 <p className="text-gray-600">
-                  Suas fotos ficam protegidas com criptografia de ponta. Backup automático e acesso controlado.
+                  Suas fotos ficam protegidas com marca d'água personalizada. Clientes veem mas não conseguem copiar.
                 </p>
               </CardContent>
             </Card>
@@ -296,7 +296,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Relatórios Detalhados</h3>
                 <p className="text-gray-600">
-                  Veja quantas fotos foram visualizadas, selecionadas e baixadas. Entenda o que seus clientes preferem.
+                  Veja quantas fotos foram visualizadas e selecionadas pelos clientes. Entenda o que seus clientes preferem.
                 </p>
               </CardContent>
             </Card>
@@ -337,8 +337,8 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-600 mb-6">
-                  "Antes eu enviava fotos pelo Google Drive e sempre dava problema. 
-                  Com a Fottufy, meus clientes escolhem as fotos super fácil e eu economizo horas de trabalho."
+                  "Antes eu enviava fotos pelo Google Drive e meus clientes copiavam tudo. 
+                  Com a Fottufy, as fotos ficam protegidas com meu logo e eles só veem o que eu quero mostrar."
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-4">
@@ -360,8 +360,8 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-600 mb-6">
-                  "Meus clientes ficaram impressionados com a profissionalidade da galeria. 
-                  Agora eles mesmos compartilham o link com familiares. Genial!"
+                  "Meus clientes ficaram impressionados com a galeria protegida. 
+                  Eles veem as fotos mas não conseguem copiar. Minha marca está sempre visível!"
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center mr-4">
@@ -383,7 +383,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-600 mb-6">
-                  "Aumentei minha produtividade em 300%! Não preciso mais ficar explicando como baixar fotos. 
+                  "Aumentei minha produtividade em 300%! As fotos ficam protegidas com minha marca e os clientes só veem as que eu quero. 
                   A Fottufy resolveu minha vida."
                 </p>
                 <div className="flex items-center">
