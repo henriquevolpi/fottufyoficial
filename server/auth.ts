@@ -222,24 +222,24 @@ async function comparePasswords(supplied: string, stored: string): Promise<boole
 }
 
 export function setupAuth(app: Express) {
-  // Configure session cookie options for maximum compatibility
+  // Configure session cookie options with enhanced security
   const sessionSettings: session.SessionOptions = {
-    // Use a strong secret for security
+    // Use the enhanced secure secret
     secret: process.env.SESSION_SECRET || "studio-development-secret-key-testing-onlyaaaaa", 
-    // These settings must be true for Replit environment to work properly
-    resave: true, 
-    saveUninitialized: true,
+    // Optimize for security vs compatibility
+    resave: false, // Don't save session if unmodified
+    saveUninitialized: false, // Don't create session until something is stored
     store: storage.sessionStore,
-    name: 'studio.sid',
+    name: 'fottufy.sid', // Use project name
     cookie: { 
-      // Must be false in development (no HTTPS)
-      secure: false,
-      // Longer session duration (30 days) to avoid frequent re-logins
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      // Allow JavaScript to read the cookie for backup recovery
-      httpOnly: false,
-      // Para Replit, usar 'lax' funciona melhor que 'none'
-      sameSite: 'lax',
+      // Enable secure cookies in production
+      secure: process.env.NODE_ENV === 'production',
+      // Reasonable session duration (7 days instead of 30)
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      // HttpOnly for security, except in development for debugging
+      httpOnly: process.env.NODE_ENV === 'production',
+      // Stricter sameSite in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: '/',
       // No domain restriction for better compatibility
       domain: undefined
@@ -324,9 +324,9 @@ export function setupAuth(app: Express) {
         sendWelcomeEmail(userData.name, userData.email).catch(() => {})
       ]);
       
-      // Define a cookie da sessão primeiro, igual ao login
+      // Define a cookie da sessão primeiro, com duração segura
       if (req.session) {
-        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias (igual ao login)
+        req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias (mais seguro)
       }
       
       // Establish session by logging in the user
@@ -343,14 +343,14 @@ export function setupAuth(app: Express) {
           console.log(`Session ID: ${req.sessionID}`);
         }
         
-        // Definir o cookie de backup (igual ao login)
+        // Definir o cookie de backup com configurações mais seguras
         try {
           res.cookie('user_id', user.id, {
-            httpOnly: false,  // Precisa ser acessível pelo JS
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            httpOnly: process.env.NODE_ENV === 'production', // Mais seguro em produção
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
             path: '/',
-            sameSite: 'lax',
-            secure: false,
+            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
             domain: undefined
           });
         } catch (cookieError) {
@@ -391,8 +391,8 @@ export function setupAuth(app: Express) {
         });
       }
       
-      // Define a cookie da sessão
-      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+      // Define a cookie da sessão com duração mais segura
+      req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias
       
       // Definir o usuario nas sessões
       req.login(user, async (err) => {
@@ -406,15 +406,15 @@ export function setupAuth(app: Express) {
           console.error("Error updating lastLoginAt:", updateError);
         }
         
-        // Tentar usar o nome padrão do domínio da aplicação em vez de usar códigos rígidos
+        // Configurar cookie com opções de segurança aprimoradas
         try {
-          // Informação sobre o domínio para o javascript do cliente
+          // Cookie de backup para recuperação de sessão
           res.cookie('user_id', user.id, {
-            httpOnly: false,  // Precisa ser acessível pelo JS
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            httpOnly: process.env.NODE_ENV === 'production', // Mais seguro em produção
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
             path: '/',
-            sameSite: 'lax',
-            secure: false,
+            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
             // Força o cookie a ser definido mesmo em contextos de iframe
             domain: undefined
           });

@@ -9,6 +9,18 @@ import { testConnection, pool, startDbHealthCheck } from "./db";
 import { storage as dbStorage } from "./storage";
 // Import backup system
 import { initializeBackupScheduler } from "./backup/backup-scheduler";
+// Import security middleware
+import { 
+  securityHeaders, 
+  generalRateLimit, 
+  authRateLimit, 
+  uploadRateLimit, 
+  advancedUploadValidation, 
+  securityLogger, 
+  corsConfig, 
+  generateSecureSessionSecret, 
+  inputSanitizer 
+} from "./security";
 // Import necessary environment variables
 import dotenv from "dotenv";
 // Carregar variáveis de ambiente do arquivo .env
@@ -26,10 +38,10 @@ if (!global.gc) {
   }
 }
 
-// Definir variável de ambiente para a sessão se não estiver definida
-if (!process.env.SESSION_SECRET) {
-  process.env.SESSION_SECRET = "studio-foto-session-secret-key-2023";
-  console.log("SESSION_SECRET definido com valor padrão");
+// Definir variável de ambiente para a sessão de forma mais segura
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === "studio-foto-session-secret-key-2023") {
+  process.env.SESSION_SECRET = generateSecureSessionSecret();
+  console.log("[SECURITY] SESSION_SECRET definido com valor seguro");
 }
 
 // Create upload directory if it doesn't exist
@@ -89,16 +101,33 @@ export const upload = multer({
   storage: multerStorage,
   fileFilter,
   limits: {
-    fileSize: 1000 * 1024 * 1024, // 1000MB (1GB) limit - efetivamente sem limite para uso normal
+    fileSize: 500 * 1024 * 1024, // 500MB limit - mais seguro que 1GB
   }
 });
 
 // Initialize Express and configure middleware
 const app = express();
 
+// ==================== SECURITY MIDDLEWARE ====================
+// Headers de segurança básicos (helmet)
+app.use(securityHeaders);
+
+// Rate limiting geral conservador
+app.use(generalRateLimit);
+
+// Sanitização básica de input
+app.use(inputSanitizer);
+
+// Logger de segurança
+app.use(securityLogger);
+
+// Validação avançada de uploads
+app.use(advancedUploadValidation);
+// ============================================================
+
 // Configure essential middleware first
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Limite para JSON
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Limite para form data
 
 // Servir arquivos estáticos do diretório public
 // IMPORTANTE: este middleware deve estar antes de qualquer outro que manipule as rotas
@@ -138,17 +167,22 @@ app.use(express.static(path.join(process.cwd(), 'public'), {
 // We must use the cors package rather than custom headers to ensure consistent behavior
 import cors from 'cors';
 
-// Configure CORS with credentials support
-app.use(cors({
-  origin: true, // Allow the requesting origin (dynamically)
-  credentials: true, // This is essential for cookies to work
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
-}));
+// Configure CORS with enhanced security
+app.use(cors(corsConfig));
 
 // Set up authentication BEFORE any route handlers
 import { setupAuth } from './auth';
 setupAuth(app);
+
+// Rate limiting para autenticação
+app.use('/api/auth', authRateLimit);
+app.use('/api/login', authRateLimit);
+app.use('/api/reset-password', authRateLimit);
+
+// Rate limiting para uploads
+app.use('/api/upload', uploadRateLimit);
+app.use('/api/projects/*/upload', uploadRateLimit);
+app.use('/api/projects/*/add-photos', uploadRateLimit);
 
 // Configure session logging middleware (otimizado - apenas erros em produção)
 app.use((req, res, next) => {
