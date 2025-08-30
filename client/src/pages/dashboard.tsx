@@ -905,7 +905,7 @@ function UploadModal({
             ✨ Criar Novo Projeto
           </DialogTitle>
           <DialogDescription className="text-slate-600 text-base leading-relaxed">
-            Preencha os detalhes do projeto e faça upload das suas fotos. Todos os campos são obrigatórios para criar uma experiência completa.
+            <span className="bg-green-100">Preencha os detalhes do projeto e faça upload das suas fotos. Fotos de no máximo 2mb, para melhor conforto dos clientes.</span>
           </DialogDescription>
         </DialogHeader>
         
