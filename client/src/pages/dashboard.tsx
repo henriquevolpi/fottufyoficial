@@ -1779,7 +1779,7 @@ export default function Dashboard() {
         {/* Decorative bottom wave */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200/60 to-transparent"></div>
       </div>
-      <main className="container mx-auto py-12 px-6">
+      <main className="container mx-auto py-12 px-3 sm:px-6">
         {/* Banner Image - Temporarily hidden */}
         {/* <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0">
           <img 
@@ -1807,7 +1807,7 @@ export default function Dashboard() {
         
         <Statistics setLocation={setLocation} />
         
-        <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white/20 p-8 mb-8">
+        <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white/20 p-4 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
             <div>
               <h2 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2">
