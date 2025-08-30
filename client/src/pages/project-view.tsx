@@ -31,7 +31,8 @@ import {
   MessageCircle,
   Plus,
   Filter,
-  FilterX
+  FilterX,
+  ArrowUp
 } from "lucide-react";
 import {
   Dialog,
@@ -98,6 +99,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const [photoComments, setPhotoComments] = useState<Record<string, any[]>>({});
   const [expandedCommentPhoto, setExpandedCommentPhoto] = useState<string | null>(null);
   const [showOnlySelected, setShowOnlySelected] = useState(false);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -757,6 +759,25 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       setShowConfirmDialog(false);
     }
   };
+
+  // Função para fazer scroll suave para o topo
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Controlar visibilidade do botão de scroll to top
+  useEffect(() => {
+    const handleScroll = () => {
+      // Mostrar o botão quando o usuário rolar mais de 300px para baixo
+      setShowScrollToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   if (loading) {
     return (
@@ -1199,6 +1220,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* Botão scroll to top - mobile apenas */}
+      {showScrollToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 md:hidden w-10 h-10 bg-gray-800/60 hover:bg-gray-700/80 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 backdrop-blur-sm"
+          aria-label="Voltar ao topo"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
       )}
     </div>
   );
