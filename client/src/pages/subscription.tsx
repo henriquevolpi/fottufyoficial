@@ -64,7 +64,7 @@ export default function SubscriptionPage() {
       borderColor: "border-purple-400",
       badge: "Mais Popular",
       features: [
-        "Até 15.000 fotos por mês",
+        "Até 17.000 fotos por mês",
         "Galerias ilimitadas",
         "Perfeito para fotógrafos que atendem vários clientes na semana",
         "Suporte prioritário"
@@ -81,7 +81,7 @@ export default function SubscriptionPage() {
       borderColor: "border-amber-200",
       badge: "Premium",
       features: [
-        "Até 35.000 fotos por mês",
+        "Até 40.000 fotos por mês",
         "Galerias ilimitadas",
         "Indicado para estúdios ou grandes equipes",
         "Suporte prioritário"
@@ -268,7 +268,7 @@ export default function SubscriptionPage() {
             
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-2">Meus clientes precisam pagar?</h3>
-              <p className="text-gray-600 text-sm">Não! Seus clientes acessam e baixam as fotos gratuitamente.</p>
+              <p className="text-gray-600 text-sm">Não! Seus clientes acessam e escolhem as fotos gratuitamente.</p>
             </div>
             
             <div className="bg-white rounded-xl p-6 shadow-sm">
@@ -277,8 +277,8 @@ export default function SubscriptionPage() {
             </div>
             
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-2">Tem limite de downloads?</h3>
-              <p className="text-gray-600 text-sm">Não! Seus clientes podem baixar as fotos quantas vezes quiserem.</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Tem limite de uploads?</h3>
+              <p className="text-gray-600 text-sm">Sim dependendo do plano, porém ao apagar galerias e fotos de um cliente, o mesmo limite volta no mesmo instante!.</p>
             </div>
           </div>
         </div>
