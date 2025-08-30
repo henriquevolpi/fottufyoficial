@@ -196,6 +196,7 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Reduced upload file size limit from 1GB to 500MB for better security posture
   - Modified session name to 'fottufy.sid' for better project branding
   - All security improvements tested and verified working without breaking existing functionality
+  - CORS configuration updated to support production domain (https://fottufy.com) - Fixed white screen issue in production
 
 ## User Preferences
 

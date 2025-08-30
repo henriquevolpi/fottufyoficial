@@ -173,6 +173,8 @@ export const corsConfig = {
       'http://localhost:5000',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5000',
+      'https://fottufy.com',
+      'https://www.fottufy.com',
       process.env.FRONTEND_URL,
       process.env.ALLOWED_ORIGIN
     ].filter(Boolean);

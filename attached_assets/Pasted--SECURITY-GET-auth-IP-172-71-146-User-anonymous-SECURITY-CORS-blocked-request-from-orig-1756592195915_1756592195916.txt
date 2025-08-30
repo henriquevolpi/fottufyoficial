@@ -1,0 +1,26 @@
+[SECURITY] GET /auth - IP: 172.71.146*** - User: anonymous
+[SECURITY] CORS blocked request from origin: https://fottufy.com
+Erro capturado pelo middleware global: Error: Origem não permitida pelo CORS
+    at origin (file:///opt/render/project/src/dist/index.js:8330:16)
+    at /opt/render/project/src/node_modules/cors/lib/index.js:219:13
+    at optionsCallback (/opt/render/project/src/node_modules/cors/lib/index.js:199:9)
+    at corsMiddleware (/opt/render/project/src/node_modules/cors/lib/index.js:204:7)
+    at Layer.handle [as handle_request] (/opt/render/project/src/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/opt/render/project/src/node_modules/express/lib/router/index.js:328:13)
+    at /opt/render/project/src/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/opt/render/project/src/node_modules/express/lib/router/index.js:346:12)
+    at next (/opt/render/project/src/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/opt/render/project/src/node_modules/serve-static/index.js:121:7)
+[SECURITY] CORS blocked request from origin: https://fottufy.com
+Erro capturado pelo middleware global: Error: Origem não permitida pelo CORS
+    at origin (file:///opt/render/project/src/dist/index.js:8330:16)
+    at /opt/render/project/src/node_modules/cors/lib/index.js:219:13
+    at optionsCallback (/opt/render/project/src/node_modules/cors/lib/index.js:199:9)
+    at corsMiddleware (/opt/render/project/src/node_modules/cors/lib/index.js:204:7)
+    at Layer.handle [as handle_request] (/opt/render/project/src/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/opt/render/project/src/node_modules/express/lib/router/index.js:328:13)
+    at /opt/render/project/src/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/opt/render/project/src/node_modules/express/lib/router/index.js:346:12)
+    at next (/opt/render/project/src/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/opt/render/project/src/node_modules/serve-static/index.js:121:7)
+Diretório temporário /opt/render/project/src/tmp limpo com sucesso
