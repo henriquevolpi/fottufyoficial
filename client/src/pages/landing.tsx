@@ -77,7 +77,7 @@ export default function LandingPage() {
               Crie galerias protegidas com seu logo onde clientes veem mas não conseguem copiar suas fotos.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <div className="flex justify-center items-center mb-12">
               <Button 
                 size="lg"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform transition-all hover:scale-105"
@@ -85,14 +85,6 @@ export default function LandingPage() {
               >
                 <Camera className="mr-2 h-5 w-5" />
                 Começar gratuitamente
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="px-8 py-6 text-lg font-semibold rounded-xl border-2 hover:bg-gray-50"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Ver demonstração
               </Button>
             </div>
 
@@ -449,7 +441,7 @@ export default function LandingPage() {
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Até 50 fotos</span>
+                    <span>Até 10 fotos</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
