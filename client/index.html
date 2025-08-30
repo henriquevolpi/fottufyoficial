@@ -41,6 +41,7 @@
 
     <!-- Botão flutuante do WhatsApp -->
     <a
+      id="whatsapp-button"
       href="https://wa.me/5583998185978?text=Olá,%20quero%20saber%20mais%20sobre%20a%20plataforma!"
       style="
         position: fixed;
@@ -62,6 +63,35 @@
     >
       <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp" width="34" height="34" style="filter: invert(1);" />
     </a>
+
+    <!-- Script para esconder o botão do WhatsApp na página project-view -->
+    <script>
+      (function() {
+        function toggleWhatsAppButton() {
+          const whatsappButton = document.getElementById('whatsapp-button');
+          if (whatsappButton) {
+            // Esconde o botão se estiver na página project-view
+            if (window.location.pathname.includes('/project-view/')) {
+              whatsappButton.style.display = 'none';
+            } else {
+              whatsappButton.style.display = 'flex';
+            }
+          }
+        }
+
+        // Executa quando a página carrega
+        toggleWhatsAppButton();
+
+        // Monitora mudanças de rota (para SPAs)
+        let currentPath = window.location.pathname;
+        setInterval(function() {
+          if (window.location.pathname !== currentPath) {
+            currentPath = window.location.pathname;
+            toggleWhatsAppButton();
+          }
+        }, 100);
+      })();
+    </script>
 
   </body>
 </html>

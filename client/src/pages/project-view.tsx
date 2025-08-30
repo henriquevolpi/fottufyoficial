@@ -930,7 +930,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         <>
                           <Filter className="w-4 h-4 mr-1" />
                           <span className="hidden sm:inline">Apenas Selecionadas</span>
-                          <span className="sm:hidden">Filtrar</span>
+                          <span className="sm:hidden">Selecionadas</span>
                         </>
                       )}
                     </Button>
