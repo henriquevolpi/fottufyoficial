@@ -851,11 +851,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       {/* Header com Ações */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div className="w-full">
             
-            <div className="mt-4 md:mt-0 flex items-center ml-auto">
+            {/* Seção de ações - responsiva com wrap */}
+            <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-3">
               {isFinalized ? (
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1 flex items-center">
                     <CheckCircle2 className="w-4 h-4 mr-1" />
                     Seleção finalizada
@@ -867,7 +868,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="flex items-center"
+                          className="flex items-center flex-shrink-0"
                         >
                           <FileText className="w-4 h-4 mr-1" />
                           Ver Fotos Selecionadas
@@ -904,10 +905,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   )}
                 </div>
               ) : (
-                <div className="space-x-2 flex items-center">
-                  <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1 flex items-center">
+                <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-3">
+                  {/* Badge com contador */}
+                  <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1 flex items-center flex-shrink-0">
                     <Clock className="w-4 h-4 mr-1" />
-                    {selectedPhotos.size} de {project.photos.length} fotos selecionadas
+                    <span className="whitespace-nowrap">{selectedPhotos.size} de {project.photos.length} fotos</span>
                   </Badge>
                   
                   {/* Botão de filtro */}
@@ -916,29 +918,33 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       variant={showOnlySelected ? "default" : "outline"}
                       size="sm"
                       onClick={() => setShowOnlySelected(!showOnlySelected)}
-                      className="flex items-center"
+                      className="flex items-center flex-shrink-0"
                     >
                       {showOnlySelected ? (
                         <>
                           <FilterX className="w-4 h-4 mr-1" />
-                          Mostrar Todas
+                          <span className="hidden sm:inline">Mostrar Todas</span>
+                          <span className="sm:hidden">Todas</span>
                         </>
                       ) : (
                         <>
                           <Filter className="w-4 h-4 mr-1" />
-                          Apenas Selecionadas
+                          <span className="hidden sm:inline">Apenas Selecionadas</span>
+                          <span className="sm:hidden">Filtrar</span>
                         </>
                       )}
                     </Button>
                   )}
                   
-                  <div className="space-x-2">
+                  {/* Botões principais */}
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button 
                       size="sm"
                       onClick={() => setShowConfirmDialog(true)}
-                      className="bg-gradient-to-r from-pink-700 via-pink-500 to-fuchsia-400 text-white font-semibold border-none shadow hover:brightness-110 transition-colors"
+                      className="bg-gradient-to-r from-pink-700 via-pink-500 to-fuchsia-400 text-white font-semibold border-none shadow hover:brightness-110 transition-colors flex-shrink-0"
                     >
-                      Finalizar Seleção
+                      <span className="hidden sm:inline">Finalizar Seleção</span>
+                      <span className="sm:hidden">Finalizar</span>
                     </Button>
                     
                     {selectedPhotos.size > 0 && (
@@ -947,10 +953,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="flex items-center"
+                            className="flex items-center flex-shrink-0"
                           >
                             <FileText className="w-4 h-4 mr-1" />
-                            Ver Selecionadas
+                            <span className="hidden sm:inline">Ver Selecionadas</span>
+                            <span className="sm:hidden">Ver</span>
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
