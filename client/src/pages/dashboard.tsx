@@ -1211,7 +1211,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               <Camera className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
-              <CardTitle className="text-lg font-bold text-[#018c05]">
+              <CardTitle className="tracking-tight text-lg font-bold text-[#018c05]">
                 Uploads Mensais
               </CardTitle>
               <p className="text-sm text-neutral-600 font-medium">

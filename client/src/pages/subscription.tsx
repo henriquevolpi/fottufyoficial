@@ -116,7 +116,7 @@ export default function SubscriptionPage() {
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               impulsionar
             </span>{' '}
-            seu negócio
+            seu negócio de fotografia
           </h1>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
