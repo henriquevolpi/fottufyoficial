@@ -732,9 +732,8 @@ export default function ProjectEdit() {
                   onClick={() => setLocation(`/project/${project.id}`)}
                   disabled={saving}
                 >
-                  Voltar
+                  Cancelar
                 </Button>
-                {/* Botão de salvar removido temporariamente
                 <Button 
                   type="submit"
                   disabled={saving}
@@ -751,7 +750,6 @@ export default function ProjectEdit() {
                     </>
                   )}
                 </Button>
-                */}
               </div>
             </form>
           </Form>
