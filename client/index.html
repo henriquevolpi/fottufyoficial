@@ -64,14 +64,15 @@
       <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp" width="34" height="34" style="filter: invert(1);" />
     </a>
 
-    <!-- Script para esconder o botão do WhatsApp na página project-view -->
+    <!-- Script para esconder o botão do WhatsApp na página project-view e project -->
     <script>
       (function() {
         function toggleWhatsAppButton() {
           const whatsappButton = document.getElementById('whatsapp-button');
           if (whatsappButton) {
-            // Esconde o botão se estiver na página project-view
-            if (window.location.pathname.includes('/project-view/')) {
+            // Esconde o botão se estiver na página project-view ou project
+            if (window.location.pathname.includes('/project-view/') || 
+                window.location.pathname.includes('/project/')) {
               whatsappButton.style.display = 'none';
             } else {
               whatsappButton.style.display = 'flex';

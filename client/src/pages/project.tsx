@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PhotoCard from "@/components/photo-card";
 import { Project } from "@shared/schema";
-import { Check, Edit, ArrowLeftCircle, FileText, MessageCircle, Eye, Loader2 } from "lucide-react";
+import { Check, Edit, ArrowLeftCircle, FileText, MessageCircle, Eye, Loader2, ArrowUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { CopyNamesButton } from "@/components/copy-names-button";
@@ -28,6 +28,7 @@ export default function ProjectView() {
   const [showSelectedFilenamesDialog, setShowSelectedFilenamesDialog] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: [`/api/projects/${id}`],
   });
@@ -63,6 +64,25 @@ export default function ProjectView() {
       }
     }
   }, [project]);
+
+  // Função para fazer scroll suave para o topo
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Controlar visibilidade do botão de scroll to top
+  useEffect(() => {
+    const handleScroll = () => {
+      // Mostrar o botão quando o usuário rolar mais de 300px para baixo
+      setShowScrollToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const togglePhotoSelection = (photoId: string) => {
     if (isFinalized) return;
@@ -120,68 +140,73 @@ export default function ProjectView() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back and Edit buttons */}
-        <div className="flex justify-between items-center mb-6">
+        {/* Back and Edit buttons - responsivo */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <Button 
             variant="ghost" 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-fit"
             onClick={() => setLocation("/dashboard")}
           >
             <ArrowLeftCircle className="h-5 w-5" />
-            Voltar para Dashboard
+            <span className="hidden sm:inline">Voltar para Dashboard</span>
+            <span className="sm:hidden">Voltar</span>
           </Button>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
             {/* Comments button */}
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-[18px] font-bold"
+              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-[18px] font-bold flex-shrink-0"
               onClick={() => setShowCommentsModal(true)}
             >
-              Comentários
+              <span className="hidden sm:inline">Comentários</span>
+              <span className="sm:hidden">Comentários</span>
               <MessageCircle className="h-3 w-3 ml-1" />
             </Button>
             
             <Button 
               variant="outline" 
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 flex-shrink-0"
               onClick={() => setLocation(`/project/${id}/edit`)}
             >
               <Edit className="h-4 w-4" />
-              Editar Galeria
+              <span className="hidden sm:inline">Editar Galeria</span>
+              <span className="sm:hidden">Editar</span>
             </Button>
           </div>
         </div>
         
         <div className="text-center mb-12">
           <h1
-            className="text-4xl font-bold bg-gradient-to-r from-[#173370] via-[#2563eb] via-60% to-[#a6cbfa] bg-clip-text text-transparent"
+            className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-[#173370] via-[#2563eb] via-60% to-[#a6cbfa] bg-clip-text text-transparent"
           >
             {project.name}
           </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+          <p className="mt-3 max-w-2xl mx-auto text-lg sm:text-xl text-gray-500 sm:mt-4 px-4">
             {isFinalized
               ? "Obrigado por fazer sua seleção."
               : "Selecione as fotos que você gostaria de manter clicando nelas."}
           </p>
-          <div className="mt-4 flex items-center justify-center space-x-4">
-            <div className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700">
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
+            <div className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 flex-shrink-0">
               <span className="font-medium">{selectedPhotos.length}</span>
               <span className="mx-1">de</span>
               <span className="font-medium">{project.photos?.length || 0}</span>
-              <span className="ml-1">selecionadas</span>
+              <span className="ml-1 hidden sm:inline">selecionadas</span>
+              <span className="ml-1 sm:hidden">fotos</span>
             </div>
             
             {selectedPhotos.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center"
+                className="flex items-center flex-shrink-0"
                 onClick={() => setShowSelectedFilenamesDialog(true)}
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Ver fotos selecionadas
+                <span className="hidden sm:inline">Ver fotos selecionadas</span>
+                <span className="sm:hidden">Ver selecionadas</span>
               </Button>
             )}
 
@@ -206,15 +231,26 @@ export default function ProjectView() {
         
         {/* Floating finalize button - only show if not finalized */}
         {!isFinalized && (
-          <div className="fixed bottom-8 right-8">
+          <div className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-40">
             <Button
               onClick={handleFinalizeSelection}
               disabled={selectedPhotos.length === 0 || isSubmitting}
-              className="flex items-center justify-center w-16 h-16 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
-              <Check className="h-8 w-8" />
+              <Check className="h-6 w-6 sm:h-8 sm:w-8" />
             </Button>
           </div>
+        )}
+
+        {/* Botão scroll to top - mobile apenas */}
+        {showScrollToTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-20 right-4 sm:bottom-24 sm:right-8 z-30 md:hidden w-10 h-10 bg-gray-800/60 hover:bg-gray-700/80 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 backdrop-blur-sm"
+            aria-label="Voltar ao topo"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
         )}
       </div>
       
