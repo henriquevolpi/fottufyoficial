@@ -1169,92 +1169,123 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   };
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
       {/* Active projects card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center">
-            <BarChart className="h-5 w-5 mr-2 text-blue-500" />
-            Projetos Ativos
-          </CardTitle>
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 via-white to-blue-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <BarChart className="h-6 w-6 text-white" />
+            </div>
+            <div className="text-right">
+              <CardTitle className="text-lg font-bold text-gray-900">
+                Projetos Ativos
+              </CardTitle>
+              <p className="text-sm text-blue-600 font-medium">
+                Em andamento
+              </p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {isLoading ? (
-            <Skeleton className="h-10 w-16" />
+            <Skeleton className="h-12 w-20" />
           ) : (
-            <>
-              <div className="text-3xl font-bold">
+            <div className="text-right">
+              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                 {data?.activeProjects || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Projetos em andamento
+                Projetos aguardando revisão
               </p>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
       
       {/* Monthly uploads card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center">
-            <Camera className="h-5 w-5 mr-2 text-green-500" />
-            Uploads Mensais
-          </CardTitle>
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 via-white to-emerald-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Camera className="h-6 w-6 text-white" />
+            </div>
+            <div className="text-right">
+              <CardTitle className="text-lg font-bold text-gray-900">
+                Uploads Mensais
+              </CardTitle>
+              <p className="text-sm text-green-600 font-medium">
+                Este mês
+              </p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {isLoading ? (
-            <Skeleton className="h-10 w-16" />
+            <Skeleton className="h-12 w-20" />
           ) : (
-            <>
-              <div className="text-3xl font-bold">
+            <div className="text-right">
+              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-800 bg-clip-text text-transparent">
                 {data?.photosThisMonth || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Fotos enviadas este mês
+                Fotos enviadas em {new Date().toLocaleDateString('pt-BR', { month: 'long' })}
               </p>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
 
-
-      
-
-
       {/* Upload usage card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-1xl flex items-center font-bold">
-            <CreditCard className="h-6 w-6 mr-3 text-purple-500" />
-            Plano: {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm text-gray-500">Uso de Uploads</span>
-            <span className="text-sm font-medium">
-              {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
-            </span>
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 via-white to-violet-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <CreditCard className="h-6 w-6 text-white" />
+            </div>
+            <div className="text-right">
+              <CardTitle className="text-lg font-bold text-gray-900">
+                Plano {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
+              </CardTitle>
+              <p className="text-sm text-purple-600 font-medium">
+                Assinatura ativa
+              </p>
+            </div>
           </div>
-          <Progress value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} className="h-2" />
-          <p className="text-xs text-gray-500 mt-2">
-            {planInfo.planType === "unlimited" 
-              ? "Plano com uploads ilimitados" 
-              : `${planInfo.percentageUsed}% do limite de uploads utilizado`}
-          </p>
+        </CardHeader>
+        <CardContent className="pt-0 pb-4">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Uso de Uploads</span>
+              <span className="text-sm font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit.toLocaleString()}
+              </span>
+            </div>
+            <div className="relative">
+              <Progress 
+                value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} 
+                className="h-3 bg-gray-200"
+              />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 opacity-20"></div>
+            </div>
+            <p className="text-xs text-gray-600 font-medium">
+              {planInfo.planType === "unlimited" 
+                ? "✨ Uploads ilimitados ativados" 
+                : `${planInfo.percentageUsed}% do limite mensal utilizado`}
+            </p>
+          </div>
         </CardContent>
-        <CardFooter className="pl-4 pb-4 pt-4 bg-transparent flex items-center">
+        <CardFooter className="pt-0 pb-6">
           <Button 
             size="md"
-            className="text-base font-normal px-7 py-2 rounded-full flex items-center
-              bg-white border-2 border-blue-600 text-blue-600
-              hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700
-              shadow-none transition-all duration-150"
+            className="w-full font-semibold py-3 rounded-xl transition-all duration-300
+              bg-gradient-to-r from-purple-500 to-violet-600 text-white 
+              hover:from-purple-600 hover:to-violet-700 hover:scale-105
+              shadow-lg hover:shadow-xl border-0"
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />
-            Ver Planos de Assinatura
+            Gerenciar Plano
           </Button>
         </CardFooter>
       </Card>
