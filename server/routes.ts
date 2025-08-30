@@ -2264,12 +2264,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/projects/:id/watermark", authenticate, requireActiveUser, async (req: Request, res: Response) => {
     try {
       const idParam = req.params.id;
-      const { showWatermark } = req.body;
+      const { showWatermark, watermarkIntensity, watermarkColor } = req.body;
       
-      console.log(`[WATERMARK] Atualizando marca d'água do projeto ${idParam} para: ${showWatermark}`);
+      console.log(`[WATERMARK] Atualizando marca d'água do projeto ${idParam}:`, {
+        showWatermark,
+        watermarkIntensity,
+        watermarkColor
+      });
       
+      // Validações
       if (typeof showWatermark !== 'boolean') {
         return res.status(400).json({ message: "showWatermark must be a boolean" });
+      }
+      
+      if (watermarkIntensity !== undefined && (typeof watermarkIntensity !== 'number' || watermarkIntensity < 0 || watermarkIntensity > 100)) {
+        return res.status(400).json({ message: "watermarkIntensity must be a number between 0 and 100" });
+      }
+      
+      if (watermarkColor !== undefined && !['white', 'gray'].includes(watermarkColor)) {
+        return res.status(400).json({ message: "watermarkColor must be 'white' or 'gray'" });
       }
       
       const project = await storage.getProject(idParam);
@@ -2285,7 +2298,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot modify projects of other photographers" });
       }
       
-      const updatedProject = await storage.updateProjectWatermark(project.id, showWatermark);
+      const updatedProject = await storage.updateProjectWatermark(
+        project.id, 
+        showWatermark, 
+        watermarkIntensity, 
+        watermarkColor
+      );
       
       if (!updatedProject) {
         return res.status(404).json({ message: "Project not found" });
