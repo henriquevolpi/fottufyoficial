@@ -638,10 +638,10 @@ export default function LandingPage() {
 
             <Card className="border-0 shadow-lg">
               <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-3">Tem limite de downloads para os clientes?</h3>
+                <h3 className="text-xl font-bold mb-3">Como funciona a proteção das fotos?</h3>
                 <p className="text-gray-600">
-                  Não! Seus clientes podem baixar as fotos selecionadas quantas vezes quiserem. 
-                  Eles também podem compartilhar o link com familiares e amigos.
+                  Suas fotos ficam protegidas com marca d'água personalizada. Os clientes podem visualizar e selecionar facilmente, 
+                  mas não conseguem copiar ou salvar as imagens. Máxima proteção para seu trabalho!
                 </p>
               </CardContent>
             </Card>
