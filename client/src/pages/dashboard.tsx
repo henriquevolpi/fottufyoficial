@@ -899,28 +899,32 @@ function UploadModal({
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-auto">
-        <DialogHeader>
-          <DialogTitle>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400 font-bold text-2xl">
-              Criar Novo Projeto
-            </span>
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[700px] max-h-[90vh] overflow-y-auto mx-auto backdrop-blur-xl bg-gradient-to-br from-white/95 via-blue-50/20 to-indigo-50/30 shadow-2xl border border-white/20 rounded-2xl">
+        <DialogHeader className="sticky top-0 z-10 bg-gradient-to-br from-white/95 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm pb-6 rounded-t-2xl border-b border-blue-100/30">
+          <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            ✨ Criar Novo Projeto
           </DialogTitle>
-          <DialogDescription className="text-sm mt-1 text-black font-semibold px-2 py-1 rounded-sm bg-[#52de00]">
-            Aceitamos fotos apenas abaixo de 2mb cada, para conforto dos clientes ❤️ / Envie no máximo lotes de 400 fotos, para evitar erros no upload 📸
+          <DialogDescription className="text-slate-600 text-base leading-relaxed">
+            Preencha os detalhes do projeto e faça upload das suas fotos. Todos os campos são obrigatórios para criar uma experiência completa.
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-1">
             <FormField
               control={form.control}
               name="projectName"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da Galeria</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📋 Nome da Galeria
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Casamento de João e Maria" {...field} />
+                    <Input 
+                      placeholder="Ex: Casamento de João e Maria" 
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -931,10 +935,16 @@ function UploadModal({
               control={form.control}
               name="clientName"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Cliente</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    👤 Nome do Cliente
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: João da Silva" {...field} />
+                    <Input 
+                      placeholder="Ex: João da Silva" 
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -959,10 +969,16 @@ function UploadModal({
               control={form.control}
               name="data"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data do Evento</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📅 Data do Evento
+                  </FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input 
+                      type="date" 
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -970,11 +986,11 @@ function UploadModal({
             />
             
 
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-2">
-                Fotos do Projeto (jpeg, png, webp, até 2mb cada)
+            <div className="mt-6">
+              <label className="block text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                📸 Fotos do Projeto
               </label>
-              <div className="border border-dashed border-gray-300 rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition relative">
+              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center cursor-pointer bg-gradient-to-br from-slate-50/50 to-blue-50/30 hover:border-blue-300 hover:shadow-md transition-all duration-300 relative">
                 <input
                   type="file"
                   accept="image/*"
@@ -983,13 +999,15 @@ function UploadModal({
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                   disabled={isUploading}
                 />
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <Camera className="h-8 w-8 text-gray-400" />
-                  <p className="text-sm text-gray-500">
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                    <Camera className="h-8 w-8 text-white" />
+                  </div>
+                  <p className="text-base font-medium text-slate-700">
                     Clique ou arraste fotos para upload :)
                   </p>
-                  <p className="text-xs text-gray-400">
-                    (Formatos aceitos: JPG, PNG, WEBP)
+                  <p className="text-xs text-slate-500 bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200">
+                    ✨ JPG, PNG, WEBP - até 2mb cada
                   </p>
                 </div>
               </div>
@@ -997,25 +1015,30 @@ function UploadModal({
             
             {thumbnails.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">
-                  {thumbnails.length} foto(s) selecionada(s)
-                </h4>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <h4 className="text-sm font-semibold text-slate-700">
+                    {thumbnails.length} foto(s) selecionada(s)
+                  </h4>
+                </div>
                 {/* Lista simples de nomes de arquivos sem miniaturas */}
-                <div className="border rounded-md max-h-[260px] overflow-y-auto">
+                <div className="border border-slate-200 rounded-xl max-h-[280px] overflow-y-auto bg-white/60 backdrop-blur-sm shadow-sm">
                   {selectedFiles.map((file, index) => (
                     <div 
                       key={index} 
-                      className="flex items-center justify-between py-2 px-3 border-b last:border-b-0 hover:bg-gray-50"
+                      className="flex items-center justify-between py-3 px-4 border-b border-slate-100 last:border-b-0 hover:bg-blue-50/50 transition-all group"
                     >
-                      <div className="flex items-center space-x-2 overflow-hidden">
-                        <Camera className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <p className="text-sm truncate">{file.name}</p>
+                      <div className="flex items-center space-x-3 overflow-hidden">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
+                          <Camera className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
                       </div>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         onClick={() => removeFile(index)}
                       >
                         <X className="h-4 w-4" />
@@ -1062,30 +1085,32 @@ function UploadModal({
               </div>
             )}
             
-            <DialogFooter className="sticky bottom-0 pt-4 mt-4 bg-white border-t z-10 flex flex-col sm:flex-row gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose} 
-                disabled={isUploading}
-                className="w-full sm:w-auto"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isUploading}
-                className="w-full sm:w-auto"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  "Criar Projeto"
-                )}
-              </Button>
+            <DialogFooter className="sticky bottom-0 pt-6 mt-8 bg-gradient-to-br from-white/95 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm border-t border-blue-100/30 rounded-b-2xl z-10">
+              <div className="flex gap-3 w-full">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose} 
+                  disabled={isUploading}
+                  className="flex-1 h-12 border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-medium rounded-xl transition-all"
+                >
+                  ❌ Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isUploading}
+                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 border-0"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ⏳ Enviando...
+                    </>
+                  ) : (
+                    "✨ Criar Projeto"
+                  )}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
