@@ -1171,17 +1171,17 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
       {/* Active projects card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 via-white to-blue-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-slate-50 via-white to-gray-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-12 h-12 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <BarChart className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
               <CardTitle className="text-lg font-bold text-gray-900">
                 Projetos Ativos
               </CardTitle>
-              <p className="text-sm text-blue-600 font-medium">
+              <p className="text-sm text-slate-600 font-medium">
                 Em andamento
               </p>
             </div>
@@ -1192,7 +1192,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
             <Skeleton className="h-12 w-20" />
           ) : (
             <div className="text-right">
-              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+              <div className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent">
                 {data?.activeProjects || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
@@ -1204,17 +1204,17 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
       </Card>
       
       {/* Monthly uploads card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 via-white to-emerald-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-neutral-50 via-white to-stone-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-12 h-12 bg-gradient-to-r from-neutral-600 to-stone-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <Camera className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
               <CardTitle className="text-lg font-bold text-gray-900">
                 Uploads Mensais
               </CardTitle>
-              <p className="text-sm text-green-600 font-medium">
+              <p className="text-sm text-neutral-600 font-medium">
                 Este mês
               </p>
             </div>
@@ -1225,7 +1225,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
             <Skeleton className="h-12 w-20" />
           ) : (
             <div className="text-right">
-              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-800 bg-clip-text text-transparent">
+              <div className="text-4xl font-bold bg-gradient-to-r from-neutral-700 to-stone-800 bg-clip-text text-transparent">
                 {data?.photosThisMonth || 0}
               </div>
               <p className="text-sm text-gray-500 mt-1">
