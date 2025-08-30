@@ -1178,7 +1178,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               <BarChart className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
-              <CardTitle className="text-lg font-bold text-gray-900">
+              <CardTitle className="text-lg font-bold text-[#1a8f1a]">
                 Projetos Ativos
               </CardTitle>
               <p className="text-sm text-slate-600 font-medium">
