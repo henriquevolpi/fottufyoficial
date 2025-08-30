@@ -3,10 +3,18 @@ import React, { useEffect, useRef } from 'react';
 interface WatermarkOverlayProps {
   children: React.ReactNode;
   enabled: boolean;
+  intensity?: number; // 0-100, padrão 25
+  color?: 'white' | 'gray'; // padrão 'white'
   className?: string;
 }
 
-export function WatermarkOverlay({ children, enabled, className = "" }: WatermarkOverlayProps) {
+export function WatermarkOverlay({ 
+  children, 
+  enabled, 
+  intensity = 25, 
+  color = 'white', 
+  className = "" 
+}: WatermarkOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -27,12 +35,24 @@ export function WatermarkOverlay({ children, enabled, className = "" }: Watermar
       // Limpar canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Configurar estilo da marca d'água mais elegante
+      // Configurar estilo da marca d'água baseado nas configurações
       const text = '📷 fottufy';
       const fontSize = Math.max(18, Math.min(rect.width, rect.height) * 0.045);
       ctx.font = `${fontSize}px Arial, sans-serif`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'; // Branco com opacidade suave
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; // Contorno mais sutil
+      
+      // Aplicar cor e intensidade dinâmicas
+      const normalizedIntensity = intensity / 100;
+      const baseOpacity = normalizedIntensity * 0.4; // Máximo 40% de opacidade
+      const strokeOpacity = normalizedIntensity * 0.2; // Máximo 20% para contorno
+      
+      if (color === 'white') {
+        ctx.fillStyle = `rgba(255, 255, 255, ${baseOpacity})`;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${strokeOpacity})`;
+      } else {
+        ctx.fillStyle = `rgba(107, 114, 128, ${baseOpacity})`; // gray-500
+        ctx.strokeStyle = `rgba(107, 114, 128, ${strokeOpacity})`;
+      }
+      
       ctx.lineWidth = 1;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -44,8 +64,13 @@ export function WatermarkOverlay({ children, enabled, className = "" }: Watermar
       const spacingX = textWidth + 100; // Mais espaço horizontal
       const spacingY = textHeight + 60; // Mais espaço vertical
 
-      // Desenhar linhas diagonais de fundo (estilo da imagem de referência)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      // Desenhar linhas diagonais de fundo com cor dinâmica
+      const lineOpacity = normalizedIntensity * 0.08;
+      if (color === 'white') {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${lineOpacity})`;
+      } else {
+        ctx.strokeStyle = `rgba(107, 114, 128, ${lineOpacity})`;
+      }
       ctx.lineWidth = 1;
       const lineSpacing = 80;
       
@@ -83,7 +108,7 @@ export function WatermarkOverlay({ children, enabled, className = "" }: Watermar
     return () => {
       resizeObserver.disconnect();
     };
-  }, [enabled]);
+  }, [enabled, intensity, color]);
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>

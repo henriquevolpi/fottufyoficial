@@ -147,6 +147,8 @@ export const projects = pgTable("projects", {
   }[]>(),
   selectedPhotos: jsonb("selected_photos").default([]).$type<string[]>(),
   showWatermark: boolean("show_watermark").default(true), // Frontend watermark control
+  watermarkIntensity: integer("watermark_intensity").default(25), // Intensidade da marca d'água (0-100)
+  watermarkColor: text("watermark_color").default('white'), // Cor da marca d'água ('white' ou 'gray')
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -166,6 +168,8 @@ export const newProjects = pgTable("new_projects", {
   title: text("title").notNull(),
   description: text("description"),
   showWatermark: boolean("show_watermark").default(true), // Frontend watermark control
+  watermarkIntensity: integer("watermark_intensity").default(25), // Intensidade da marca d'água (0-100)
+  watermarkColor: text("watermark_color").default('white'), // Cor da marca d'água ('white' ou 'gray')
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

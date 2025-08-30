@@ -51,6 +51,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { WatermarkSettingsModal } from "@/components/WatermarkSettingsModal";
 import { CopyNamesButton } from "@/components/copy-names-button";
 import { compressMultipleImages } from "@/lib/imageCompression";
 import { PhotoComment } from "@shared/schema";
@@ -215,6 +216,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isTogglingWatermark, setIsTogglingWatermark] = useState(false);
+  const [showWatermarkModal, setShowWatermarkModal] = useState(false);
   const [modalProject, setModalProject] = useState(project);
   
   const getStatusColor = (status: string) => {
@@ -315,31 +317,33 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
     }
   };
 
-  const handleToggleWatermark = async () => {
+  const handleSaveWatermarkSettings = async (settings: { enabled: boolean; intensity: number; color: 'white' | 'gray' }) => {
     try {
       setIsTogglingWatermark(true);
       
-      const newWatermarkValue = !project.showWatermark;
-      
       await apiRequest('PATCH', `/api/projects/${project.id}/watermark`, {
-        showWatermark: newWatermarkValue
+        showWatermark: settings.enabled,
+        watermarkIntensity: settings.intensity,
+        watermarkColor: settings.color
       });
       
       // Update local state
-      project.showWatermark = newWatermarkValue;
+      project.showWatermark = settings.enabled;
+      project.watermarkIntensity = settings.intensity;
+      project.watermarkColor = settings.color;
       
       toast({
-        title: "Marca d'água atualizada",
-        description: `Marca d'água ${newWatermarkValue ? 'ativada' : 'desativada'} para este projeto.`,
+        title: "Configurações salvas",
+        description: `Marca d'água ${settings.enabled ? 'ativada' : 'desativada'} com intensidade ${settings.intensity}% e cor ${settings.color === 'white' ? 'branca' : 'cinza'}.`,
       });
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
     } catch (error) {
-      console.error('Error toggling watermark:', error);
+      console.error('Error updating watermark settings:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível alterar a configuração da marca d'água.",
+        description: "Não foi possível salvar as configurações da marca d'água.",
         variant: "destructive"
       });
     } finally {
@@ -425,9 +429,9 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
               ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 border-blue-100' 
               : 'text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border-slate-200'
             }`}
-            onClick={handleToggleWatermark}
+            onClick={() => setShowWatermarkModal(true)}
             disabled={isTogglingWatermark}
-            title={`Marca d'água ${project.showWatermark !== false ? 'ativada' : 'desativada'}`}
+            title={`Configurar marca d'água (${project.showWatermark !== false ? 'ativada' : 'desativada'})`}
           >
             {isTogglingWatermark ? (
               <>
@@ -629,6 +633,19 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Watermark Settings Modal */}
+      <WatermarkSettingsModal
+        isOpen={showWatermarkModal}
+        onClose={() => setShowWatermarkModal(false)}
+        onSave={handleSaveWatermarkSettings}
+        currentSettings={{
+          enabled: project.showWatermark !== false,
+          intensity: project.watermarkIntensity || 25,
+          color: (project.watermarkColor as 'white' | 'gray') || 'white'
+        }}
+        projectName={project?.name || project?.nome || 'Projeto'}
+      />
     </Card>
   );
 }

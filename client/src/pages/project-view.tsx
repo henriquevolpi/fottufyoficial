@@ -1021,6 +1021,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 
                 <WatermarkOverlay 
                   enabled={project.showWatermark === true} 
+                  intensity={project.watermarkIntensity || 25}
+                  color={(project.watermarkColor as 'white' | 'gray') || 'white'}
                   className="absolute inset-0 w-full h-full cursor-zoom-in group"
                 >
                   <div 
@@ -1228,6 +1230,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             {/* Imagem com watermark */}
             <WatermarkOverlay 
               enabled={project.showWatermark === true} 
+              intensity={project.watermarkIntensity || 25}
+              color={(project.watermarkColor as 'white' | 'gray') || 'white'}
               className="relative"
             >
               <img
