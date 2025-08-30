@@ -1266,7 +1266,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} 
                 className="h-3 bg-gray-200"
               />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 opacity-30"></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400 to-amber-500 opacity-40"></div>
             </div>
             <p className="text-xs text-emerald-200 font-medium">
               {planInfo.planType === "unlimited" 
