@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getPhotoUrl, getImageUrl } from "@/lib/imageUtils";
 import { WatermarkOverlay } from "@/components/WatermarkOverlay";
+import { VirtualizedPhotoGrid } from "@/components/VirtualizedPhotoGrid";
+import { useDeviceCapabilities } from "@/hooks/useVirtualization";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -74,6 +76,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   const projectId = params?.id || urlParams.id;
   const { toast } = useToast();
   const { user } = useAuth();
+  const deviceCapabilities = useDeviceCapabilities();
+  
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
@@ -97,6 +101,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Otimização: Memoizar mapa de índices para evitar findIndex repetitivo
+  const photoIndexMap = useMemo(() => {
+    if (!project?.photos) return new Map();
+    const map = new Map<string, number>();
+    project.photos.forEach((photo, index) => {
+      map.set(photo.id, index);
+    });
+    return map;
+  }, [project?.photos]);
 
   // Carrega comentários apenas quando necessário (não todos de uma vez)
   // useEffect removido para melhor performance - comentários são carregados sob demanda
@@ -172,25 +186,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     }
   }, [photoComments]);
 
-  // Função para enviar comentário
-  const handleSubmitComment = (photoId: string) => {
-    const commentText = commentTexts[photoId];
-    if (!commentText?.trim()) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, digite seu comentário.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createCommentMutation.mutate({
-      photoId,
-      clientName: "Cliente",
-      comment: commentText.trim(),
-      photoIdForClear: photoId, // Para saber qual campo limpar
-    });
-  };
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
   const adaptProject = (project: any): Project => {
@@ -533,6 +528,30 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     setCurrentPhotoIndex(photoIndex);
     setImageModalOpen(true);
   }, [project?.photos]);
+  
+  // Otimização: Handlers memoizados para o VirtualizedPhotoGrid
+  const handleCommentTextChange = useCallback((photoId: string, text: string) => {
+    setCommentTexts(prev => ({ ...prev, [photoId]: text }));
+  }, []);
+  
+  const handleSubmitComment = useCallback((photoId: string) => {
+    const commentText = commentTexts[photoId];
+    if (!commentText?.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, digite seu comentário.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCommentMutation.mutate({
+      photoId,
+      clientName: "Cliente",
+      comment: commentText.trim(),
+      photoIdForClear: photoId,
+    });
+  }, [commentTexts, toast, createCommentMutation]);
   
   // Navegar para a próxima foto no modal com cleanup de memória
   const goToNextPhoto = useCallback(() => {
@@ -994,188 +1013,23 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </div>
         ) : null}
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {project.photos
-            .filter(photo => showOnlySelected ? selectedPhotos.has(photo.id) : true)
-            .map((photo) => {
-              const originalIndex = project.photos.findIndex(p => p.id === photo.id);
-              return (
-            <Card
-              key={photo.id}
-              className={`overflow-hidden group cursor-pointer transition ${
-                isFinalized ? 'opacity-80' : 'hover:shadow-md'
-              } ${selectedPhotos.has(photo.id) ? 'ring-2 ring-primary' : ''}`}
-              onClick={() => {
-                const isProjectFinalized = isFinalized || 
-                                          project?.status === "finalizado" || 
-                                          project?.status === "Completed" || 
-                                          project?.finalizado === true;
-                if (!isProjectFinalized) {
-                  togglePhotoSelection(photo.id);
-                }
-              }}
-            >
-              <div className="relative h-64">
-                {/* Debug info - will show in development only */}
-                {/* Removed ID display */}
-                
-                <WatermarkOverlay 
-                  enabled={project.showWatermark === true} 
-                  className="absolute inset-0 w-full h-full cursor-zoom-in group"
-                >
-                  <div 
-                    className="w-full h-full"
-                    onClick={(e) => openImageModal(photo.url, originalIndex, e)}
-                  >
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200 z-20">
-                      <Maximize className="h-6 w-6 text-white" />
-                    </div>
-                    <img
-                      src={photo.url && !photo.url.includes('project-photos') ? photo.url : `https://cdn.fottufy.com/${photo.filename}`}
-                      alt="Photo"
-                      className="w-full h-full object-cover ml-[0px] mr-[0px] pl-[2px] pr-[2px] mt-[0px] mb-[0px] pt-[0px] pb-[0px]"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.jpg';
-                      }}
-                      onContextMenu={e => e.preventDefault()}
-                      title="Clique para ampliar"
-                    />
-                  </div>
-                </WatermarkOverlay>
-                
-                {/* Selection indicator */}
-                {selectedPhotos.has(photo.id) && (
-                  <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
-                    <Check className="h-5 w-5" />
-                  </div>
-                )}
-                
-                {/* Filename - mostrar nome original se disponível */}
-                <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-sm truncate">
-                  {photo.originalName || photo.filename}
-                </div>
-              </div>
-              <CardContent className="p-3 space-y-3">
-                <div className="text-center">
-                  <Button
-                    variant={selectedPhotos.has(photo.id) ? "default" : "outline"}
-                    size="sm"
-                    className={
-                      `w-full transition-colors` +
-                      (selectedPhotos.has(photo.id)
-                        ? " bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 text-white font-semibold border-none shadow"
-                        : "")
-                    }
-                    disabled={isFinalized || project?.status === "finalizado" || project?.status === "Completed" || project?.finalizado === true}
-                  >
-                    {selectedPhotos.has(photo.id) ? (
-                      <>
-                        <Check className="mr-1 h-4 w-4" /> Selecionado
-                      </>
-                    ) : (
-                      "Selecionar"
-                    )}
-                  </Button>
-                </div>
-
-                {/* Comment Button */}
-                <div className="border-t pt-3" onClick={(e) => e.stopPropagation()}>
-                  {selectedPhotos.has(photo.id) ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCommentSection(photo.id);
-                      }}
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      {photoComments[photo.id] && photoComments[photo.id].length > 0 
-                        ? `Comentários (${photoComments[photo.id].length})`
-                        : "Comentar"
-                      }
-                    </Button>
-                  ) : (
-                    <div className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-gray-400 cursor-not-allowed"
-                        disabled
-                      >
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Selecione a foto para comentar
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Expanded Comment Section - Only for selected photos */}
-                {expandedCommentPhoto === photo.id && selectedPhotos.has(photo.id) && (
-                  <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2" onClick={(e) => e.stopPropagation()}>
-                    {/* Comment Text Area */}
-                    <div>
-                      <Textarea
-                        placeholder="Digite seu comentário sobre esta foto..."
-                        value={commentTexts[photo.id] || ""}
-                        onChange={(e) => setCommentTexts(prev => ({ 
-                          ...prev, 
-                          [photo.id]: e.target.value 
-                        }))}
-                        className="text-xs min-h-[60px] resize-none"
-                        rows={2}
-                      />
-                    </div>
-
-                    {/* Submit Comment Button */}
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="w-full text-xs"
-                      onClick={() => handleSubmitComment(photo.id)}
-                      disabled={createCommentMutation.isPending || !commentTexts[photo.id]?.trim()}
-                    >
-                      {createCommentMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        "Enviar Comentário"
-                      )}
-                    </Button>
-
-                    {/* Existing Comments Display */}
-                    {photoComments[photo.id] && photoComments[photo.id].length > 0 && (
-                      <div className="border-t mt-3 pt-3 space-y-2">
-                        <div className="text-xs font-medium text-gray-600">
-                          Comentários anteriores ({photoComments[photo.id].length}):
-                        </div>
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {photoComments[photo.id].map((comment, idx) => (
-                            <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
-                              <div className="flex justify-end mb-1">
-                                <span className="text-gray-400 text-xs">
-                                  {new Date(comment.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-gray-600 text-xs leading-relaxed">
-                                {comment.comment}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );})}
-        
-        </div>
+        {/* Grid otimizado com virtualização */}
+        <VirtualizedPhotoGrid
+          photos={project.photos}
+          selectedPhotos={selectedPhotos}
+          isFinalized={isFinalized}
+          showWatermark={project.showWatermark === true}
+          showOnlySelected={showOnlySelected}
+          commentTexts={commentTexts}
+          photoComments={photoComments}
+          expandedCommentPhoto={expandedCommentPhoto}
+          isCommentMutationPending={createCommentMutation.isPending}
+          onToggleSelection={togglePhotoSelection}
+          onOpenModal={openImageModal}
+          onToggleCommentSection={toggleCommentSection}
+          onCommentTextChange={handleCommentTextChange}
+          onSubmitComment={handleSubmitComment}
+        />
       </main>
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
