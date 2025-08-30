@@ -1171,17 +1171,17 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
       {/* Active projects card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-slate-50 via-white to-gray-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <BarChart className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
-              <CardTitle className="text-lg font-bold text-[#1a8f1a]">
+              <CardTitle className="text-lg font-bold text-white">
                 Projetos Ativos
               </CardTitle>
-              <p className="text-sm text-slate-600 font-medium">
+              <p className="text-sm text-blue-100 font-medium">
                 Em andamento
               </p>
             </div>
@@ -1189,13 +1189,13 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         </CardHeader>
         <CardContent className="pt-0">
           {isLoading ? (
-            <Skeleton className="h-12 w-20" />
+            <Skeleton className="h-12 w-20 bg-white/20" />
           ) : (
             <div className="text-right">
-              <div className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent">
+              <div className="text-4xl font-bold text-white drop-shadow-sm">
                 {data?.activeProjects || 0}
               </div>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-blue-100 mt-1">
                 Projetos aguardando revisão
               </p>
             </div>
@@ -1204,17 +1204,17 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
       </Card>
       
       {/* Monthly uploads card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-neutral-50 via-white to-stone-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-500 via-violet-600 to-purple-600 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-gradient-to-r from-neutral-600 to-stone-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <Camera className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
-              <CardTitle className="tracking-tight text-lg font-bold text-[#018c05]">
+              <CardTitle className="tracking-tight text-lg font-bold text-white">
                 Uploads Mensais
               </CardTitle>
-              <p className="text-sm text-neutral-600 font-medium">
+              <p className="text-sm text-purple-100 font-medium">
                 Este mês
               </p>
             </div>
@@ -1222,13 +1222,13 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         </CardHeader>
         <CardContent className="pt-0">
           {isLoading ? (
-            <Skeleton className="h-12 w-20" />
+            <Skeleton className="h-12 w-20 bg-white/20" />
           ) : (
             <div className="text-right">
-              <div className="text-4xl font-bold bg-gradient-to-r from-neutral-700 to-stone-800 bg-clip-text text-transparent">
+              <div className="text-4xl font-bold text-white drop-shadow-sm">
                 {data?.photosThisMonth || 0}
               </div>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-purple-100 mt-1">
                 Fotos enviadas em {new Date().toLocaleDateString('pt-BR', { month: 'long' })}
               </p>
             </div>
