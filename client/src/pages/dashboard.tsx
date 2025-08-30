@@ -1237,17 +1237,17 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
       </Card>
 
       {/* Upload usage card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 via-white to-violet-50 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-600 via-green-700 to-teal-800 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <CreditCard className="h-6 w-6 text-white" />
             </div>
             <div className="text-right">
-              <CardTitle className="text-lg font-bold text-gray-900">
+              <CardTitle className="text-lg font-bold text-white">
                 Plano {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
               </CardTitle>
-              <p className="text-sm text-purple-600 font-medium">
+              <p className="text-sm text-emerald-200 font-medium">
                 Assinatura ativa
               </p>
             </div>
@@ -1256,8 +1256,8 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         <CardContent className="pt-0 pb-4">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700">Uso de Uploads</span>
-              <span className="text-sm font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+              <span className="text-sm font-medium text-emerald-100">Uso de Uploads</span>
+              <span className="text-sm font-bold text-emerald-800 bg-white/90 px-2 py-1 rounded-full">
                 {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit.toLocaleString()}
               </span>
             </div>
@@ -1266,9 +1266,9 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} 
                 className="h-3 bg-gray-200"
               />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 opacity-20"></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 opacity-30"></div>
             </div>
-            <p className="text-xs text-gray-600 font-medium">
+            <p className="text-xs text-emerald-200 font-medium">
               {planInfo.planType === "unlimited" 
                 ? "✨ Uploads ilimitados ativados" 
                 : `${planInfo.percentageUsed}% do limite mensal utilizado`}
@@ -1279,9 +1279,9 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
           <Button 
             size="md"
             className="w-full font-semibold py-3 rounded-xl transition-all duration-300
-              bg-gradient-to-r from-purple-500 to-violet-600 text-white 
-              hover:from-purple-600 hover:to-violet-700 hover:scale-105
-              shadow-lg hover:shadow-xl border-0"
+              bg-white/20 backdrop-blur-sm text-white border border-white/30
+              hover:bg-white/30 hover:scale-105
+              shadow-lg hover:shadow-xl"
             onClick={() => setLocation("/subscription")}
           >
             <Settings className="mr-2 h-4 w-4" />
