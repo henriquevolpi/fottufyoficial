@@ -1262,11 +1262,14 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               </span>
             </div>
             <div className="relative">
-              <Progress 
-                value={planInfo.planType === "unlimited" ? 0 : planInfo.percentageUsed} 
-                className="h-3 bg-gray-200"
-              />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400 to-amber-500 opacity-40"></div>
+              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-orange-400 to-amber-500 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: planInfo.planType === "unlimited" ? "0%" : `${planInfo.percentageUsed}%` 
+                  }}
+                />
+              </div>
             </div>
             <p className="text-xs text-emerald-200 font-medium">
               {planInfo.planType === "unlimited" 
