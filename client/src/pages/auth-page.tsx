@@ -112,7 +112,7 @@ export default function AuthPage() {
               {activeTab === 'login' ? 'Fottufy - Boas Vindas' : 'Crie sua Conta'}
             </h1>
             <p className="mt-1 text-gray-600">
-              {activeTab === 'login' ? 'Sua plataforma Oficial de Seleção de Fotos para Fotografia' : 'Rápido e fácil, vamos começar!'}
+              {activeTab === 'login' ? 'Sua plataforma Oficial de Seleção de Fotos para Fotografia 📸' : 'Rápido e fácil, vamos começar!'}
             </p>
           </div>
 

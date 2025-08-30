@@ -420,29 +420,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     loadProject();
   }, [loadProject]);
   
-  // Recarregar dados quando a aba recebe foco (para pegar mudanças feitas no dashboard)
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('Aba recebeu foco, recarregando dados do projeto...');
-      loadProject();
-    };
-    
-    // Adicionar listeners para quando a aba/janela recebe foco
-    window.addEventListener('focus', handleFocus);
-    
-    // Também detectar quando voltamos de outra aba
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        handleFocus();
-      }
-    });
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, [loadProject]);
-  
   // Cleanup completo: cancelar requisições e limpar memória ao desmontar
   useEffect(() => {
     return () => {
@@ -1044,8 +1021,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 
                 <WatermarkOverlay 
                   enabled={project.showWatermark === true} 
-                  intensity={project.watermarkIntensity || 25}
-                  color={(project.watermarkColor as 'white' | 'gray') || 'white'}
                   className="absolute inset-0 w-full h-full cursor-zoom-in group"
                 >
                   <div 
@@ -1253,8 +1228,6 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             {/* Imagem com watermark */}
             <WatermarkOverlay 
               enabled={project.showWatermark === true} 
-              intensity={project.watermarkIntensity || 25}
-              color={(project.watermarkColor as 'white' | 'gray') || 'white'}
               className="relative"
             >
               <img

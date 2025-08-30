@@ -354,7 +354,7 @@ export interface IStorage {
   finalizeProjectSelection(id: number, selectedPhotos: string[]): Promise<Project | undefined>;
   archiveProject(id: number): Promise<Project | undefined>;
   reopenProject(id: number): Promise<Project | undefined>;
-  updateProjectWatermark(id: number, showWatermark: boolean, watermarkIntensity?: number, watermarkColor?: string): Promise<Project | undefined>;
+  updateProjectWatermark(id: number, showWatermark: boolean): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
   
   // Photo comment methods
@@ -991,16 +991,11 @@ export class MemStorage implements IStorage {
     return updatedProject;
   }
 
-  async updateProjectWatermark(id: number, showWatermark: boolean, watermarkIntensity?: number, watermarkColor?: string): Promise<Project | undefined> {
+  async updateProjectWatermark(id: number, showWatermark: boolean): Promise<Project | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
 
-    const updatedProject = { 
-      ...project, 
-      showWatermark,
-      ...(watermarkIntensity !== undefined && { watermarkIntensity }),
-      ...(watermarkColor !== undefined && { watermarkColor })
-    };
+    const updatedProject = { ...project, showWatermark };
     this.projects.set(id, updatedProject);
     
     return updatedProject;
@@ -1883,25 +1878,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateProjectWatermark(id: number, showWatermark: boolean, watermarkIntensity?: number, watermarkColor?: string): Promise<Project | undefined> {
+  async updateProjectWatermark(id: number, showWatermark: boolean): Promise<Project | undefined> {
     try {
-      const updateData: any = { showWatermark };
-      
-      if (watermarkIntensity !== undefined) {
-        updateData.watermarkIntensity = watermarkIntensity;
-      }
-      
-      if (watermarkColor !== undefined) {
-        updateData.watermarkColor = watermarkColor;
-      }
-      
       const [updatedProject] = await db
         .update(projects)
-        .set(updateData)
+        .set({ showWatermark })
         .where(eq(projects.id, id))
         .returning();
       
-      console.log(`DatabaseStorage: Marca d'água do projeto ID=${id} atualizada:`, updateData);
+      console.log(`DatabaseStorage: Marca d'água do projeto ID=${id} atualizada para ${showWatermark}`);
       return updatedProject;
     } catch (error) {
       console.error("Erro ao atualizar marca d'água do projeto:", error);
