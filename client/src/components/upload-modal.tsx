@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-// Interface para o objeto de projeto retornado pela API
+// Interface para o objeto de projeto retornado pela API - cache bust 🔄
 interface ProjectResponse {
   id: number;
   publicId: string;
