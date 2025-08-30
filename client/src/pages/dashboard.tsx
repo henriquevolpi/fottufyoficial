@@ -339,6 +339,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', project.id] });
     } catch (error) {
       console.error('Error updating watermark settings:', error);
       toast({

@@ -17,6 +17,7 @@ export function WatermarkOverlay({
 }: WatermarkOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
 
   useEffect(() => {
     if (!enabled || !containerRef.current || !canvasRef.current) return;
