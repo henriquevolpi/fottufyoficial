@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import imageCompression from 'browser-image-compression'
 import { useToast } from "@/hooks/use-toast";
 import { getMemoryStatus, detectDeviceCapacity, smartPause, isSafeToContinue, UIResponsivenessMonitor } from '@/lib/whiteScreenProtection';
+import { queryClient } from '@/lib/queryClient';
 
 interface ImageUploaderProps {
   projectId: string | number;
@@ -527,6 +528,14 @@ export function ImageUploader({ projectId, onUploadSuccess }: ImageUploaderProps
       } catch (err) {
         console.warn('Failed to clear localStorage (storage may be disabled or quota exceeded):', err);
       }
+      
+      // ✅ Invalidar cache do React Query para atualizar dados em tempo real
+      console.log("Invalidating cache after image upload...");
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      }, 500);
       
       // Chamar callback de sucesso se fornecido
       if (onUploadSuccess) {

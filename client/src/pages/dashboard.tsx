@@ -1616,6 +1616,15 @@ export default function Dashboard() {
         
         setFilteredProjects(filtered);
       }
+      
+      // ✅ Invalidar cache do React Query para atualizar as caixas do dashboard automaticamente
+      console.log("Invalidating cache to update dashboard stats...");
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      }, 500); // Pequeno delay para garantir que o servidor processou tudo
+      
     } catch (error) {
       console.error("Error in project creation handling:", error);
       // We've already added the initial project data, so user still sees something,
