@@ -33,7 +33,7 @@ import { compressMultipleImages } from "@/lib/imageCompression";
 const projectEditSchema = z.object({
   name: z.string().min(3, { message: "O nome do projeto deve ter pelo menos 3 caracteres" }),
   clientName: z.string().min(3, { message: "O nome do cliente deve ter pelo menos 3 caracteres" }),
-  clientEmail: z.string().email({ message: "Email inválido" }),
+  clientEmail: z.string().optional(),
   status: z.string(),
   reopenSelection: z.boolean().optional()
 });
@@ -732,8 +732,9 @@ export default function ProjectEdit() {
                   onClick={() => setLocation(`/project/${project.id}`)}
                   disabled={saving}
                 >
-                  Cancelar
+                  Voltar
                 </Button>
+                {/* Botão de salvar removido temporariamente
                 <Button 
                   type="submit"
                   disabled={saving}
@@ -750,6 +751,7 @@ export default function ProjectEdit() {
                     </>
                   )}
                 </Button>
+                */}
               </div>
             </form>
           </Form>
