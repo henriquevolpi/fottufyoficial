@@ -142,8 +142,8 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       });
       // Limpar o campo de comentário da foto específica
       setCommentTexts(prev => ({ ...prev, [data.photoIdForClear]: "" }));
-      // Recarregar comentários da foto
-      loadPhotoComments(data.photoId);
+      // Forçar recarregamento dos comentários da foto para mostrar o novo comentário
+      reloadPhotoComments(data.photoId);
     },
     onError: (error) => {
       toast({
@@ -187,6 +187,34 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       }
     }
   }, [photoComments]);
+
+  // Função para forçar recarregamento dos comentários (usado após criar novo comentário)
+  const reloadPhotoComments = useCallback(async (photoId: string) => {
+    try {
+      // AbortController para timeout de comentarios
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      const response = await fetch(`/api/photos/${photoId}/comments`, {
+        signal: controller.signal,
+        credentials: 'include',
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const comments = await response.json();
+        setPhotoComments(prev => ({
+          ...prev,
+          [photoId]: comments
+        }));
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error("Erro ao recarregar comentários da foto:", error);
+      }
+    }
+  }, []);
 
   
   // Função para adaptar o formato do projeto (servidor ou localStorage)
