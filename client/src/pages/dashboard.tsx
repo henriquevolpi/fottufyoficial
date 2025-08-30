@@ -1171,7 +1171,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
       {/* Active projects card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -1181,7 +1181,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               <CardTitle className="text-lg font-bold text-white">
                 Projetos Ativos
               </CardTitle>
-              <p className="text-sm text-blue-100 font-medium">
+              <p className="text-sm text-blue-200 font-medium">
                 Em andamento
               </p>
             </div>
@@ -1195,7 +1195,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               <div className="text-4xl font-bold text-white drop-shadow-sm">
                 {data?.activeProjects || 0}
               </div>
-              <p className="text-sm text-blue-100 mt-1">
+              <p className="text-sm text-blue-200 mt-1">
                 Projetos aguardando revisão
               </p>
             </div>
@@ -1204,7 +1204,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
       </Card>
       
       {/* Monthly uploads card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-500 via-violet-600 to-purple-600 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 via-purple-700 to-violet-800 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -1214,7 +1214,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               <CardTitle className="tracking-tight text-lg font-bold text-white">
                 Uploads Mensais
               </CardTitle>
-              <p className="text-sm text-purple-100 font-medium">
+              <p className="text-sm text-purple-200 font-medium">
                 Este mês
               </p>
             </div>
@@ -1228,7 +1228,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               <div className="text-4xl font-bold text-white drop-shadow-sm">
                 {data?.photosThisMonth || 0}
               </div>
-              <p className="text-sm text-purple-100 mt-1">
+              <p className="text-sm text-purple-200 mt-1">
                 Fotos enviadas em {new Date().toLocaleDateString('pt-BR', { month: 'long' })}
               </p>
             </div>
