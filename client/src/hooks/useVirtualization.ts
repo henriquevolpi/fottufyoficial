@@ -121,10 +121,10 @@ export function useDeviceCapabilities() {
   });
   
   useEffect(() => {
-    // Detectar mobile
+    // Detectar mobile - incluir tablets
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
-    );
+    ) || window.innerWidth <= 768; // Considerar telas pequenas como mobile
     
     // Detectar dispositivo com baixa performance
     const hardwareConcurrency = navigator.hardwareConcurrency || 4;
@@ -133,7 +133,7 @@ export function useDeviceCapabilities() {
     const isLowEnd = hardwareConcurrency <= 2 || memory <= 2;
     const hasGoodPerformance = hardwareConcurrency >= 4 && memory >= 4;
     
-    // Determinar configurações baseadas no dispositivo
+    // Configurações mais conservadoras para mobile
     let maxPhotosPerPage = 144;
     let shouldUseVirtualization = false;
     
@@ -141,8 +141,9 @@ export function useDeviceCapabilities() {
       maxPhotosPerPage = 50;
       shouldUseVirtualization = true;
     } else if (isMobile) {
-      maxPhotosPerPage = 100;
-      shouldUseVirtualization = true;
+      // No mobile, NUNCA usar virtualização - causa problemas de scroll
+      maxPhotosPerPage = 144;
+      shouldUseVirtualization = false;
     }
     
     setCapabilities({

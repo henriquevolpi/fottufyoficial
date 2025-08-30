@@ -53,12 +53,19 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
       : photos;
   }, [photos, showOnlySelected, selectedPhotos]);
   
-  // Configurar virtualização
+  // Configurar virtualização - mais conservadora no mobile
+  const shouldEnableVirtualization = useMemo(() => {
+    // No mobile, nunca usar virtualização para evitar problemas de scroll
+    if (deviceCapabilities.isMobile) return false;
+    // Em desktop, só usar se realmente necessário (muitas fotos)
+    return deviceCapabilities.shouldUseVirtualization && filteredPhotos.length > 100;
+  }, [deviceCapabilities.isMobile, deviceCapabilities.shouldUseVirtualization, filteredPhotos.length]);
+  
   const virtualization = useVirtualization(filteredPhotos, {
     itemHeight: 420, // Altura estimada de cada card (h-64 + CardContent + margins)
     containerHeight: 800, // Altura típica da viewport
     buffer: 2, // Buffer de 2 linhas acima e abaixo
-    enabled: deviceCapabilities.shouldUseVirtualization && filteredPhotos.length > 20
+    enabled: shouldEnableVirtualization
   });
   
   const {
@@ -89,56 +96,59 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
     console.log(`[VirtualizedPhotoGrid] Total: ${filteredPhotos.length}, Visible: ${visibleItems.length}, Columns: ${itemsPerRow}, Virtualization: ${isVirtualizationActive}`);
   }
   
+  // Renderização condicional - sem container extra quando virtualização desabilitada
+  if (!isVirtualizationActive) {
+    // Grid normal - sem containers extras que podem causar problemas de scroll
+    return (
+      <div className={gridClasses}>
+        {filteredPhotos.map((photo) => {
+          const originalIndex = photos.findIndex(p => p.id === photo.id);
+          return (
+            <PhotoCard
+              key={photo.id}
+              photo={photo}
+              isSelected={selectedPhotos.has(photo.id)}
+              isFinalized={isFinalized}
+              showWatermark={showWatermark}
+              originalIndex={originalIndex}
+              commentText={commentTexts[photo.id] || ""}
+              photoComments={photoComments[photo.id] || []}
+              isCommentExpanded={expandedCommentPhoto === photo.id}
+              isCommentMutationPending={isCommentMutationPending}
+              onToggleSelection={onToggleSelection}
+              onOpenModal={onOpenModal}
+              onToggleCommentSection={onToggleCommentSection}
+              onCommentTextChange={onCommentTextChange}
+              onSubmitComment={onSubmitComment}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+  
+  // Grid virtualizado - apenas para desktop com muitas fotos
   return (
     <div 
       ref={containerRef}
       className="w-full overflow-auto"
       style={{ 
-        height: isVirtualizationActive ? '80vh' : 'auto',
-        maxHeight: isVirtualizationActive ? '80vh' : 'none'
+        height: '80vh',
+        maxHeight: '80vh'
       }}
     >
-      {isVirtualizationActive ? (
-        // Grid virtualizado
-        <div style={{ height: totalHeight, position: 'relative' }}>
-          <div 
-            className={gridClasses}
-            style={{ 
-              transform: `translateY(${offsetY}px)`,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0
-            }}
-          >
-            {visibleItems.map((photo, index) => {
-              const originalIndex = photos.findIndex(p => p.id === photo.id);
-              return (
-                <PhotoCard
-                  key={photo.id}
-                  photo={photo}
-                  isSelected={selectedPhotos.has(photo.id)}
-                  isFinalized={isFinalized}
-                  showWatermark={showWatermark}
-                  originalIndex={originalIndex}
-                  commentText={commentTexts[photo.id] || ""}
-                  photoComments={photoComments[photo.id] || []}
-                  isCommentExpanded={expandedCommentPhoto === photo.id}
-                  isCommentMutationPending={isCommentMutationPending}
-                  onToggleSelection={onToggleSelection}
-                  onOpenModal={onOpenModal}
-                  onToggleCommentSection={onToggleCommentSection}
-                  onCommentTextChange={onCommentTextChange}
-                  onSubmitComment={onSubmitComment}
-                />
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        // Grid normal para poucos itens ou dispositivos potentes
-        <div className={gridClasses}>
-          {filteredPhotos.map((photo) => {
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        <div 
+          className={gridClasses}
+          style={{ 
+            transform: `translateY(${offsetY}px)`,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0
+          }}
+        >
+          {visibleItems.map((photo, index) => {
             const originalIndex = photos.findIndex(p => p.id === photo.id);
             return (
               <PhotoCard
@@ -161,18 +171,7 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
             );
           })}
         </div>
-      )}
-      
-      {/* Indicador de performance em desenvolvimento */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 bg-black/80 text-white p-2 rounded text-xs">
-          <div>Total: {filteredPhotos.length} fotos</div>
-          <div>Visíveis: {visibleItems.length}</div>
-          <div>Colunas: {itemsPerRow}</div>
-          <div>Virtual: {isVirtualizationActive ? 'Sim' : 'Não'}</div>
-          <div>Device: {deviceCapabilities.isLowEnd ? 'Low-end' : 'Normal'}</div>
-        </div>
-      )}
+      </div>
     </div>
   );
 });
