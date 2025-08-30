@@ -1744,11 +1744,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Generate a temporary password for the email (user can reset it)
-      const tempPassword = Math.random().toString(36).slice(-8);
+      // Set standard password to 123456
+      const standardPassword = "123456";
       
-      // Send welcome email with temporary password
-      const emailResult = await sendWelcomeEmail(user.email, user.name, tempPassword);
+      // Update user password in database
+      await storage.resetUserPasswordByAdmin(userId, standardPassword, req.user?.email || 'admin');
+      
+      // Send welcome email with standard password
+      const emailResult = await sendWelcomeEmail(user.email, user.name, standardPassword);
       
       if (!emailResult.success) {
         return res.status(500).json({ 
@@ -1758,9 +1761,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({ 
-        message: "Welcome email resent successfully",
-        email: user.email,
-        tempPassword: tempPassword
+        message: "Welcome email resent successfully and password reset to 123456",
+        email: user.email
       });
     } catch (error) {
       console.error("Error resending welcome email:", error);
