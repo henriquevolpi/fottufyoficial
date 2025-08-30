@@ -651,25 +651,32 @@ export default function UploadModal({
 
   return (
     <Dialog open={open} onOpenChange={isSubmitting ? undefined : handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto backdrop-blur-sm bg-white/95 shadow-2xl border-0">
-        <DialogHeader className="sticky top-0 z-10 bg-white pb-4">
-          <DialogTitle>New Project</DialogTitle>
-          <DialogDescription>
-            Fill in the project details and upload your photos. All fields are
-            required.
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto backdrop-blur-xl bg-gradient-to-br from-white/95 via-blue-50/20 to-indigo-50/30 shadow-2xl border border-white/20 rounded-2xl">
+        <DialogHeader className="sticky top-0 z-10 bg-gradient-to-br from-white/95 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm pb-6 rounded-t-2xl border-b border-blue-100/30">
+          <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            ✨ Criar Novo Projeto
+          </DialogTitle>
+          <DialogDescription className="text-slate-600 text-base leading-relaxed">
+            Preencha os detalhes do projeto e faça upload das suas fotos. Todos os campos são obrigatórios para criar uma experiência completa.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-1">
             <FormField
               control={form.control}
               name="nome"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📋 Nome do Projeto
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Wedding Photoshoot" {...field} />
+                    <Input 
+                      placeholder="Ex: Casamento João & Maria" 
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -680,10 +687,16 @@ export default function UploadModal({
               control={form.control}
               name="cliente"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Client Name</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    👤 Nome do Cliente
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="John and Jane Doe" {...field} />
+                    <Input 
+                      placeholder="Ex: João Silva" 
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -694,12 +707,15 @@ export default function UploadModal({
               control={form.control}
               name="emailCliente"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Client Email</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📧 Email do Cliente
+                  </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="client@example.com"
+                      placeholder="cliente@exemplo.com"
                       type="email"
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all"
                       {...field}
                     />
                   </FormControl>
@@ -712,10 +728,16 @@ export default function UploadModal({
               control={form.control}
               name="dataEvento"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event Date</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📅 Data do Evento
+                  </FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input 
+                      type="date" 
+                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -726,12 +748,14 @@ export default function UploadModal({
               control={form.control}
               name="observacoes"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📝 Observações
+                  </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Additional notes about the project..."
-                      className="resize-none"
+                      placeholder="Anotações adicionais sobre o projeto..."
+                      className="resize-none min-h-[100px] border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all"
                       {...field}
                     />
                   </FormControl>
@@ -740,13 +764,15 @@ export default function UploadModal({
               )}
             />
 
-            <div className="space-y-2">
-              <FormLabel>Photos</FormLabel>
+            <div className="space-y-4">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                📸 Fotos do Projeto
+              </FormLabel>
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center ${
+                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 ${
                   isDragging
-                    ? "border-primary bg-primary/10"
-                    : "border-gray-300"
+                    ? "border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-[1.02]"
+                    : "border-slate-300 bg-gradient-to-br from-slate-50/50 to-blue-50/30 hover:border-blue-300 hover:shadow-md"
                 }`}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -756,18 +782,24 @@ export default function UploadModal({
                 onDrop={handleFileDrop}
               >
                 <div className="flex flex-col items-center">
-                  <Upload className="h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Drag and drop photos here, or
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg">
+                    <Upload className="h-8 w-8 text-white" />
+                  </div>
+                  <p className="text-base font-medium text-slate-700 mb-2">
+                    Arraste e solte suas fotos aqui
+                  </p>
+                  <p className="text-sm text-slate-500 mb-4">
+                    ou clique no botão abaixo para selecionar
                   </p>
                   <Button
                     type="button"
                     variant="outline"
+                    className="bg-white/80 backdrop-blur-sm border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700 font-medium rounded-xl px-6 py-2 transition-all shadow-sm"
                     onClick={() => {
                       document.getElementById("file-upload")?.click();
                     }}
                   >
-                    Select from computer
+                    📁 Selecionar do Computador
                   </Button>
                   <input
                     id="file-upload"
@@ -777,35 +809,39 @@ export default function UploadModal({
                     className="hidden"
                     onChange={handleFileSelect}
                   />
-                  <p className="text-xs text-gray-500 mt-2">
-                    JPG, PNG, GIF - sem limite de tamanho
+                  <p className="text-xs text-slate-500 mt-3 bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200">
+                    ✨ JPG, PNG, GIF - sem limite de tamanho
                   </p>
                 </div>
               </div>
 
               {previews.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium mb-2">
-                    {previews.length} photo{previews.length !== 1 ? "s" : ""}{" "}
-                    selected
-                  </p>
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      {previews.length} foto{previews.length !== 1 ? "s" : ""} selecionada{previews.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
 
                   {/* Lista de nomes de arquivos */}
-                  <div className="border rounded-md max-h-[260px] overflow-y-auto">
+                  <div className="border border-slate-200 rounded-xl max-h-[280px] overflow-y-auto bg-white/60 backdrop-blur-sm shadow-sm">
                     {files.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between py-2 px-3 border-b last:border-b-0 hover:bg-gray-50"
+                        className="flex items-center justify-between py-3 px-4 border-b border-slate-100 last:border-b-0 hover:bg-blue-50/50 transition-all group"
                       >
-                        <div className="flex items-center space-x-2 overflow-hidden">
-                          <Image className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <p className="text-sm truncate">{file.name}</p>
+                        <div className="flex items-center space-x-3 overflow-hidden">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
+                            <Image className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
                         </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                          className="h-8 w-8 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                           onClick={() => removeFile(index)}
                         >
                           <X className="h-4 w-4" />
@@ -820,13 +856,19 @@ export default function UploadModal({
             </div>
 
             {isSubmitting && (
-              <div className="w-full flex flex-col gap-2 mt-4">
-                <div className="h-2 bg-gray-200 rounded overflow-hidden">
+              <div className="w-full flex flex-col gap-3 mt-6 p-4 bg-gradient-to-br from-blue-50/80 to-indigo-50/60 rounded-xl border border-blue-100/50 shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {uploadStatus === "completed" ? "✅ Upload concluído!" : "📤 Enviando fotos..."}
+                  </p>
+                </div>
+                <div className="h-3 bg-white/60 rounded-full overflow-hidden shadow-inner">
                   <div
-                    className={`h-full transition-all duration-300 ease-in-out ${
+                    className={`h-full transition-all duration-500 ease-out rounded-full ${
                       uploadStatus === "completed"
-                        ? "bg-green-500 animate-pulse"
-                        : "bg-primary"
+                        ? "bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse"
+                        : "bg-gradient-to-r from-blue-500 to-indigo-600"
                     }`}
                     style={{
                       width:
@@ -836,33 +878,40 @@ export default function UploadModal({
                     }}
                   />
                 </div>
-                <div className="text-xs text-gray-500 mt-1 text-center">
+                <div className="text-sm text-slate-600 text-center font-medium">
                   {uploadStatus === "completed"
-                    ? "Upload completed!"
-                    : `Uploading photos... ${uploadPercentage}%`}
+                    ? "🎉 Projeto criado com sucesso!"
+                    : `${uploadPercentage}% concluído`}
                 </div>
               </div>
             )}
 
-            <DialogFooter className="sticky bottom-0 z-10 bg-white pt-4 mt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Project"
-                )}
-              </Button>
+            <DialogFooter className="sticky bottom-0 z-10 bg-gradient-to-br from-white/95 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm pt-6 mt-8 border-t border-blue-100/30 rounded-b-2xl">
+              <div className="flex gap-3 w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-medium rounded-xl transition-all"
+                >
+                  ❌ Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 border-0"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ⏳ Criando projeto...
+                    </>
+                  ) : (
+                    "✨ Criar Projeto"
+                  )}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
