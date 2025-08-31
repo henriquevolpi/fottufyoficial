@@ -74,7 +74,7 @@ export default function LandingPage() {
             
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
               Pare de enviar fotos por WhatsApp, Google Drive ou WeTransfer. 
-              Crie galerias protegidas com seu logo onde clientes veem mas não conseguem copiar suas fotos.
+              Crie galerias protegidas com seu logo onde clientes veem com mais conforto e segurança.
             </p>
             
             <div className="flex justify-center items-center mb-12">
@@ -316,7 +316,7 @@ export default function LandingPage() {
               O que nossos clientes dizem
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Mais de 5.000 fotógrafos já aumentaram suas vendas com a Fottufy
+              Fottufy é facilidade e conforto na hora da seleção!
             </p>
           </div>
 
@@ -670,17 +670,9 @@ export default function LandingPage() {
               <Camera className="mr-2 h-5 w-5" />
               Começar gratuitamente
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-6 text-lg font-semibold rounded-xl"
-            >
-              <MessageSquare className="mr-2 h-5 w-5" />
-              Falar com vendas
-            </Button>
           </div>
           <p className="text-blue-100 text-sm mt-6">
-            Teste gratuito por 14 dias • Sem cartão de crédito • Suporte em português
+            Não mande mais a seleção por drive ou whatsapp, use a Fottufy!
           </p>
         </div>
       </section>
