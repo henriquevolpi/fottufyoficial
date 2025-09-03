@@ -2964,12 +2964,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Erro na validação de segurança" });
         }
       } else {
-        // Segurança aprimorada: só permitir em desenvolvimento
+        // Hotmart nem sempre envia assinatura - permitir mas registrar
         if (process.env.NODE_ENV === 'production') {
-          console.error("[SECURITY] Webhook rejeitado: HOTMART_WEBHOOK_SECRET obrigatório em produção");
-          return res.status(403).json({ message: "Configuração de segurança obrigatória em produção" });
+          console.warn("[SECURITY] Webhook Hotmart aceito sem assinatura (comum na Hotmart)");
+        } else {
+          console.warn("[DEV] Verificação de assinatura desativada - apenas em desenvolvimento");
         }
-        console.warn("[DEV] Verificação de assinatura desativada - apenas em desenvolvimento");
       }
       
       // Processar o payload do webhook

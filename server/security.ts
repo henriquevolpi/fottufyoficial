@@ -67,11 +67,12 @@ export const generalRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Não aplicar rate limit para admins e requisições locais
+  // Não aplicar rate limit para admins, requisições locais e webhooks
   skip: (req: Request) => {
     const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip?.includes('localhost');
     const isAdmin = req.user && (req.user as any).role === 'admin';
-    return isLocalhost || isAdmin;
+    const isWebhook = req.path.includes('/webhook/');
+    return isLocalhost || isAdmin || isWebhook;
   }
 });
 

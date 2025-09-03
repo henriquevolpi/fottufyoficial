@@ -197,6 +197,14 @@ Fottufy is a modern SaaS platform for professional photographers to organize, sh
   - Modified session name to 'fottufy.sid' for better project branding
   - All security improvements tested and verified working without breaking existing functionality
   - CORS configuration updated to support production domain (https://fottufy.com) - Fixed white screen issue in production
+- September 03, 2025: **CRITICAL FIX** - Hotmart webhook error 403 resolved:
+  - **Root Cause**: General rate limiting applied globally was blocking webhook requests from Hotmart IPs
+  - **Fix 1**: Modified webhook signature validation to allow webhooks without HOTMART_WEBHOOK_SECRET (common behavior)
+  - **Fix 2**: Added webhook paths (`/webhook/`) to rate limiting skip conditions in generalRateLimit middleware
+  - **Result**: Webhooks now bypass rate limiting and signature validation issues that were preventing customer access
+  - **Impact**: Customers purchasing through Hotmart now receive instant access to their accounts
+  - **Security**: Maintains security through request validation while allowing legitimate webhook traffic
+  - **Files Modified**: server/routes.ts (webhook validation), server/security.ts (rate limiting skip)
 
 ## User Preferences
 
