@@ -221,6 +221,7 @@ export default function UserTable({ users, filter }: UserTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Subscription ID</TableHead>
               <TableHead>Created</TableHead>
@@ -245,6 +246,9 @@ export default function UserTable({ users, filter }: UserTableProps) {
                       </div>
                     </div>
                   </div>
+                </TableCell>
+                <TableCell className="text-sm text-gray-500">
+                  {user.phone || "-"}
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(user.status)}
@@ -300,7 +304,7 @@ export default function UserTable({ users, filter }: UserTableProps) {
             ))}
             {filteredUsers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No users found.
                 </TableCell>
               </TableRow>
