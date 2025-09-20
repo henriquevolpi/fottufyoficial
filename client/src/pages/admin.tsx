@@ -47,6 +47,7 @@ import {
   Loader2,
   Mail,
   PencilIcon,
+  Phone,
   PlusIcon,
   SearchIcon,
   Trash2Icon,
@@ -65,6 +66,51 @@ interface AdminUserFilters {
   searchQuery?: string;
 }
 
+// Função para formatar telefone de forma resumida
+const formatPhoneNumber = (phone: string | null): string => {
+  if (!phone) {
+    return "-";
+  }
+  
+  // Remove todos os caracteres não numéricos
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // Remove código do país brasileiro (+55) se presente
+  if (cleaned.startsWith('55') && (cleaned.length === 12 || cleaned.length === 13)) {
+    cleaned = cleaned.slice(2);
+  }
+  
+  // Verifica se o número resultante é válido (10 ou 11 dígitos)
+  if (cleaned.length !== 10 && cleaned.length !== 11) {
+    return "-";
+  }
+  
+  // Se tiver 11 dígitos (com DDD), formata como (XX) XXXXX-XXXX
+  if (cleaned.length === 11) {
+    const ddd = cleaned.slice(0, 2);
+    const firstPart = cleaned.slice(2, 7);
+    const secondPart = cleaned.slice(7);
+    return `(${ddd}) ${firstPart}-${secondPart}`;
+  }
+  
+  // Se tiver 10 dígitos (com DDD), formata como (XX) XXXX-XXXX
+  if (cleaned.length === 10) {
+    const ddd = cleaned.slice(0, 2);
+    const firstPart = cleaned.slice(2, 6);
+    const secondPart = cleaned.slice(6);
+    return `(${ddd}) ${firstPart}-${secondPart}`;
+  }
+  
+  // Se chegou aqui, retorna o número limpo ou traço
+  return "-";
+};
+
+// Função helper para verificar se há telefone válido
+const hasValidPhone = (phone: string | null): boolean => {
+  if (!phone) return false;
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length >= 10;
+};
 
 export default function Admin() {
   const { toast } = useToast();
@@ -744,6 +790,7 @@ export default function Admin() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>User</TableHead>
+                          <TableHead>Phone</TableHead>
                           <TableHead>Plan</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Subscription</TableHead>
@@ -754,7 +801,7 @@ export default function Admin() {
                       <TableBody>
                         {filteredUsers.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-gray-500">
+                            <TableCell colSpan={7} className="h-24 text-center text-gray-500">
                               No users found. Try adjusting your filters.
                             </TableCell>
                           </TableRow>
@@ -775,6 +822,20 @@ export default function Admin() {
                                     </div>
                                   </div>
                                 </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-500">
+                                {hasValidPhone(user.phone) ? (
+                                  <div className="flex items-center space-x-2">
+                                    <Phone className="h-4 w-4 text-gray-400" />
+                                    <span data-testid={`phone-${user.id}`}>
+                                      {formatPhoneNumber(user.phone)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span data-testid={`phone-${user.id}`} className="text-gray-400">
+                                    -
+                                  </span>
+                                )}
                               </TableCell>
                               <TableCell>
                                 {getPlanBadge(user.planType)}
