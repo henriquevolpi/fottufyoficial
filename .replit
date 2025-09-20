@@ -19,6 +19,10 @@ externalPort = 3000
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 39215
+externalPort = 3001
+
 [workflows]
 runButton = "Project"
 
@@ -45,3 +49,6 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[agent]
+integrations = ["javascript_stripe:1.0.0"]

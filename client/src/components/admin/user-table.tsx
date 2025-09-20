@@ -36,7 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { FileEdit, MoreVertical, Trash2, Eye, Mail } from "lucide-react";
+import { FileEdit, MoreVertical, Trash2, Eye, Mail, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -52,6 +52,52 @@ interface UserTableProps {
   users: User[];
   filter: string;
 }
+
+// Função para formatar telefone de forma resumida
+const formatPhoneNumber = (phone: string | null): string => {
+  if (!phone) {
+    return "-";
+  }
+  
+  // Remove todos os caracteres não numéricos
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // Remove código do país brasileiro (+55) se presente
+  if (cleaned.length === 13 && cleaned.startsWith('55')) {
+    cleaned = cleaned.slice(2);
+  }
+  
+  // Limita a 11 dígitos para evitar problemas com strings muito longas
+  if (cleaned.length > 11) {
+    cleaned = cleaned.slice(-11);
+  }
+  
+  // Se tiver 11 dígitos (com DDD), formata como (XX) XXXXX-XXXX
+  if (cleaned.length === 11) {
+    const ddd = cleaned.slice(0, 2);
+    const firstPart = cleaned.slice(2, 7);
+    const secondPart = cleaned.slice(7);
+    return `(${ddd}) ${firstPart}-${secondPart}`;
+  }
+  
+  // Se tiver 10 dígitos (com DDD), formata como (XX) XXXX-XXXX
+  if (cleaned.length === 10) {
+    const ddd = cleaned.slice(0, 2);
+    const firstPart = cleaned.slice(2, 6);
+    const secondPart = cleaned.slice(6);
+    return `(${ddd}) ${firstPart}-${secondPart}`;
+  }
+  
+  // Se for outro formato, retorna como está
+  return phone;
+};
+
+// Função helper para verificar se há telefone válido
+const hasValidPhone = (phone: string | null): boolean => {
+  if (!phone) return false;
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length >= 10;
+};
 
 export default function UserTable({ users, filter }: UserTableProps) {
   const { toast } = useToast();
@@ -248,7 +294,18 @@ export default function UserTable({ users, filter }: UserTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="text-sm text-gray-500">
-                  {user.phone || "-"}
+                  {hasValidPhone(user.phone) ? (
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <span data-testid={`phone-${user.id}`}>
+                        {formatPhoneNumber(user.phone)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span data-testid={`phone-${user.id}`} className="text-gray-400">
+                      -
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(user.status)}
