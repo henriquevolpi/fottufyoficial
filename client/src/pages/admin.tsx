@@ -112,6 +112,29 @@ const hasValidPhone = (phone: string | null): boolean => {
   return cleaned.length >= 10;
 };
 
+// Função para gerar link do WhatsApp
+const generateWhatsAppLink = (phone: string | null): string => {
+  if (!phone) return "#";
+  
+  // Remove todos os caracteres não numéricos
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // Remove código do país brasileiro (+55) se presente
+  if (cleaned.startsWith('55') && (cleaned.length === 12 || cleaned.length === 13)) {
+    cleaned = cleaned.slice(2);
+  }
+  
+  // Se não tiver 10 ou 11 dígitos, retorna link vazio
+  if (cleaned.length !== 10 && cleaned.length !== 11) {
+    return "#";
+  }
+  
+  // Adiciona código do país brasileiro para o WhatsApp
+  const whatsappNumber = `55${cleaned}`;
+  
+  return `https://wa.me/${whatsappNumber}`;
+};
+
 export default function Admin() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
@@ -825,12 +848,19 @@ export default function Admin() {
                               </TableCell>
                               <TableCell className="text-sm text-gray-500">
                                 {hasValidPhone(user.phone) ? (
-                                  <div className="flex items-center space-x-2">
-                                    <Phone className="h-4 w-4 text-gray-400" />
+                                  <a
+                                    href={generateWhatsAppLink(user.phone)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center space-x-2 text-green-600 hover:text-green-800 hover:underline transition-colors cursor-pointer"
+                                    data-testid={`phone-link-${user.id}`}
+                                    title={`Abrir WhatsApp para ${formatPhoneNumber(user.phone)}`}
+                                  >
+                                    <Phone className="h-4 w-4" />
                                     <span data-testid={`phone-${user.id}`}>
                                       {formatPhoneNumber(user.phone)}
                                     </span>
-                                  </div>
+                                  </a>
                                 ) : (
                                   <span data-testid={`phone-${user.id}`} className="text-gray-400">
                                     -
