@@ -105,7 +105,7 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
     const spacingX = textWidth + 60;
     const spacingY = textHeight + 40;
 
-    // Desenhar padrão repetitivo com dupla camada para melhor visibilidade
+    // Desenhar padrão repetitivo alternando entre cores claras e escuras
     let rowIndex = 0;
     for (let y = -spacingY; y < canvas.height + spacingY; y += spacingY) {
       let colIndex = 0;
@@ -114,15 +114,11 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
         ctx.translate(x + spacingX / 2, y + spacingY / 2);
         ctx.rotate(-Math.PI / 6); // Rotação de 30 graus
         
-        // Primeira camada: branco/cinza muito claro (ligeiramente abaixo)
-        ctx.fillStyle = 'rgba(240, 240, 240, 0.7)'; // Quase branco para fotos escuras
-        ctx.fillText(text, 0, 3); // Deslocamento de 3px para baixo
-        
-        // Segunda camada: alternar entre cores claras e escuras em padrão xadrez
+        // Alternar entre cores claras e escuras em padrão xadrez
         const isDark = (rowIndex + colIndex) % 2 === 0;
         ctx.fillStyle = isDark 
-          ? 'rgba(0, 0, 0, 0.4)'      // Marca d'água preta (mais visível em fotos claras)
-          : 'rgba(255, 255, 255, 0.6)'; // Marca d'água branca (mais visível em fotos escuras)
+          ? 'rgba(0, 0, 0, 0.4)'      // OPACIDADE PRETA: ajuste o último número (0.4) entre 0.1 e 1.0
+          : 'rgba(255, 255, 255, 0.6)'; // OPACIDADE BRANCA: ajuste o último número (0.6) entre 0.1 e 1.0
         
         ctx.fillText(text, 0, 0);
         ctx.restore();
