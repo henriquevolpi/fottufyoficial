@@ -157,7 +157,6 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
     
     // Adicionar canvas ao DOM
     canvas.className = "absolute inset-0 pointer-events-none z-10";
-    canvas.style.mixBlendMode = 'multiply';
     container.appendChild(canvas);
 
     // Atualizar marca d'água inicialmente
