@@ -32,7 +32,8 @@ import {
   Check,
   Image as ImageIcon,
   Moon,
-  Sun
+  Sun,
+  Send
 } from "lucide-react";
 import { 
   Tabs, 
@@ -1874,12 +1875,12 @@ export default function Dashboard() {
                 </TabsList>
               </div>
               
-              {/* Botão Novo Projeto ao lado das abas em telas grandes, embaixo em mobile */}
-              <div className="flex justify-start lg:justify-end">
+              {/* Botões de ação ao lado das abas em telas grandes, embaixo em mobile */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-start lg:justify-end">
                 <Button
                   onClick={() => setUploadModalOpen(true)}
                   className={`
-                    w-full lg:w-auto
+                    w-full sm:w-auto
                     flex items-center justify-center
                     bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
                     text-white font-semibold
@@ -1894,6 +1895,27 @@ export default function Dashboard() {
                 >
                   <PlusCircle className="h-5 w-5 mr-2" />
                   Novo Projeto
+                </Button>
+                
+                <Button
+                  onClick={() => window.open('https://fromsmash.com/pt', '_blank', 'noopener,noreferrer')}
+                  className={`
+                    w-full sm:w-auto
+                    flex items-center justify-center
+                    bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600
+                    text-white font-semibold
+                    rounded-xl shadow-lg shadow-emerald-500/25
+                    px-8 py-3
+                    transition-all duration-300
+                    hover:from-emerald-700 hover:via-green-700 hover:to-teal-700
+                    hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/30
+                    focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2
+                    text-base border border-emerald-500/20
+                  `}
+                  data-testid="button-send-files-fromsmash"
+                >
+                  <Send className="h-5 w-5 mr-2" />
+                  Enviar Seleção
                 </Button>
               </div>
             </div>
