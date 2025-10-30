@@ -114,8 +114,8 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
         ctx.translate(x + spacingX / 2, y + spacingY / 2);
         ctx.rotate(-Math.PI / 6); // Rotação de 30 graus
         
-        // Primeira camada: cinza claro (ligeiramente abaixo)
-        ctx.fillStyle = 'rgba(180, 180, 180, 0.5)'; // Cinza claro
+        // Primeira camada: branco/cinza muito claro (ligeiramente abaixo)
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.7)'; // Quase branco para fotos escuras
         ctx.fillText(text, 0, 3); // Deslocamento de 3px para baixo
         
         // Segunda camada: alternar entre cores claras e escuras em padrão xadrez
