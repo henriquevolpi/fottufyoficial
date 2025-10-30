@@ -92,10 +92,9 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
     canvas.height = currentHeight;
 
     // Configurar texto da marca d'água
-    const text = 'fottufy (não copie)';
+    const text = 'COPIA NAO AUTORIZADA';
     const fontSize = Math.max(16, Math.min(rect.width, rect.height) * 0.04);
-    ctx.font = `${fontSize}px Arial`;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.font = `bold ${fontSize}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -106,15 +105,26 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
     const spacingX = textWidth + 60;
     const spacingY = textHeight + 40;
 
-    // Desenhar padrão repetitivo
+    // Desenhar padrão repetitivo alternando entre cores claras e escuras
+    let rowIndex = 0;
     for (let y = -spacingY; y < canvas.height + spacingY; y += spacingY) {
+      let colIndex = 0;
       for (let x = -spacingX; x < canvas.width + spacingX; x += spacingX) {
         ctx.save();
         ctx.translate(x + spacingX / 2, y + spacingY / 2);
         ctx.rotate(-Math.PI / 6); // Rotação de 30 graus
+        
+        // Alternar entre cores claras e escuras em padrão xadrez
+        const isDark = (rowIndex + colIndex) % 2 === 0;
+        ctx.fillStyle = isDark 
+          ? 'rgba(0, 0, 0, 0.4)'      // Marca d'água preta (mais visível em fotos claras)
+          : 'rgba(255, 255, 255, 0.6)'; // Marca d'água branca (mais visível em fotos escuras)
+        
         ctx.fillText(text, 0, 0);
         ctx.restore();
+        colIndex++;
       }
+      rowIndex++;
     }
   }, [enabled]);
 
