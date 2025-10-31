@@ -1898,7 +1898,7 @@ export default function Dashboard() {
                 </Button>
                 
                 <Button
-                  onClick={() => window.open('https://fromsmash.com/pt', '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open('https://file.kiwi/', '_blank', 'noopener,noreferrer')}
                   className={`
                     w-full sm:w-auto
                     flex items-center justify-center
