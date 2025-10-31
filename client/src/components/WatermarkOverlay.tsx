@@ -120,7 +120,7 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
           ? 'rgba(0, 0, 0, 0.4)'      // OPACIDADE PRETA: ajuste o último número (0.4) entre 0.1 e 1.0
           : 'rgba(255, 255, 255, 0.6)'; // OPACIDADE BRANCA: ajuste o último número (0.6) entre 0.1 e 1.0
         
-        ctx.fillText(text, 0, 0);
+        ctx.fillText(text, 0.2, 0.3);
         ctx.restore();
         colIndex++;
       }
