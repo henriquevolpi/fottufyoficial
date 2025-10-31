@@ -118,7 +118,7 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
         const isDark = (rowIndex + colIndex) % 2 === 0;
         ctx.fillStyle = isDark 
           ? 'rgba(0, 0, 0, 0.28)'      // OPACIDADE PRETA: ajuste o último número (0.28) entre 0.1 e 1.0
-          : 'rgba(255, 255, 255, 0.32)'; // OPACIDADE BRANCA: ajuste o último número (0.32) entre 0.1 e 1.0
+          : 'rgba(255, 255, 255, 0.25)'; // OPACIDADE BRANCA: ajuste o último número (0.25) entre 0.1 e 1.0
         
         ctx.fillText(text, 0, 0);
         ctx.restore();
