@@ -28,7 +28,6 @@ import { nanoid } from "nanoid";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { compressMultipleImages } from "@/lib/imageCompression";
-import { getMemoryStatus, detectDeviceCapacity, smartPause, isSafeToContinue, UIResponsivenessMonitor } from '@/lib/whiteScreenProtection';
 
 // Esquema para validação do formulário
 const projectEditSchema = z.object({
@@ -54,16 +53,6 @@ export default function ProjectEdit() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState("details");
-  
-  // 🛡️ SISTEMA DE MONITORAMENTO ANTI-TELA BRANCA
-  const [uiMonitor] = useState(new UIResponsivenessMonitor());
-  
-  useEffect(() => {
-    return () => {
-      // Cleanup do monitor quando componente é desmontado
-      uiMonitor.stop();
-    };
-  }, [uiMonitor]);
 
   // Query to fetch project comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery<PhotoComment[]>({
@@ -148,15 +137,12 @@ export default function ProjectEdit() {
       setIsUploading(true);
       setUploadProgress(0);
       
-      // Iniciar monitoramento de responsividade da UI
-      uiMonitor.start();
-      
       // ETAPA 1: Redimensionar imagens no front-end antes do upload com proteção contra tela branca
       console.log(`[Frontend] Iniciando redimensionamento de ${newPhotos.length} imagens para o projeto ${project.id}`);
       
       setUploadProgress(5); // 5% - iniciando processamento
       
-      // Redimensionar todas as imagens com callback de progresso e sistema de proteção
+      // Redimensionar todas as imagens com callback de progresso e sistema de proteção embutido
       const compressedFiles = await compressMultipleImages(
         newPhotos,
         {
@@ -168,17 +154,11 @@ export default function ProjectEdit() {
           // Atualizar progresso da compressão (5% a 25%)
           const compressionProgress = 5 + (processed / total) * 20;
           setUploadProgress(Math.round(compressionProgress));
-          
-          // Reportar atividade ao monitor UI
-          uiMonitor.reportActivity(`Comprimindo imagem ${processed}/${total}`);
         }
       );
 
       console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
       setUploadProgress(25); // 25% - compressão concluída
-      
-      // Reportar atividade ao monitor UI
-      uiMonitor.reportActivity('Preparando arquivos para upload');
       
       // Primeiro tentar usar a API com monitoramento de progresso
       try {
@@ -201,9 +181,6 @@ export default function ProjectEdit() {
             if (event.lengthComputable) {
               const uploadPercent = 25 + ((event.loaded / event.total) * 70);
               setUploadProgress(Math.min(Math.round(uploadPercent), 95));
-              
-              // Reportar atividade ao monitor UI
-              uiMonitor.reportActivity(`Enviando fotos: ${Math.round((event.loaded / event.total) * 100)}%`);
             }
           };
           
@@ -298,52 +275,7 @@ export default function ProjectEdit() {
           description: errorDetails,
           variant: "destructive",
         });
-        return;
       }
-      
-      // Fallback: Atualizar no localStorage
-      const storedProjects = localStorage.getItem('projects');
-      if (!storedProjects) {
-        throw new Error('Erro ao atualizar: projetos não encontrados');
-      }
-      
-      const projects = JSON.parse(storedProjects);
-      const projectIndex = projects.findIndex((p: any) => p.id === project.id);
-      
-      if (projectIndex === -1) {
-        throw new Error('Erro ao atualizar: projeto não encontrado');
-      }
-      
-      // Atualizar o projeto com as novas fotos
-      const updatedProject = { ...projects[projectIndex] };
-      
-      // Garantir que o projeto tenha um array de fotos
-      if (!updatedProject.photos) {
-        updatedProject.photos = [];
-      }
-      
-      // Adicionar as novas fotos ao projeto
-      updatedProject.photos = [...updatedProject.photos, ...processedPhotos];
-      
-      // Atualizar o contador de fotos
-      updatedProject.fotos = updatedProject.photos.length;
-      
-      // Salvar no localStorage
-      projects[projectIndex] = updatedProject;
-      localStorage.setItem('projects', JSON.stringify(projects));
-      
-      // Limpar as fotos carregadas
-      clearPhotos();
-      
-      toast({
-        title: "Fotos adicionadas com sucesso",
-        description: `${processedPhotos.length} nova(s) foto(s) adicionada(s) ao projeto.`,
-      });
-      
-      // Recarregar o projeto para mostrar as novas fotos
-      setTimeout(() => {
-        setLocation(`/project/${project.id}`);
-      }, 1000);
       
     } catch (error: any) {
       console.error('Erro ao adicionar fotos:', error);
@@ -391,9 +323,6 @@ export default function ProjectEdit() {
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
-      
-      // Parar monitoramento de responsividade da UI
-      uiMonitor.stop();
     }
   };
   
