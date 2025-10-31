@@ -28,6 +28,7 @@ import { nanoid } from "nanoid";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { compressMultipleImages } from "@/lib/imageCompression";
+import { getMemoryStatus, detectDeviceCapacity, smartPause, isSafeToContinue, UIResponsivenessMonitor } from '@/lib/whiteScreenProtection';
 
 // Esquema para validação do formulário
 const projectEditSchema = z.object({
@@ -51,7 +52,18 @@ export default function ProjectEdit() {
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState("details");
+  
+  // 🛡️ SISTEMA DE MONITORAMENTO ANTI-TELA BRANCA
+  const [uiMonitor] = useState(new UIResponsivenessMonitor());
+  
+  useEffect(() => {
+    return () => {
+      // Cleanup do monitor quando componente é desmontado
+      uiMonitor.stop();
+    };
+  }, [uiMonitor]);
 
   // Query to fetch project comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery<PhotoComment[]>({
@@ -134,49 +146,43 @@ export default function ProjectEdit() {
     
     try {
       setIsUploading(true);
+      setUploadProgress(0);
       
-      // ETAPA 1: Redimensionar imagens no front-end antes do upload
+      // Iniciar monitoramento de responsividade da UI
+      uiMonitor.start();
+      
+      // ETAPA 1: Redimensionar imagens no front-end antes do upload com proteção contra tela branca
       console.log(`[Frontend] Iniciando redimensionamento de ${newPhotos.length} imagens para o projeto ${project.id}`);
       
-      // Redimensionar todas as imagens
+      setUploadProgress(5); // 5% - iniciando processamento
+      
+      // Redimensionar todas as imagens com callback de progresso e sistema de proteção
       const compressedFiles = await compressMultipleImages(
         newPhotos,
         {
           maxWidthOrHeight: 970, // Largura máxima padronizada
           quality: 0.9, // Qualidade padronizada
           useWebWorker: true,
+        },
+        (processed, total) => {
+          // Atualizar progresso da compressão (5% a 25%)
+          const compressionProgress = 5 + (processed / total) * 20;
+          setUploadProgress(Math.round(compressionProgress));
+          
+          // Reportar atividade ao monitor UI
+          uiMonitor.reportActivity(`Comprimindo imagem ${processed}/${total}`);
         }
       );
 
       console.log(`[Frontend] Redimensionamento concluído: ${compressedFiles.length} imagens processadas`);
+      setUploadProgress(25); // 25% - compressão concluída
       
-      // Processar as fotos para upload (converter para URL base64 para simplificar)
-      const processedPhotos = await Promise.all(
-        compressedFiles.map(async (file) => {
-          // Gerar um ID único para a foto
-          const photoId = nanoid();
-          
-          // Ler o arquivo como base64 para salvar no localStorage
-          const reader = new FileReader();
-          const base64Promise = new Promise<string>((resolve) => {
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(file);
-          });
-          
-          const url = await base64Promise;
-          
-          return {
-            id: photoId,
-            url: url,
-            filename: file.name,
-            selected: false
-          };
-        })
-      );
+      // Reportar atividade ao monitor UI
+      uiMonitor.reportActivity('Preparando arquivos para upload');
       
-      // Primeiro tentar usar a API
+      // Primeiro tentar usar a API com monitoramento de progresso
       try {
-        console.log(`[Frontend] Enviando ${processedPhotos.length} fotos redimensionadas para o projeto ${project.id}`);
+        console.log(`[Frontend] Enviando ${compressedFiles.length} fotos redimensionadas para o projeto ${project.id}`);
         
         // Criar FormData para upload de arquivos
         const formData = new FormData();
@@ -186,21 +192,47 @@ export default function ProjectEdit() {
           formData.append('photos', file);
         });
         
-        // Enviar os arquivos usando FormData
-        const response = await fetch(`/api/projects/${project.id}/photos`, {
-          method: 'POST',
-          // Não definir Content-Type para que o navegador defina automaticamente com boundary
-          body: formData,
-          credentials: 'include',
+        // Usar XMLHttpRequest para monitorar progresso do upload
+        const response = await new Promise<Response>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          // Monitorar progresso do upload (25% a 95%)
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const uploadPercent = 25 + ((event.loaded / event.total) * 70);
+              setUploadProgress(Math.min(Math.round(uploadPercent), 95));
+              
+              // Reportar atividade ao monitor UI
+              uiMonitor.reportActivity(`Enviando fotos: ${Math.round((event.loaded / event.total) * 100)}%`);
+            }
+          };
+          
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(new Response(xhr.responseText, { status: xhr.status }));
+            } else {
+              reject(new Error(`Upload failed with status: ${xhr.status}`));
+            }
+          };
+          
+          xhr.onerror = () => {
+            reject(new Error('Network error during upload'));
+          };
+          
+          xhr.open('POST', `/api/projects/${project.id}/photos`);
+          xhr.setRequestHeader('credentials', 'include');
+          xhr.send(formData);
         });
         
         if (response.ok) {
+          setUploadProgress(100);
+          
           // Sucesso! Limpar as fotos carregadas
           clearPhotos();
           
           toast({
             title: "Fotos adicionadas com sucesso",
-            description: `${processedPhotos.length} nova(s) foto(s) adicionada(s) ao projeto.`,
+            description: `${compressedFiles.length} nova(s) foto(s) adicionada(s) ao projeto.`,
           });
           
           // Recarregar o projeto para mostrar as novas fotos
@@ -358,6 +390,10 @@ export default function ProjectEdit() {
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      
+      // Parar monitoramento de responsividade da UI
+      uiMonitor.stop();
     }
   };
   
@@ -810,6 +846,37 @@ export default function ProjectEdit() {
                   </div>
                 ))}
               </div>
+              
+              {/* Barra de progresso de upload */}
+              {isUploading && (
+                <div className="w-full flex flex-col gap-2 mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300 ease-in-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-gray-600 mt-1 px-1">
+                    <div className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Processando {newPhotos.length} fotos</span>
+                    </div>
+                    <span className="font-medium text-blue-600">{uploadProgress}%</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 text-center">
+                    {uploadProgress < 25 ? (
+                      "Comprimindo imagens..."
+                    ) : uploadProgress < 95 ? (
+                      "Enviando fotos para o servidor..."
+                    ) : (
+                      "Finalizando o processamento..."
+                    )}
+                  </div>
+                </div>
+              )}
               
               {/* Botão para fazer upload */}
               <div className="mt-4 flex justify-end">
