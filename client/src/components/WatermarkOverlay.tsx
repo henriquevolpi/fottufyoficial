@@ -117,10 +117,10 @@ const WatermarkOverlay = memo(function WatermarkOverlay({
         // Alternar entre cores claras e escuras em padrão xadrez
         const isDark = (rowIndex + colIndex) % 2 === 0;
         ctx.fillStyle = isDark 
-          ? 'rgba(0, 0, 0, 0.4)'      // OPACIDADE PRETA: ajuste o último número (0.4) entre 0.1 e 1.0
-          : 'rgba(255, 255, 255, 0.6)'; // OPACIDADE BRANCA: ajuste o último número (0.6) entre 0.1 e 1.0
+          ? 'rgba(0, 0, 0, 0.28)'      // OPACIDADE PRETA: ajuste o último número (0.28) entre 0.1 e 1.0
+          : 'rgba(255, 255, 255, 0.32)'; // OPACIDADE BRANCA: ajuste o último número (0.32) entre 0.1 e 1.0
         
-        ctx.fillText(text, 0.9, 0.10);
+        ctx.fillText(text, 0, 0);
         ctx.restore();
         colIndex++;
       }
