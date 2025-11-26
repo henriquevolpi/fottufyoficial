@@ -353,6 +353,7 @@ export interface IStorage {
   createHotmartOffer(offer: InsertHotmartOffer): Promise<HotmartOffer>;
   updateHotmartOffer(id: number, data: Partial<HotmartOffer>): Promise<HotmartOffer | undefined>;
   deleteHotmartOffer(id: number): Promise<boolean>;
+  hardDeleteHotmartOffer(id: number): Promise<boolean>;
   
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -1745,6 +1746,23 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Erro ao deletar oferta da Hotmart:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Deleta permanentemente uma oferta do banco de dados (hard delete)
+   */
+  async hardDeleteHotmartOffer(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(hotmartOffers)
+        .where(eq(hotmartOffers.id, id));
+      
+      console.log(`[HOTMART] Oferta excluída permanentemente: ID=${id}`);
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir permanentemente oferta da Hotmart:", error);
       return false;
     }
   }

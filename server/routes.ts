@@ -3447,20 +3447,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
-   * Deleta (desativa) uma oferta
+   * Deleta (desativa) ou exclui permanentemente uma oferta
+   * Query param: ?permanent=true para excluir permanentemente
    */
   app.delete("/api/admin/hotmart/offers/:id", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
       const offerId = parseInt(req.params.id);
+      const permanent = req.query.permanent === 'true';
       
-      const success = await storage.deleteHotmartOffer(offerId);
+      let success: boolean;
+      if (permanent) {
+        success = await storage.hardDeleteHotmartOffer(offerId);
+      } else {
+        success = await storage.deleteHotmartOffer(offerId);
+      }
       
       if (!success) {
         return res.status(404).json({ message: "Oferta não encontrada" });
       }
 
-      console.log(`Admin: Oferta desativada - ID ${offerId}`);
-      res.json({ message: "Oferta desativada com sucesso" });
+      const action = permanent ? "excluída permanentemente" : "desativada";
+      console.log(`Admin: Oferta ${action} - ID ${offerId}`);
+      res.json({ message: `Oferta ${action} com sucesso` });
     } catch (error) {
       console.error("Erro ao deletar oferta da Hotmart:", error);
       res.status(500).json({ message: "Erro ao deletar oferta" });
