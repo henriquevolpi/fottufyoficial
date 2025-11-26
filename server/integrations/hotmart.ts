@@ -111,37 +111,45 @@ export function validateHotmartSignature(payload: string, signature: string, sec
  * 
  * Esta função implementa:
  * 1. Busca de ID da oferta em múltiplos locais do payload
- * 2. Verificação do ID contra o mapeamento de ofertas para planos
+ * 2. Verificação do ID contra o banco de dados de ofertas (substituindo o mapa hardcoded)
  * 3. Detecção e rejeição de planos de teste (retorna null)
  * 4. Busca recursiva de IDs de oferta em estruturas complexas
  * 
  * @param payload O payload recebido do webhook da Hotmart
- * @returns String com o tipo de plano ou null se não for encontrado/válido
+ * @returns Promise com o tipo de plano ou null se não for encontrado/válido
  */
-export function determinePlanType(payload: HotmartWebhookPayload): string | null {
+export async function determinePlanType(payload: HotmartWebhookPayload): Promise<string | null> {
   try {
     if (!payload) {
       console.log('Hotmart: Payload inválido');
       return null;
     }
     
+    // Função auxiliar para verificar se uma oferta existe no banco de dados
+    const checkOfferInDatabase = async (offerId: string): Promise<string | null> => {
+      const offer = await storage.getHotmartOfferByCode(offerId);
+      if (offer && offer.isActive) {
+        console.log(`Hotmart: Oferta encontrada no banco de dados: ${offerId} -> ${offer.planType}`);
+        return offer.planType;
+      }
+      return null;
+    };
+    
     // Primeiro verificar locais conhecidos
     // Verificar se temos o ID da oferta diretamente nos parâmetros
     if (payload.data?.params?.off) {
       const offerId = payload.data.params.off;
       console.log(`Hotmart: ID da oferta encontrado em params: ${offerId}`);
-      if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
-        return HOTMART_OFFER_TO_PLAN_MAP[offerId];
-      }
+      const planType = await checkOfferInDatabase(offerId);
+      if (planType) return planType;
     }
     
     // Verificar se temos o ID da oferta diretamente no objeto offer
     if (payload.data?.purchase?.offer?.off) {
       const offerId = payload.data.purchase.offer.off;
       console.log(`Hotmart: ID da oferta encontrado em offer: ${offerId}`);
-      if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
-        return HOTMART_OFFER_TO_PLAN_MAP[offerId];
-      }
+      const planType = await checkOfferInDatabase(offerId);
+      if (planType) return planType;
     }
     
     // Buscar o ID da oferta no parâmetro "off" dentro da URL da transação
@@ -154,26 +162,27 @@ export function determinePlanType(payload: HotmartWebhookPayload): string | null
         if (offMatch && offMatch[1]) {
           const offerId = offMatch[1];
           console.log(`Hotmart: ID da oferta encontrado na URL: ${offerId}`);
-          if (HOTMART_OFFER_TO_PLAN_MAP[offerId]) {
-            return HOTMART_OFFER_TO_PLAN_MAP[offerId];
-          }
+          const planType = await checkOfferInDatabase(offerId);
+          if (planType) return planType;
         }
       }
     }
     
     // Tentar pegar o código da oferta (segunda tentativa)
     const offerCode = payload.data?.purchase?.offer?.code;
-    if (offerCode && HOTMART_OFFER_TO_PLAN_MAP[offerCode]) {
-      console.log(`Hotmart: Usando código da oferta: ${offerCode}`);
-      return HOTMART_OFFER_TO_PLAN_MAP[offerCode];
+    if (offerCode) {
+      console.log(`Hotmart: Verificando código da oferta: ${offerCode}`);
+      const planType = await checkOfferInDatabase(offerCode);
+      if (planType) return planType;
     }
     
     // Buscar recursivamente em qualquer parte do payload
     console.log('Hotmart: Iniciando busca recursiva por ID de oferta...');
-    const offerId = findOfferIdInPayload(payload);
+    const offerId = await findOfferIdInPayload(payload);
     if (offerId) {
       console.log(`Hotmart: ID da oferta encontrado por busca recursiva: ${offerId}`);
-      return HOTMART_OFFER_TO_PLAN_MAP[offerId];
+      const planType = await checkOfferInDatabase(offerId);
+      if (planType) return planType;
     }
     
     // Verificar se o plano encontrado não é um plano de teste
@@ -455,8 +464,9 @@ function findCustomerName(payload: any, depth: number = 0): string | null {
 
 /**
  * Função recursiva auxiliar para buscar o ID da oferta em qualquer lugar do objeto payload
+ * Agora apenas retorna o ID da oferta sem verificar no mapa (verificação é feita no banco de dados)
  */
-function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
+async function findOfferIdInPayload(obj: any, depth: number = 0): Promise<string | null> {
   // Limite de profundidade para evitar loops infinitos
   if (depth > 15 || !obj || typeof obj !== 'object') {
     return null;
@@ -465,14 +475,14 @@ function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
   // Verificar estruturas específicas conhecidas
   // 1. Estrutura: data.transaction.details.purchaseInfo.vendorInfo.productData.offerId
   const complexOfferId1 = obj?.data?.transaction?.details?.purchaseInfo?.vendorInfo?.productData?.offerId;
-  if (complexOfferId1 && typeof complexOfferId1 === 'string' && HOTMART_OFFER_TO_PLAN_MAP[complexOfferId1]) {
+  if (complexOfferId1 && typeof complexOfferId1 === 'string') {
     console.log(`Hotmart: ID da oferta encontrado em estrutura complexa (tipo 1):`, complexOfferId1);
     return complexOfferId1;
   }
   
   // 2. Estrutura: purchaseDetails.product.information.offerId
   const complexOfferId2 = obj?.purchaseDetails?.product?.information?.offerId;
-  if (complexOfferId2 && typeof complexOfferId2 === 'string' && HOTMART_OFFER_TO_PLAN_MAP[complexOfferId2]) {
+  if (complexOfferId2 && typeof complexOfferId2 === 'string') {
     console.log(`Hotmart: ID da oferta encontrado em estrutura complexa (tipo 2):`, complexOfferId2);
     return complexOfferId2;
   }
@@ -485,17 +495,14 @@ function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
     // Verificar se a propriedade é um ID de oferta
     if (offerIdKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
       const potentialOfferId = obj[key];
-      // Verificar se existe no mapeamento
-      if (HOTMART_OFFER_TO_PLAN_MAP[potentialOfferId]) {
-        console.log(`Hotmart: ID da oferta encontrado na propriedade ${key}:`, potentialOfferId);
-        return potentialOfferId;
-      }
+      console.log(`Hotmart: ID da oferta encontrado na propriedade ${key}:`, potentialOfferId);
+      return potentialOfferId;
     }
     
     // Verificar se existe algum padrão de URL com off=XXXX
     if (typeof obj[key] === 'string' && obj[key].includes('off=')) {
       const offMatch = obj[key].match(/off=([a-zA-Z0-9]+)/);
-      if (offMatch && offMatch[1] && HOTMART_OFFER_TO_PLAN_MAP[offMatch[1]]) {
+      if (offMatch && offMatch[1]) {
         console.log(`Hotmart: ID da oferta encontrado em URL:`, offMatch[1]);
         return offMatch[1];
       }
@@ -503,28 +510,9 @@ function findOfferIdInPayload(obj: any, depth: number = 0): string | null {
     
     // Verificar objetos aninhados
     if (obj[key] && typeof obj[key] === 'object') {
-      const nestedOfferId = findOfferIdInPayload(obj[key], depth + 1);
+      const nestedOfferId = await findOfferIdInPayload(obj[key], depth + 1);
       if (nestedOfferId) {
         return nestedOfferId;
-      }
-    }
-  }
-  
-  // Verificar se existe uma oferta diretamente em offerName/productName - checando pelo nome do plano
-  for (const key of Object.keys(obj)) {
-    if (['offerName', 'productName', 'planName', 'subscription_name'].includes(key.toLowerCase()) && typeof obj[key] === 'string') {
-      const planName = obj[key].toLowerCase();
-      console.log(`Hotmart: Verificando nome de plano "${planName}" para inferir oferta`);
-      
-      // Verificar se o nome contém palavras-chave que indicam o plano
-      if (planName.includes('basic') || planName.includes('básico')) {
-        return 'ro76q5uz'; // ID da oferta do plano básico
-      } 
-      else if (planName.includes('standard') || planName.includes('padrão')) {
-        return 'tpfhcllk'; // ID da oferta do plano standard
-      }
-      else if (planName.includes('professional') || planName.includes('profissional') || planName.includes('pro')) {
-        return 'xtuh4ji0'; // ID da oferta do plano professional
       }
     }
   }
@@ -1033,7 +1021,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
     let user = await storage.getUserByEmail(email);
     
     // Determinar o tipo de plano com base na oferta
-    const planType = determinePlanType(payload);
+    const planType = await determinePlanType(payload);
     
     // Verificar se é um evento de cancelamento (eventos de cancelamento não precisam de planType)
     const isCancellationEvent = [
