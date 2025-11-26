@@ -2078,6 +2078,9 @@ function HotmartOffersManagement() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [editingOffer, setEditingOffer] = useState<HotmartOffer | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [offerToDelete, setOfferToDelete] = useState<HotmartOffer | null>(null);
+  const [showInactiveOffers, setShowInactiveOffers] = useState(false);
   const [formData, setFormData] = useState({
     offerCode: "",
     planType: "basic_v2" as "basic_v2" | "standard_v2" | "professional_v2",
@@ -2135,22 +2138,29 @@ function HotmartOffersManagement() {
     },
   });
 
-  // Mutation para deletar oferta
+  // Mutation para deletar oferta (soft ou hard delete)
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/admin/hotmart/offers/${id}`, {});
+    mutationFn: async ({ id, permanent }: { id: number; permanent: boolean }) => {
+      const url = permanent 
+        ? `/api/admin/hotmart/offers/${id}?permanent=true`
+        : `/api/admin/hotmart/offers/${id}`;
+      return await apiRequest("DELETE", url, {});
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      const action = variables.permanent ? "excluída permanentemente" : "desativada";
       toast({
-        title: "Oferta desativada",
-        description: "A oferta foi desativada com sucesso!",
+        title: `Oferta ${action}`,
+        description: `A oferta foi ${action} com sucesso!`,
       });
+      setDeleteDialogOpen(false);
+      setOfferToDelete(null);
       refetch();
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
+      const action = variables.permanent ? "excluir" : "desativar";
       toast({
-        title: "Erro ao desativar oferta",
-        description: error.message || "Ocorreu um erro ao desativar a oferta",
+        title: `Erro ao ${action} oferta`,
+        description: error.message || `Ocorreu um erro ao ${action} a oferta`,
         variant: "destructive",
       });
     },
@@ -2324,7 +2334,20 @@ function HotmartOffersManagement() {
 
       {/* Tabela de ofertas */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-medium mb-4">Ofertas Cadastradas</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium">Ofertas Cadastradas</h3>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="show-inactive"
+              checked={showInactiveOffers}
+              onCheckedChange={setShowInactiveOffers}
+              data-testid="switch-show-inactive"
+            />
+            <Label htmlFor="show-inactive" className="cursor-pointer">
+              Mostrar inativas
+            </Label>
+          </div>
+        </div>
         
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -2347,7 +2370,9 @@ function HotmartOffersManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {offers.map((offer: any) => (
+              {offers
+                .filter((offer: any) => showInactiveOffers || offer.isActive)
+                .map((offer: any) => (
                 <TableRow key={offer.id} data-testid={`row-offer-${offer.id}`}>
                   <TableCell className="font-mono font-medium">{offer.offerCode}</TableCell>
                   <TableCell>{getPlanName(offer.planType)}</TableCell>
@@ -2381,7 +2406,10 @@ function HotmartOffersManagement() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deleteMutation.mutate(offer.id)}
+                        onClick={() => {
+                          setOfferToDelete(offer);
+                          setDeleteDialogOpen(true);
+                        }}
                         disabled={deleteMutation.isPending}
                         data-testid={`button-delete-${offer.id}`}
                       >
@@ -2395,6 +2423,58 @@ function HotmartOffersManagement() {
           </Table>
         )}
       </div>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir ou Desativar Oferta?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Você tem duas opções para remover a oferta <strong className="font-mono">{offerToDelete?.offerCode}</strong>:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li><strong>Desativar:</strong> A oferta fica inativa mas permanece no banco de dados (recomendado)</li>
+                <li><strong>Excluir permanentemente:</strong> A oferta é removida 100% do banco de dados (não pode ser desfeito)</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              Cancelar
+            </AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (offerToDelete) {
+                  deleteMutation.mutate({ id: offerToDelete.id, permanent: false });
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              data-testid="button-deactivate"
+            >
+              Apenas Desativar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (offerToDelete) {
+                  deleteMutation.mutate({ id: offerToDelete.id, permanent: true });
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              data-testid="button-permanent-delete"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir Permanentemente"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
