@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser, 
   projects, type Project, type InsertProject,
   photos, photoComments, portfolios, portfolioPhotos,
+  hotmartOffers, type HotmartOffer, type InsertHotmartOffer,
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
@@ -344,6 +345,14 @@ export interface IStorage {
     analysis: any;
     recommendations: string[];
   }>;
+  
+  // Hotmart Offers management methods
+  getAllHotmartOffers(): Promise<any[]>;
+  getActiveHotmartOffers(): Promise<any[]>;
+  getHotmartOfferByCode(offerCode: string): Promise<any | undefined>;
+  createHotmartOffer(offer: any): Promise<any>;
+  updateHotmartOffer(id: number, data: Partial<any>): Promise<any | undefined>;
+  deleteHotmartOffer(id: number): Promise<boolean>;
   
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -1617,6 +1626,126 @@ export class DatabaseStorage implements IStorage {
         },
         recommendations: ["Tente novamente", "Contate o suporte"]
       };
+    }
+  }
+
+  // ==================== HOTMART OFFERS MANAGEMENT ====================
+  
+  /**
+   * Busca todas as ofertas da Hotmart (ativas e inativas)
+   */
+  async getAllHotmartOffers(): Promise<HotmartOffer[]> {
+    try {
+      const offers = await db
+        .select()
+        .from(hotmartOffers)
+        .orderBy(desc(hotmartOffers.createdAt));
+      
+      return offers;
+    } catch (error) {
+      console.error("Erro ao buscar ofertas da Hotmart:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Busca apenas ofertas ativas da Hotmart
+   */
+  async getActiveHotmartOffers(): Promise<HotmartOffer[]> {
+    try {
+      const offers = await db
+        .select()
+        .from(hotmartOffers)
+        .where(eq(hotmartOffers.isActive, true))
+        .orderBy(desc(hotmartOffers.createdAt));
+      
+      return offers;
+    } catch (error) {
+      console.error("Erro ao buscar ofertas ativas da Hotmart:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Busca uma oferta específica pelo código
+   */
+  async getHotmartOfferByCode(offerCode: string): Promise<HotmartOffer | undefined> {
+    try {
+      const [offer] = await db
+        .select()
+        .from(hotmartOffers)
+        .where(eq(hotmartOffers.offerCode, offerCode))
+        .limit(1);
+      
+      return offer;
+    } catch (error) {
+      console.error("Erro ao buscar oferta por código:", error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Cria uma nova oferta da Hotmart
+   */
+  async createHotmartOffer(offer: InsertHotmartOffer): Promise<HotmartOffer> {
+    try {
+      const [newOffer] = await db
+        .insert(hotmartOffers)
+        .values({
+          ...offer,
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[HOTMART] Nova oferta criada: ${newOffer.offerCode} -> ${newOffer.planType}`);
+      return newOffer;
+    } catch (error) {
+      console.error("Erro ao criar oferta da Hotmart:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Atualiza uma oferta existente
+   */
+  async updateHotmartOffer(id: number, data: Partial<HotmartOffer>): Promise<HotmartOffer | undefined> {
+    try {
+      const [updatedOffer] = await db
+        .update(hotmartOffers)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(hotmartOffers.id, id))
+        .returning();
+      
+      console.log(`[HOTMART] Oferta atualizada: ID=${id}`);
+      return updatedOffer;
+    } catch (error) {
+      console.error("Erro ao atualizar oferta da Hotmart:", error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Deleta uma oferta (soft delete - apenas desativa)
+   */
+  async deleteHotmartOffer(id: number): Promise<boolean> {
+    try {
+      // Soft delete: apenas desativar a oferta em vez de deletar do banco
+      await db
+        .update(hotmartOffers)
+        .set({
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(eq(hotmartOffers.id, id));
+      
+      console.log(`[HOTMART] Oferta desativada: ID=${id}`);
+      return true;
+    } catch (error) {
+      console.error("Erro ao deletar oferta da Hotmart:", error);
+      return false;
     }
   }
 
