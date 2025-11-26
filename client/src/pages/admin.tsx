@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { User, SUBSCRIPTION_PLANS } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -695,7 +695,7 @@ export default function Admin() {
         <main className="flex-1 bg-gray-50">
         <div className="container mx-auto py-6 px-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3">
+            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-4">
               <TabsTrigger value="users" className="flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2" />
                 Users Management
@@ -703,6 +703,10 @@ export default function Admin() {
               <TabsTrigger value="subscriptions" className="flex items-center">
                 <BarChart className="h-4 w-4 mr-2" />
                 Subscriptions
+              </TabsTrigger>
+              <TabsTrigger value="hotmart" className="flex items-center">
+                <KeyIcon className="h-4 w-4 mr-2" />
+                Hotmart
               </TabsTrigger>
               <TabsTrigger value="stats" className="flex items-center">
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
@@ -1462,6 +1466,10 @@ export default function Admin() {
               </div>
             </TabsContent>
             
+            <TabsContent value="hotmart" className="space-y-4">
+              <HotmartOffersManagement />
+            </TabsContent>
+            
             <TabsContent value="stats" className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
@@ -1967,5 +1975,317 @@ export default function Admin() {
       </AlertDialog>
       </div>
     </AdminLayout>
+  );
+}
+
+/**
+ * Componente para gerenciar ofertas da Hotmart
+ * Permite adicionar, editar, ativar/desativar ofertas sem precisar modificar o código
+ */
+interface HotmartOffer {
+  id: number;
+  offerCode: string;
+  planType: "basic_v2" | "standard_v2" | "professional_v2";
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function HotmartOffersManagement() {
+  const { toast } = useToast();
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<HotmartOffer | null>(null);
+  const [formData, setFormData] = useState({
+    offerCode: "",
+    planType: "basic_v2" as "basic_v2" | "standard_v2" | "professional_v2",
+    description: "",
+    isActive: true
+  });
+
+  // Buscar ofertas
+  const { data: offers = [], isLoading, refetch } = useQuery<HotmartOffer[]>({
+    queryKey: ["/api/admin/hotmart/offers"],
+  });
+
+  // Mutation para criar oferta
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      return await apiRequest("POST", "/api/admin/hotmart/offers", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Oferta criada",
+        description: "A oferta foi criada com sucesso!",
+      });
+      refetch();
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao criar oferta",
+        description: error.message || "Ocorreu um erro ao criar a oferta",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para atualizar oferta
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<typeof formData> }) => {
+      return await apiRequest("PUT", `/api/admin/hotmart/offers/${id}`, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Oferta atualizada",
+        description: "A oferta foi atualizada com sucesso!",
+      });
+      refetch();
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao atualizar oferta",
+        description: error.message || "Ocorreu um erro ao atualizar a oferta",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para deletar oferta
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/admin/hotmart/offers/${id}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Oferta desativada",
+        description: "A oferta foi desativada com sucesso!",
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao desativar oferta",
+        description: error.message || "Ocorreu um erro ao desativar a oferta",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      offerCode: "",
+      planType: "basic_v2",
+      description: "",
+      isActive: true,
+    });
+    setIsCreating(false);
+    setEditingOffer(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingOffer) {
+      updateMutation.mutate({ id: editingOffer.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleEdit = (offer: HotmartOffer) => {
+    setEditingOffer(offer);
+    setFormData({
+      offerCode: offer.offerCode,
+      planType: offer.planType,
+      description: offer.description || "",
+      isActive: offer.isActive,
+    });
+    setIsCreating(true);
+  };
+
+  const getPlanName = (planType: string) => {
+    const planMap: Record<string, string> = {
+      basic_v2: "Básico (6.000 fotos)",
+      standard_v2: "Standard (17.000 fotos)",
+      professional_v2: "Professional (40.000 fotos)",
+    };
+    return planMap[planType] || planType;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header com botão de nova oferta */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Gerenciar Ofertas da Hotmart</h2>
+            <p className="text-gray-600">
+              Configure os códigos de ofertas da Hotmart e seus respectivos planos sem precisar modificar o código
+            </p>
+          </div>
+          {!isCreating && (
+            <Button onClick={() => setIsCreating(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Nova Oferta
+            </Button>
+          )}
+        </div>
+
+        {/* Formulário de criação/edição */}
+        {isCreating && (
+          <form onSubmit={handleSubmit} className="mt-6 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-lg font-medium mb-4">
+              {editingOffer ? "Editar Oferta" : "Nova Oferta"}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="offerCode">Código da Oferta *</Label>
+                <Input
+                  id="offerCode"
+                  value={formData.offerCode}
+                  onChange={(e) => setFormData({ ...formData, offerCode: e.target.value })}
+                  placeholder="ex: ro76q5uz"
+                  required
+                  data-testid="input-offer-code"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Código único da oferta conforme Hotmart
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="planType">Plano Associado *</Label>
+                <Select
+                  value={formData.planType}
+                  onValueChange={(value: any) => setFormData({ ...formData, planType: value })}
+                >
+                  <SelectTrigger data-testid="select-plan-type">
+                    <SelectValue placeholder="Selecione o plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic_v2">Básico (6.000 fotos)</SelectItem>
+                    <SelectItem value="standard_v2">Standard (17.000 fotos)</SelectItem>
+                    <SelectItem value="professional_v2">Professional (40.000 fotos)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="description">Descrição (opcional)</Label>
+                <Input
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="ex: Plano Básico Mensal - R$14,90"
+                  data-testid="input-description"
+                />
+              </div>
+
+              <div className="md:col-span-2 flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  data-testid="switch-is-active"
+                />
+                <Label htmlFor="isActive">Oferta ativa</Label>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                data-testid="button-submit-offer"
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>{editingOffer ? "Atualizar" : "Criar"} Oferta</>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetForm}
+                data-testid="button-cancel"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Tabela de ofertas */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <h3 className="text-lg font-medium mb-4">Ofertas Cadastradas</h3>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          </div>
+        ) : offers.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Nenhuma oferta cadastrada ainda</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Plano</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {offers.map((offer: any) => (
+                <TableRow key={offer.id} data-testid={`row-offer-${offer.id}`}>
+                  <TableCell className="font-mono font-medium">{offer.offerCode}</TableCell>
+                  <TableCell>{getPlanName(offer.planType)}</TableCell>
+                  <TableCell className="text-gray-600">
+                    {offer.description || "-"}
+                  </TableCell>
+                  <TableCell>
+                    {offer.isActive ? (
+                      <Badge className="bg-green-100 text-green-800">Ativa</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inativa</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(offer)}
+                        data-testid={`button-edit-${offer.id}`}
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(offer.id)}
+                        disabled={deleteMutation.isPending}
+                        data-testid={`button-delete-${offer.id}`}
+                      >
+                        <Trash2Icon className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    </div>
   );
 }
