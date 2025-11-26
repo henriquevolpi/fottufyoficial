@@ -1260,7 +1260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update user with new expiration date
       const updatedUser = await storage.updateUser(user.id, { 
-        subscriptionExpiresAt: expirationDate,
+        subscriptionEndDate: expirationDate,
         subscriptionStatus: "active",
         subscriptionStartDate: new Date(),
       });
