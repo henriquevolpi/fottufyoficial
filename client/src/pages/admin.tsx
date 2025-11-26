@@ -2067,6 +2067,7 @@ interface HotmartOffer {
   id: number;
   offerCode: string;
   planType: "basic_v2" | "standard_v2" | "professional_v2";
+  billingPeriod: "monthly" | "yearly";
   description: string | null;
   isActive: boolean;
   createdAt: string;
@@ -2080,6 +2081,7 @@ function HotmartOffersManagement() {
   const [formData, setFormData] = useState({
     offerCode: "",
     planType: "basic_v2" as "basic_v2" | "standard_v2" | "professional_v2",
+    billingPeriod: "monthly" as "monthly" | "yearly",
     description: "",
     isActive: true
   });
@@ -2158,6 +2160,7 @@ function HotmartOffersManagement() {
     setFormData({
       offerCode: "",
       planType: "basic_v2",
+      billingPeriod: "monthly",
       description: "",
       isActive: true,
     });
@@ -2179,6 +2182,7 @@ function HotmartOffersManagement() {
     setFormData({
       offerCode: offer.offerCode,
       planType: offer.planType,
+      billingPeriod: offer.billingPeriod || "monthly",
       description: offer.description || "",
       isActive: offer.isActive,
     });
@@ -2252,6 +2256,22 @@ function HotmartOffersManagement() {
                 </Select>
               </div>
 
+              <div>
+                <Label htmlFor="billingPeriod">Período de Cobrança *</Label>
+                <Select
+                  value={formData.billingPeriod}
+                  onValueChange={(value: any) => setFormData({ ...formData, billingPeriod: value })}
+                >
+                  <SelectTrigger data-testid="select-billing-period">
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal (30 dias)</SelectItem>
+                    <SelectItem value="yearly">Anual (365 dias)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="md:col-span-2">
                 <Label htmlFor="description">Descrição (opcional)</Label>
                 <Input
@@ -2320,6 +2340,7 @@ function HotmartOffersManagement() {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Plano</TableHead>
+                <TableHead>Período</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -2330,6 +2351,13 @@ function HotmartOffersManagement() {
                 <TableRow key={offer.id} data-testid={`row-offer-${offer.id}`}>
                   <TableCell className="font-mono font-medium">{offer.offerCode}</TableCell>
                   <TableCell>{getPlanName(offer.planType)}</TableCell>
+                  <TableCell>
+                    {offer.billingPeriod === "yearly" ? (
+                      <Badge className="bg-purple-100 text-purple-800">Anual (365d)</Badge>
+                    ) : (
+                      <Badge className="bg-blue-100 text-blue-800">Mensal (30d)</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-gray-600">
                     {offer.description || "-"}
                   </TableCell>

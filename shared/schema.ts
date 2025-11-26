@@ -405,6 +405,8 @@ export const insertHotmartOfferSchema = createInsertSchema(hotmartOffers).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  billingPeriod: z.enum(["monthly", "yearly"]).default("monthly"),
 });
 
 export type HotmartOffer = typeof hotmartOffers.$inferSelect;
