@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { User, SUBSCRIPTION_PLANS } from "@shared/schema";
@@ -43,6 +43,7 @@ import {
   CircleSlashIcon,
   Clock,
   FilterIcon,
+  ImageIcon,
   KeyIcon,
   Loader2,
   Mail,
@@ -51,8 +52,10 @@ import {
   PlusIcon,
   SearchIcon,
   Trash2Icon,
+  UploadIcon,
   UsersIcon,
   XCircleIcon,
+  LinkIcon,
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -746,7 +749,7 @@ export default function Admin() {
         <main className="flex-1 bg-gray-50">
         <div className="container mx-auto py-6 px-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-4">
+            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-5">
               <TabsTrigger value="users" className="flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2" />
                 Users Management
@@ -758,6 +761,10 @@ export default function Admin() {
               <TabsTrigger value="hotmart" className="flex items-center">
                 <KeyIcon className="h-4 w-4 mr-2" />
                 Hotmart
+              </TabsTrigger>
+              <TabsTrigger value="banner" className="flex items-center">
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Banner
               </TabsTrigger>
               <TabsTrigger value="stats" className="flex items-center">
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
@@ -1517,6 +1524,10 @@ export default function Admin() {
             
             <TabsContent value="hotmart" className="space-y-4">
               <HotmartOffersManagement />
+            </TabsContent>
+
+            <TabsContent value="banner" className="space-y-4">
+              <BannerManagement />
             </TabsContent>
             
             <TabsContent value="stats" className="space-y-4">
@@ -2475,6 +2486,277 @@ function HotmartOffersManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/**
+ * Componente para gerenciar o banner do dashboard
+ */
+interface BannerConfig {
+  imageUrl: string;
+  linkUrl: string;
+  altText: string;
+  isActive: boolean;
+}
+
+function BannerManagement() {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [formData, setFormData] = useState<BannerConfig>({
+    imageUrl: "",
+    linkUrl: "",
+    altText: "Banner do Dashboard",
+    isActive: false
+  });
+
+  const { data: bannerData, isLoading, refetch } = useQuery<BannerConfig>({
+    queryKey: ["/api/admin/banner"],
+  });
+
+  useEffect(() => {
+    if (bannerData) {
+      setFormData({
+        imageUrl: bannerData.imageUrl || "",
+        linkUrl: bannerData.linkUrl || "",
+        altText: bannerData.altText || "Banner do Dashboard",
+        isActive: bannerData.isActive ?? false
+      });
+    }
+  }, [bannerData]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: BannerConfig) => {
+      return await apiRequest("PUT", "/api/admin/banner", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Banner atualizado",
+        description: "As configurações do banner foram salvas com sucesso!",
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Ocorreu um erro ao salvar o banner",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Arquivo inválido",
+        description: "Por favor, selecione uma imagem (JPG, PNG, etc)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+
+      const response = await fetch('/api/admin/banner/upload', {
+        method: 'POST',
+        body: formDataUpload,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha no upload');
+      }
+
+      const result = await response.json();
+      setFormData(prev => ({ ...prev, imageUrl: result.imageUrl }));
+      
+      toast({
+        title: "Upload concluído",
+        description: "A imagem foi enviada com sucesso!",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro no upload",
+        description: "Não foi possível enviar a imagem",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = () => {
+    updateMutation.mutate(formData);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-medium">Banner do Dashboard</h3>
+            <p className="text-sm text-gray-500">Configure o banner que aparece na área do fotógrafo</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="banner-active"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+              data-testid="switch-banner-active"
+            />
+            <Label htmlFor="banner-active" className="cursor-pointer">
+              {formData.isActive ? (
+                <Badge className="bg-green-100 text-green-800">Ativo</Badge>
+              ) : (
+                <Badge variant="secondary">Inativo</Badge>
+              )}
+            </Label>
+          </div>
+        </div>
+
+        <div className="grid gap-6">
+          <div>
+            <Label className="mb-2 block">Imagem do Banner</Label>
+            <div className="space-y-4">
+              {formData.imageUrl && (
+                <div className="relative rounded-lg overflow-hidden border bg-gray-50">
+                  <img 
+                    src={formData.imageUrl} 
+                    alt={formData.altText}
+                    className="w-full h-auto max-h-64 object-contain"
+                  />
+                </div>
+              )}
+              
+              <div className="flex items-center gap-4">
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    data-testid="input-banner-image"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    disabled={uploading}
+                    asChild
+                  >
+                    <span>
+                      {uploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <UploadIcon className="h-4 w-4 mr-2" />
+                          Enviar Imagem
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </label>
+
+                <span className="text-sm text-gray-500">ou</span>
+
+                <Input
+                  placeholder="Cole a URL da imagem"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="flex-1"
+                  data-testid="input-banner-url"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="banner-link" className="mb-2 block">
+              <div className="flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                Link do Banner (opcional)
+              </div>
+            </Label>
+            <Input
+              id="banner-link"
+              placeholder="https://exemplo.com/promocao"
+              value={formData.linkUrl}
+              onChange={(e) => setFormData(prev => ({ ...prev, linkUrl: e.target.value }))}
+              data-testid="input-banner-link"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Se preenchido, o banner será clicável e abrirá este link em nova aba
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="banner-alt" className="mb-2 block">Texto alternativo (acessibilidade)</Label>
+            <Input
+              id="banner-alt"
+              placeholder="Descrição da imagem"
+              value={formData.altText}
+              onChange={(e) => setFormData(prev => ({ ...prev, altText: e.target.value }))}
+              data-testid="input-banner-alt"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-6 pt-6 border-t">
+          <Button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            data-testid="button-save-banner"
+          >
+            {updateMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              "Salvar Configurações"
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {formData.imageUrl && formData.isActive && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Preview do Banner</h4>
+          <div className="border rounded-lg overflow-hidden">
+            {formData.linkUrl ? (
+              <a href={formData.linkUrl} target="_blank" rel="noopener noreferrer" className="block cursor-pointer hover:opacity-90 transition-opacity">
+                <img 
+                  src={formData.imageUrl} 
+                  alt={formData.altText}
+                  className="w-full h-auto"
+                />
+              </a>
+            ) : (
+              <img 
+                src={formData.imageUrl} 
+                alt={formData.altText}
+                className="w-full h-auto"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
