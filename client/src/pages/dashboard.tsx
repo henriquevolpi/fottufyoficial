@@ -1136,6 +1136,13 @@ function DashboardBanner() {
     return null;
   }
 
+  // Garantir que o link tenha protocolo
+  const getFullUrl = (url: string | undefined) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    return `https://${url}`;
+  };
+
   const bannerContent = (
     <img 
       src={banner.imageUrl} 
@@ -1149,7 +1156,7 @@ function DashboardBanner() {
     <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0" data-testid="dashboard-banner">
       {banner.linkUrl ? (
         <a 
-          href={banner.linkUrl} 
+          href={getFullUrl(banner.linkUrl)} 
           target="_blank" 
           rel="noopener noreferrer"
           className="block hover:opacity-95 transition-opacity cursor-pointer"
