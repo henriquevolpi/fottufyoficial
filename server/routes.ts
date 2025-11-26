@@ -3561,11 +3561,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filename = `banner_${Date.now()}.${ext}`;
       const key = `banners/${filename}`;
 
+      // Ler arquivo do disco (multer usa diskStorage)
+      const fs = await import('fs');
+      const buffer = fs.readFileSync(file.path);
+      
       // Upload para R2 usando a função existente
-      const imageUrl = await uploadFileToR2(file.buffer, key, file.mimetype);
+      const result = await uploadFileToR2(buffer, key, file.mimetype, false);
+      
+      // Limpar arquivo temporário
+      try {
+        fs.unlinkSync(file.path);
+      } catch (e) {
+        console.log("Aviso: não foi possível remover arquivo temporário");
+      }
       
       console.log(`Admin: Banner image uploaded - ${filename}`);
-      res.json({ imageUrl });
+      res.json({ imageUrl: result.url });
     } catch (error) {
       console.error("Erro ao fazer upload da imagem do banner:", error);
       res.status(500).json({ message: "Erro ao fazer upload da imagem" });
