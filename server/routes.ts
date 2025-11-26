@@ -1234,6 +1234,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set access time for a user
+  app.post("/api/admin/set-access-time", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { email, days } = req.body;
+      
+      if (!email || !days) {
+        return res.status(400).json({ message: "Email and days are required" });
+      }
+      
+      // Validate days is a positive number
+      const daysNumber = parseInt(days);
+      if (isNaN(daysNumber) || daysNumber <= 0) {
+        return res.status(400).json({ message: "Days must be a positive number" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Calculate expiration date
+      const expirationDate = new Date(Date.now() + daysNumber * 24 * 60 * 60 * 1000);
+      
+      // Update user with new expiration date
+      const updatedUser = await storage.updateUser(user.id, { 
+        subscriptionExpiresAt: expirationDate,
+        subscriptionStatus: "active",
+        subscriptionStartDate: new Date(),
+      });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user" });
+      }
+      
+      res.json({
+        success: true,
+        user: {
+          ...updatedUser,
+          password: undefined,
+        },
+        expiresAt: expirationDate,
+        daysGranted: daysNumber
+      });
+    } catch (error) {
+      console.error("Error setting access time:", error);
+      res.status(500).json({ message: "Failed to set access time for user" });
+    }
+  });
+
   // Rota exclusiva para ativação manual de planos pelo ADM (expira em 34 dias)
   app.post("/api/admin/activate-manual-plan", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {

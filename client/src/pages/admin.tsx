@@ -354,7 +354,8 @@ export default function Admin() {
     name: "",
     email: "",
     status: "active",
-    planType: "free"
+    planType: "free",
+    accessDays: undefined as number | undefined
   });
 
   // Reset Password Form
@@ -513,6 +514,41 @@ export default function Admin() {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to update plan",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Handle setting access time
+  const handleSetAccessTime = async () => {
+    if (!editingUser || !editForm.accessDays) return;
+    
+    try {
+      const response = await apiRequest("POST", "/api/admin/set-access-time", {
+        email: editingUser.email,
+        days: editForm.accessDays
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update access time");
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      const expirationDate = new Date(Date.now() + editForm.accessDays * 24 * 60 * 60 * 1000);
+      
+      toast({
+        title: "Tempo de Acesso Atualizado",
+        description: `${editingUser.name} agora tem ${editForm.accessDays} dias de acesso (expira em ${expirationDate.toLocaleDateString('pt-BR')}).`
+      });
+      
+      setEditUserDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Falha ao atualizar tempo de acesso",
         variant: "destructive"
       });
     }
@@ -1868,6 +1904,30 @@ export default function Admin() {
                 </Select>
               </div>
               
+              <div className="space-y-2">
+                <Label>Tempo de Acesso</Label>
+                <Select 
+                  value={editForm.accessDays?.toString() || ""} 
+                  onValueChange={(value) => setEditForm({...editForm, accessDays: value ? parseInt(value) : undefined})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 dias (1 mês)</SelectItem>
+                    <SelectItem value="60">60 dias (2 meses)</SelectItem>
+                    <SelectItem value="90">90 dias (3 meses)</SelectItem>
+                    <SelectItem value="180">180 dias (6 meses)</SelectItem>
+                    <SelectItem value="365">365 dias (1 ano)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editForm.accessDays && (
+                  <p className="text-xs text-gray-500">
+                    Expira em: {new Date(Date.now() + editForm.accessDays * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              
               <div className="space-y-4 pt-4">
                 {/* Email Button */}
                 <div className="w-full">
@@ -1900,6 +1960,14 @@ export default function Admin() {
                       Update Plan
                     </Button>
                   </div>
+                  
+                  <Button 
+                    onClick={handleSetAccessTime}
+                    disabled={!editForm.accessDays}
+                    className="w-full"
+                  >
+                    Definir Tempo de Acesso
+                  </Button>
                   
                   <Button 
                     variant="outline" 
