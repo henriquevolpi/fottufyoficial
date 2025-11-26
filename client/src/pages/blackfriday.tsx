@@ -21,7 +21,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 
 function CountdownTimer() {
-  const targetDate = new Date("2024-12-05T23:59:59").getTime();
+  const targetDate = new Date("2025-12-05T23:59:59").getTime();
   
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
