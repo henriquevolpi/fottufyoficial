@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, Link } from "wouter";
 import { 
@@ -18,6 +19,56 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+function CountdownTimer() {
+  const targetDate = new Date("2024-12-05T23:59:59").getTime();
+  
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = targetDate - now;
+
+      if (distance > 0) {
+        setTimeLeft({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000)
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex justify-center gap-4 mb-8">
+      <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-4 min-w-[80px] text-center">
+        <div className="text-3xl md:text-4xl font-black text-yellow-400">{timeLeft.days}</div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Dias</div>
+      </div>
+      <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-4 min-w-[80px] text-center">
+        <div className="text-3xl md:text-4xl font-black text-yellow-400">{timeLeft.hours.toString().padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Horas</div>
+      </div>
+      <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-4 min-w-[80px] text-center">
+        <div className="text-3xl md:text-4xl font-black text-yellow-400">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Min</div>
+      </div>
+      <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-4 min-w-[80px] text-center">
+        <div className="text-3xl md:text-4xl font-black text-yellow-400">{timeLeft.seconds.toString().padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Seg</div>
+      </div>
+    </div>
+  );
+}
 
 export default function BlackFridayPage() {
   const { user, isLoading } = useAuth();
@@ -52,7 +103,7 @@ export default function BlackFridayPage() {
         "Ideal para quem está começando",
         "Acesso imediato e suporte"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=z0pxaesy&checkoutMode=6",
+      url: "https://pay.hotmart.com/K99608926Q?off=z0fgxfr5&checkoutMode=6",
       popular: false
     },
     {
@@ -69,7 +120,7 @@ export default function BlackFridayPage() {
         "Perfeito para fotógrafos ativos",
         "Suporte prioritário"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=tpfhcllk&checkoutMode=6",
+      url: "https://pay.hotmart.com/K99608926Q?off=2rkaudbb&checkoutMode=6",
       popular: true
     },
     {
@@ -86,7 +137,7 @@ export default function BlackFridayPage() {
         "Indicado para estúdios ou equipes",
         "Suporte prioritário"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=xtuh4ji0&checkoutMode=6",
+      url: "https://pay.hotmart.com/K99608926Q?off=z61olrnh&checkoutMode=6",
       popular: false
     }
   ];
@@ -106,7 +157,7 @@ export default function BlackFridayPage() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-400 px-6 py-3 rounded-full text-lg font-bold mb-6 animate-pulse">
             <Flame className="h-5 w-5" />
-            BLACK FRIDAY 2024
+            BLACK FRIDAY 2025
             <Flame className="h-5 w-5" />
           </div>
           
@@ -118,6 +169,11 @@ export default function BlackFridayPage() {
             Aproveite esta oferta exclusiva e garanta um ano inteiro de acesso com super desconto. 
             Oferta por tempo limitado!
           </p>
+          
+          <div className="mb-8">
+            <p className="text-gray-400 text-sm mb-4 uppercase tracking-wider">A oferta acaba em:</p>
+            <CountdownTimer />
+          </div>
           
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
             <div className="flex items-center gap-2">
