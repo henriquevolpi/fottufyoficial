@@ -3475,6 +3475,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== DASHBOARD BANNER MANAGEMENT ====================
+  
+  /**
+   * Obtém a configuração do banner do dashboard
+   */
+  app.get("/api/admin/banner", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const setting = await storage.getSiteSetting("dashboard_banner");
+      if (!setting) {
+        return res.json({
+          imageUrl: "",
+          linkUrl: "",
+          altText: "Banner do Dashboard",
+          isActive: false
+        });
+      }
+      res.json({
+        ...setting.value,
+        isActive: setting.isActive
+      });
+    } catch (error) {
+      console.error("Erro ao obter configuração do banner:", error);
+      res.status(500).json({ message: "Erro ao obter configuração do banner" });
+    }
+  });
+
+  /**
+   * Obtém a configuração do banner para usuários logados (público)
+   */
+  app.get("/api/banner", authenticate, async (req: Request, res: Response) => {
+    try {
+      const setting = await storage.getSiteSetting("dashboard_banner");
+      if (!setting || !setting.isActive) {
+        return res.json(null);
+      }
+      res.json({
+        imageUrl: setting.value.imageUrl,
+        linkUrl: setting.value.linkUrl,
+        altText: setting.value.altText || "Banner"
+      });
+    } catch (error) {
+      console.error("Erro ao obter banner:", error);
+      res.status(500).json({ message: "Erro ao obter banner" });
+    }
+  });
+
+  /**
+   * Atualiza a configuração do banner do dashboard
+   */
+  app.put("/api/admin/banner", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { imageUrl, linkUrl, altText, isActive } = req.body;
+      const adminUser = req.user as any;
+      
+      const setting = await storage.upsertSiteSetting(
+        "dashboard_banner",
+        { imageUrl, linkUrl, altText },
+        isActive ?? true,
+        adminUser?.id
+      );
+      
+      console.log(`Admin: Banner atualizado por ${adminUser?.email}`);
+      res.json({
+        ...setting.value,
+        isActive: setting.isActive
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar banner:", error);
+      res.status(500).json({ message: "Erro ao atualizar banner" });
+    }
+  });
+
+  /**
+   * Upload de imagem para o banner
+   */
+  app.post("/api/admin/banner/upload", authenticate, requireAdmin, upload.single('image'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhuma imagem enviada" });
+      }
+
+      const file = req.file;
+      const ext = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+      const filename = `banner_${Date.now()}.${ext}`;
+      const key = `banners/${filename}`;
+
+      // Upload para R2 usando a função existente
+      const imageUrl = await uploadFileToR2(file.buffer, key, file.mimetype);
+      
+      console.log(`Admin: Banner image uploaded - ${filename}`);
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("Erro ao fazer upload da imagem do banner:", error);
+      res.status(500).json({ message: "Erro ao fazer upload da imagem" });
+    }
+  });
+
   /**
    * Retorna lista de planos de assinatura disponíveis baseado em ofertas ativas
    * Este endpoint substitui SUBSCRIPTION_PLANS hardcoded por dados dinâmicos do banco

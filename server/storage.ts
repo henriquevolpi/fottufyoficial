@@ -3,6 +3,7 @@ import {
   projects, type Project, type InsertProject,
   photos, photoComments, portfolios, portfolioPhotos,
   hotmartOffers, type HotmartOffer, type InsertHotmartOffer,
+  siteSettings, type SiteSetting,
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
@@ -354,6 +355,10 @@ export interface IStorage {
   updateHotmartOffer(id: number, data: Partial<HotmartOffer>): Promise<HotmartOffer | undefined>;
   deleteHotmartOffer(id: number): Promise<boolean>;
   hardDeleteHotmartOffer(id: number): Promise<boolean>;
+  
+  // Site Settings methods
+  getSiteSetting(key: string): Promise<SiteSetting | undefined>;
+  upsertSiteSetting(key: string, value: Record<string, any>, isActive: boolean, updatedBy?: number): Promise<SiteSetting>;
   
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -1764,6 +1769,68 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao excluir permanentemente oferta da Hotmart:", error);
       return false;
+    }
+  }
+
+  // ==================== SITE SETTINGS METHODS ====================
+  
+  /**
+   * Obtém uma configuração do site pela chave
+   */
+  async getSiteSetting(key: string): Promise<SiteSetting | undefined> {
+    try {
+      const [setting] = await db
+        .select()
+        .from(siteSettings)
+        .where(eq(siteSettings.key, key));
+      return setting;
+    } catch (error) {
+      console.error(`[SITE_SETTINGS] Erro ao obter configuração ${key}:`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Cria ou atualiza uma configuração do site
+   */
+  async upsertSiteSetting(
+    key: string, 
+    value: Record<string, any>, 
+    isActive: boolean, 
+    updatedBy?: number
+  ): Promise<SiteSetting> {
+    try {
+      const existing = await this.getSiteSetting(key);
+      
+      if (existing) {
+        const [updated] = await db
+          .update(siteSettings)
+          .set({
+            value,
+            isActive,
+            updatedBy: updatedBy || null,
+            updatedAt: new Date()
+          })
+          .where(eq(siteSettings.key, key))
+          .returning();
+        console.log(`[SITE_SETTINGS] Configuração ${key} atualizada`);
+        return updated;
+      } else {
+        const [created] = await db
+          .insert(siteSettings)
+          .values({
+            key,
+            value,
+            isActive,
+            updatedBy: updatedBy || null
+          })
+          .returning();
+        console.log(`[SITE_SETTINGS] Configuração ${key} criada`);
+        return created;
+      }
+    } catch (error) {
+      console.error(`[SITE_SETTINGS] Erro ao salvar configuração ${key}:`, error);
+      throw error;
     }
   }
 

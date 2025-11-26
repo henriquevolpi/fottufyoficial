@@ -412,6 +412,32 @@ export const insertHotmartOfferSchema = createInsertSchema(hotmartOffers).omit({
 export type HotmartOffer = typeof hotmartOffers.$inferSelect;
 export type InsertHotmartOffer = z.infer<typeof insertHotmartOfferSchema>;
 
+// ==================== SITE SETTINGS TABLE ====================
+// Tabela para armazenar configurações do site (banner, etc)
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(), // Chave única para a configuração (ex: "dashboard_banner")
+  value: jsonb("value").notNull().$type<Record<string, any>>(), // Valor em JSON
+  isActive: boolean("is_active").notNull().default(true),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: integer("updated_by"), // ID do admin que fez a última alteração
+});
+
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+
+// Interface para o banner do dashboard
+export interface DashboardBannerConfig {
+  imageUrl: string;
+  linkUrl?: string;
+  altText?: string;
+}
+
 // NOTA: Tabela session removida do schema Drizzle para evitar conflitos
 // A tabela session é gerenciada pelo connect-pg-simple e não deve ser alterada pelo Drizzle
 // Formato atual no banco: sid (varchar), sess (json), expire (timestamp)
