@@ -416,6 +416,21 @@ export default function Admin() {
     },
     enabled: activeTab === 'subscriptions'
   });
+
+  // Dynamic Subscription Plans Query (replaces hardcoded SUBSCRIPTION_PLANS)
+  const {
+    data: dynamicPlans = [],
+    isLoading: isLoadingPlans
+  } = useQuery<Array<{type: string, name: string, price: number, uploadLimit: number, description: string}>>({
+    queryKey: ['/api/admin/subscription-plans'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/subscription-plans', {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch subscription plans');
+      return response.json();
+    }
+  });
   
   // Atualiza o estado temporário quando o filtro por plano muda através dos cards
   const updateTempFiltersFromPlanClick = (planType?: string) => {
@@ -762,7 +777,7 @@ export default function Admin() {
                     </CardContent>
                   </Card>
                   
-                  {isLoadingPlanCounts 
+                  {isLoadingPlanCounts || isLoadingPlans
                     ? Array(4).fill(null).map((_, index) => (
                         <Card key={index}>
                           <CardHeader className="pb-2">
@@ -774,11 +789,9 @@ export default function Admin() {
                           </CardContent>
                         </Card>
                       ))
-                    : Object.entries(SUBSCRIPTION_PLANS)
-                        .sort(([,a], [,b]) => a.price > b.price ? 1 : -1)
-                        .map(([key, plan]) => (
+                    : dynamicPlans.map((plan) => (
                           <Card 
-                            key={key} 
+                            key={plan.type} 
                             className={`cursor-pointer hover:shadow-md transition-shadow ${filters.planType === plan.type ? 'ring-2 ring-primary' : ''}`}
                             onClick={() => {
                               setFilters({...filters, planType: plan.type});
@@ -1530,12 +1543,12 @@ export default function Admin() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => {
+                      {dynamicPlans.map((plan) => {
                         const count = users.filter(user => user.planType === plan.type).length;
                         const percentage = users.length > 0 ? (count / users.length) * 100 : 0;
                         
                         return (
-                          <div key={key} className="space-y-2">
+                          <div key={plan.type} className="space-y-2">
                             <div className="flex justify-between">
                               <span className="text-sm font-medium">{plan.name}</span>
                               <span className="text-sm text-gray-500">{count} users ({percentage.toFixed(1)}%)</span>
@@ -1613,8 +1626,8 @@ export default function Admin() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Plans</SelectItem>
-                  {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => (
-                    <SelectItem key={key} value={plan.type}>{plan.name}</SelectItem>
+                  {dynamicPlans.map((plan) => (
+                    <SelectItem key={plan.type} value={plan.type}>{plan.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1757,8 +1770,8 @@ export default function Admin() {
                   <SelectValue placeholder="Select plan" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => (
-                    <SelectItem key={key} value={plan.type}>
+                  {dynamicPlans.map((plan) => (
+                    <SelectItem key={plan.type} value={plan.type}>
                       {plan.name} ({plan.uploadLimit} uploads)
                     </SelectItem>
                   ))}
@@ -1846,8 +1859,8 @@ export default function Admin() {
                     <SelectValue placeholder="Select plan" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => (
-                      <SelectItem key={key} value={plan.type}>
+                    {dynamicPlans.map((plan) => (
+                      <SelectItem key={plan.type} value={plan.type}>
                         {plan.name} ({plan.uploadLimit} uploads)
                       </SelectItem>
                     ))}
