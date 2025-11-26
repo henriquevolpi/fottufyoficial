@@ -3369,7 +3369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/admin/hotmart/offers", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const { offerCode, planType, description, isActive } = req.body;
+      const { offerCode, planType, billingPeriod, description, isActive } = req.body;
       
       // Validar campos obrigatórios
       if (!offerCode || !planType) {
@@ -3394,6 +3394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newOffer = await storage.createHotmartOffer({
         offerCode,
         planType,
+        billingPeriod: billingPeriod || 'monthly',
         description: description || null,
         isActive: isActive !== undefined ? isActive : true
       });
@@ -3412,7 +3413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/hotmart/offers/:id", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {
       const offerId = parseInt(req.params.id);
-      const { offerCode, planType, description, isActive } = req.body;
+      const { offerCode, planType, billingPeriod, description, isActive } = req.body;
       
       // Validar tipo de plano se fornecido
       if (planType) {
@@ -3428,6 +3429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedOffer = await storage.updateHotmartOffer(offerId, {
         offerCode,
         planType,
+        billingPeriod,
         description,
         isActive
       });
