@@ -394,6 +394,7 @@ export const hotmartOffers = pgTable("hotmart_offers", {
   id: serial("id").primaryKey(),
   offerCode: text("offer_code").notNull().unique(), // Código da oferta na Hotmart (ex: "ro76q5uz")
   planType: text("plan_type").notNull(), // Tipo de plano: "basic_v2", "standard_v2", "professional_v2"
+  billingPeriod: text("billing_period").notNull().default("monthly"), // "monthly" (30 dias) ou "yearly" (365 dias)
   description: text("description"), // Descrição opcional da oferta
   isActive: boolean("is_active").notNull().default(true), // Se a oferta está ativa
   createdAt: timestamp("created_at").notNull().defaultNow(),
