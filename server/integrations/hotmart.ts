@@ -119,6 +119,11 @@ export function validateHotmartSignature(payload: string, signature: string, sec
  * @returns Promise com o tipo de plano ou null se não for encontrado/válido
  */
 export async function determinePlanType(payload: HotmartWebhookPayload): Promise<string | null> {
+  const offer = await determineOffer(payload);
+  return offer ? offer.planType : null;
+}
+
+export async function determineOffer(payload: HotmartWebhookPayload): Promise<{ planType: string; billingPeriod: string } | null> {
   try {
     if (!payload) {
       console.log('Hotmart: Payload inválido');
@@ -126,11 +131,11 @@ export async function determinePlanType(payload: HotmartWebhookPayload): Promise
     }
     
     // Função auxiliar para verificar se uma oferta existe no banco de dados
-    const checkOfferInDatabase = async (offerId: string): Promise<string | null> => {
+    const checkOfferInDatabase = async (offerId: string): Promise<{ planType: string; billingPeriod: string } | null> => {
       const offer = await storage.getHotmartOfferByCode(offerId);
       if (offer && offer.isActive) {
-        console.log(`Hotmart: Oferta encontrada no banco de dados: ${offerId} -> ${offer.planType}`);
-        return offer.planType;
+        console.log(`Hotmart: Oferta encontrada no banco de dados: ${offerId} -> ${offer.planType} (${offer.billingPeriod})`);
+        return { planType: offer.planType, billingPeriod: offer.billingPeriod };
       }
       return null;
     };
@@ -1020,8 +1025,10 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
     // Verificar se já existe um usuário com este email
     let user = await storage.getUserByEmail(email);
     
-    // Determinar o tipo de plano com base na oferta
-    const planType = await determinePlanType(payload);
+    // Determinar a oferta completa (planType + billingPeriod)
+    const offer = await determineOffer(payload);
+    const planType = offer ? offer.planType : null;
+    const billingPeriod = offer ? offer.billingPeriod : 'monthly';
     
     // Verificar se é um evento de cancelamento (eventos de cancelamento não precisam de planType)
     const isCancellationEvent = [
@@ -1038,12 +1045,17 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
       return { success: false, message: 'Nenhuma oferta válida encontrada' };
     }
     
+    // Calcular duração da assinatura com base no billingPeriod
+    const subscriptionDays = billingPeriod === 'yearly' ? 365 : 30;
+    const subscriptionEndDate = new Date(Date.now() + subscriptionDays * 24 * 60 * 60 * 1000);
+    console.log(`Hotmart: Calculando assinatura: ${billingPeriod} = ${subscriptionDays} dias (vence em ${subscriptionEndDate.toISOString()})`);
+    
     // Processar de acordo com o tipo de evento
     switch (event) {
       case 'purchase.approved':
         if (user) {
           // Usuário existente - ativar o plano
-          console.log(`Hotmart: Ativando plano ${planType} para usuário existente: ${email}`);
+          console.log(`Hotmart: Ativando plano ${planType} (${billingPeriod}) para usuário existente: ${email}`);
           
           // IMPORTANTE: Cancelar qualquer downgrade pendente (pagamento regularizado)
           if (user.pendingDowngradeDate) {
@@ -1054,6 +1066,11 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           // Verificar se planType é válido (não é null)
           if (planType) {
             await storage.updateUserSubscription(user.id, planType);
+            
+            // Atualizar com a data de expiração correta baseada no billingPeriod
+            await storage.updateUser(user.id, {
+              subscriptionEndDate: subscriptionEndDate,
+            });
           } else {
             console.error(`Hotmart: Tipo de plano inválido para usuário existente: ${email}`);
           }
@@ -1067,7 +1084,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           });
         } else {
           // Criar um novo usuário com o plano ativado
-          console.log(`Hotmart: Criando novo usuário com plano ${planType}: ${email}`);
+          console.log(`Hotmart: Criando novo usuário com plano ${planType} (${billingPeriod}): ${email}`);
           
           // Gerar uma senha temporária para o novo usuário
           const tempPassword = generateRandomPassword(8); // Senha de 8 caracteres
@@ -1098,6 +1115,11 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           // Atualizar limite de uploads com base no plano
           if (planType) {
             await storage.updateUserSubscription(user.id, planType);
+            
+            // Atualizar com a data de expiração correta baseada no billingPeriod
+            await storage.updateUser(user.id, {
+              subscriptionEndDate: subscriptionEndDate,
+            });
           } else {
             console.error(`Hotmart: Tipo de plano inválido para novo usuário: ${email}`);
           }
