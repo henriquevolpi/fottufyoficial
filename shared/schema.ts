@@ -388,6 +388,27 @@ export type InsertPortfolio = z.infer<typeof insertPortfolioSchema>;
 export type PortfolioPhoto = typeof portfolioPhotos.$inferSelect;
 export type InsertPortfolioPhoto = z.infer<typeof insertPortfolioPhotoSchema>;
 
+// ==================== HOTMART OFFERS TABLE ====================
+// Tabela para gerenciar ofertas da Hotmart dinamicamente pelo painel admin
+export const hotmartOffers = pgTable("hotmart_offers", {
+  id: serial("id").primaryKey(),
+  offerCode: text("offer_code").notNull().unique(), // Código da oferta na Hotmart (ex: "ro76q5uz")
+  planType: text("plan_type").notNull(), // Tipo de plano: "basic_v2", "standard_v2", "professional_v2"
+  description: text("description"), // Descrição opcional da oferta
+  isActive: boolean("is_active").notNull().default(true), // Se a oferta está ativa
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHotmartOfferSchema = createInsertSchema(hotmartOffers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type HotmartOffer = typeof hotmartOffers.$inferSelect;
+export type InsertHotmartOffer = z.infer<typeof insertHotmartOfferSchema>;
+
 // NOTA: Tabela session removida do schema Drizzle para evitar conflitos
 // A tabela session é gerenciada pelo connect-pg-simple e não deve ser alterada pelo Drizzle
 // Formato atual no banco: sid (varchar), sess (json), expire (timestamp)
