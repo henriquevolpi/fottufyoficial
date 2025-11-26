@@ -3296,6 +3296,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro interno ao gerar analytics" });
     }
   });
+
+  // ==================== HOTMART OFFERS MANAGEMENT ROUTES ====================
+  
+  /**
+   * Lista todas as ofertas da Hotmart (ativas e inativas)
+   */
+  app.get("/api/admin/hotmart/offers", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const offers = await storage.getAllHotmartOffers();
+      
+      console.log(`Admin: Listadas ${offers.length} ofertas da Hotmart`);
+      res.json(offers);
+    } catch (error) {
+      console.error("Erro ao listar ofertas da Hotmart:", error);
+      res.status(500).json({ message: "Erro ao listar ofertas" });
+    }
+  });
+
+  /**
+   * Cria uma nova oferta da Hotmart
+   */
+  app.post("/api/admin/hotmart/offers", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { offerCode, planType, description, isActive } = req.body;
+      
+      // Validar campos obrigatórios
+      if (!offerCode || !planType) {
+        return res.status(400).json({ message: "Código da oferta e tipo de plano são obrigatórios" });
+      }
+
+      // Validar tipo de plano
+      const validPlanTypes = ['basic_v2', 'standard_v2', 'professional_v2'];
+      if (!validPlanTypes.includes(planType)) {
+        return res.status(400).json({ 
+          message: "Tipo de plano inválido. Use: basic_v2, standard_v2 ou professional_v2" 
+        });
+      }
+
+      // Verificar se a oferta já existe
+      const existingOffer = await storage.getHotmartOfferByCode(offerCode);
+      if (existingOffer) {
+        return res.status(409).json({ message: "Já existe uma oferta com este código" });
+      }
+
+      // Criar a oferta
+      const newOffer = await storage.createHotmartOffer({
+        offerCode,
+        planType,
+        description: description || null,
+        isActive: isActive !== undefined ? isActive : true
+      });
+
+      console.log(`Admin: Nova oferta criada - ${newOffer.offerCode} -> ${newOffer.planType}`);
+      res.status(201).json(newOffer);
+    } catch (error) {
+      console.error("Erro ao criar oferta da Hotmart:", error);
+      res.status(500).json({ message: "Erro ao criar oferta" });
+    }
+  });
+
+  /**
+   * Atualiza uma oferta existente
+   */
+  app.put("/api/admin/hotmart/offers/:id", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const offerId = parseInt(req.params.id);
+      const { offerCode, planType, description, isActive } = req.body;
+      
+      // Validar tipo de plano se fornecido
+      if (planType) {
+        const validPlanTypes = ['basic_v2', 'standard_v2', 'professional_v2'];
+        if (!validPlanTypes.includes(planType)) {
+          return res.status(400).json({ 
+            message: "Tipo de plano inválido. Use: basic_v2, standard_v2 ou professional_v2" 
+          });
+        }
+      }
+
+      // Atualizar a oferta
+      const updatedOffer = await storage.updateHotmartOffer(offerId, {
+        offerCode,
+        planType,
+        description,
+        isActive
+      });
+
+      if (!updatedOffer) {
+        return res.status(404).json({ message: "Oferta não encontrada" });
+      }
+
+      console.log(`Admin: Oferta atualizada - ID ${offerId}`);
+      res.json(updatedOffer);
+    } catch (error) {
+      console.error("Erro ao atualizar oferta da Hotmart:", error);
+      res.status(500).json({ message: "Erro ao atualizar oferta" });
+    }
+  });
+
+  /**
+   * Deleta (desativa) uma oferta
+   */
+  app.delete("/api/admin/hotmart/offers/:id", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const offerId = parseInt(req.params.id);
+      
+      const success = await storage.deleteHotmartOffer(offerId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Oferta não encontrada" });
+      }
+
+      console.log(`Admin: Oferta desativada - ID ${offerId}`);
+      res.json({ message: "Oferta desativada com sucesso" });
+    } catch (error) {
+      console.error("Erro ao deletar oferta da Hotmart:", error);
+      res.status(500).json({ message: "Erro ao deletar oferta" });
+    }
+  });
   
   /**
    * Lista detalhada de usuários por categoria de assinatura

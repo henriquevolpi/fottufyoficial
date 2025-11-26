@@ -347,11 +347,11 @@ export interface IStorage {
   }>;
   
   // Hotmart Offers management methods
-  getAllHotmartOffers(): Promise<any[]>;
-  getActiveHotmartOffers(): Promise<any[]>;
-  getHotmartOfferByCode(offerCode: string): Promise<any | undefined>;
-  createHotmartOffer(offer: any): Promise<any>;
-  updateHotmartOffer(id: number, data: Partial<any>): Promise<any | undefined>;
+  getAllHotmartOffers(): Promise<HotmartOffer[]>;
+  getActiveHotmartOffers(): Promise<HotmartOffer[]>;
+  getHotmartOfferByCode(offerCode: string): Promise<HotmartOffer | undefined>;
+  createHotmartOffer(offer: InsertHotmartOffer): Promise<HotmartOffer>;
+  updateHotmartOffer(id: number, data: Partial<HotmartOffer>): Promise<HotmartOffer | undefined>;
   deleteHotmartOffer(id: number): Promise<boolean>;
   
   // Project methods
