@@ -3414,6 +3414,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao deletar oferta" });
     }
   });
+
+  /**
+   * Retorna lista de planos de assinatura disponíveis baseado em ofertas ativas
+   * Este endpoint substitui SUBSCRIPTION_PLANS hardcoded por dados dinâmicos do banco
+   */
+  app.get("/api/admin/subscription-plans", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const activeOffers = await storage.getActiveHotmartOffers();
+      
+      // Agrupar ofertas por plan_type para evitar duplicatas
+      const plansMap = new Map();
+      
+      for (const offer of activeOffers) {
+        if (!plansMap.has(offer.planType)) {
+          let uploadLimit = 0;
+          let name = "";
+          let price = 0;
+          
+          // Mapear limites de upload e nomes baseado no plan_type
+          switch (offer.planType) {
+            case "free":
+              uploadLimit = 10;
+              name = "Gratuito";
+              price = 0;
+              break;
+            case "basic_v2":
+              uploadLimit = 6000;
+              name = "Básico";
+              price = 14.9;
+              break;
+            case "standard_v2":
+              uploadLimit = 17000;
+              name = "Padrão";
+              price = 29.9;
+              break;
+            case "professional_v2":
+              uploadLimit = 40000;
+              name = "Profissional";
+              price = 49.9;
+              break;
+            default:
+              uploadLimit = 10;
+              name = offer.planType;
+              price = 0;
+          }
+          
+          plansMap.set(offer.planType, {
+            type: offer.planType,
+            name,
+            price,
+            uploadLimit,
+            description: offer.description
+          });
+        }
+      }
+      
+      // Sempre incluir o plano free (mesmo que não tenha oferta ativa)
+      if (!plansMap.has("free")) {
+        plansMap.set("free", {
+          type: "free",
+          name: "Gratuito",
+          price: 0,
+          uploadLimit: 10,
+          description: "Plano gratuito para testes"
+        });
+      }
+      
+      // Converter Map para array e ordenar por preço
+      const plans = Array.from(plansMap.values()).sort((a, b) => a.price - b.price);
+      
+      res.json(plans);
+    } catch (error) {
+      console.error("Erro ao buscar planos de assinatura:", error);
+      res.status(500).json({ message: "Erro ao buscar planos de assinatura" });
+    }
+  });
   
   /**
    * Lista detalhada de usuários por categoria de assinatura
