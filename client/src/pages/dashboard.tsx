@@ -1120,6 +1120,50 @@ function UploadModal({
   );
 }
 
+// Dynamic Dashboard Banner component
+interface BannerData {
+  imageUrl: string;
+  linkUrl?: string;
+  altText: string;
+}
+
+function DashboardBanner() {
+  const { data: banner, isLoading } = useQuery<BannerData | null>({
+    queryKey: ["/api/banner"],
+  });
+
+  if (isLoading || !banner || !banner.imageUrl) {
+    return null;
+  }
+
+  const bannerContent = (
+    <img 
+      src={banner.imageUrl} 
+      alt={banner.altText || "Banner"} 
+      className="w-full h-auto object-cover"
+      data-testid="dashboard-banner-image"
+    />
+  );
+
+  return (
+    <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0" data-testid="dashboard-banner">
+      {banner.linkUrl ? (
+        <a 
+          href={banner.linkUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="block hover:opacity-95 transition-opacity cursor-pointer"
+          data-testid="dashboard-banner-link"
+        >
+          {bannerContent}
+        </a>
+      ) : (
+        bannerContent
+      )}
+    </div>
+  );
+}
+
 // Dashboard statistics component
 function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   // Statistics data
@@ -1806,14 +1850,8 @@ export default function Dashboard() {
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200/60 to-transparent"></div>
       </div>
       <main className="container mx-auto py-12 px-3 sm:px-6">
-        {/* Banner Image - Temporarily hidden */}
-        {/* <div className="w-full mb-8 bg-white rounded-xl shadow-md overflow-hidden p-0">
-          <img 
-            src="/bannerdash2.jpg" 
-            alt="Dashboard Banner" 
-            className="w-full h-auto object-cover" 
-          />
-        </div> */}
+        {/* Banner Dinâmico */}
+        <DashboardBanner />
 
         {/* Aviso de novidades */}
         <div className="mt-0 mb-8 px-8 py-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/70 to-blue-50/70 backdrop-blur-sm rounded-2xl border border-blue-100/50 shadow-lg shadow-blue-500/5 flex items-start gap-6">
