@@ -847,7 +847,16 @@ function UploadModal({
               reject(new Error('Erro ao processar resposta do servidor'));
             }
           } else {
-            reject(new Error('Erro ao criar projeto'));
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              if (errorData.error === "UPLOAD_LIMIT_REACHED") {
+                reject({ isLimitError: true, details: errorData.details });
+              } else {
+                reject(new Error(errorData.message || 'Erro ao criar projeto'));
+              }
+            } catch {
+              reject(new Error('Erro ao criar projeto'));
+            }
           }
         };
         
@@ -886,13 +895,21 @@ function UploadModal({
       setThumbnails([]);
       form.reset();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during upload:", error);
-      toast({
-        title: "Erro ao criar projeto",
-        description: "Ocorreu um erro durante o upload. Por favor, tente novamente.",
-        variant: "destructive",
-      });
+      if (error?.isLimitError) {
+        toast({
+          title: "Limite de uploads atingido",
+          description: error.details || "Você atingiu o limite do seu plano. Verifique sua assinatura na dashboard ou entre em contato com o suporte.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao criar projeto",
+          description: error?.message || "Ocorreu um erro durante o upload. Por favor, tente novamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsUploading(false);
     }

@@ -174,7 +174,11 @@ export default function UploadPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create project");
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error === "UPLOAD_LIMIT_REACHED") {
+          throw { isLimitError: true, details: errorData.details };
+        }
+        throw new Error(errorData.message || "Failed to create project");
       }
 
       toast({
@@ -188,13 +192,21 @@ export default function UploadPage() {
       // Invalidate projects query and redirect to dashboard
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       setLocation("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create project. Please try again.",
-        variant: "destructive",
-      });
+      if (error?.isLimitError) {
+        toast({
+          title: "Limite de uploads atingido",
+          description: error.details || "Você atingiu o limite do seu plano. Verifique sua assinatura na dashboard ou entre em contato com o suporte.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao criar projeto",
+          description: error?.message || "Ocorreu um erro durante o upload. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsUploading(false);
     }
