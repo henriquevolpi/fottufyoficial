@@ -349,12 +349,12 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
   };
   
   return (
-        <Card className="overflow-hidden bg-white/70 backdrop-blur-sm border-0 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300 hover:scale-[1.02] rounded-2xl">
+        <Card className="overflow-hidden bg-white/70 dark:bg-gray-800/90 backdrop-blur-sm border-0 dark:border dark:border-gray-700/50 shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_0_25px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-[1.02] rounded-2xl">
       <CardHeader className="p-6 pb-4">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <CardTitle className="text-xl font-bold text-slate-800 mb-2 leading-tight">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
-            <CardDescription className="text-slate-600 font-medium">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-white mb-2 leading-tight">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
+            <CardDescription className="text-slate-600 dark:text-gray-400 font-medium">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
           </div>
           <Badge className={`${getStatusColor(status)} rounded-full px-3 py-1 text-xs font-semibold border-0 shadow-sm`}>
             {getStatusDisplayName(status)}
@@ -362,29 +362,29 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
         </div>
       </CardHeader>
       <CardContent className="px-6 pb-4">
-        <div className="flex items-center text-sm text-slate-500 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center mr-3">
-            <Calendar className="h-4 w-4 text-blue-600" />
+        <div className="flex items-center text-sm text-slate-500 dark:text-gray-400 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/50 flex items-center justify-center mr-3">
+            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
           <span className="font-medium">{formatDate(project?.data || new Date().toISOString())}</span>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center text-sm bg-slate-50 rounded-lg p-3">
-            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mr-3">
-              <Camera className="h-4 w-4 text-green-600" />
+          <div className="flex items-center text-sm bg-slate-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mr-3">
+              <Camera className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <div className="font-bold text-slate-800">{project?.photos?.length || project?.fotos || 0}</div>
-              <div className="text-xs text-slate-500">fotos</div>
+              <div className="font-bold text-slate-800 dark:text-white">{project?.photos?.length || project?.fotos || 0}</div>
+              <div className="text-xs text-slate-500 dark:text-gray-400">fotos</div>
             </div>
           </div>
-          <div className="flex items-center text-sm bg-slate-50 rounded-lg p-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
-              <FileText className="h-4 w-4 text-purple-600" />
+          <div className="flex items-center text-sm bg-slate-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-3">
+              <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <div className="font-bold text-slate-800">{project?.selectedPhotos?.length || project?.selecionadas || 0}</div>
-              <div className="text-xs text-slate-500">selecionadas</div>
+              <div className="font-bold text-slate-800 dark:text-white">{project?.selectedPhotos?.length || project?.selecionadas || 0}</div>
+              <div className="text-xs text-slate-500 dark:text-gray-400">selecionadas</div>
             </div>
           </div>
         </div>
@@ -464,7 +464,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
           <Button 
             variant="outline" 
             size="sm"
-            className="flex-1 text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl py-2.5 px-2 sm:px-3 transition-all duration-200 min-w-0"
+            className="flex-1 text-xs sm:text-sm font-semibold text-slate-700 dark:text-gray-200 border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-500 rounded-xl py-2.5 px-2 sm:px-3 transition-all duration-200 min-w-0"
             onClick={() => setLocation(`/project/${project.id}`)}
           >
             <ArrowUpRight className="h-4 w-4 mr-1 sm:mr-2 flex-shrink-0" />
@@ -1892,7 +1892,7 @@ export default function Dashboard() {
         <DashboardBanner />
 
         {/* Aviso de novidades */}
-        <div className="mt-0 mb-8 px-8 py-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/70 to-blue-50/70 backdrop-blur-sm rounded-2xl border border-blue-100/50 shadow-lg shadow-blue-500/5 flex items-start gap-6">
+        <div className="mt-0 mb-8 px-8 py-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/70 to-blue-50/70 dark:from-gray-800/70 dark:via-gray-800/70 dark:to-gray-800/70 backdrop-blur-sm rounded-2xl border border-blue-100/50 dark:border-gray-700/50 shadow-lg shadow-blue-500/5 dark:shadow-black/20 flex items-start gap-6">
           <div className="hidden sm:flex w-8 h-8 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center shadow-lg shrink-0">
             <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
@@ -1900,7 +1900,7 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">Recomende a Fottufy a um amigo ❤️</p>
-            <p className="font-medium text-[#080707] text-[14px]">Dica da semana: Clientes relatam ter um aumento significativo nas vendas de fotos adicionais mandando as fotos pré-editadas com presets para a seleção!</p>
+            <p className="font-medium text-slate-700 dark:text-gray-300 text-[14px]">Dica da semana: Clientes relatam ter um aumento significativo nas vendas de fotos adicionais mandando as fotos pré-editadas com presets para a seleção!</p>
           </div>
         </div>
 
@@ -1909,21 +1909,21 @@ export default function Dashboard() {
         
         <Statistics setLocation={setLocation} />
         
-        <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white/20 p-4 sm:p-8 mb-8">
+        <div className="bg-white/60 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/30 border border-white/20 dark:border-gray-700/50 p-4 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2">
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-300 dark:to-indigo-300 bg-clip-text text-transparent mb-2">
                 Meus Projetos
               </h2>
-              <p className="text-lg text-[#000000]">Gerencie seus projetos fotográficos com elegância</p>
+              <p className="text-lg text-slate-700 dark:text-gray-300">Gerencie seus projetos fotográficos com elegância</p>
             </div>
             
             <div className="flex items-center w-full sm:w-auto gap-3">
               <div className="relative flex-1 sm:w-80">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-gray-400" />
                 <Input 
                   placeholder="Buscar projetos..."
-                  className="pl-12 pr-4 py-3 rounded-xl border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm text-lg shadow-sm"
+                  className="pl-12 pr-4 py-3 rounded-xl border-slate-200 dark:border-gray-600 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 dark:bg-gray-800/80 dark:text-white backdrop-blur-sm text-lg shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -1932,9 +1932,9 @@ export default function Dashboard() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="shrink-0 h-12 w-12 rounded-xl border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm"
+                className="shrink-0 h-12 w-12 rounded-xl border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-500 shadow-sm"
               >
-                <Filter className="h-5 w-5 text-slate-600" />
+                <Filter className="h-5 w-5 text-slate-600 dark:text-gray-300" />
               </Button>
             </div>
           </div>
@@ -1943,11 +1943,11 @@ export default function Dashboard() {
             {/* Layout com abas e botão na esquerda */}
             <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex justify-start w-full lg:w-auto overflow-x-auto lg:overflow-x-visible">
-                <TabsList className="inline-flex bg-slate-100/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50 min-w-fit lg:min-w-0">
-                  <TabsTrigger value="all" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Todos</TabsTrigger>
-                  <TabsTrigger value="pending" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Pendentes</TabsTrigger>
-                  <TabsTrigger value="reviewed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Revisados</TabsTrigger>
-                  <TabsTrigger value="completed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700 text-slate-600 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Finalizados</TabsTrigger>
+                <TabsList className="inline-flex bg-slate-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50 dark:border-gray-700/50 min-w-fit lg:min-w-0">
+                  <TabsTrigger value="all" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Todos</TabsTrigger>
+                  <TabsTrigger value="pending" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Pendentes</TabsTrigger>
+                  <TabsTrigger value="reviewed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Revisados</TabsTrigger>
+                  <TabsTrigger value="completed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Finalizados</TabsTrigger>
                 </TabsList>
               </div>
               
@@ -2019,12 +2019,12 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : filteredProjects.length === 0 ? (
-                <div className="text-center py-16 bg-white/60 backdrop-blur-sm rounded-2xl border-0 shadow-lg shadow-slate-200/50">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-                    <Camera className="h-10 w-10 text-blue-600" />
+                <div className="text-center py-16 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border-0 dark:border dark:border-gray-700/50 shadow-lg shadow-slate-200/50 dark:shadow-black/30">
+                  <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-2xl flex items-center justify-center">
+                    <Camera className="h-10 w-10 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-800 mb-3">Nenhum projeto encontrado</h3>
-                  <p className="text-slate-600 mb-8 text-lg max-w-md mx-auto leading-relaxed">
+                  <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">Nenhum projeto encontrado</h3>
+                  <p className="text-slate-600 dark:text-gray-400 mb-8 text-lg max-w-md mx-auto leading-relaxed">
                     {searchQuery 
                       ? "Tente ajustar seus filtros ou termos de pesquisa para encontrar seus projetos" 
                       : "Comece criando seu primeiro projeto fotográfico e organize suas fotos com elegância"
@@ -2069,14 +2069,14 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : filteredProjects.length === 0 ? (
-                  <div className="text-center py-16 bg-white/60 backdrop-blur-sm rounded-2xl border-0 shadow-lg shadow-slate-200/50">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
-                      <Clock className="h-10 w-10 text-amber-600" />
+                  <div className="text-center py-16 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border-0 dark:border dark:border-gray-700/50 shadow-lg shadow-slate-200/50 dark:shadow-black/30">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 rounded-2xl flex items-center justify-center">
+                      <Clock className="h-10 w-10 text-amber-600 dark:text-amber-400" />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-800 mb-3">
+                    <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">
                       Nenhum projeto {getStatusFilter(tab)}
                     </h3>
-                    <p className="text-slate-600 mb-8 text-lg max-w-md mx-auto leading-relaxed">
+                    <p className="text-slate-600 dark:text-gray-400 mb-8 text-lg max-w-md mx-auto leading-relaxed">
                       Os projetos aparecerão aqui quando forem marcados como {getStatusFilter(tab)}.
                     </p>
                   </div>
