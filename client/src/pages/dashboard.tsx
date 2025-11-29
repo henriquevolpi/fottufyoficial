@@ -1229,11 +1229,22 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
     // Calculate percentage with safety check for divide-by-zero
     const percentageUsed = uploadLimit > 0 ? Math.round((usedUploads / uploadLimit) * 100) : 0;
     
+    // Calculate days until renewal
+    let daysUntilRenewal: number | null = null;
+    if (user.subscriptionEndDate) {
+      const endDate = new Date(user.subscriptionEndDate);
+      const now = new Date();
+      const diffTime = endDate.getTime() - now.getTime();
+      daysUntilRenewal = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (daysUntilRenewal < 0) daysUntilRenewal = 0;
+    }
+    
     return {
       planType: planType,
       uploadLimit: uploadLimit,
       usedUploads: usedUploads,
-      percentageUsed: percentageUsed
+      percentageUsed: percentageUsed,
+      daysUntilRenewal: daysUntilRenewal
     };
   };
   
@@ -1242,7 +1253,8 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
     planType: "free",
     uploadLimit: 50,
     usedUploads: 0,
-    percentageUsed: 0
+    percentageUsed: 0,
+    daysUntilRenewal: null
   };
   
   return (
@@ -1325,7 +1337,9 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 Plano {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
               </CardTitle>
               <p className="text-sm text-emerald-200 font-medium">
-                Assinatura ativa
+                {planInfo.daysUntilRenewal !== null 
+                  ? `Renova em ${planInfo.daysUntilRenewal} dias`
+                  : "Assinatura ativa"}
               </p>
             </div>
           </div>
