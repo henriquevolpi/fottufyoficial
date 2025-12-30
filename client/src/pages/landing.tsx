@@ -579,7 +579,7 @@ export default function LandingPage() {
 
           <div className="text-center mt-12">
             <p className="text-gray-600">
-              Todos os planos incluem 14 dias de teste grátis. Cancele a qualquer momento.
+              Cancele a qualquer momento, com um simples botão
             </p>
           </div>
         </div>
@@ -678,63 +678,23 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <Camera className="h-8 w-8 text-blue-400 mr-2" />
-                <span className="text-2xl font-bold">Fottufy</span>
-              </div>
-              <p className="text-gray-400 mb-4">
-                A plataforma mais simples para fotógrafos entregarem fotos aos clientes.
-              </p>
-              <div className="flex space-x-4">
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 cursor-pointer transition-colors">
-                  <span className="text-sm">f</span>
-                </div>
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-400 cursor-pointer transition-colors">
-                  <span className="text-sm">t</span>
-                </div>
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 cursor-pointer transition-colors">
-                  <span className="text-sm">i</span>
-                </div>
-              </div>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center">
+              <Camera className="h-6 w-6 text-blue-400 mr-2" />
+              <span className="text-xl font-bold">Fottufy</span>
             </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Produto</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#recursos" className="hover:text-white transition-colors">Recursos</a></li>
-                <li><a href="#precos" className="hover:text-white transition-colors">Preços</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Segurança</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-              </ul>
+            
+            <div className="text-gray-400 text-sm">
+              <p>&copy; {new Date().getFullYear()} Fottufy. Todos os direitos reservados.</p>
             </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Empresa</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Sobre</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Carreiras</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Imprensa</a></li>
-              </ul>
+            
+            <div className="flex space-x-6 text-gray-400 text-sm">
+              <a href="#recursos" className="hover:text-white transition-colors">Recursos</a>
+              <a href="#precos" className="hover:text-white transition-colors">Preços</a>
+              <a href="/login" className="hover:text-white transition-colors">Login</a>
             </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Suporte</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Central de Ajuda</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contato</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Comunidade</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Fottufy. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
