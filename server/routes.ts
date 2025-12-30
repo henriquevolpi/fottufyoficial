@@ -5395,6 +5395,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== Hotmart Webhook ====================
+  app.post("/api/hotmart/webhook", async (req: Request, res: Response) => {
+    try {
+      console.log('Hotmart: Webhook recebido', JSON.stringify(req.body));
+      
+      const result = await processHotmartWebhook(req.body);
+      
+      if (result.success) {
+        return res.status(200).json(result);
+      } else {
+        // Hotmart espera 200 até para erros que não devem ser retentados
+        return res.status(200).json(result);
+      }
+    } catch (error) {
+      console.error('Hotmart webhook error:', error);
+      return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  });
+
 
   return httpServer;
 }
