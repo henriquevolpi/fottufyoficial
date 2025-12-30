@@ -1991,7 +1991,7 @@ export default function Dashboard() {
                   data-testid="button-send-files-fromsmash"
                 >
                   <Send className="h-5 w-5 mr-2" />
-                  Enviar Seleção
+                  Enviar Fotos Prontas
                 </Button>
               </div>
             </div>
