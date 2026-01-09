@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, Link } from "wouter";
 import { 
@@ -18,9 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SubscriptionPage() {
   const { user, isLoading } = useAuth();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   
   if (isLoading) {
     return (
@@ -37,7 +39,7 @@ export default function SubscriptionPage() {
     return <Redirect to="/auth" />;
   }
   
-  const plans = [
+  const monthlyPlans = [
     {
       name: "Plano Básico",
       price: "R$19,90",
@@ -90,6 +92,62 @@ export default function SubscriptionPage() {
       popular: false
     }
   ];
+
+  const yearlyPlans = [
+    {
+      name: "Básico Anual",
+      price: "R$14,90",
+      period: "/mês",
+      icon: <Camera className="h-8 w-8" />,
+      color: "from-blue-500 to-blue-600",
+      borderColor: "border-blue-200",
+      badge: "Economia 25%",
+      features: [
+        "Até 6.000 fotos por mês",
+        "Galerias ilimitadas", 
+        "Faturamento anual",
+        "Suporte preferencial"
+      ],
+      url: "https://pay.hotmart.com/K99608926Q?off=5nuz8yie&checkoutMode=6",
+      popular: false
+    },
+    {
+      name: "Fotógrafo Anual",
+      price: "R$24,90",
+      period: "/mês",
+      icon: <Zap className="h-8 w-8" />,
+      color: "from-purple-500 to-purple-600",
+      borderColor: "border-purple-400",
+      badge: "Melhor Valor",
+      features: [
+        "Até 17.000 fotos por mês",
+        "Galerias ilimitadas",
+        "Faturamento anual",
+        "Suporte VIP"
+      ],
+      url: "https://pay.hotmart.com/K99608926Q?off=m3m4e5r3&checkoutMode=6",
+      popular: true
+    },
+    {
+      name: "Estúdio Anual",
+      price: "R$39,90",
+      period: "/mês",
+      icon: <Crown className="h-8 w-8" />,
+      color: "from-amber-500 to-amber-600",
+      borderColor: "border-amber-200",
+      badge: "Business Anual",
+      features: [
+        "Até 40.000 fotos por mês",
+        "Galerias ilimitadas",
+        "Faturamento anual",
+        "Gerente de conta"
+      ],
+      url: "https://pay.hotmart.com/K99608926Q?off=v7l03w48&checkoutMode=6",
+      popular: false
+    }
+  ];
+
+  const plans = billingCycle === "monthly" ? monthlyPlans : yearlyPlans;
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -105,7 +163,7 @@ export default function SubscriptionPage() {
         </div>
         
         {/* Hero Section */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="h-4 w-4" />
             Planos e Assinaturas
@@ -118,6 +176,35 @@ export default function SubscriptionPage() {
             </span>{' '}
             seu negócio de fotografia
           </h1>
+
+          {/* Billing Switcher */}
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <Tabs 
+              value={billingCycle} 
+              onValueChange={(v) => setBillingCycle(v as "monthly" | "yearly")}
+              className="w-full max-w-[400px]"
+            >
+              <TabsList className="grid w-full grid-cols-2 p-1 bg-gray-100 rounded-xl h-14">
+                <TabsTrigger 
+                  value="monthly" 
+                  className="rounded-lg font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm h-12"
+                >
+                  Mensal
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="yearly" 
+                  className="rounded-lg font-semibold data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm h-12"
+                >
+                  Anual (Economize)
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {billingCycle === "yearly" && (
+              <Badge className="bg-green-100 text-green-700 border-green-200 px-3 py-1 animate-bounce">
+                Economize até 25% no plano anual!
+              </Badge>
+            )}
+          </div>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
             Todos os planos incluem galerias ilimitadas, links personalizados e suporte especializado. 
@@ -144,7 +231,7 @@ export default function SubscriptionPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {plans.map((plan, index) => (
             <Card 
-              key={index} 
+              key={`${billingCycle}-${index}`} 
               className={`relative flex flex-col shadow-xl hover:shadow-2xl transition-all duration-300 border-2 ${plan.borderColor} group hover:scale-105 ${plan.popular ? 'transform scale-105' : ''}`}
             >
               {/* Badge for popular/premium plans */}
