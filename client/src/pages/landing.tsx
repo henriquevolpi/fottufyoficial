@@ -28,7 +28,7 @@ export default function LandingPage() {
   const [, navigate] = useLocation();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -56,7 +56,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <Badge className="mb-6 bg-blue-100 text-blue-700 hover:bg-blue-100">
@@ -113,7 +113,7 @@ export default function LandingPage() {
                     <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                   </div>
                   <div className="flex-1 text-center text-sm text-gray-600">
-                    fottufy.com/galeria/casamento-ana-pedro
+                    fottufy.com/suagaleria
                   </div>
                 </div>
                 <div className="p-8 bg-gradient-to-br from-gray-50 to-white">
@@ -160,7 +160,7 @@ export default function LandingPage() {
       </section>
 
       {/* Como Funciona */}
-      <section id="como-funciona" className="py-20 bg-gray-50">
+      <section id="como-funciona" className="py-20 bg-gray-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -236,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* Recursos */}
-      <section id="recursos" className="py-20 bg-white">
+      <section id="recursos" className="py-20 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -324,7 +324,7 @@ export default function LandingPage() {
       </section>
 
       {/* Depoimentos */}
-      <section id="depoimentos" className="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
+      <section id="depoimentos" className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
