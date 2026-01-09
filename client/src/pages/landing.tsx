@@ -167,52 +167,67 @@ export default function LandingPage() {
               Como funciona a Fottufy?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Em apenas 3 passos simples, você transforma a forma como entrega fotos aos seus clientes
+              Do upload à entrega final: uma jornada completa e profissional para seus projetos
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
                 <Zap className="h-10 w-10 text-white" />
               </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full">
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
                 <h3 className="text-2xl font-bold mb-4 text-gray-900">1. Faça Upload</h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-6 text-sm lg:text-base">
                   Arraste e solte suas fotos na plataforma. Nosso sistema otimiza automaticamente para web.
                 </p>
-                <div className="text-sm text-blue-600 font-medium">
-                  ⚡ Upload em lote • 🔄 Processamento automático
+                <div className="text-xs lg:text-sm text-blue-600 font-medium">
+                  ⚡ Upload em lote • 🔄 Processamento
                 </div>
               </div>
             </div>
 
-            <div className="text-center">
-              <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
                 <Link2 className="h-10 w-10 text-white" />
               </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full">
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">2. Compartilhe o Link</h3>
-                <p className="text-gray-600 mb-6">
-                  Envie o link personalizado para seu cliente por WhatsApp, e-mail ou SMS.
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">2. Compartilhe</h3>
+                <p className="text-gray-600 mb-6 text-sm lg:text-base">
+                  Envie o link personalizado para seu cliente por WhatsApp, e-mail ou SMS de forma rápida.
                 </p>
-                <div className="text-sm text-purple-600 font-medium">
-                  🔗 Link personalizado • 📱 Funciona em qualquer dispositivo
+                <div className="text-xs lg:text-sm text-purple-600 font-medium">
+                  🔗 Link único • 📱 Mobile Ready
                 </div>
               </div>
             </div>
 
-            <div className="text-center">
-              <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
                 <Heart className="h-10 w-10 text-white" />
               </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full">
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">3. Cliente Escolhe</h3>
-                <p className="text-gray-600 mb-6">
-                  Seu cliente navega e seleciona as fotos favoritas com marca d'água de proteção.
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">3. Seleção</h3>
+                <p className="text-gray-600 mb-6 text-sm lg:text-base">
+                  Seu cliente escolhe as favoritas com conforto e proteção de marca d'água.
                 </p>
-                <div className="text-sm text-green-600 font-medium">
-                  ❤️ Seleção por favoritos • 🛡️ Proteção com logo
+                <div className="text-xs lg:text-sm text-pink-600 font-medium">
+                  ❤️ Favoritos • 🛡️ Proteção
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
+                <CheckCircle className="h-10 w-10 text-white" />
+              </div>
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">4. Entrega Final</h3>
+                <p className="text-gray-600 mb-6 text-sm lg:text-base">
+                  Envie os arquivos finais editados diretamente pela Fottufy. Tudo em um só lugar!
+                </p>
+                <div className="text-xs lg:text-sm text-green-600 font-medium">
+                  ✅ Projeto pronto • 📦 Download fácil
                 </div>
               </div>
             </div>
