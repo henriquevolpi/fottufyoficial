@@ -262,6 +262,11 @@ export default function SubscriptionPage() {
                     {plan.period}
                   </span>
                 </div>
+                {billingCycle === "yearly" && (
+                  <div className="text-xs text-gray-600 font-medium mt-1">
+                    pagamento anual
+                  </div>
+                )}
               </CardHeader>
               
               <CardContent className="flex-grow px-6 pb-6">
