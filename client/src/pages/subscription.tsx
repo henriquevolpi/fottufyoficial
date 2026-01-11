@@ -96,7 +96,7 @@ export default function SubscriptionPage() {
   const yearlyPlans = [
     {
       name: "Básico Anual",
-      price: "R$14,90",
+      price: "R$12,92",
       period: "/mês",
       icon: <Camera className="h-8 w-8" />,
       color: "from-blue-500 to-blue-600",
@@ -113,7 +113,7 @@ export default function SubscriptionPage() {
     },
     {
       name: "Fotógrafo Anual",
-      price: "R$24,90",
+      price: "R$19,59",
       period: "/mês",
       icon: <Zap className="h-8 w-8" />,
       color: "from-purple-500 to-purple-600",
@@ -130,7 +130,7 @@ export default function SubscriptionPage() {
     },
     {
       name: "Estúdio Anual",
-      price: "R$39,90",
+      price: "R$30,75",
       period: "/mês",
       icon: <Crown className="h-8 w-8" />,
       color: "from-amber-500 to-amber-600",
@@ -201,7 +201,7 @@ export default function SubscriptionPage() {
             </Tabs>
             {billingCycle === "yearly" && (
               <Badge className="bg-green-100 text-green-700 border-green-200 px-3 py-1 animate-bounce">
-                Economize até 25% no plano anual!
+                Economize até 35% no plano anual!
               </Badge>
             )}
           </div>

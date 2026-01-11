@@ -1900,7 +1900,7 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">Recomende a Fottufy a um amigo ❤️</p>
-            <p className="font-medium text-slate-700 dark:text-gray-300 text-[14px]">Dica da semana: Clientes relatam ter um aumento significativo nas vendas de fotos adicionais mandando as fotos pré-editadas com presets para a seleção!</p>
+            <p className="font-medium text-slate-700 dark:text-gray-300 text-[14px]">Somos uma plataforma Brasileira 100% independente, cada apoio e sugestão é de grande importância para nós {"<3"}</p>
           </div>
         </div>
 
