@@ -108,7 +108,7 @@ export default function SubscriptionPage() {
         "Faturamento anual",
         "Suporte preferencial"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=5nuz8yie&checkoutMode=6",
+      url: "https://pay.hotmart.com/K99608926Q?off=qrud9ui2&checkoutMode=6",
       popular: false
     },
     {
@@ -125,7 +125,7 @@ export default function SubscriptionPage() {
         "Faturamento anual",
         "Suporte VIP"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=m3m4e5r3&checkoutMode=6",
+      url: "https://pay.hotmart.com/K99608926Q?off=9w3ya3rl&checkoutMode=6",
       popular: true
     },
     {
@@ -142,7 +142,7 @@ export default function SubscriptionPage() {
         "Faturamento anual",
         "Gerente de conta"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=v7l03w48&checkoutMode=6",
+      url: "https://pay.hotmart.com/K99608926Q?off=rh54m382&checkoutMode=6",
       popular: false
     }
   ];
