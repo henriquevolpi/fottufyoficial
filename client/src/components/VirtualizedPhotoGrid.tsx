@@ -79,15 +79,15 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
   
   // Determinar classes do grid baseado no número de colunas
   const gridClasses = useMemo(() => {
-    const baseClasses = "grid gap-4 px-4 sm:px-6 lg:px-8";
+    const baseClasses = "grid gap-4 px-2 sm:px-6 lg:px-8";
     switch (itemsPerRow) {
-      case 1: return `${baseClasses} grid-cols-1`;
-      case 2: return `${baseClasses} grid-cols-1 sm:grid-cols-2`;
-      case 3: return `${baseClasses} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`;
-      case 4: return `${baseClasses} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
-      case 5: return `${baseClasses} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`;
-      case 6: return `${baseClasses} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 max-w-[1800px]:grid-cols-6`;
-      default: return `${baseClasses} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
+      case 1: return `${baseClasses} grid-cols-2 sm:grid-cols-1`;
+      case 2: return `${baseClasses} grid-cols-2`;
+      case 3: return `${baseClasses} grid-cols-2 sm:grid-cols-2 lg:grid-cols-3`;
+      case 4: return `${baseClasses} grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
+      case 5: return `${baseClasses} grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`;
+      case 6: return `${baseClasses} grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 max-w-[1800px]:grid-cols-6`;
+      default: return `${baseClasses} grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
     }
   }, [itemsPerRow]);
   
