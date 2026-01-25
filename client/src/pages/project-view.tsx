@@ -861,7 +861,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Hero Section com Capa */}
       {coverPhotoUrl && (
-        <div className="relative h-96 overflow-hidden">
+        <div className="relative h-[55vh] md:h-[65vh] overflow-hidden">
           {/* Background com desfoque */}
           <div 
             className="absolute inset-0 bg-cover bg-center transform scale-110"
