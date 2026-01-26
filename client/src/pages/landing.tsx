@@ -352,9 +352,9 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               { name: "Gratuito", price: "0", features: ["Até 10 fotos", "1 galeria", "Suporte email"], cta: "COMEÇAR GRÁTIS", popular: false },
-              { name: "Básico", price: "27", features: ["Até 500 fotos", "Galerias ilimitadas", "Marca d'água"], cta: "SELECIONAR", popular: false },
-              { name: "Fotógrafo", price: "57", features: ["Até 2.000 fotos", "Download em alta", "Suporte VIP"], cta: "MAIS VENDIDO", popular: true },
-              { name: "Estúdio", price: "97", features: ["Espaço ilimitado", "Domínio próprio", "Marca branca"], cta: "SELECIONAR", popular: false }
+              { name: "Básico", price: "19,90", features: ["Até 6.000 fotos", "Galerias ilimitadas", "Links personalizados", "Suporte prioritário"], cta: "SELECIONAR", popular: false },
+              { name: "Profissional", price: "49,90", features: ["Fotos ilimitadas", "Marca d'água personalizada", "Dashboard de estatísticas", "Suporte VIP 24/7"], cta: "MAIS POPULAR", popular: true },
+              { name: "Oferta Especial", price: "Consultar", features: ["Acesso a cursos", "Comunidade exclusiva", "Mentorias mensais"], cta: "VER OFERTAS", popular: false, isHotmart: true }
             ].map((plan, idx) => (
               <Card key={idx} className={`relative bg-white border-none shadow-2xl rounded-[40px] overflow-hidden transition-all duration-500 hover:-translate-y-4 ${plan.popular ? 'ring-4 ring-purple-500/20' : ''}`}>
                 {plan.popular && (
@@ -365,9 +365,9 @@ export default function LandingPage() {
                 <CardContent className="p-10 text-center">
                   <h3 className="text-2xl font-black mb-4 text-slate-900 tracking-tight">{plan.name}</h3>
                   <div className="flex justify-center items-baseline gap-1 mb-8">
-                    <span className="text-xl font-bold text-slate-400">R$</span>
-                    <span className="text-5xl font-black text-slate-900">{plan.price}</span>
-                    <span className="text-slate-400 font-medium">/mês</span>
+                    {plan.price !== "Consultar" && <span className="text-xl font-bold text-slate-400">R$</span>}
+                    <span className={`${plan.price === "Consultar" ? 'text-3xl' : 'text-5xl'} font-black text-slate-900`}>{plan.price}</span>
+                    {plan.price !== "Consultar" && <span className="text-slate-400 font-medium">/mês</span>}
                   </div>
                   <ul className="space-y-4 mb-10 text-left">
                     {plan.features.map((feat, fidx) => (
@@ -380,7 +380,7 @@ export default function LandingPage() {
                   <Button 
                     variant={plan.popular ? "default" : "outline"} 
                     className={`w-full py-6 rounded-2xl font-black text-xs tracking-widest ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : 'border-slate-200 hover:bg-slate-50'}`}
-                    onClick={() => navigate('/auth')}
+                    onClick={() => plan.isHotmart ? window.open('https://hotmart.com', '_blank') : navigate('/auth')}
                   >
                     {plan.cta}
                   </Button>
