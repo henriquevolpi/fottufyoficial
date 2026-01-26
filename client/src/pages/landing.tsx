@@ -119,10 +119,10 @@ export default function LandingPage() {
                 {/* Conteúdo da Galeria Estilizado */}
                 <div className="relative p-6 md:p-16 bg-gradient-to-br from-white via-slate-50 to-purple-50/30">
                   <div className="flex flex-col items-center mb-16">
-                    <h3 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">
+                    <h3 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4 text-center">
                       SELEÇÃO <span className="text-purple-600">PREMIUM</span>
                     </h3>
-                    <p className="text-slate-400 font-medium tracking-[0.3em] uppercase text-sm">Wedding Collection • 2026</p>
+                    <p className="text-slate-400 font-medium tracking-[0.3em] uppercase text-sm text-center">Wedding Collection • 2026</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-8">
@@ -179,9 +179,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
           </div>
         </div>
       </section>
