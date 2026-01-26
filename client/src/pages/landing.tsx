@@ -56,160 +56,132 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pt-32 pb-24 bg-white relative overflow-hidden">
+        {/* Background Decorative Shapes */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-200/30 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/30 rounded-full blur-[120px] animate-pulse delay-700"></div>
+        <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-pink-100/40 rounded-full blur-[80px]"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <Badge className="mb-6 bg-blue-100 text-blue-700 hover:bg-blue-100">
-              <Sparkles className="h-4 w-4 mr-1" />
-              Nova forma de entregar fotos aos clientes
-            </Badge>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-sm font-medium mb-8 shadow-sm animate-bounce">
+              <Sparkles className="h-4 w-4" />
+              <span>A galeria preferida dos fotógrafos de elite</span>
+            </div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Entregue fotos aos seus{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                clientes
-              </span>{' '}
-              de forma profissional
+            <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-8 tracking-tight leading-[0.9]">
+              FOTTUFY<br />
+              <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent italic">
+                Sua marca, sua entrega.
+              </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-              Pare de enviar fotos por WhatsApp, Google Drive ou WeTransfer. 
-              Crie galerias protegidas com seu logo onde clientes veem com mais conforto e segurança.
+            <p className="text-xl md:text-2xl text-slate-500 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
+              Envie fotos, selecione favoritos e entregue projetos com uma experiência visual que passa <span className="text-purple-600 font-medium">total confiança</span> e profissionalismo.
             </p>
             
-            <div className="flex justify-center items-center mb-12">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20">
               <Button 
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform transition-all hover:scale-105"
+                className="bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-10 py-8 text-xl font-bold rounded-2xl shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transform transition-all hover:scale-105 group"
                 onClick={() => navigate('/auth')}
               >
-                <Camera className="mr-2 h-5 w-5" />
-                Começar gratuitamente
+                <Zap className="mr-2 h-6 w-6 fill-white" />
+                COMEÇAR AGORA, É GRÁTIS!
+                <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
               </Button>
+              <p className="text-xs text-slate-400 font-mono tracking-widest uppercase">Plataforma Oficial</p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500 mb-16">
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Sem instalação
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Funciona em qualquer dispositivo
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Suporte brasileiro
-              </div>
-            </div>
-
-            {/* Hero Visual */}
+            {/* Hero Visual - Inspirado no Design Youze */}
             <div className="relative max-w-6xl mx-auto">
-              <div className="relative bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-200 overflow-hidden transition-all duration-500 hover:shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
-                {/* Header da Barra do Navegador */}
-                <div className="bg-gray-50 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between border-b border-gray-200/60">
-                  <div className="flex space-x-1.5 md:space-x-2">
-                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-red-400 rounded-full shadow-inner"></div>
-                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-amber-400 rounded-full shadow-inner"></div>
-                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-emerald-400 rounded-full shadow-inner"></div>
+              <div className="relative bg-white/70 backdrop-blur-2xl rounded-[40px] shadow-[0_40px_100px_rgba(0,0,0,0.1)] border border-white overflow-hidden transition-all duration-700 hover:shadow-[0_60px_120px_rgba(139,92,246,0.15)] group/container">
+                {/* Header Estilo App Moderno */}
+                <div className="bg-white/50 px-8 py-6 flex items-center justify-between border-b border-slate-100">
+                  <div className="flex items-center gap-4">
+                    <div className="flex space-x-2">
+                      <div className="w-3 h-3 bg-slate-200 rounded-full"></div>
+                      <div className="w-3 h-3 bg-slate-200 rounded-full"></div>
+                      <div className="w-3 h-3 bg-slate-200 rounded-full"></div>
+                    </div>
+                    <div className="h-4 w-px bg-slate-200 mx-2"></div>
+                    <div className="px-4 py-1.5 bg-slate-50 rounded-full text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                      fottufy.app/live-preview
+                    </div>
                   </div>
-                  <div className="flex-1 max-w-[150px] sm:max-w-md mx-2 md:mx-4 px-3 md:px-4 py-1.5 bg-white rounded-lg text-[10px] md:text-xs font-mono text-gray-400 border border-gray-200 truncate shadow-sm">
-                    fottufy.com/galeria/casamento-ana-e-pedro
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-purple-600" />
+                    </div>
                   </div>
-                  <div className="w-10 md:w-20"></div> {/* Spacer for balance */}
                 </div>
 
-                {/* Conteúdo da Galeria */}
-                <div className="relative p-4 md:p-12 bg-white">
-                  {/* Branding do Fotógrafo */}
-                  <div className="flex flex-col items-center mb-8 md:mb-12 animate-in fade-in slide-in-from-top duration-1000">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white mb-3 md:mb-4 shadow-xl shadow-blue-500/20">
-                      <Camera className="h-6 w-6 md:h-8 md:w-8" />
-                    </div>
-                    <h3 className="text-xl md:text-3xl font-light text-gray-900 tracking-widest uppercase mb-2 text-center">Casamento Ana & Pedro</h3>
-                    <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-30"></div>
+                {/* Conteúdo da Galeria Estilizado */}
+                <div className="relative p-6 md:p-16 bg-gradient-to-br from-white via-slate-50 to-purple-50/30">
+                  <div className="flex flex-col items-center mb-16">
+                    <h3 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">
+                      SELEÇÃO <span className="text-purple-600">PREMIUM</span>
+                    </h3>
+                    <p className="text-slate-400 font-medium tracking-[0.3em] uppercase text-sm">Wedding Collection • 2026</p>
                   </div>
 
-                  {/* Grid de Fotos Realista */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-8">
                     {[
-                      { id: 1, selected: true, delay: '0ms' },
-                      { id: 2, selected: false, delay: '100ms' },
-                      { id: 3, selected: true, delay: '200ms' },
-                      { id: 4, selected: true, delay: '300ms' },
-                      { id: 5, selected: false, delay: '400ms' },
-                      { id: 6, selected: true, delay: '500ms' },
-                      { id: 7, selected: false, delay: '600ms' },
-                      { id: 8, selected: true, delay: '700ms' }
+                      { id: 1, selected: true, color: 'from-purple-100 to-blue-100' },
+                      { id: 2, selected: false, color: 'from-blue-100 to-pink-100' },
+                      { id: 3, selected: true, color: 'from-pink-100 to-purple-100' },
+                      { id: 4, selected: true, color: 'from-purple-100 to-amber-100' }
                     ].map((item) => (
                       <div 
                         key={item.id} 
-                        className={`group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer transition-all duration-500 hover:scale-[1.03] shadow-lg hover:shadow-2xl border border-gray-100 animate-in fade-in slide-in-from-bottom-4`}
-                        style={{ animationDelay: item.delay }}
+                        className="group relative aspect-[4/5] rounded-[32px] overflow-hidden bg-white shadow-xl transition-all duration-500 hover:-translate-y-2"
                       >
-                        {/* Mock Image Content */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                          <Image className="h-8 w-8 md:h-10 md:w-10 text-gray-300 opacity-40" />
-                          {/* Marca d'água Realista */}
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none rotate-[-30deg]">
-                            <span className="text-gray-900/5 text-xs md:text-lg font-black tracking-[0.2em] uppercase whitespace-nowrap select-none">
-                              Fottufy • Protegido
-                            </span>
-                          </div>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-40 group-hover:opacity-60 transition-opacity`}></div>
+                        <div className="absolute inset-0 flex items-center justify-center rotate-[-15deg] opacity-10 group-hover:opacity-20 transition-opacity">
+                          <span className="text-2xl font-black text-slate-900 select-none">FOTTUFY</span>
                         </div>
-
-                        {/* Overlay Gradiente */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                        {/* Botão de Seleção (Coração) */}
-                        <div className={`absolute top-2 right-2 md:top-4 md:right-4 p-1.5 md:p-2.5 rounded-full backdrop-blur-md transition-all duration-300 ${item.selected ? 'bg-red-500 text-white scale-110 shadow-lg shadow-red-500/40' : 'bg-white/40 text-gray-700 hover:bg-white/60 hover:text-red-500'}`}>
-                          <Heart className={`h-4 w-4 md:h-5 md:w-5 ${item.selected ? 'fill-current' : ''}`} />
+                        
+                        {/* Botão de Seleção Flutuante */}
+                        <div className={`absolute bottom-6 right-6 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg ${item.selected ? 'bg-purple-600 text-white scale-110 rotate-12' : 'bg-white/90 text-slate-400 hover:text-purple-600'}`}>
+                          <Heart className={`h-6 w-6 ${item.selected ? 'fill-current' : ''}`} />
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Barra de Ação Flutuante */}
-                  <div className="mt-8 md:mt-12 flex flex-col items-center gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-2.5 md:py-3 bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/50">
-                      <div className="flex -space-x-2 md:-space-x-3">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-white bg-gray-100 overflow-hidden flex items-center justify-center shadow-sm">
-                            <Image className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
-                          </div>
-                        ))}
+                  {/* Floating Dashboard Elements */}
+                  <div className="absolute top-20 right-[-20px] hidden lg:block w-64 p-6 bg-white rounded-3xl shadow-2xl border border-slate-100 animate-in slide-in-from-right duration-1000">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
                       </div>
-                      <p className="text-xs md:text-sm font-medium text-gray-700">
-                        <span className="text-blue-600 font-bold">12 fotos</span> selecionadas
-                      </p>
+                      <div className="text-left">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Conversão</p>
+                        <p className="text-xl font-black text-slate-900">+88%</p>
+                      </div>
                     </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full w-[88%] bg-green-500 rounded-full"></div>
+                    </div>
+                  </div>
 
-                    <Button className="group bg-blue-600 hover:bg-blue-700 text-white px-6 md:px-10 py-5 md:py-7 text-lg md:text-xl font-bold rounded-2xl shadow-[0_10px_40px_rgba(37,99,235,0.2)] hover:shadow-[0_20px_50px_rgba(37,99,235,0.3)] transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto">
-                      Finalizar Seleção
-                      <ArrowRight className="ml-2 md:ml-3 h-5 w-5 md:h-6 md:w-6 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-
-                    <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-gray-400 text-[10px] md:text-xs font-medium uppercase tracking-widest text-center">
-                      <span className="flex items-center gap-1.5">
-                        <Shield className="h-3.5 w-3.5 text-blue-500" />
-                        Marca d'água Ativa
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Smartphone className="h-3.5 w-3.5 text-indigo-500" />
-                        Interface Mobile
-                      </span>
+                  <div className="absolute bottom-20 left-[-20px] hidden lg:block w-64 p-6 bg-white rounded-3xl shadow-2xl border border-slate-100 animate-in slide-in-from-left duration-1000">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <Smartphone className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acesso Mobile</p>
+                        <p className="text-xl font-black text-slate-900">100% OK</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Efeito de Brilho */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
               </div>
-
-              {/* Elementos Decorativos de Fundo */}
-              <div className="absolute -top-12 -right-12 w-48 md:w-64 h-48 md:h-64 bg-blue-500/5 rounded-full blur-[80px] -z-10 animate-pulse"></div>
-              <div className="absolute -bottom-12 -left-12 w-48 md:w-64 h-48 md:h-64 bg-indigo-500/5 rounded-full blur-[80px] -z-10 animate-pulse delay-700"></div>
             </div>
+          </div>
+        </div>
+      </section>
           </div>
         </div>
       </section>
