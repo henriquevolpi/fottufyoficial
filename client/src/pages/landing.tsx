@@ -390,234 +390,70 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-                  <div className="text-4xl font-bold mb-2 text-blue-600">R$ 19,90</div>
-                  <div className="text-gray-500">por mês</div>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Até 6.000 fotos</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Galerias ilimitadas</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Links personalizados</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Suporte prioritário</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => navigate('/auth')}
-                >
-                  Escolher plano
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Padrão - Mais Popular */}
-            <Card className="border-2 border-purple-400 shadow-xl transform scale-105 relative">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-purple-600 text-white px-4 py-1 text-sm">
-                  Mais Popular
-                </Badge>
-              </div>
-              <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold mb-2">Padrão</h3>
-                  <div className="text-4xl font-bold mb-2 text-purple-600">R$ 29,90</div>
-                  <div className="text-gray-500">por mês</div>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Até 15.000 fotos</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Galerias ilimitadas</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Links personalizados</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Relatórios avançados</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Suporte VIP</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  onClick={() => navigate('/auth')}
-                >
-                  Escolher plano
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Premium */}
-            <Card className="border-2 border-yellow-200 shadow-lg">
-              <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold mb-2">Premium</h3>
-                  <div className="text-4xl font-bold mb-2 text-yellow-600">R$ 49,90</div>
-                  <div className="text-gray-500">por mês</div>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Até 35.000 fotos</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Tudo do Padrão</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>API personalizada</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Gerente dedicado</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-yellow-600 hover:bg-yellow-700"
-                  onClick={() => navigate('/auth')}
-                >
-                  Escolher plano
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center mt-12">
-            <p className="text-gray-600">
-              Cancele a qualquer momento, com um simples botão
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* FAQ */}
-      <section className="py-20 bg-white">
+      <section className="py-32 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
-              Perguntas Frequentes
+          <div className="text-center mb-24">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
+              PERGUNTAS <span className="text-blue-600">FREQUENTES</span>
             </h2>
-            <p className="text-xl text-gray-600">
-              Tire suas dúvidas sobre a Fottufy
-            </p>
           </div>
 
           <div className="space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-3">Como meus clientes acessam as fotos?</h3>
-                <p className="text-gray-600">
-                  Você envia um link personalizado por WhatsApp, e-mail ou SMS. Seus clientes clicam no link e 
-                  acessam a galeria direto no navegador, sem precisar instalar nada.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-3">As fotos ficam seguras?</h3>
-                <p className="text-gray-600">
-                  Sim! Utilizamos criptografia de ponta e armazenamento em nuvem seguro. Apenas pessoas com o 
-                  link podem acessar as fotos. Você pode remover a galeria a qualquer momento.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-3">Posso personalizar as galerias?</h3>
-                <p className="text-gray-600">
-                  Sim! Você pode personalizar o nome da galeria, adicionar sua marca e escolher cores. 
-                  Nos planos pagos, também pode usar seu próprio domínio.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-3">Como funciona a proteção das fotos?</h3>
-                <p className="text-gray-600">
-                  Suas fotos ficam protegidas com marca d'água personalizada. Os clientes podem visualizar e selecionar facilmente, 
-                  mas não conseguem copiar ou salvar as imagens. Máxima proteção para seu trabalho!
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-3">Como cancelo minha assinatura?</h3>
-                <p className="text-gray-600">
-                  Você pode cancelar a qualquer momento direto no painel de controle. Não há fidelidade nem multas. 
-                  Suas galerias ficam ativas até o final do período pago.
-                </p>
-              </CardContent>
-            </Card>
+            {[
+              { q: "Como meus clientes acessam as fotos?", a: "Você envia um link personalizado. Seus clientes clicam e acessam a galeria direto no navegador, sem precisar instalar nada." },
+              { q: "As fotos ficam seguras?", a: "Sim! Utilizamos criptografia de ponta e armazenamento em nuvem seguro. Apenas pessoas com o link podem acessar." },
+              { q: "Posso personalizar as galerias?", a: "Sim! Você pode adicionar sua marca e escolher cores. Nos planos pagos, pode usar seu próprio domínio." },
+              { q: "Como funciona a proteção?", a: "Suas fotos recebem marca d'água automática. Os clientes visualizam e selecionam, mas não conseguem copiar." }
+            ].map((item, idx) => (
+              <Card key={idx} className="border-none shadow-lg shadow-slate-100 rounded-[32px] overflow-hidden">
+                <CardContent className="p-10">
+                  <h3 className="text-xl font-black mb-4 text-slate-900 tracking-tight">{item.q}</h3>
+                  <p className="text-slate-500 font-light leading-relaxed">{item.a}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Final */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            Pronto para transformar seu negócio?
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.1),transparent)]"></div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl md:text-7xl font-black text-white mb-8 tracking-tight leading-none">
+            PRONTO PARA O<br />PRÓXIMO NÍVEL?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Junte-se a mais de 5.000 fotógrafos que já aumentaram suas vendas e 
-            melhoraram a experiência dos clientes com a Fottufy.
+          <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto font-light">
+            Junte-se a elite dos fotógrafos brasileiros e transforme sua entrega hoje mesmo.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-6 text-lg font-semibold rounded-xl"
-              onClick={() => navigate('/auth')}
-            >
-              <Camera className="mr-2 h-5 w-5" />
-              Começar gratuitamente
-            </Button>
-          </div>
-          <p className="text-blue-100 text-sm mt-6">
-            Não mande mais a seleção por drive ou whatsapp, use a Fottufy!
-          </p>
+          <Button 
+            size="lg"
+            className="bg-white text-purple-600 hover:bg-slate-50 px-12 py-8 text-xl font-black rounded-2xl shadow-2xl transform transition-all hover:scale-105"
+            onClick={() => navigate('/auth')}
+          >
+            COMEÇAR AGORA
+          </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+      <footer className="py-24 bg-slate-950 text-white overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-12">
             <div className="flex items-center">
-              <Camera className="h-6 w-6 text-blue-400 mr-2" />
-              <span className="text-xl font-bold">Fottufy</span>
+              <Camera className="h-8 w-8 text-purple-500 mr-2" />
+              <span className="text-3xl font-black tracking-tighter">Fottufy</span>
             </div>
-            
-            <div className="text-gray-400 text-sm">
-              <p>&copy; {new Date().getFullYear()} Fottufy. Todos os direitos reservados.</p>
-            </div>
-            
-            <div className="flex space-x-6 text-gray-400 text-sm">
+            <div className="flex flex-wrap justify-center gap-8 text-slate-400 font-bold tracking-widest uppercase text-[10px]">
+              <a href="#como-funciona" className="hover:text-white transition-colors">Como Funciona</a>
               <a href="#recursos" className="hover:text-white transition-colors">Recursos</a>
               <a href="#precos" className="hover:text-white transition-colors">Preços</a>
-              <a href="/login" className="hover:text-white transition-colors">Login</a>
+              <a href="/auth" className="hover:text-white transition-colors">Entrar</a>
             </div>
+            <p className="text-slate-600 text-[10px] font-bold tracking-widest uppercase">© 2026 Fottufy. Design de Elite.</p>
           </div>
         </div>
       </footer>
