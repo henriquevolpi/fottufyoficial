@@ -184,343 +184,212 @@ export default function LandingPage() {
       </section>
 
       {/* Social Proof */}
-      <section className="py-12 bg-white border-b border-gray-100">
+      <section className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-gray-500 mb-8">Mais de 5.000 fotógrafos já confiam na Fottufy</p>
-            <div className="flex justify-center items-center space-x-12 grayscale opacity-60">
-              <div className="text-2xl font-bold text-gray-400">PhotoStudio</div>
-              <div className="text-2xl font-bold text-gray-400">FotoMagic</div>
-              <div className="text-2xl font-bold text-gray-400">ClickArt</div>
-              <div className="text-2xl font-bold text-gray-400">LensCraft</div>
+            <p className="text-slate-400 font-bold tracking-[0.2em] uppercase text-xs mb-12">Empresas que confiam na nossa tecnologia</p>
+            <div className="flex flex-wrap justify-center items-center gap-12 md:gap-20 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+              <div className="text-3xl font-black text-slate-900 tracking-tighter">PhotoStudio</div>
+              <div className="text-3xl font-black text-slate-900 tracking-tighter">FotoMagic</div>
+              <div className="text-3xl font-black text-slate-900 tracking-tighter">ClickArt</div>
+              <div className="text-3xl font-black text-slate-900 tracking-tighter">LensCraft</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Como Funciona */}
-      <section id="como-funciona" className="py-20 bg-gray-50 overflow-hidden">
+      <section id="como-funciona" className="py-32 bg-slate-50 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
-              Como funciona a Fottufy?
+          <div className="text-center mb-24">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
+              A JORNADA DA <span className="text-purple-600">ENTREGA PERFEITA</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Do upload à entrega final: uma jornada completa e profissional para seus projetos
+            <p className="text-xl text-slate-500 max-w-3xl mx-auto font-light">
+              Do primeiro clique à satisfação total do seu cliente
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
-                <Zap className="h-10 w-10 text-white" />
-              </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">1. Faça Upload</h3>
-                <p className="text-gray-600 mb-6 text-sm lg:text-base">
-                  Arraste e solte suas fotos na plataforma. Nosso sistema otimiza automaticamente para web.
-                </p>
-                <div className="text-xs lg:text-sm text-blue-600 font-medium">
-                  ⚡ Upload em lote • 🔄 Processamento
+            {[
+              { step: "01", title: "Upload Inteligente", icon: Zap, color: "bg-purple-100 text-purple-600", desc: "Arraste centenas de fotos. Nosso sistema processa e otimiza tudo em segundos." },
+              { step: "02", title: "Link Exclusivo", icon: Link2, color: "bg-blue-100 text-blue-600", desc: "Envie um link personalizado que respira a identidade da sua marca." },
+              { step: "03", title: "Seleção Intuitiva", icon: Heart, color: "bg-pink-100 text-pink-600", desc: "Seu cliente escolhe as fotos favoritas com um clique, de qualquer lugar." },
+              { step: "04", title: "Projeto Finalizado", icon: CheckCircle, color: "bg-green-100 text-green-600", desc: "Receba a lista pronta e entregue o trabalho finalizado com elegância." }
+            ].map((item, idx) => (
+              <div key={idx} className="group relative">
+                <div className="bg-white rounded-[40px] p-10 shadow-sm border border-slate-100 h-full transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
+                  <div className="absolute top-[-20px] right-[-20px] text-8xl font-black text-slate-50 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                    {item.step}
+                  </div>
+                  <div className={`w-16 h-16 ${item.color} rounded-2xl flex items-center justify-center mb-8 shadow-inner`}>
+                    <item.icon className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-2xl font-black mb-4 text-slate-900 tracking-tight">{item.title}</h3>
+                  <p className="text-slate-500 leading-relaxed font-light">
+                    {item.desc}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
-                <Link2 className="h-10 w-10 text-white" />
-              </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">2. Compartilhe</h3>
-                <p className="text-gray-600 mb-6 text-sm lg:text-base">
-                  Envie o link personalizado para seu cliente por WhatsApp, e-mail ou SMS de forma rápida.
-                </p>
-                <div className="text-xs lg:text-sm text-purple-600 font-medium">
-                  🔗 Link único • 📱 Mobile Ready
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
-                <Heart className="h-10 w-10 text-white" />
-              </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">3. Seleção</h3>
-                <p className="text-gray-600 mb-6 text-sm lg:text-base">
-                  Seu cliente escolhe as favoritas com conforto e proteção de marca d'água.
-                </p>
-                <div className="text-xs lg:text-sm text-pink-600 font-medium">
-                  ❤️ Favoritos • 🛡️ Proteção
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
-                <CheckCircle className="h-10 w-10 text-white" />
-              </div>
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 h-full transition-shadow group-hover:shadow-md">
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">4. Entrega Final</h3>
-                <p className="text-gray-600 mb-6 text-sm lg:text-base">
-                  Envie os arquivos finais editados diretamente pela Fottufy. Tudo em um só lugar!
-                </p>
-                <div className="text-xs lg:text-sm text-green-600 font-medium">
-                  ✅ Projeto pronto • 📦 Download fácil
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Recursos */}
-      <section id="recursos" className="py-20 bg-white overflow-hidden">
+      <section id="recursos" className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
-              Tudo que você precisa em um só lugar
+          <div className="text-center mb-24">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
+              TECNOLOGIA PARA <span className="text-blue-600">ELITE</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Recursos pensados para proteger suas fotos e impressionar seus clientes
+            <p className="text-xl text-slate-500 max-w-3xl mx-auto font-light">
+              Tudo o que você precisa para escalar seu negócio de fotografia
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
-                  <Smartphone className="h-6 w-6 text-blue-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Design Responsivo</h3>
-                <p className="text-gray-600">
-                  Suas galerias ficam perfeitas em celular, tablet e desktop. Seus clientes acessam de qualquer lugar.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-600 transition-colors">
-                  <Clock className="h-6 w-6 text-green-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Upload Ultra-Rápido</h3>
-                <p className="text-gray-600">
-                  Tecnologia avançada para upload de centenas de fotos em poucos minutos. Sem travamentos.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
-                  <Shield className="h-6 w-6 text-purple-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Proteção com Logo</h3>
-                <p className="text-gray-600">
-                  Suas fotos ficam protegidas com marca d'água personalizada. Clientes veem mas não conseguem copiar.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-yellow-600 transition-colors">
-                  <Globe className="h-6 w-6 text-yellow-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Links Personalizados</h3>
-                <p className="text-gray-600">
-                  Crie links únicos e memoráveis para cada evento. Mais profissional para sua marca.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-red-600 transition-colors">
-                  <TrendingUp className="h-6 w-6 text-red-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Relatórios Detalhados</h3>
-                <p className="text-gray-600">
-                  Veja quantas fotos foram visualizadas e selecionadas pelos clientes. Entenda o que seus clientes preferem.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-indigo-600 transition-colors">
-                  <Mail className="h-6 w-6 text-indigo-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Notificações Automáticas</h3>
-                <p className="text-gray-600">
-                  Receba avisos quando seus clientes acessarem e selecionarem fotos. Mantenha-se sempre informado.
-                </p>
-              </CardContent>
-            </Card>
+            {[
+              { title: "Design Imersivo", icon: Smartphone, color: "bg-blue-50 text-blue-600", desc: "Experiência mobile-first que encanta o cliente no primeiro segundo." },
+              { title: "Velocidade Real", icon: Clock, color: "bg-amber-50 text-amber-600", desc: "Uploads paralelos e processamento ultra-rápido sem travamentos." },
+              { title: "Proteção Total", icon: Shield, color: "bg-purple-50 text-purple-600", desc: "Marca d'água automática e dinâmica para proteger sua arte." },
+              { title: "Personalização", icon: Globe, color: "bg-indigo-50 text-indigo-600", desc: "Domínio próprio e links que reforçam o poder da sua marca." },
+              { title: "Insights de IA", icon: TrendingUp, color: "bg-green-50 text-green-600", desc: "Saiba o que seu cliente mais gosta antes mesmo dele te falar." },
+              { title: "Notificações", icon: Mail, color: "bg-pink-50 text-pink-600", desc: "Avisos em tempo real de acessos e seleções finalizadas." }
+            ].map((item, idx) => (
+              <Card key={idx} className="bg-white border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 rounded-[32px] overflow-hidden group">
+                <CardContent className="p-10">
+                  <div className={`w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-sm`}>
+                    <item.icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-xl font-black mb-3 text-slate-900 tracking-tight">{item.title}</h3>
+                  <p className="text-slate-500 leading-relaxed font-light">
+                    {item.desc}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Depoimentos */}
-      <section id="depoimentos" className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
-              O que nossos clientes dizem
+      <section id="depoimentos" className="py-32 bg-slate-900 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.1),transparent)]"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-24">
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">
+              QUEM USA, <span className="text-purple-400">EVOLUI</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Fottufy é facilidade e conforto na hora da seleção!
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto font-light">
+              Histórias de sucesso de fotógrafos que transformaram sua entrega
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <div className="flex mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-6">
-                  "Antes eu enviava fotos pelo Google Drive e meus clientes copiavam tudo. 
-                  Com a Fottufy, as fotos ficam protegidas com meu logo e eles só veem o que eu quero mostrar."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-white font-bold">MC</span>
+            {[
+              { name: "Maria Clara", role: "Casamentos", initials: "MC", color: "from-blue-500 to-purple-600", text: "Antes eu perdia horas explicando como baixar fotos. Agora meus clientes fazem tudo sozinhos e ainda me elogiam pelo design!" },
+              { name: "Ricardo Santos", role: "Eventos", initials: "RS", color: "from-purple-500 to-pink-600", text: "A proteção com marca d'água me deu a segurança que eu precisava para subir o nível dos meus pacotes premium." },
+              { name: "Ana Flávia", role: "Newborn", initials: "AF", color: "from-pink-500 to-amber-600", text: "Aumentei minha produtividade absurdamente. O sistema de seleção é o mais rápido que já testei no mercado brasileiro." }
+            ].map((item, idx) => (
+              <Card key={idx} className="bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl rounded-[40px] overflow-hidden group">
+                <CardContent className="p-10">
+                  <div className="flex mb-6">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-4 w-4 text-amber-400 fill-current" />
+                    ))}
                   </div>
-                  <div>
-                    <p className="font-semibold">Maria Clara</p>
-                    <p className="text-sm text-gray-500">Fotógrafa de Casamentos - SP</p>
+                  <p className="text-slate-200 text-lg leading-relaxed mb-8 font-light italic">
+                    "{item.text}"
+                  </p>
+                  <div className="flex items-center">
+                    <div className={`w-14 h-14 bg-gradient-to-r ${item.color} rounded-2xl flex items-center justify-center mr-4 shadow-xl`}>
+                      <span className="text-white font-black text-lg">{item.initials}</span>
+                    </div>
+                    <div>
+                      <p className="font-black text-white text-lg tracking-tight">{item.name}</p>
+                      <p className="text-sm text-slate-400 font-bold tracking-wider uppercase">{item.role}</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <div className="flex mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-6">
-                  "Meus clientes ficaram impressionados com a galeria protegida. 
-                  Eles veem as fotos mas não conseguem copiar. Minha marca está sempre visível!"
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-white font-bold">RS</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Ricardo Santos</p>
-                    <p className="text-sm text-gray-500">Fotógrafo de Eventos - RJ</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-8">
-                <div className="flex mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-6">
-                  "Aumentei minha produtividade em 300%! As fotos ficam protegidas com minha marca e os clientes só veem as que eu quero. 
-                  A Fottufy resolveu minha vida."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-white font-bold">AF</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Ana Flávia</p>
-                    <p className="text-sm text-gray-500">Fotógrafa Newborn - MG</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Estatísticas */}
-      <section className="py-16 bg-white">
+      <section className="py-24 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-blue-600 mb-2">5k+</div>
-              <div className="text-gray-600">Fotógrafos ativos</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-purple-600 mb-2">2M+</div>
-              <div className="text-gray-600">Fotos enviadas</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-green-600 mb-2">98%</div>
-              <div className="text-gray-600">Satisfação</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-red-600 mb-2">24/7</div>
-              <div className="text-gray-600">Suporte</div>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { val: "5k+", label: "Fotógrafos", color: "text-purple-600" },
+              { val: "2M+", label: "Fotos", color: "text-blue-600" },
+              { val: "98%", label: "Sucesso", color: "text-pink-600" },
+              { val: "24/7", label: "Suporte", color: "text-amber-600" }
+            ].map((item, idx) => (
+              <div key={idx} className="text-center">
+                <div className={`text-5xl md:text-7xl font-black ${item.color} mb-2 tracking-tighter`}>{item.val}</div>
+                <div className="text-slate-400 font-bold tracking-[0.3em] uppercase text-xs">{item.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Preços */}
-      <section id="precos" className="py-20 bg-gray-50">
+      <section id="precos" className="py-32 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
-              Planos que cabem no seu bolso
+          <div className="text-center mb-24">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
+              PLANOS PARA <span className="text-purple-600">CRESCER</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Comece gratuitamente e escale conforme seu negócio cresce
+            <p className="text-xl text-slate-500 max-w-3xl mx-auto font-light">
+              Comece agora e escale conforme seu sucesso aumenta
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Plano Gratuito */}
-            <Card className="border-2 border-gray-200 shadow-lg">
-              <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold mb-2">Gratuito</h3>
-                  <div className="text-4xl font-bold mb-2">R$ 0</div>
-                  <div className="text-gray-500">Para sempre</div>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Até 10 fotos</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>1 galeria</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                    <span>Suporte por email</span>
-                  </li>
-                </ul>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate('/auth')}
-                >
-                  Começar grátis
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Básico */}
-            <Card className="border-2 border-blue-200 shadow-lg">
-              <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold mb-2">Básico</h3>
+            {[
+              { name: "Gratuito", price: "0", features: ["Até 10 fotos", "1 galeria", "Suporte email"], cta: "COMEÇAR GRÁTIS", popular: false },
+              { name: "Básico", price: "27", features: ["Até 500 fotos", "Galerias ilimitadas", "Marca d'água"], cta: "SELECIONAR", popular: false },
+              { name: "Fotógrafo", price: "57", features: ["Até 2.000 fotos", "Download em alta", "Suporte VIP"], cta: "MAIS VENDIDO", popular: true },
+              { name: "Estúdio", price: "97", features: ["Espaço ilimitado", "Domínio próprio", "Marca branca"], cta: "SELECIONAR", popular: false }
+            ].map((plan, idx) => (
+              <Card key={idx} className={`relative bg-white border-none shadow-2xl rounded-[40px] overflow-hidden transition-all duration-500 hover:-translate-y-4 ${plan.popular ? 'ring-4 ring-purple-500/20' : ''}`}>
+                {plan.popular && (
+                  <div className="bg-purple-600 text-white text-[10px] font-black tracking-[0.2em] uppercase py-2 text-center">
+                    MAIS POPULAR
+                  </div>
+                )}
+                <CardContent className="p-10 text-center">
+                  <h3 className="text-2xl font-black mb-4 text-slate-900 tracking-tight">{plan.name}</h3>
+                  <div className="flex justify-center items-baseline gap-1 mb-8">
+                    <span className="text-xl font-bold text-slate-400">R$</span>
+                    <span className="text-5xl font-black text-slate-900">{plan.price}</span>
+                    <span className="text-slate-400 font-medium">/mês</span>
+                  </div>
+                  <ul className="space-y-4 mb-10 text-left">
+                    {plan.features.map((feat, fidx) => (
+                      <li key={fidx} className="flex items-center gap-3 text-slate-600">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="font-medium text-sm">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    variant={plan.popular ? "default" : "outline"} 
+                    className={`w-full py-6 rounded-2xl font-black text-xs tracking-widest ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : 'border-slate-200 hover:bg-slate-50'}`}
+                    onClick={() => navigate('/auth')}
+                  >
+                    {plan.cta}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
                   <div className="text-4xl font-bold mb-2 text-blue-600">R$ 19,90</div>
                   <div className="text-gray-500">por mês</div>
                 </div>
