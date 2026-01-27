@@ -1786,106 +1786,105 @@ export default function Dashboard() {
   }, [currentTab, searchQuery, projects]);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
-        <div className="container mx-auto py-6 px-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center space-x-3">
-              <h1 className="text-3xl font-black tracking-tight m-0 p-0">
-                <span className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 bg-clip-text text-transparent">Fottu</span>
-                <span className="bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">fy</span>
-              </h1>
-              
+    <div className="min-h-screen bg-white dark:bg-slate-950 overflow-x-hidden">
+      {/* Background Decorative Shapes - Youze Style */}
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-200/20 dark:bg-purple-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/20 dark:bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+      <header className="sticky top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 z-50">
+        <div className="container mx-auto px-6">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                <Camera className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
+                Fottufy
+              </span>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto">
+            <div className="flex items-center gap-4">
               <Button
                 onClick={() => setUploadModalOpen(true)}
-                className={`
-                  w-full sm:w-auto
-                  flex items-center justify-center
-                  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
-                  text-white font-semibold
-                  rounded-xl shadow-lg shadow-blue-500/25
-                  px-8 py-3
-                  transition-all duration-300
-                  hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
-                  hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
-                  text-base border border-blue-500/20
-                `}
+                size="lg"
+                className="hidden sm:flex bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-xs tracking-widest uppercase rounded-2xl px-8 py-6 shadow-xl shadow-purple-500/20 transform transition-all hover:scale-105"
               >
                 <PlusCircle className="h-5 w-5 mr-2" />
                 Novo Projeto
               </Button>
               
-              <div className="flex items-center border-t sm:border-t-0 sm:border-l border-slate-200/60 pt-4 sm:pt-0 pl-0 sm:pl-6 mt-2 sm:mt-0 w-full sm:w-auto">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-4 shrink-0 shadow-lg">
-                  <span className="text-white font-bold text-lg">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                  </span>
-                </div>
-                <div className="flex-grow mr-4">
-                  <p className="font-semibold text-slate-800 truncate text-lg">{user?.name || "User"}</p>
-                  <p className="text-slate-500 text-sm truncate">{user?.email}</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={toggleTheme} 
-                  size="sm" 
-                  className="shrink-0 mr-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400 rounded-lg px-3 py-2"
-                  title={`Alternar para modo ${theme === 'light' ? 'escuro' : 'claro'}`}
-                >
-                  {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleLogout} 
-                  size="sm" 
-                  className="shrink-0 border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400 rounded-lg px-4 py-2"
-                >
-                  Logout
-                </Button>
+              <div className="hidden md:flex flex-col items-end mr-2">
+                <span className="text-sm font-black text-slate-900 dark:text-white leading-none">{user?.name || "User"}</span>
+                <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">{user?.plan || 'Gratuito'}</span>
               </div>
+              
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-lg">
+                <span className="text-white font-black text-lg">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                </span>
+              </div>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={toggleTheme} 
+                className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                title={`Alternar para modo ${theme === 'light' ? 'escuro' : 'claro'}`}
+              >
+                {theme === 'light' ? <Moon className="h-5 w-5 text-slate-600" /> : <Sun className="h-5 w-5 text-slate-400" />}
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={handleLogout} 
+                className="rounded-xl border-slate-200 dark:border-slate-700 font-bold text-xs tracking-widest uppercase py-6 px-6"
+              >
+                Sair
+              </Button>
             </div>
           </div>
         </div>
       </header>
-      {/* Banner Cinematográfico Moderno */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-white via-slate-50/90 to-white">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30"></div>
-        <div className="absolute inset-0 opacity-[0.02]">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/3 w-80 h-80 bg-purple-400 rounded-full blur-3xl"></div>
-        </div>
+      
+      {/* Hero Banner - Youze Premium Style */}
+      <div className="relative overflow-hidden py-16 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-purple-100/30 dark:bg-purple-900/10 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-blue-100/30 dark:bg-blue-900/10 rounded-full blur-[80px] pointer-events-none"></div>
         
-        <div className="relative container mx-auto px-6 py-6">
+        <div className="relative container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="flex items-center justify-center gap-6 mb-6">
               <img
                 src={fottufinhopng}
                 alt="Fottufinho Mascote"
-                className="w-16 h-16"
+                className="w-20 h-20"
               />
               
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                  Bem-vindo de volta, 
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none uppercase">
+                <span className="text-slate-900 dark:text-white">
+                  Olá, 
                 </span>
-                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent ml-2">
+                <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {user?.name?.split(' ')[0] || 'Fotógrafo'}
                 </span>
               </h1>
             </div>
             
-            <p className="text-sm sm:text-base text-slate-600 font-light max-w-2xl mx-auto leading-relaxed">
-              Sua plataforma profissional para gerenciar projetos fotográficos com elegância.
+            <p className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
+              Sua plataforma de elite para gerenciar projetos fotográficos.
             </p>
+            
+            {/* Mobile New Project Button */}
+            <Button
+              onClick={() => setUploadModalOpen(true)}
+              size="lg"
+              className="sm:hidden mt-8 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-sm tracking-widest uppercase rounded-2xl px-10 py-8 shadow-2xl shadow-purple-500/20 transform transition-all hover:scale-105"
+            >
+              <PlusCircle className="h-6 w-6 mr-3" />
+              Novo Projeto
+            </Button>
           </div>
         </div>
-        
-        {/* Decorative bottom wave */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200/60 to-transparent"></div>
       </div>
       <main className="container mx-auto py-12 px-3 sm:px-6">
         {/* Banner Dinâmico */}
