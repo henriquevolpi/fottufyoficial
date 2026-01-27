@@ -1285,12 +1285,12 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
                   <>
                     <Check className="h-4 w-4" />
-                    <span className="hidden sm:inline">Selecionado</span>
+                    <span>Selecionado</span>
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Selecionar</span>
+                    <span>Selecionar</span>
                   </>
                 )}
               </button>
