@@ -1365,19 +1365,19 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   };
   
   return (
-    <div className="mb-8 sm:mb-16">
+    <div className="mb-6 sm:mb-10">
       {/* Section Header - Youze Style */}
-      <div className="flex items-center gap-3 mb-4 sm:mb-8">
-        <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest">
+      <div className="flex items-center gap-3 mb-3 sm:mb-5">
+        <span className="px-3 py-1 sm:px-3 sm:py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest">
           📊 Métricas
         </span>
       </div>
       
-      <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-4">
         {/* Active projects card - Glassmorphism Style */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full">
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
                 <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
@@ -1391,7 +1391,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               {isLoading ? (
                 <Skeleton className="h-8 sm:h-12 w-12 sm:w-20 mx-auto sm:mx-0" />
               ) : (
-                <div className="text-2xl sm:text-5xl font-black text-slate-900 dark:text-white text-center sm:text-left">
+                <div className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white text-center sm:text-left">
                   {data?.activeProjects || 0}
                 </div>
               )}
@@ -1402,9 +1402,12 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         {/* Monthly uploads card */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full">
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
+                <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
+                  <Upload className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
+                </div>
                 <div className="text-center sm:text-left">
                   <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Uploads</p>
                   <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">Este mês</p>
@@ -1413,7 +1416,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
               {isLoading ? (
                 <Skeleton className="h-8 sm:h-12 w-12 sm:w-20 mx-auto sm:mx-0" />
               ) : (
-                <div className="text-2xl sm:text-5xl font-black text-slate-900 dark:text-white text-center sm:text-left">
+                <div className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white text-center sm:text-left">
                   {data?.photosThisMonth || 0}
                 </div>
               )}
@@ -1424,7 +1427,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         {/* Upload usage card */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full">
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
                 <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
@@ -1435,7 +1438,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                   <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">{planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}</p>
                 </div>
               </div>
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-2">
                 <div className="flex justify-center sm:justify-between items-center">
                   <span className="hidden sm:block text-xs font-bold text-slate-500 uppercase tracking-wider">Uso</span>
                   <span className="text-[10px] sm:text-sm font-black text-purple-600 bg-purple-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
@@ -1450,12 +1453,12 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="hidden sm:block px-6 pb-6 pt-0">
+            <CardFooter className="hidden sm:block px-4 pb-4 pt-0">
               <Button 
-                className="w-full font-black text-xs tracking-widest uppercase py-6 rounded-2xl transition-all bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl shadow-purple-500/20 hover:scale-105"
+                className="w-full font-bold text-xs tracking-wide uppercase py-3 rounded-xl transition-all bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/20 hover:scale-105"
                 onClick={() => setLocation("/subscription")}
               >
-                <Settings className="mr-2 h-4 w-4" />
+                <Settings className="mr-2 h-3 w-3" />
                 Gerenciar Plano
               </Button>
             </CardFooter>
@@ -1930,7 +1933,7 @@ export default function Dashboard() {
       </header>
       
       {/* Hero Banner - Youze Premium Style */}
-      <div className="relative overflow-hidden py-6 sm:py-16 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="relative overflow-hidden py-4 sm:py-8 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-purple-100/30 dark:bg-purple-900/10 rounded-full blur-[100px] pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-blue-100/30 dark:bg-blue-900/10 rounded-full blur-[80px] pointer-events-none"></div>
         
@@ -1943,7 +1946,7 @@ export default function Dashboard() {
                 className="w-12 h-12 sm:w-20 sm:h-20"
               />
               
-              <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none uppercase">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-none uppercase">
                 <span className="text-slate-900 dark:text-white">
                   Olá, 
                 </span>
@@ -1969,13 +1972,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <main className="container mx-auto py-4 sm:py-12 px-3 sm:px-6">
+      <main className="container mx-auto py-3 sm:py-6 px-3 sm:px-6">
         {/* Banner Dinâmico */}
         <DashboardBanner />
 
         {/* Aviso de novidades - Youze Style */}
-        <div className="mt-0 mb-6 sm:mb-12 relative overflow-hidden">
-          <div className="relative bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl sm:shadow-2xl shadow-purple-500/20">
+        <div className="mt-0 mb-4 sm:mb-8 relative overflow-hidden">
+          <div className="relative bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-xl sm:shadow-2xl shadow-purple-500/20">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-400/20 rounded-full blur-2xl"></div>
             
@@ -2160,7 +2163,7 @@ export default function Dashboard() {
         </div>
       </main>
       {/* Seção de redefinição de senha discreta no rodapé */}
-      <div className="border-t border-slate-200/60 pt-8 pb-12 mt-12 bg-white/30 backdrop-blur-sm">
+      <div className="border-t border-slate-200/60 pt-4 pb-6 mt-6 bg-white/30 backdrop-blur-sm">
         <div className="container max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             <div className="text-slate-600 font-medium">
