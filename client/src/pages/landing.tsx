@@ -351,10 +351,10 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
-              { name: "Gratuito", price: "0", features: ["Até 10 fotos", "1 galeria", "Suporte email"], cta: "COMEÇAR GRÁTIS", popular: false },
-              { name: "Básico", price: "19,90", features: ["Até 6.000 fotos", "Galerias ilimitadas", "Links personalizados", "Suporte prioritário"], cta: "SELECIONAR", popular: false },
-              { name: "Profissional", price: "49,90", features: ["Fotos ilimitadas", "Marca d'água personalizada", "Dashboard de estatísticas", "Suporte VIP 24/7"], cta: "MAIS POPULAR", popular: true },
-              { name: "Oferta Especial", price: "Consultar", features: ["Acesso a cursos", "Comunidade exclusiva", "Mentorias mensais"], cta: "VER OFERTAS", popular: false, isHotmart: true }
+              { name: "Gratuito", price: "0", features: ["Até 10 fotos", "1 galeria", "Suporte por email"], cta: "Começar grátis", popular: false, subtitle: "Para sempre" },
+              { name: "Básico", price: "19,90", features: ["Até 6.000 fotos", "Galerias ilimitadas", "Links personalizados", "Suporte prioritário"], cta: "Escolher plano", popular: false, subtitle: "por mês", color: "text-blue-600" },
+              { name: "Padrão", price: "29,90", features: ["Até 15.000 fotos", "Galerias ilimitadas", "Links personalizados", "Relatórios avançados", "Suporte VIP"], cta: "Escolher plano", popular: true, subtitle: "por mês", color: "text-purple-600" },
+              { name: "Premium", price: "49,90", features: ["Até 35.000 fotos", "Tudo do Padrão", "API personalizada", "Gerente dedicado"], cta: "Escolher plano", popular: false, subtitle: "por mês", color: "text-amber-600" }
             ].map((plan, idx) => (
               <Card key={idx} className={`relative bg-white border-none shadow-2xl rounded-[40px] overflow-hidden transition-all duration-500 hover:-translate-y-4 ${plan.popular ? 'ring-4 ring-purple-500/20' : ''}`}>
                 {plan.popular && (
@@ -363,30 +363,42 @@ export default function LandingPage() {
                   </div>
                 )}
                 <CardContent className="p-10 text-center">
-                  <h3 className="text-2xl font-black mb-4 text-slate-900 tracking-tight">{plan.name}</h3>
-                  <div className="flex justify-center items-baseline gap-1 mb-8">
-                    {plan.price !== "Consultar" && <span className="text-xl font-bold text-slate-400">R$</span>}
-                    <span className={`${plan.price === "Consultar" ? 'text-3xl' : 'text-5xl'} font-black text-slate-900`}>{plan.price}</span>
-                    {plan.price !== "Consultar" && <span className="text-slate-400 font-medium">/mês</span>}
+                  <h3 className="text-2xl font-black mb-1 text-slate-900 tracking-tight">{plan.name}</h3>
+                  <div className="mb-8">
+                    <div className={`text-4xl font-black ${plan.color || 'text-slate-900'}`}>R$ {plan.price}</div>
+                    <div className="text-slate-400 text-sm font-medium">{plan.subtitle}</div>
                   </div>
                   <ul className="space-y-4 mb-10 text-left">
                     {plan.features.map((feat, fidx) => (
                       <li key={fidx} className="flex items-center gap-3 text-slate-600">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                         <span className="font-medium text-sm">{feat}</span>
                       </li>
                     ))}
                   </ul>
                   <Button 
                     variant={plan.popular ? "default" : "outline"} 
-                    className={`w-full py-6 rounded-2xl font-black text-xs tracking-widest ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : 'border-slate-200 hover:bg-slate-50'}`}
-                    onClick={() => plan.isHotmart ? window.open('https://hotmart.com', '_blank') : navigate('/auth')}
+                    className={`w-full py-6 rounded-2xl font-black text-xs tracking-widest transition-all duration-300 ${
+                      plan.popular 
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200' 
+                        : plan.name === 'Básico' 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-none' 
+                          : plan.name === 'Premium' 
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white border-none'
+                            : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}
+                    onClick={() => navigate('/auth')}
                   >
                     {plan.cta}
                   </Button>
                 </CardContent>
               </Card>
             ))}
+          </div>
+          <div className="text-center mt-12">
+            <p className="text-slate-400 text-sm font-medium">
+              Cancele a qualquer momento, com um simples botão
+            </p>
           </div>
         </div>
       </section>
