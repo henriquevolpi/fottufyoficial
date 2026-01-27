@@ -512,7 +512,6 @@ export default function Admin() {
         description: `${editingUser.name}'s plan has been updated to ${editForm.planType}.`
       });
       
-      setEditUserDialogOpen(false);
     } catch (error) {
       toast({
         title: "Error",
@@ -547,7 +546,6 @@ export default function Admin() {
         description: `${editingUser.name} agora tem ${editForm.accessDays} dias de acesso (expira em ${expirationDate.toLocaleDateString('pt-BR')}).`
       });
       
-      setEditUserDialogOpen(false);
     } catch (error) {
       toast({
         title: "Erro",
@@ -580,7 +578,6 @@ export default function Admin() {
         description: `${editingUser.name}'s status has been updated to ${editForm.status}.`
       });
       
-      setEditUserDialogOpen(false);
     } catch (error) {
       toast({
         title: "Error",
