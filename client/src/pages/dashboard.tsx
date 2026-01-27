@@ -1680,133 +1680,158 @@ export default function Dashboard() {
   const handleProjectCreated = async (newProject: any) => {
     console.log("Project created, ensuring complete data...");
     
+    // Proteção contra tela branca: Garantir que sempre temos dados válidos
+    if (!newProject || !newProject.id) {
+      console.warn("handleProjectCreated: newProject inválido, ignorando");
+      return;
+    }
+    
     try {
       // Use a more reliable approach to get the complete project data
       // First, prepare the formatted project with whatever data we have now
       const initialFormattedProject = {
         ...newProject,
         id: newProject.id,
-        nome: newProject.name || newProject.nome,
-        cliente: newProject.clientName || newProject.cliente,
-        emailCliente: newProject.clientEmail || newProject.emailCliente,
+        nome: newProject.name || newProject.nome || 'Projeto',
+        cliente: newProject.clientName || newProject.cliente || 'Cliente',
+        emailCliente: newProject.clientEmail || newProject.emailCliente || '',
         fotos: newProject.photos ? newProject.photos.length : (newProject.fotos || 0),
         selecionadas: newProject.selectedPhotos ? newProject.selectedPhotos.length : (newProject.selecionadas || 0),
         status: newProject.status || "pending"
       };
       
       // Immediately add this to the projects list for a responsive UI experience
-      const initialUpdatedProjects = [initialFormattedProject, ...projects.filter(p => p.id !== initialFormattedProject.id)];
-      setProjects(initialUpdatedProjects);
-      
-      // Also update filtered projects right away
-      if (currentTab === "all" || initialFormattedProject.status === getStatusFilter(currentTab)) {
-        setFilteredProjects([initialFormattedProject, ...filteredProjects.filter(p => p.id !== initialFormattedProject.id)]);
+      try {
+        const initialUpdatedProjects = [initialFormattedProject, ...projects.filter(p => p.id !== initialFormattedProject.id)];
+        setProjects(initialUpdatedProjects);
+        
+        // Also update filtered projects right away
+        if (currentTab === "all" || initialFormattedProject.status === getStatusFilter(currentTab)) {
+          setFilteredProjects([initialFormattedProject, ...filteredProjects.filter(p => p.id !== initialFormattedProject.id)]);
+        }
+      } catch (stateError) {
+        console.error("Erro ao atualizar estado dos projetos:", stateError);
+        // Continua mesmo com erro - a UI já foi atualizada pelo modal
       }
       
       // Now make a separate call to get the complete and accurate data
       // Use a longer delay to ensure the server has fully processed everything
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const response = await fetch(`/api/projects/${newProject.id}`);
-      
-      if (!response.ok) {
-        console.warn("Could not fetch complete project data, using initial data");
-        return; // Already added the initial project data above
-      }
-      
-      // Get the complete and accurate project data
-      const completeProject = await response.json();
-      console.log("Complete project data fetched:", completeProject);
-      
-      // Format for dashboard display with complete data
-      const completeFormattedProject = {
-        ...completeProject,
-        nome: completeProject.name,
-        cliente: completeProject.clientName,
-        emailCliente: completeProject.clientEmail,
-        fotos: completeProject.photos ? completeProject.photos.length : 0,
-        selecionadas: completeProject.selectedPhotos ? completeProject.selectedPhotos.length : 0
-      };
-      
-      // Update the projects state with the complete data
-      const finalUpdatedProjects = [completeFormattedProject, ...projects.filter(p => p.id !== completeFormattedProject.id)];
-      setProjects(finalUpdatedProjects);
-      
-      // Final update to filtered projects based on current tab and complete data
-      if (currentTab === "all" || completeFormattedProject.status === getStatusFilter(currentTab)) {
-        setFilteredProjects([completeFormattedProject, ...filteredProjects.filter(p => p.id !== completeFormattedProject.id)]);
-      }
-      
-      // Update user-specific localStorage with the complete data
-      if (user && user.id) {
-        const storageKey = `projects_user_${user.id}`;
-        localStorage.setItem(storageKey, JSON.stringify(finalUpdatedProjects));
-      }
-      
-      // Force a refresh of the entire projects list to ensure everything is in sync
-      const refreshResponse = await fetch('/api/projects');
-      if (refreshResponse.ok) {
-        const refreshedProjects = await refreshResponse.json();
+      // Fetch adicional do projeto completo - envolvido em try-catch para proteção
+      try {
+        const response = await fetch(`/api/projects/${newProject.id}`);
         
-        // Format the refreshed data
-        const formattedProjects = refreshedProjects.map((project: any) => ({
-          ...project,
-          nome: project.name,
-          cliente: project.clientName,
-          emailCliente: project.clientEmail,
-          fotos: project.photos ? project.photos.length : 0,
-          selecionadas: project.selectedPhotos ? project.selectedPhotos.length : 0
-        }));
-        
-        // Update project states with the freshest data
-        setProjects(formattedProjects);
-        
-        // Apply current filtering
-        let filtered = formattedProjects;
-        if (currentTab !== "all") {
-          const statusFilter = getStatusFilter(currentTab);
-          filtered = formattedProjects.filter(
-            project => project.status === statusFilter
-          );
+        if (!response.ok) {
+          console.warn("Could not fetch complete project data, using initial data");
+          // Não retorna - continua para atualizar cache
+        } else {
+          // Get the complete and accurate project data
+          const completeProject = await response.json();
+          console.log("Complete project data fetched:", completeProject);
+          
+          // Format for dashboard display with complete data
+          const completeFormattedProject = {
+            ...completeProject,
+            nome: completeProject.name || 'Projeto',
+            cliente: completeProject.clientName || 'Cliente',
+            emailCliente: completeProject.clientEmail || '',
+            fotos: completeProject.photos ? completeProject.photos.length : 0,
+            selecionadas: completeProject.selectedPhotos ? completeProject.selectedPhotos.length : 0
+          };
+          
+          // Update the projects state with the complete data
+          const finalUpdatedProjects = [completeFormattedProject, ...projects.filter(p => p.id !== completeFormattedProject.id)];
+          setProjects(finalUpdatedProjects);
+          
+          // Final update to filtered projects based on current tab and complete data
+          if (currentTab === "all" || completeFormattedProject.status === getStatusFilter(currentTab)) {
+            setFilteredProjects([completeFormattedProject, ...filteredProjects.filter(p => p.id !== completeFormattedProject.id)]);
+          }
+          
+          // Update user-specific localStorage with the complete data
+          try {
+            if (user && user.id) {
+              const storageKey = `projects_user_${user.id}`;
+              localStorage.setItem(storageKey, JSON.stringify(finalUpdatedProjects));
+            }
+          } catch (storageErr) {
+            console.warn("Erro ao salvar no localStorage:", storageErr);
+          }
         }
-        
-        // Apply search filter if any
-        if (searchQuery && searchQuery.length > 0) {
-          const query = searchQuery.toLowerCase();
-          filtered = filtered.filter(project => {
-            // Verificar nome/name - aceitar ambos os formatos
-            const projectName = project.nome || project.name || '';
-            const clientName = project.cliente || project.clientName || '';
-            const clientEmail = project.emailCliente || project.clientEmail || '';
-            
-            return (
-              projectName.toString().toLowerCase().includes(query) ||
-              clientName.toString().toLowerCase().includes(query) ||
-              clientEmail.toString().toLowerCase().includes(query)
+      } catch (fetchError) {
+        console.warn("Erro ao buscar projeto completo, usando dados iniciais:", fetchError);
+        // Não lança erro - projeto já foi adicionado com dados iniciais
+      }
+      
+      // Force a refresh of the entire projects list - também protegido
+      try {
+        const refreshResponse = await fetch('/api/projects');
+        if (refreshResponse.ok) {
+          const refreshedProjects = await refreshResponse.json();
+          
+          // Format the refreshed data
+          const formattedProjects = (refreshedProjects || []).map((project: any) => ({
+            ...project,
+            nome: project.name || 'Projeto',
+            cliente: project.clientName || 'Cliente',
+            emailCliente: project.clientEmail || '',
+            fotos: project.photos ? project.photos.length : 0,
+            selecionadas: project.selectedPhotos ? project.selectedPhotos.length : 0
+          }));
+          
+          // Update project states with the freshest data
+          setProjects(formattedProjects);
+          
+          // Apply current filtering
+          let filtered = formattedProjects;
+          if (currentTab !== "all") {
+            const statusFilter = getStatusFilter(currentTab);
+            filtered = formattedProjects.filter(
+              (project: any) => project.status === statusFilter
             );
-          });
+          }
+          
+          // Apply search filter if any
+          if (searchQuery && searchQuery.length > 0) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter((project: any) => {
+              const projectName = project.nome || project.name || '';
+              const clientName = project.cliente || project.clientName || '';
+              const clientEmail = project.emailCliente || project.clientEmail || '';
+              
+              return (
+                projectName.toString().toLowerCase().includes(query) ||
+                clientName.toString().toLowerCase().includes(query) ||
+                clientEmail.toString().toLowerCase().includes(query)
+              );
+            });
+          }
+          
+          setFilteredProjects(filtered);
         }
-        
-        setFilteredProjects(filtered);
+      } catch (refreshError) {
+        console.warn("Erro ao atualizar lista de projetos:", refreshError);
+        // Não lança erro - já temos os dados iniciais
       }
       
-      // ✅ Invalidar cache do React Query para atualizar as caixas do dashboard automaticamente
+      // ✅ Invalidar cache do React Query - protegido contra erros
       console.log("Invalidating cache to update dashboard stats...");
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      }, 500); // Pequeno delay para garantir que o servidor processou tudo
+      try {
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+        }, 500);
+      } catch (cacheError) {
+        console.warn("Erro ao invalidar cache:", cacheError);
+      }
       
     } catch (error) {
       console.error("Error in project creation handling:", error);
-      // We've already added the initial project data, so user still sees something,
-      // but let's inform them about the issue
-      toast({
-        title: "Project Created",
-        description: "Project was created but some details may be incomplete. Refresh the page to see the latest data.",
-        variant: "default"
-      });
+      // We've already added the initial project data, so user still sees something
+      // Não mostramos toast de erro para não confundir o usuário - projeto foi criado com sucesso
+      console.log("Projeto foi criado, mas houve erro ao atualizar dados. Usuário pode atualizar a página.");
     }
   };
   

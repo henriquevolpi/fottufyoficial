@@ -42,53 +42,61 @@ export default function PromotionalBanner() {
   };
 
   return (
-    <div className="w-full mb-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-md overflow-hidden">
-      <div className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between text-white">
-        <div className="flex flex-col md:flex-row items-center mb-4 md:mb-0">
-          <Zap className="h-8 w-8 mr-3 mb-2 md:mb-0 animate-pulse" />
-          <div className="text-center md:text-left">
-            <h3 className="text-xl font-bold mb-1">
-              🚨 Adquira seu Plano a partir de R$19,90 - Planos promocionais disponíveis por tempo limitado!
-            </h3>
-            <p className="text-sm text-white/80">
-              Aproveite e garanta mais espaço para suas fotos antes que essa oferta acabe.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center">
-          <div className="flex items-center space-x-2 mb-3 bg-white/20 py-2 px-4 rounded-lg">
-            <Clock className="h-5 w-5" />
-            <div className="grid grid-flow-col gap-1 text-center auto-cols-max">
-              <div className="flex flex-col">
-                <span className="font-mono text-xl">
-                  {formatTimeValue(timeRemaining.hours)}
-                </span>
-                <span className="text-xs">horas</span>
-              </div>
-              <span className="text-xl">:</span>
-              <div className="flex flex-col">
-                <span className="font-mono text-xl">
-                  {formatTimeValue(timeRemaining.minutes)}
-                </span>
-                <span className="text-xs">min</span>
-              </div>
-              <span className="text-xl">:</span>
-              <div className="flex flex-col">
-                <span className="font-mono text-xl">
-                  {formatTimeValue(timeRemaining.seconds)}
-                </span>
-                <span className="text-xs">seg</span>
-              </div>
+    <div className="w-full mb-8 relative overflow-hidden">
+      <div className="relative bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl sm:rounded-3xl shadow-2xl shadow-purple-500/25">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-fuchsia-400/20 rounded-full blur-2xl"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative p-5 sm:p-8 flex flex-col md:flex-row items-center justify-between text-white gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
+              <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-white animate-pulse" />
+            </div>
+            <div className="text-center md:text-left">
+              <h3 className="text-lg sm:text-2xl font-black uppercase tracking-tight mb-1">
+                🚨 Planos a partir de R$19,90
+              </h3>
+              <p className="text-sm sm:text-base text-purple-100 font-light">
+                Oferta por tempo limitado! Garanta mais espaço para suas fotos.
+              </p>
             </div>
           </div>
-          
-          <Button 
-            onClick={() => setLocation('/subscription')} 
-            className="w-full bg-white text-red-600 hover:bg-white/90 hover:text-red-700 font-bold"
-          >
-            Ver planos com desconto
-          </Button>
+
+          <div className="flex flex-col items-center gap-4 shrink-0">
+            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm py-3 px-5 rounded-2xl">
+              <Clock className="h-5 w-5 text-purple-200" />
+              <div className="flex items-center gap-1 text-center">
+                <div className="flex flex-col items-center">
+                  <span className="font-black text-xl sm:text-2xl">
+                    {formatTimeValue(timeRemaining.hours)}
+                  </span>
+                  <span className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">h</span>
+                </div>
+                <span className="font-black text-xl sm:text-2xl mx-0.5">:</span>
+                <div className="flex flex-col items-center">
+                  <span className="font-black text-xl sm:text-2xl">
+                    {formatTimeValue(timeRemaining.minutes)}
+                  </span>
+                  <span className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">m</span>
+                </div>
+                <span className="font-black text-xl sm:text-2xl mx-0.5">:</span>
+                <div className="flex flex-col items-center">
+                  <span className="font-black text-xl sm:text-2xl">
+                    {formatTimeValue(timeRemaining.seconds)}
+                  </span>
+                  <span className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200">s</span>
+                </div>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={() => setLocation('/subscription')} 
+              className="w-full bg-white text-purple-700 hover:bg-purple-50 hover:text-purple-800 font-black text-xs sm:text-sm tracking-widest uppercase px-6 py-5 sm:py-6 rounded-2xl shadow-xl hover:scale-105 transition-all duration-300"
+            >
+              Ver Planos
+            </Button>
+          </div>
         </div>
       </div>
     </div>
