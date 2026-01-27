@@ -631,49 +631,44 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
       
       {/* Client Link Modal */}
       <Dialog open={showClientLinkModal} onOpenChange={setShowClientLinkModal}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto bg-white border border-gray-200 rounded-2xl shadow-2xl p-0 overflow-hidden">
-          <div className="p-6">
-            <DialogHeader className="mb-4">
-              <div className="inline-block mb-3 w-fit">
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200">
-                  Compartilhar Galeria
-                </span>
-              </div>
-              <DialogTitle className="text-xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Enviar para o Cliente
-              </DialogTitle>
-              <DialogDescription className="text-gray-500 text-sm">
-                Copie a mensagem e envie via WhatsApp ou e-mail.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-3">
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 max-h-48 overflow-y-auto">
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line break-words">
-{`Olá! 📸
-
-Suas fotos do projeto "${project?.name || project?.nome || 'Seu Projeto'}" estão prontas!
-
-Acesse o link para ver e selecionar suas fotos favoritas:
-
-${window.location.origin}/project-view/${project.id}
-
-Qualquer dúvida, estou à disposição!`}
-                </p>
-              </div>
-              
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 overflow-hidden">
-                <code className="text-xs text-blue-700 font-mono block truncate">
+        <DialogContent className="sm:max-w-[500px] max-w-[95vw] bg-white rounded-2xl p-6">
+          <DialogHeader>
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 mb-2 w-fit">
+              Compartilhar Galeria
+            </span>
+            <DialogTitle className="text-xl font-black text-gray-900">
+              Enviar para o Cliente
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 text-sm">
+              Copie a mensagem e envie via WhatsApp ou e-mail.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-3">
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <p className="text-sm text-gray-700 leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                Olá! 📸<br/><br/>
+                Suas fotos do projeto "<strong>{project?.name || project?.nome || 'Seu Projeto'}</strong>" estão prontas!<br/><br/>
+                Acesse o link para ver e selecionar suas fotos favoritas:<br/><br/>
+                <span className="text-blue-600 text-xs" style={{ wordBreak: 'break-all' }}>
                   {`${window.location.origin}/project-view/${project.id}`}
-                </code>
-              </div>
+                </span><br/><br/>
+                Qualquer dúvida, estou à disposição!
+              </p>
             </div>
             
-            <div className="flex flex-col gap-2 mt-4">
-              <Button
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl py-3"
-                onClick={() => {
-                  const message = `Olá! 📸
+            <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <p className="text-xs text-blue-700 font-mono" style={{ wordBreak: 'break-all' }}>
+                {`${window.location.origin}/project-view/${project.id}`}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col gap-2 mt-5">
+            <Button
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl h-11"
+              onClick={() => {
+                const message = `Olá! 📸
 
 Suas fotos do projeto "${project?.name || project?.nome || 'Seu Projeto'}" estão prontas!
 
@@ -682,33 +677,32 @@ Acesse o link para ver e selecionar suas fotos favoritas:
 ${window.location.origin}/project-view/${project.id}
 
 Qualquer dúvida, estou à disposição!`;
-                  navigator.clipboard.writeText(message);
-                  toast({
-                    title: "Mensagem copiada!",
-                    description: "Mensagem completa copiada.",
-                  });
-                  setShowClientLinkModal(false);
-                }}
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Copiar Mensagem Completa
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full rounded-xl font-semibold py-3"
-                onClick={() => {
-                  const link = `${window.location.origin}/project-view/${project.id}`;
-                  navigator.clipboard.writeText(link);
-                  toast({
-                    title: "Link copiado!",
-                    description: "Link da galeria copiado.",
-                  });
-                }}
-              >
-                <LinkIcon className="h-4 w-4 mr-2" />
-                Copiar Apenas o Link
-              </Button>
-            </div>
+                navigator.clipboard.writeText(message);
+                toast({
+                  title: "Mensagem copiada!",
+                  description: "Mensagem completa copiada.",
+                });
+                setShowClientLinkModal(false);
+              }}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Copiar Mensagem Completa
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full rounded-xl font-semibold h-11"
+              onClick={() => {
+                const link = `${window.location.origin}/project-view/${project.id}`;
+                navigator.clipboard.writeText(link);
+                toast({
+                  title: "Link copiado!",
+                  description: "Link da galeria copiado.",
+                });
+              }}
+            >
+              <LinkIcon className="h-4 w-4 mr-2" />
+              Copiar Apenas o Link
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
