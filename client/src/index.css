@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   FIX: Prevenir substituição de letras no Chrome
+   Desabilita ligaduras e features OpenType que 
+   podem modificar caracteres automaticamente
+   ======================================== */
+*, *::before, *::after {
+  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "hlig" 0, "calt" 0;
+  font-variant-ligatures: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "hlig" 0, "calt" 0;
+  -moz-font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "hlig" 0, "calt" 0;
+}
+
 /* Custom styles for react-phone-input-2 */
 .react-tel-input .form-control {
   @apply w-full h-10 py-2 text-base rounded-md border border-input bg-background text-foreground shadow-sm ring-offset-background !important;
