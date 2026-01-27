@@ -116,9 +116,10 @@ export default function ProjectView() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 py-12 px-4 sm:px-6 lg:px-8 flex justify-center items-center">
         <div className="text-center">
-          <p className="text-lg text-gray-600">Loading project...</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 animate-pulse"></div>
+          <p className="text-lg text-white/70 font-medium">Carregando projeto...</p>
         </div>
       </div>
     );
@@ -126,11 +127,11 @@ export default function ProjectView() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Project Not Found</h1>
-          <p className="mt-3 text-lg text-gray-600">
-            The project you're looking for doesn't exist or has been removed.
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 py-12 px-4 sm:px-6 lg:px-8 flex justify-center items-center">
+        <div className="text-center backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8">
+          <h1 className="text-3xl font-black text-white">Projeto Não Encontrado</h1>
+          <p className="mt-3 text-lg text-white/60">
+            O projeto que você procura não existe ou foi removido.
           </p>
         </div>
       </div>
@@ -138,36 +139,34 @@ export default function ProjectView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back and Edit buttons - responsivo */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        {/* Navigation bar with glassmorphism */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <Button 
             variant="ghost" 
-            className="flex items-center gap-2 w-fit"
+            className="flex items-center gap-2 w-fit text-white/80 hover:text-white hover:bg-white/10 rounded-2xl transition-all duration-300"
             onClick={() => setLocation("/dashboard")}
           >
             <ArrowLeftCircle className="h-5 w-5" />
-            <span className="hidden sm:inline">Voltar para Dashboard</span>
-            <span className="sm:hidden">Voltar</span>
+            <span className="hidden sm:inline font-semibold">Voltar para Dashboard</span>
+            <span className="sm:hidden font-semibold">Voltar</span>
           </Button>
           
           <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
-            {/* Comments button */}
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-[18px] font-bold flex-shrink-0"
+              className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-400/30 text-white hover:from-purple-500/30 hover:to-pink-500/30 rounded-2xl font-bold flex-shrink-0 transition-all duration-300"
               onClick={() => setShowCommentsModal(true)}
             >
-              <span className="hidden sm:inline">Comentários</span>
-              <span className="sm:hidden">Comentários</span>
-              <MessageCircle className="h-3 w-3 ml-1" />
+              <MessageCircle className="h-4 w-4 mr-2" />
+              <span>Comentários</span>
             </Button>
             
             <Button 
-              variant="outline" 
-              className="flex items-center gap-2 flex-shrink-0"
+              variant="ghost" 
+              className="flex items-center gap-2 flex-shrink-0 bg-white/10 backdrop-blur-xl border border-white/20 text-white hover:bg-white/20 rounded-2xl font-semibold transition-all duration-300"
               onClick={() => setLocation(`/project/${id}/edit`)}
             >
               <Edit className="h-4 w-4" />
@@ -177,76 +176,92 @@ export default function ProjectView() {
           </div>
         </div>
         
-        <div className="text-center mb-12">
-          <h1
-            className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-[#173370] via-[#2563eb] via-60% to-[#a6cbfa] bg-clip-text text-transparent"
-          >
+        {/* Hero header with gradient */}
+        <div className="text-center mb-10 sm:mb-12">
+          <div className="inline-block mb-4">
+            <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-400/30 backdrop-blur-xl">
+              Galeria de Fotos
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight">
             {project.name}
           </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-lg sm:text-xl text-gray-500 sm:mt-4 px-4">
+          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-white/60 sm:mt-5 px-4">
             {isFinalized
               ? "Obrigado por fazer sua seleção."
               : "Selecione as fotos que você gostaria de manter clicando nelas."}
           </p>
-          <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
-            <div className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 flex-shrink-0">
-              <span className="font-medium">{selectedPhotos.length}</span>
-              <span className="mx-1">de</span>
-              <span className="font-medium">{project.photos?.length || 0}</span>
-              <span className="ml-1 hidden sm:inline">selecionadas</span>
-              <span className="ml-1 sm:hidden">fotos</span>
+          
+          {/* Stats bar */}
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
+            <div className="inline-flex items-center px-5 py-2.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-3">
+                <Check className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-black text-xl">{selectedPhotos.length}</span>
+              <span className="mx-2 text-white/50">de</span>
+              <span className="font-black text-xl">{project.photos?.length || 0}</span>
+              <span className="ml-2 text-white/70 hidden sm:inline">selecionadas</span>
             </div>
             
             {selectedPhotos.length > 0 && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center flex-shrink-0"
+                className="flex items-center flex-shrink-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl border border-blue-400/30 text-white hover:from-blue-500/30 hover:to-cyan-500/30 rounded-2xl font-semibold transition-all duration-300"
                 onClick={() => setShowSelectedFilenamesDialog(true)}
               >
-                <FileText className="h-4 w-4 mr-2" />
+                <Eye className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Ver fotos selecionadas</span>
                 <span className="sm:hidden">Ver selecionadas</span>
               </Button>
             )}
-
           </div>
         </div>
         
-        {/* Gallery grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {project.photos && project.photos.map((photo) => (
-            <PhotoCard
-              key={photo.id}
-              id={photo.id}
-              url={photo.url}
-              filename={photo.filename}
-              originalName={photo.originalName}
-              isSelected={selectedPhotos.includes(photo.id)}
-              onToggleSelect={togglePhotoSelection}
-              disabled={isFinalized}
-            />
+        {/* Gallery grid with modern spacing */}
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {project.photos && project.photos.map((photo, index) => (
+            <div 
+              key={photo.id} 
+              className="transform transition-all duration-300 hover:scale-[1.02]"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <PhotoCard
+                id={photo.id}
+                url={photo.url}
+                filename={photo.filename}
+                originalName={photo.originalName}
+                isSelected={selectedPhotos.includes(photo.id)}
+                onToggleSelect={togglePhotoSelection}
+                disabled={isFinalized}
+              />
+            </div>
           ))}
         </div>
         
-        {/* Floating finalize button - only show if not finalized */}
+        {/* Floating finalize button with gradient */}
         {!isFinalized && (
           <div className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-40">
             <Button
               onClick={handleFinalizeSelection}
               disabled={selectedPhotos.length === 0 || isSubmitting}
-              className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-purple-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Check className="h-6 w-6 sm:h-8 sm:w-8" />
+              {isSubmitting ? (
+                <Loader2 className="h-7 w-7 sm:h-8 sm:w-8 animate-spin" />
+              ) : (
+                <Check className="h-7 w-7 sm:h-8 sm:w-8" />
+              )}
             </Button>
           </div>
         )}
 
-        {/* Botão scroll to top - mobile apenas */}
+        {/* Scroll to top button */}
         {showScrollToTop && (
           <button
             onClick={scrollToTop}
-            className="fixed bottom-20 right-4 sm:bottom-24 sm:right-8 z-30 md:hidden w-10 h-10 bg-gray-800/60 hover:bg-gray-700/80 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 backdrop-blur-sm"
+            className="fixed bottom-24 right-4 sm:bottom-32 sm:right-8 z-30 md:hidden w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-center text-white shadow-lg transition-all duration-300"
             aria-label="Voltar ao topo"
           >
             <ArrowUp className="h-5 w-5" />
@@ -256,16 +271,22 @@ export default function ProjectView() {
       
       {/* Finalized message modal */}
       <Dialog open={finalizeDialogOpen} onOpenChange={setFinalizeDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border border-white/20 backdrop-blur-xl rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Selection Finalized</DialogTitle>
-            <DialogDescription>
-              Thank you for making your selection. Your photographer has been notified and will process the selected photos. You've selected {selectedPhotos.length} out of {project.photos?.length || 0} photos.
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center">
+              <Check className="h-8 w-8 text-white" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-white text-center">Seleção Finalizada!</DialogTitle>
+            <DialogDescription className="text-white/60 text-center">
+              Obrigado por fazer sua seleção. Seu fotógrafo foi notificado e processará as fotos selecionadas. Você selecionou {selectedPhotos.length} de {project.photos?.length || 0} fotos.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setFinalizeDialogOpen(false)}>
-              Close
+          <DialogFooter className="mt-4">
+            <Button 
+              onClick={() => setFinalizeDialogOpen(false)}
+              className="w-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white font-bold rounded-2xl hover:opacity-90 transition-all duration-300"
+            >
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -273,44 +294,50 @@ export default function ProjectView() {
       
       {/* Selected Photos Filenames Dialog */}
       <Dialog open={showSelectedFilenamesDialog} onOpenChange={setShowSelectedFilenamesDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border border-white/20 backdrop-blur-xl rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Fotos Selecionadas</DialogTitle>
-            <DialogDescription>
+            <div className="inline-block mb-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-400/30">
+                {selectedPhotos.length} selecionadas
+              </span>
+            </div>
+            <DialogTitle className="text-2xl font-black text-white">Fotos Selecionadas</DialogTitle>
+            <DialogDescription className="text-white/60">
               Lista de arquivos selecionados neste projeto.
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-[60vh] overflow-y-auto my-4">
             <div className="space-y-2">
               {(Array.isArray(project.photos) && project.photos.length > 0) ? (
                 project.photos
                   .filter(photo => selectedPhotos.includes(photo.id))
                   .map(photo => (
-                    <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
-                      <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm font-mono">{photo.originalName || photo.filename}</span>
+                    <div key={photo.id} className="p-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl flex items-center hover:bg-white/15 transition-all duration-300">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500/30 to-pink-500/30 flex items-center justify-center mr-3">
+                        <FileText className="w-4 h-4 text-purple-300" />
+                      </div>
+                      <span className="text-sm font-medium text-white/80">{photo.originalName || photo.filename}</span>
                     </div>
                   ))
               ) : (
-                <div className="p-4 text-center text-gray-500">
+                <div className="p-4 text-center text-white/50">
                   Nenhuma foto selecionada.
                 </div>
               )}
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {/* Apenas mostrar o botão se há fotos selecionadas */}
             {selectedPhotos.length > 0 && (
               <CopyNamesButton
                 selectedPhotos={project.photos.filter(photo => selectedPhotos.includes(photo.id))}
                 size="default"
                 variant="outline"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl"
               />
             )}
             <Button 
               onClick={() => setShowSelectedFilenamesDialog(false)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white font-bold rounded-xl hover:opacity-90 transition-all duration-300"
             >
               Fechar
             </Button>
@@ -320,14 +347,17 @@ export default function ProjectView() {
 
       {/* Enhanced Comments Modal with Photo Thumbnails */}
       <Dialog open={showCommentsModal} onOpenChange={setShowCommentsModal}>
-        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[900px] mx-auto max-h-[85vh] overflow-y-auto bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border border-white/20 backdrop-blur-xl rounded-3xl">
           <DialogHeader>
-            <DialogTitle
-                className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent"
-              >
-              Comentários do Projeto - {project?.name}
+            <div className="inline-block mb-2 w-fit">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-400/30">
+                Comentários
+              </span>
+            </div>
+            <DialogTitle className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+              {project?.name}
             </DialogTitle>
-            <DialogDescription className="text-sm mt-1">
+            <DialogDescription className="text-white/60 text-sm mt-1">
               Comentários dos clientes organizados por foto com miniaturas para referência visual.
             </DialogDescription>
           </DialogHeader>
@@ -335,18 +365,19 @@ export default function ProjectView() {
           <div className="max-h-[60vh] overflow-y-auto my-4">
             {commentsLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>Carregando comentários...</span>
+                <Loader2 className="h-6 w-6 animate-spin mr-2 text-purple-400" />
+                <span className="text-white/70">Carregando comentários...</span>
               </div>
             ) : commentsData.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">Nenhum comentário ainda</p>
-                <p>Os comentários dos clientes aparecerão aqui quando forem enviados.</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+                  <MessageCircle className="h-8 w-8 text-white/30" />
+                </div>
+                <p className="text-lg font-bold text-white/70 mb-2">Nenhum comentário ainda</p>
+                <p className="text-white/50">Os comentários dos clientes aparecerão aqui quando forem enviados.</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Group comments by photo */}
+              <div className="space-y-4">
                 {Object.entries(
                   commentsData.reduce((acc: Record<string, any[]>, comment: any) => {
                     if (!acc[comment.photoId]) {
@@ -356,55 +387,50 @@ export default function ProjectView() {
                     return acc;
                   }, {})
                 ).map(([photoId, photoComments]: [string, any[]]) => (
-                  <div key={photoId} className="border rounded-lg p-4 bg-white shadow-sm">
+                  <div key={photoId} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:bg-white/15 transition-all duration-300">
                     <div className="flex items-start gap-4 mb-4">
-                      {/* Photo thumbnail */}
                       {photoComments[0]?.photoUrl && (
                         <div className="flex-shrink-0">
                           <img
                             src={photoComments[0].photoUrl}
                             alt={photoComments[0].photoOriginalName || photoComments[0].photoFilename || 'Foto'}
-                            className="w-20 h-20 object-cover rounded border"
+                            className="w-20 h-20 object-cover rounded-xl border border-white/20"
                           />
                         </div>
                       )}
                       
-                      {/* Photo info and actions */}
                       <div className="flex-1">
-                        <h4 className="font-medium text-base text-gray-900 mb-1">
+                        <h4 className="font-bold text-base text-white mb-1">
                           {photoComments[0]?.photoOriginalName || photoComments[0]?.photoFilename || 'Foto sem nome'}
                         </h4>
-                        <p className="text-sm text-gray-500 mb-2">
+                        <p className="text-sm text-white/50">
                           {photoComments.length} comentário{photoComments.length !== 1 ? 's' : ''}
                         </p>
-                        
-
                       </div>
                     </div>
                     
-                    {/* Comments list */}
                     <div className="space-y-3">
                       {photoComments.map((comment: any) => (
                         <div
                           key={comment.id}
-                          className={`p-4 rounded-lg border ${
+                          className={`p-4 rounded-xl border ${
                             !comment.isViewed 
-                              ? 'bg-blue-50 border-blue-200 shadow-sm' 
-                              : 'bg-gray-50 border-gray-200'
+                              ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-400/30' 
+                              : 'bg-white/5 border-white/10'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm text-gray-900">
+                              <span className="font-semibold text-sm text-white">
                                 {comment.clientName || "Cliente"}
                               </span>
                               {!comment.isViewed && (
-                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                <span className="px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full">
                                   Novo
                                 </span>
                               )}
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-white/40">
                               {new Date(comment.createdAt).toLocaleDateString('pt-BR', {
                                 day: '2-digit',
                                 month: '2-digit',
@@ -414,7 +440,7 @@ export default function ProjectView() {
                               })}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700 leading-relaxed">
+                          <p className="text-sm text-white/70 leading-relaxed">
                             {comment.comment}
                           </p>
                         </div>
@@ -427,7 +453,10 @@ export default function ProjectView() {
           </div>
           
           <DialogFooter className="mt-6">
-            <Button onClick={() => setShowCommentsModal(false)} className="w-full sm:w-auto">
+            <Button 
+              onClick={() => setShowCommentsModal(false)} 
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white font-bold rounded-xl hover:opacity-90 transition-all duration-300"
+            >
               Fechar
             </Button>
           </DialogFooter>
