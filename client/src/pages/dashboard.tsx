@@ -349,42 +349,44 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
   };
   
   return (
-        <Card className="overflow-hidden bg-white/70 dark:bg-gray-800/90 backdrop-blur-sm border-0 dark:border dark:border-gray-700/50 shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_0_25px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-[1.02] rounded-2xl">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <Card className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl">
       <CardHeader className="p-6 pb-4">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-white mb-2 leading-tight">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
-            <CardDescription className="text-slate-600 dark:text-gray-400 font-medium">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-xl font-black text-slate-900 dark:text-white mb-1 leading-tight truncate">{project?.name || project?.nome || "Untitled Project"}</CardTitle>
+            <CardDescription className="text-slate-500 dark:text-slate-400 font-medium text-sm truncate">{project?.clientName || project?.cliente || "Unknown Client"}</CardDescription>
           </div>
-          <Badge className={`${getStatusColor(status)} rounded-full px-3 py-1 text-xs font-semibold border-0 shadow-sm`}>
+          <Badge className={`${getStatusColor(status)} rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border-0 shadow-sm shrink-0`}>
             {getStatusDisplayName(status)}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="px-6 pb-4">
-        <div className="flex items-center text-sm text-slate-500 dark:text-gray-400 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/50 flex items-center justify-center mr-3">
-            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-3">
+            <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </div>
-          <span className="font-medium">{formatDate(project?.data || new Date().toISOString())}</span>
+          <span className="font-bold text-slate-700 dark:text-slate-300">{formatDate(project?.data || new Date().toISOString())}</span>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center text-sm bg-slate-50 dark:bg-gray-700/50 rounded-lg p-3">
-            <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mr-3">
-              <Camera className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center text-sm bg-slate-50 dark:bg-slate-800 rounded-2xl p-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-3 shadow-lg shadow-blue-500/20">
+              <Camera className="h-5 w-5 text-white" />
             </div>
             <div>
-              <div className="font-bold text-slate-800 dark:text-white">{project?.photos?.length || project?.fotos || 0}</div>
-              <div className="text-xs text-slate-500 dark:text-gray-400">fotos</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-white">{project?.photos?.length || project?.fotos || 0}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">fotos</div>
             </div>
           </div>
-          <div className="flex items-center text-sm bg-slate-50 dark:bg-gray-700/50 rounded-lg p-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-3">
-              <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <div className="flex items-center text-sm bg-slate-50 dark:bg-slate-800 rounded-2xl p-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center mr-3 shadow-lg shadow-purple-500/20">
+              <Check className="h-5 w-5 text-white" />
             </div>
             <div>
-              <div className="font-bold text-slate-800 dark:text-white">{project?.selectedPhotos?.length || project?.selecionadas || 0}</div>
-              <div className="text-xs text-slate-500 dark:text-gray-400">selecionadas</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-white">{project?.selectedPhotos?.length || project?.selecionadas || 0}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">selecionadas</div>
             </div>
           </div>
         </div>
@@ -631,6 +633,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
         </DialogContent>
       </Dialog>
     </Card>
+        </div>
   );
 }
 
@@ -1275,131 +1278,131 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   };
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
-      {/* Active projects card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <BarChart className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-right">
-              <CardTitle className="text-lg font-bold text-white">
-                Projetos Ativos
-              </CardTitle>
-              <p className="text-sm text-blue-200 font-medium">
-                Em andamento
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {isLoading ? (
-            <Skeleton className="h-12 w-20 bg-white/20" />
-          ) : (
-            <div className="text-right">
-              <div className="text-4xl font-bold text-white drop-shadow-sm">
-                {data?.activeProjects || 0}
-              </div>
-              <p className="text-sm text-blue-200 mt-1">
-                Projetos aguardando revisão
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className="mb-16">
+      {/* Section Header - Youze Style */}
+      <div className="flex items-center gap-3 mb-8">
+        <span className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-black uppercase tracking-widest">
+          📊 Métricas
+        </span>
+      </div>
       
-      {/* Monthly uploads card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 via-purple-700 to-violet-800 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <Camera className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-right">
-              <CardTitle className="tracking-tight text-lg font-bold text-white">
-                Uploads Mensais
-              </CardTitle>
-              <p className="text-sm text-purple-200 font-medium">
-                Este mês
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {isLoading ? (
-            <Skeleton className="h-12 w-20 bg-white/20" />
-          ) : (
-            <div className="text-right">
-              <div className="text-4xl font-bold text-white drop-shadow-sm">
-                {data?.photosThisMonth || 0}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Active projects card - Glassmorphism Style */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                  <BarChart className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Projetos</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Ativos</p>
+                </div>
               </div>
-              <p className="text-sm text-purple-200 mt-1">
-                Fotos enviadas em {new Date().toLocaleDateString('pt-BR', { month: 'long' })}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              {isLoading ? (
+                <Skeleton className="h-12 w-20" />
+              ) : (
+                <div className="text-5xl font-black text-slate-900 dark:text-white">
+                  {data?.activeProjects || 0}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Monthly uploads card */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
+                  <Camera className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Uploads</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Este mês</p>
+                </div>
+              </div>
+              {isLoading ? (
+                <Skeleton className="h-12 w-20" />
+              ) : (
+                <div className="text-5xl font-black text-slate-900 dark:text-white">
+                  {data?.photosThisMonth || 0}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Upload usage card */}
-      <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-600 via-green-700 to-teal-800 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group text-white">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <CreditCard className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-right">
-              <CardTitle className="text-lg font-bold text-white">
-                Plano {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
-              </CardTitle>
-              <p className="text-sm text-emerald-200 font-medium">
-                {planInfo.daysUntilRenewal !== null 
-                  ? `Renova em ${planInfo.daysUntilRenewal} dias`
-                  : "Assinatura ativa"}
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 pb-4">
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-emerald-100">Uso de Uploads</span>
-              <span className="text-sm font-bold text-emerald-800 bg-white/90 px-2 py-1 rounded-full">
-                {planInfo.usedUploads} / {planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit.toLocaleString()}
-              </span>
-            </div>
-            <div className="relative">
-              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-orange-400 to-amber-500 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: planInfo.planType === "unlimited" ? "0%" : `${planInfo.percentageUsed}%` 
-                  }}
-                />
+        {/* Total photos card */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                  <ImageIcon className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Fotos</p>
+                </div>
               </div>
-            </div>
-            <p className="text-xs text-emerald-200 font-medium">
-              {planInfo.planType === "unlimited" 
-                ? "✨ Uploads ilimitados ativados" 
-                : `${planInfo.percentageUsed}% do limite mensal utilizado`}
-            </p>
-          </div>
-        </CardContent>
-        <CardFooter className="pt-0 pb-6">
-          <Button 
-            size="md"
-            className="w-full font-semibold py-3 rounded-xl transition-all duration-300
-              bg-white/20 backdrop-blur-sm text-white border border-white/30
-              hover:bg-white/30 hover:scale-105
-              shadow-lg hover:shadow-xl"
-            onClick={() => setLocation("/subscription")}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Gerenciar Plano
-          </Button>
-        </CardFooter>
-      </Card>
+              {isLoading ? (
+                <Skeleton className="h-12 w-20" />
+              ) : (
+                <div className="text-5xl font-black text-slate-900 dark:text-white">
+                  {data?.totalPhotos || 0}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Upload usage card */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                  <CreditCard className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Plano</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Uso</span>
+                  <span className="text-sm font-black text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                    {planInfo.usedUploads}/{planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full transition-all duration-500"
+                    style={{ width: planInfo.planType === "unlimited" ? "0%" : `${planInfo.percentageUsed}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="px-6 pb-6 pt-0">
+              <Button 
+                className="w-full font-black text-xs tracking-widest uppercase py-6 rounded-2xl transition-all bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl shadow-purple-500/20 hover:scale-105"
+                onClick={() => setLocation("/subscription")}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Gerenciar Plano
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1890,16 +1893,26 @@ export default function Dashboard() {
         {/* Banner Dinâmico */}
         <DashboardBanner />
 
-        {/* Aviso de novidades */}
-        <div className="mt-0 mb-8 px-8 py-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/70 to-blue-50/70 dark:from-gray-800/70 dark:via-gray-800/70 dark:to-gray-800/70 backdrop-blur-sm rounded-2xl border border-blue-100/50 dark:border-gray-700/50 shadow-lg shadow-blue-500/5 dark:shadow-black/20 flex items-start gap-6">
-          <div className="hidden sm:flex w-8 h-8 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center shadow-lg shrink-0">
-            <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-bold mb-2 text-xl bg-gradient-to-r from-slate-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">Recomende a Fottufy a um amigo ❤️</p>
-            <p className="font-medium text-slate-700 dark:text-gray-300 text-[14px]">Somos uma plataforma Brasileira 100% independente, cada apoio e sugestão é de grande importância para nós {"<3"}</p>
+        {/* Aviso de novidades - Youze Style */}
+        <div className="mt-0 mb-12 relative overflow-hidden">
+          <div className="relative bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-purple-500/20">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-400/20 rounded-full blur-2xl"></div>
+            
+            <div className="relative flex flex-col sm:flex-row items-center gap-6">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <div className="text-center sm:text-left flex-1">
+                <p className="font-black text-xl sm:text-2xl text-white uppercase tracking-tight mb-2">Recomende a Fottufy ❤️</p>
+                <p className="font-light text-purple-100 text-sm sm:text-base leading-relaxed">Somos uma plataforma Brasileira 100% independente, cada apoio e sugestão é de grande importância para nós {"<3"}</p>
+              </div>
+              <button className="shrink-0 bg-white text-purple-700 font-black text-xs tracking-widest uppercase px-6 py-4 rounded-2xl shadow-xl hover:scale-105 transition-transform">
+                Indicar Amigo
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1908,65 +1921,48 @@ export default function Dashboard() {
         
         <Statistics setLocation={setLocation} />
         
-        <div className="bg-white/60 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/30 border border-white/20 dark:border-gray-700/50 p-4 sm:p-8 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
+        {/* Meus Projetos Section - Youze Style */}
+        <div className="mt-16">
+          {/* Section Header with Pill Badge */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-300 dark:to-indigo-300 bg-clip-text text-transparent mb-2">
-                Meus Projetos
+              <span className="inline-block px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-black uppercase tracking-widest mb-4">
+                📁 Galeria
+              </span>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
+                Meus <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Projetos</span>
               </h2>
-              <p className="text-lg text-slate-700 dark:text-gray-300">Gerencie seus projetos fotográficos com elegância</p>
+              <p className="text-lg text-slate-500 dark:text-slate-400 font-light mt-2">Gerencie suas galerias com elegância profissional</p>
             </div>
             
-            <div className="flex items-center w-full sm:w-auto gap-3">
+            <div className="flex items-center w-full sm:w-auto gap-4">
               <div className="relative flex-1 sm:w-80">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <Input 
                   placeholder="Buscar projetos..."
-                  className="pl-12 pr-4 py-3 rounded-xl border-slate-200 dark:border-gray-600 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 dark:bg-gray-800/80 dark:text-white backdrop-blur-sm text-lg shadow-sm"
+                  className="pl-12 pr-4 py-7 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-lg shadow-xl focus:ring-purple-500/20"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="shrink-0 h-12 w-12 rounded-xl border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-500 shadow-sm"
-              >
-                <Filter className="h-5 w-5 text-slate-600 dark:text-gray-300" />
-              </Button>
             </div>
           </div>
           
           <Tabs defaultValue="all" value={currentTab} onValueChange={setCurrentTab}>
-            {/* Layout com abas e botão na esquerda */}
-            <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex justify-start w-full lg:w-auto overflow-x-auto lg:overflow-x-visible">
-                <TabsList className="inline-flex bg-slate-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-1 text-lg shadow-sm border border-slate-200/50 dark:border-gray-700/50 min-w-fit lg:min-w-0">
-                  <TabsTrigger value="all" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Todos</TabsTrigger>
-                  <TabsTrigger value="pending" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Pendentes</TabsTrigger>
-                  <TabsTrigger value="reviewed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Revisados</TabsTrigger>
-                  <TabsTrigger value="completed" className="text-sm sm:text-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 text-slate-600 dark:text-gray-400 rounded-lg px-3 sm:px-6 py-2 sm:py-3 transition-all duration-200 whitespace-nowrap">Finalizados</TabsTrigger>
+            <div className="mb-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+              <div className="flex justify-start w-full xl:w-auto overflow-x-auto pb-4 xl:pb-0">
+                <TabsList className="bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl h-auto shrink-0">
+                  <TabsTrigger value="all" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Todos</TabsTrigger>
+                  <TabsTrigger value="pending" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Pendentes</TabsTrigger>
+                  <TabsTrigger value="reviewed" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Revisados</TabsTrigger>
+                  <TabsTrigger value="completed" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Finalizados</TabsTrigger>
                 </TabsList>
               </div>
               
-              {/* Botões de ação ao lado das abas em telas grandes, embaixo em mobile */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-start lg:justify-end">
+              <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
                 <Button
                   onClick={() => setUploadModalOpen(true)}
-                  className={`
-                    w-full sm:w-auto
-                    flex items-center justify-center
-                    bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
-                    text-white font-semibold
-                    rounded-xl shadow-lg shadow-blue-500/25
-                    px-8 py-3
-                    transition-all duration-300
-                    hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
-                    hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30
-                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
-                    text-base border border-blue-500/20
-                  `}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-xs tracking-widest uppercase rounded-2xl px-8 py-7 shadow-2xl shadow-purple-500/20 transform transition-all hover:scale-105"
                 >
                   <PlusCircle className="h-5 w-5 mr-2" />
                   Novo Projeto
@@ -1974,23 +1970,11 @@ export default function Dashboard() {
                 
                 <Button
                   onClick={() => window.open('https://www.transferxl.com', '_blank', 'noopener,noreferrer')}
-                  className={`
-                    w-full sm:w-auto
-                    flex items-center justify-center
-                    bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600
-                    text-white font-semibold
-                    rounded-xl shadow-lg shadow-emerald-500/25
-                    px-8 py-3
-                    transition-all duration-300
-                    hover:from-emerald-700 hover:via-green-700 hover:to-teal-700
-                    hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/30
-                    focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2
-                    text-base border border-emerald-500/20
-                  `}
+                  className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-800 font-black text-xs tracking-widest uppercase rounded-2xl px-8 py-7 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transform transition-all hover:scale-105"
                   data-testid="button-send-files-fromsmash"
                 >
                   <Send className="h-5 w-5 mr-2" />
-                  Enviar Fotos Prontas
+                  Enviar Prontas
                 </Button>
               </div>
             </div>
