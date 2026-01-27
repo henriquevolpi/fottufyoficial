@@ -1143,6 +1143,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           onToggleCommentSection={toggleCommentSection}
           onCommentTextChange={handleCommentTextChange}
           onSubmitComment={handleSubmitComment}
+          photoIndexMap={photoIndexMap}
         />
       </main>
       {/* Confirmation Dialog - Youze Style */}

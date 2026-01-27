@@ -25,6 +25,7 @@ interface VirtualizedPhotoGridProps {
   onToggleCommentSection: (photoId: string) => void;
   onCommentTextChange: (photoId: string, text: string) => void;
   onSubmitComment: (photoId: string) => void;
+  photoIndexMap?: Map<string, number>;
 }
 
 export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
@@ -41,30 +42,36 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
   onOpenModal,
   onToggleCommentSection,
   onCommentTextChange,
-  onSubmitComment
+  onSubmitComment,
+  photoIndexMap
 }: VirtualizedPhotoGridProps) {
   
   const deviceCapabilities = useDeviceCapabilities();
   
-  // Filtrar fotos se necessário
   const filteredPhotos = useMemo(() => {
     return showOnlySelected 
       ? photos.filter(photo => selectedPhotos.has(photo.id))
       : photos;
   }, [photos, showOnlySelected, selectedPhotos]);
   
-  // Configurar virtualização - mais conservadora no mobile
+  const localPhotoIndexMap = useMemo(() => {
+    if (photoIndexMap && photoIndexMap.size > 0) return photoIndexMap;
+    const map = new Map<string, number>();
+    photos.forEach((photo, index) => {
+      map.set(photo.id, index);
+    });
+    return map;
+  }, [photos, photoIndexMap]);
+  
   const shouldEnableVirtualization = useMemo(() => {
-    // No mobile, nunca usar virtualização para evitar problemas de scroll
     if (deviceCapabilities.isMobile) return false;
-    // Em desktop, só usar se realmente necessário (muitas fotos)
     return deviceCapabilities.shouldUseVirtualization && filteredPhotos.length > 100;
   }, [deviceCapabilities.isMobile, deviceCapabilities.shouldUseVirtualization, filteredPhotos.length]);
   
   const virtualization = useVirtualization(filteredPhotos, {
-    itemHeight: 420, // Altura estimada de cada card (h-64 + CardContent + margins)
-    containerHeight: 800, // Altura típica da viewport
-    buffer: 2, // Buffer de 2 linhas acima e abaixo
+    itemHeight: 420,
+    containerHeight: 800,
+    buffer: 2,
     enabled: shouldEnableVirtualization
   });
   
@@ -77,7 +84,6 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
     isVirtualizationActive
   } = virtualization;
   
-  // Determinar classes do grid baseado no número de colunas
   const gridClasses = useMemo(() => {
     const baseClasses = "grid gap-4 sm:gap-5 px-2 sm:px-4 lg:px-6";
     switch (itemsPerRow) {
@@ -91,18 +97,11 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
     }
   }, [itemsPerRow]);
   
-  // Log de debug em desenvolvimento
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[VirtualizedPhotoGrid] Total: ${filteredPhotos.length}, Visible: ${visibleItems.length}, Columns: ${itemsPerRow}, Virtualization: ${isVirtualizationActive}`);
-  }
-  
-  // Renderização condicional - sem container extra quando virtualização desabilitada
   if (!isVirtualizationActive) {
-    // Grid normal - sem containers extras que podem causar problemas de scroll
     return (
       <div className={gridClasses}>
         {filteredPhotos.map((photo) => {
-          const originalIndex = photos.findIndex(p => p.id === photo.id);
+          const originalIndex = localPhotoIndexMap.get(photo.id) ?? 0;
           return (
             <PhotoCard
               key={photo.id}
@@ -127,7 +126,6 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
     );
   }
   
-  // Grid virtualizado - apenas para desktop com muitas fotos
   return (
     <div 
       ref={containerRef}
@@ -148,8 +146,8 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
             right: 0
           }}
         >
-          {visibleItems.map((photo, index) => {
-            const originalIndex = photos.findIndex(p => p.id === photo.id);
+          {visibleItems.map((photo) => {
+            const originalIndex = localPhotoIndexMap.get(photo.id) ?? 0;
             return (
               <PhotoCard
                 key={photo.id}

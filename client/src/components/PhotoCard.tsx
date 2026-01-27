@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +7,8 @@ import {
   Check, 
   Loader2,
   Maximize,
-  MessageCircle
+  MessageCircle,
+  ImageIcon
 } from "lucide-react";
 
 interface Photo {
@@ -35,7 +36,6 @@ interface PhotoCardProps {
   onSubmitComment: (photoId: string) => void;
 }
 
-// Componente memoizado para evitar re-renders desnecessários
 export const PhotoCard = memo(function PhotoCard({
   photo,
   isSelected,
@@ -53,7 +53,37 @@ export const PhotoCard = memo(function PhotoCard({
   onSubmitComment
 }: PhotoCardProps) {
   
-  // Memoizar handlers para evitar re-criação
+  const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(card);
+          }
+        });
+      },
+      {
+        rootMargin: '200px',
+        threshold: 0.01
+      }
+    );
+    
+    observer.observe(card);
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  
   const handleCardClick = useCallback(() => {
     if (!isFinalized) {
       onToggleSelection(photo.id);
@@ -77,53 +107,82 @@ export const PhotoCard = memo(function PhotoCard({
     onSubmitComment(photo.id);
   }, [onSubmitComment, photo.id]);
 
-  // Determinar URL da imagem com fallback otimizado
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    setImageError(true);
+    e.currentTarget.src = '/placeholder.jpg';
+  }, []);
+
   const imageUrl = photo.url && !photo.url.includes('project-photos') 
     ? photo.url 
     : `https://cdn.fottufy.com/${photo.filename}`;
 
   return (
     <Card
+      ref={cardRef}
       className={`overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border-0 shadow-md ${
         isFinalized ? 'opacity-80' : 'hover:shadow-xl hover:scale-[1.02]'
       } ${isSelected ? 'ring-2 ring-purple-500 shadow-lg shadow-purple-500/20' : ''}`}
       onClick={handleCardClick}
+      style={{ 
+        contain: 'layout style paint',
+        contentVisibility: 'auto',
+        containIntrinsicSize: '0 350px'
+      }}
     >
-      <div className="relative h-64">
-        <WatermarkOverlay 
-          enabled={showWatermark} 
-          className="absolute inset-0 w-full h-full cursor-zoom-in group"
-          reuseCanvas={true}
-        >
-          <div 
-            className="w-full h-full"
-            onClick={handleImageClick}
+      <div className="relative h-64 bg-slate-100">
+        {isVisible ? (
+          <WatermarkOverlay 
+            enabled={showWatermark} 
+            className="absolute inset-0 w-full h-full cursor-zoom-in group"
+            reuseCanvas={true}
           >
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 shadow-lg">
-              <Maximize className="h-6 w-6 text-white drop-shadow-lg" />
+            <div 
+              className="w-full h-full"
+              onClick={handleImageClick}
+            >
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 shadow-lg">
+                <Maximize className="h-6 w-6 text-white drop-shadow-lg" />
+              </div>
+              
+              {!imageLoaded && !imageError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+                  <div className="animate-pulse">
+                    <ImageIcon className="h-10 w-10 text-slate-300" />
+                  </div>
+                </div>
+              )}
+              
+              <img
+                src={imageUrl}
+                alt="Photo"
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  imageLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                loading="lazy"
+                decoding="async"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                onContextMenu={e => e.preventDefault()}
+                title="Clique para ampliar"
+              />
             </div>
-            <img
-              src={imageUrl}
-              alt="Photo"
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => {
-                e.currentTarget.src = '/placeholder.jpg';
-              }}
-              onContextMenu={e => e.preventDefault()}
-              title="Clique para ampliar"
-            />
+          </WatermarkOverlay>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+            <ImageIcon className="h-10 w-10 text-slate-200" />
           </div>
-        </WatermarkOverlay>
+        )}
         
-        {/* Selection indicator - Youze Style */}
         {isSelected && (
           <div className="absolute top-3 right-3 bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white rounded-full p-1.5 shadow-lg shadow-purple-500/40">
             <Check className="h-4 w-4" />
           </div>
         )}
         
-        {/* Filename - Youze Style */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white p-3 pt-8 text-sm font-medium truncate">
           {photo.originalName || photo.filename}
         </div>
@@ -152,7 +211,6 @@ export const PhotoCard = memo(function PhotoCard({
           </Button>
         </div>
 
-        {/* Comment Button - Youze Style */}
         <div className="border-t border-slate-100 pt-3" onClick={(e) => e.stopPropagation()}>
           {isSelected ? (
             <Button
@@ -182,7 +240,6 @@ export const PhotoCard = memo(function PhotoCard({
           )}
         </div>
 
-        {/* Expanded Comment Section - Youze Style */}
         {isCommentExpanded && isSelected && (
           <div className="border-t border-slate-100 space-y-3 text-[15px] text-left pt-3 mt-2" onClick={(e) => e.stopPropagation()}>
             <div>
@@ -211,7 +268,6 @@ export const PhotoCard = memo(function PhotoCard({
               )}
             </Button>
 
-            {/* Existing Comments Display - Youze Style */}
             {photoComments && photoComments.length > 0 && (
               <div className="border-t border-slate-100 mt-3 pt-3 space-y-2">
                 <div className="text-xs font-bold text-slate-600">
@@ -239,7 +295,6 @@ export const PhotoCard = memo(function PhotoCard({
     </Card>
   );
 }, (prevProps, nextProps) => {
-  // Comparação customizada para otimizar re-renders
   return (
     prevProps.photo.id === nextProps.photo.id &&
     prevProps.isSelected === nextProps.isSelected &&
