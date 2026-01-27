@@ -1365,33 +1365,33 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
   };
   
   return (
-    <div className="mb-16">
+    <div className="mb-8 sm:mb-16">
       {/* Section Header - Youze Style */}
-      <div className="flex items-center gap-3 mb-8">
-        <span className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-black uppercase tracking-widest">
+      <div className="flex items-center gap-3 mb-4 sm:mb-8">
+        <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest">
           📊 Métricas
         </span>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
         {/* Active projects card - Glassmorphism Style */}
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
-                  <BarChart className="h-7 w-7 text-white" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
+                <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
+                  <BarChart className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Projetos</p>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Ativos</p>
+                <div className="text-center sm:text-left">
+                  <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Projetos</p>
+                  <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">Ativos</p>
                 </div>
               </div>
               {isLoading ? (
-                <Skeleton className="h-12 w-20" />
+                <Skeleton className="h-8 sm:h-12 w-12 sm:w-20 mx-auto sm:mx-0" />
               ) : (
-                <div className="text-5xl font-black text-slate-900 dark:text-white">
+                <div className="text-2xl sm:text-5xl font-black text-slate-900 dark:text-white text-center sm:text-left">
                   {data?.activeProjects || 0}
                 </div>
               )}
@@ -1401,22 +1401,22 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         
         {/* Monthly uploads card */}
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
-                  <Camera className="h-7 w-7 text-white" />
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
+                <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
+                  <Camera className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Uploads</p>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Este mês</p>
+                <div className="text-center sm:text-left">
+                  <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Uploads</p>
+                  <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">Este mês</p>
                 </div>
               </div>
               {isLoading ? (
-                <Skeleton className="h-12 w-20" />
+                <Skeleton className="h-8 sm:h-12 w-12 sm:w-20 mx-auto sm:mx-0" />
               ) : (
-                <div className="text-5xl font-black text-slate-900 dark:text-white">
+                <div className="text-2xl sm:text-5xl font-black text-slate-900 dark:text-white text-center sm:text-left">
                   {data?.photosThisMonth || 0}
                 </div>
               )}
@@ -1426,26 +1426,26 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
 
         {/* Upload usage card */}
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
-                  <CreditCard className="h-7 w-7 text-white" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
+                <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
+                  <CreditCard className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Plano</p>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}</p>
+                <div className="text-center sm:text-left">
+                  <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Plano</p>
+                  <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">{planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Uso</span>
-                  <span className="text-sm font-black text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex justify-center sm:justify-between items-center">
+                  <span className="hidden sm:block text-xs font-bold text-slate-500 uppercase tracking-wider">Uso</span>
+                  <span className="text-[10px] sm:text-sm font-black text-purple-600 bg-purple-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
                     {planInfo.usedUploads}/{planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
                   </span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 sm:h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full transition-all duration-500"
                     style={{ width: planInfo.planType === "unlimited" ? "0%" : `${planInfo.percentageUsed}%` }}
@@ -1453,7 +1453,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="px-6 pb-6 pt-0">
+            <CardFooter className="hidden sm:block px-6 pb-6 pt-0">
               <Button 
                 className="w-full font-black text-xs tracking-widest uppercase py-6 rounded-2xl transition-all bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl shadow-purple-500/20 hover:scale-105"
                 onClick={() => setLocation("/subscription")}
@@ -1908,20 +1908,20 @@ export default function Dashboard() {
       </header>
       
       {/* Hero Banner - Youze Premium Style */}
-      <div className="relative overflow-hidden py-16 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="relative overflow-hidden py-6 sm:py-16 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-purple-100/30 dark:bg-purple-900/10 rounded-full blur-[100px] pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-blue-100/30 dark:bg-blue-900/10 rounded-full blur-[80px] pointer-events-none"></div>
         
-        <div className="relative container mx-auto px-6">
+        <div className="relative container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-6 mb-6">
+            <div className="flex items-center justify-center gap-3 sm:gap-6 mb-2 sm:mb-6">
               <img
                 src={fottufinhopng}
                 alt="Fottufinho Mascote"
-                className="w-20 h-20"
+                className="w-12 h-12 sm:w-20 sm:h-20"
               />
               
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none uppercase">
+              <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none uppercase">
                 <span className="text-slate-900 dark:text-white">
                   Olá, 
                 </span>
@@ -1931,7 +1931,7 @@ export default function Dashboard() {
               </h1>
             </div>
             
-            <p className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
+            <p className="hidden sm:block text-lg sm:text-xl text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
               Sua plataforma de elite para gerenciar projetos fotográficos.
             </p>
             
@@ -1939,35 +1939,35 @@ export default function Dashboard() {
             <Button
               onClick={() => setUploadModalOpen(true)}
               size="lg"
-              className="sm:hidden mt-8 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-sm tracking-widest uppercase rounded-2xl px-10 py-8 shadow-2xl shadow-purple-500/20 transform transition-all hover:scale-105"
+              className="sm:hidden mt-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-xs tracking-widest uppercase rounded-xl px-6 py-5 shadow-xl shadow-purple-500/20 transform transition-all hover:scale-105"
             >
-              <PlusCircle className="h-6 w-6 mr-3" />
+              <PlusCircle className="h-5 w-5 mr-2" />
               Novo Projeto
             </Button>
           </div>
         </div>
       </div>
-      <main className="container mx-auto py-12 px-3 sm:px-6">
+      <main className="container mx-auto py-4 sm:py-12 px-3 sm:px-6">
         {/* Banner Dinâmico */}
         <DashboardBanner />
 
         {/* Aviso de novidades - Youze Style */}
-        <div className="mt-0 mb-12 relative overflow-hidden">
-          <div className="relative bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-purple-500/20">
+        <div className="mt-0 mb-6 sm:mb-12 relative overflow-hidden">
+          <div className="relative bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl sm:shadow-2xl shadow-purple-500/20">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-400/20 rounded-full blur-2xl"></div>
             
-            <div className="relative flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <div className="relative flex flex-row items-center gap-3 sm:gap-6">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <div className="text-center sm:text-left flex-1">
-                <p className="font-black text-xl sm:text-2xl text-white uppercase tracking-tight mb-2">Recomende a Fottufy ❤️</p>
-                <p className="font-light text-purple-100 text-sm sm:text-base leading-relaxed">Somos uma plataforma Brasileira 100% independente, cada apoio e sugestão é de grande importância para nós {"<3"}</p>
+              <div className="text-left flex-1 min-w-0">
+                <p className="font-black text-sm sm:text-2xl text-white uppercase tracking-tight mb-0.5 sm:mb-2">Recomende a Fottufy ❤️</p>
+                <p className="font-light text-purple-100 text-xs sm:text-base leading-relaxed line-clamp-2 sm:line-clamp-none">Somos uma plataforma Brasileira 100% independente!</p>
               </div>
-              <button className="shrink-0 bg-white text-purple-700 font-black text-xs tracking-widest uppercase px-6 py-4 rounded-2xl shadow-xl hover:scale-105 transition-transform">
+              <button className="hidden sm:block shrink-0 bg-white text-purple-700 font-black text-xs tracking-widest uppercase px-6 py-4 rounded-2xl shadow-xl hover:scale-105 transition-transform">
                 Indicar Amigo
               </button>
             </div>
