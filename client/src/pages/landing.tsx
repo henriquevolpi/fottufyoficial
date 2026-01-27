@@ -83,12 +83,12 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20">
               <Button 
                 size="lg"
-                className="bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-10 py-8 text-xl font-bold rounded-2xl shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transform transition-all hover:scale-105 group"
+                className="bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-6 sm:px-10 py-6 sm:py-8 text-sm sm:text-xl font-bold rounded-2xl shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transform transition-all hover:scale-105 group w-auto max-w-[90vw] sm:max-w-none"
                 onClick={() => navigate('/auth')}
               >
-                <Zap className="mr-2 h-6 w-6 fill-white" />
-                COMEÇAR AGORA, É GRÁTIS!
-                <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                <Zap className="mr-1.5 sm:mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-white shrink-0" />
+                <span className="whitespace-nowrap">COMEÇAR AGORA, É GRÁTIS!</span>
+                <ArrowRight className="ml-1.5 sm:ml-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:translate-x-1 transition-transform shrink-0" />
               </Button>
               <p className="text-xs text-slate-400 font-mono tracking-widest uppercase">Plataforma Oficial</p>
             </div>
