@@ -920,13 +920,16 @@ function UploadModal({
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[700px] max-h-[90vh] overflow-y-auto mx-auto backdrop-blur-xl bg-gradient-to-br from-white/95 via-blue-50/20 to-indigo-50/30 shadow-2xl border border-white/20 rounded-2xl">
-        <DialogHeader className="sticky top-0 z-10 bg-gradient-to-br from-white/95 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm pb-6 rounded-t-2xl border-b border-blue-100/30">
-          <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            ✨ Criar Novo Projeto
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[700px] max-h-[90vh] overflow-y-auto mx-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl rounded-3xl">
+        <DialogHeader className="pb-6">
+          <span className="inline-block px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 w-fit">
+            ✨ Nova Galeria
+          </span>
+          <DialogTitle className="text-3xl font-black text-slate-900 dark:text-white">
+            Criar Novo Projeto
           </DialogTitle>
-          <DialogDescription className="text-slate-600 text-base leading-relaxed">
-            <span className="bg-green-100">Preencha os detalhes do projeto e faça upload das suas fotos. Fotos de no máximo 2mb, para melhor conforto dos clientes.</span>
+          <DialogDescription className="text-slate-500 dark:text-slate-400 text-base leading-relaxed mt-2">
+            Preencha os detalhes do projeto e faça upload das suas fotos. Máximo 2MB por foto.
           </DialogDescription>
         </DialogHeader>
         
@@ -936,14 +939,14 @@ function UploadModal({
               control={form.control}
               name="projectName"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     📋 Nome da Galeria
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Ex: Casamento de João e Maria" 
-                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      className="h-14 border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-800 rounded-2xl text-base font-medium transition-all" 
                       {...field} 
                     />
                   </FormControl>
@@ -956,14 +959,14 @@ function UploadModal({
               control={form.control}
               name="clientName"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     👤 Nome do Cliente
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Ex: João da Silva" 
-                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      className="h-14 border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-800 rounded-2xl text-base font-medium transition-all" 
                       {...field} 
                     />
                   </FormControl>
@@ -990,14 +993,14 @@ function UploadModal({
               control={form.control}
               name="data"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     📅 Data do Evento
                   </FormLabel>
                   <FormControl>
                     <Input 
                       type="date" 
-                      className="h-12 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all" 
+                      className="h-14 border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-800 rounded-2xl text-base font-medium transition-all" 
                       {...field} 
                     />
                   </FormControl>
@@ -1007,11 +1010,11 @@ function UploadModal({
             />
             
 
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+            <div className="mt-8">
+              <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 📸 Fotos do Projeto
               </label>
-              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center cursor-pointer bg-gradient-to-br from-slate-50/50 to-blue-50/30 hover:border-blue-300 hover:shadow-md transition-all duration-300 relative">
+              <div className="relative group border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-10 text-center cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/30 dark:hover:bg-purple-900/10 transition-all duration-300">
                 <input
                   type="file"
                   accept="image/*"
@@ -1021,45 +1024,49 @@ function UploadModal({
                   disabled={isUploading}
                 />
                 <div className="flex flex-col items-center justify-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-xl shadow-purple-500/20 group-hover:scale-110 transition-transform">
                     <Camera className="h-8 w-8 text-white" />
                   </div>
-                  <p className="text-base font-medium text-slate-700">
-                    Clique ou arraste fotos para upload :)
+                  <p className="text-lg font-black text-slate-700 dark:text-slate-200">
+                    Clique ou arraste fotos
                   </p>
-                  <p className="text-xs text-slate-500 bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200">
-                    ✨ JPG, PNG, WEBP - até 2mb cada
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    JPG, PNG, WEBP - até 2MB cada
                   </p>
                 </div>
               </div>
             </div>
             
             {thumbnails.length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <h4 className="text-sm font-semibold text-slate-700">
-                    {thumbnails.length} foto(s) selecionada(s)
-                  </h4>
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      {thumbnails.length} foto(s) selecionada(s)
+                    </h4>
+                  </div>
+                  <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    Pronto
+                  </span>
                 </div>
-                {/* Lista simples de nomes de arquivos sem miniaturas */}
-                <div className="border border-slate-200 rounded-xl max-h-[280px] overflow-y-auto bg-white/60 backdrop-blur-sm shadow-sm">
+                <div className="border border-slate-100 dark:border-slate-800 rounded-2xl max-h-[240px] overflow-y-auto bg-slate-50 dark:bg-slate-800/50">
                   {selectedFiles.map((file, index) => (
                     <div 
                       key={index} 
-                      className="flex items-center justify-between py-3 px-4 border-b border-slate-100 last:border-b-0 hover:bg-blue-50/50 transition-all group"
+                      className="flex items-center justify-between py-3 px-4 border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all group"
                     >
                       <div className="flex items-center space-x-3 overflow-hidden">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
-                          <Camera className="h-4 w-4 text-blue-600" />
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/10">
+                          <Camera className="h-5 w-5 text-white" />
                         </div>
-                        <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{file.name}</p>
                       </div>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                         onClick={() => removeFile(index)}
                       >
                         <X className="h-4 w-4" />
@@ -1070,65 +1077,58 @@ function UploadModal({
               </div>
             )}
             
-            {/* Barra de progresso de upload melhorada */}
+            {/* Barra de progresso de upload - Youze Style */}
             {isUploading && (
-              <div className="w-full flex flex-col gap-2 mt-4">
-                <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+              <div className="w-full flex flex-col gap-4 mt-6 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20 animate-pulse">
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-700 dark:text-slate-200">Processando {thumbnails.length} fotos</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {uploadProgress < 30 ? "Preparando arquivos..." : uploadProgress < 70 ? "Enviando para servidor..." : uploadProgress < 90 ? "Processando imagens..." : "Finalizando..."}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{uploadProgress}%</span>
+                </div>
+                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300 ease-in-out"
+                    className="h-full bg-gradient-to-r from-purple-500 to-blue-600 transition-all duration-300 ease-out rounded-full"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
-                <div className="flex justify-between items-center text-xs text-gray-600 mt-1 px-1">
-                  <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Processando {thumbnails.length} fotos</span>
-                  </div>
-                  <span className="font-medium">{uploadProgress}%</span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1 text-center">
-                  {uploadProgress < 30 ? (
-                    "Preparando arquivos para upload..."
-                  ) : uploadProgress < 70 ? (
-                    "Enviando fotos para o servidor..."
-                  ) : uploadProgress < 90 ? (
-                    "Processando imagens no servidor..."
-                  ) : (
-                    "Finalizando o processamento..."
-                  )}
-                </div>
-                <div className="text-xs text-gray-400 mt-1 text-center">
-                  Por favor, não feche ou atualize a página durante o upload
-                </div>
+                <p className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-widest">
+                  Não feche a página durante o upload
+                </p>
               </div>
             )}
             
-            <DialogFooter className="sticky bottom-0 pt-6 mt-8 bg-gradient-to-br from-white/95 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm border-t border-blue-100/30 rounded-b-2xl z-10">
-              <div className="flex gap-3 w-full">
+            <DialogFooter className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex gap-4 w-full">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={onClose} 
                   disabled={isUploading}
-                  className="flex-1 h-12 border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-medium rounded-xl transition-all"
+                  className="flex-1 h-14 border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-black text-xs tracking-widest uppercase rounded-2xl transition-all"
                 >
-                  ❌ Cancelar
+                  Cancelar
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isUploading}
-                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 border-0"
+                  className="flex-1 h-14 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-xs tracking-widest uppercase rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-105 border-0"
                 >
                   {isUploading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      ⏳ Enviando...
+                      Enviando...
                     </>
                   ) : (
-                    "✨ Criar Projeto"
+                    "Criar Projeto"
                   )}
                 </Button>
               </div>
