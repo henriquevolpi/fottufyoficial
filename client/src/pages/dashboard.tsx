@@ -1350,31 +1350,6 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
           </Card>
         </div>
 
-        {/* Total photos card */}
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-3xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
-                  <ImageIcon className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total</p>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Fotos</p>
-                </div>
-              </div>
-              {isLoading ? (
-                <Skeleton className="h-12 w-20" />
-              ) : (
-                <div className="text-5xl font-black text-slate-900 dark:text-white">
-                  {data?.totalPhotos || 0}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Upload usage card */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
@@ -1829,10 +1804,6 @@ export default function Dashboard() {
                 Novo Projeto
               </Button>
               
-              <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-sm font-black text-slate-900 dark:text-white leading-none">{user?.name || "User"}</span>
-                <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">{user?.plan || 'Gratuito'}</span>
-              </div>
               
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-lg">
                 <span className="text-white font-black text-lg">
