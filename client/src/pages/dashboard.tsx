@@ -1405,9 +1405,6 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
           <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden">
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
-                <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
-                  <Camera className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
-                </div>
                 <div className="text-center sm:text-left">
                   <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Uploads</p>
                   <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">Este mês</p>
