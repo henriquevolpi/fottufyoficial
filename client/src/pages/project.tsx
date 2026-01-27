@@ -29,6 +29,12 @@ export default function ProjectView() {
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  
+  // ============================================
+  // CONTROLE DE SELEÇÃO DE FOTOS
+  // Para reativar a seleção, mude para: true
+  // ============================================
+  const PERMITIR_SELECAO_FOTOS = false;
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: [`/api/projects/${id}`],
   });
@@ -85,7 +91,8 @@ export default function ProjectView() {
   }, []);
 
   const togglePhotoSelection = (photoId: string) => {
-    if (isFinalized) return;
+    // Bloqueia seleção se não permitido ou se já finalizado
+    if (!PERMITIR_SELECAO_FOTOS || isFinalized) return;
 
     if (selectedPhotos.includes(photoId)) {
       setSelectedPhotos(prev => prev.filter(id => id !== photoId));
