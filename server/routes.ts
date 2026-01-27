@@ -1905,6 +1905,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Project data (raw):", { projectName, clientName, clientEmail, photographerId });
       console.log("Project data (processed):", { name, clientName, clientEmail, photographerId });
+      console.log("[Server Debug] req.files existe:", !!req.files);
+      console.log("[Server Debug] req.files é array:", Array.isArray(req.files));
+      console.log("[Server Debug] req.files length:", req.files ? (req.files as any[]).length : 0);
+      console.log("[Server Debug] req.body.photos:", typeof photos, Array.isArray(photos) ? `array(${photos.length})` : photos);
+      console.log("[Server Debug] req.body.photosData:", !!photosData);
       
       // Validate project data and ensure photographerId is set to the current user's ID if logged in
       const currentUserId = req.user?.id || parseInt(photographerId || '1');

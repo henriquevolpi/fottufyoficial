@@ -757,9 +757,21 @@ function UploadModal({
       }
       
       // Append compressed files to FormData
-      compressedFiles.forEach((file) => {
+      console.log(`[Frontend Debug] Adicionando ${compressedFiles.length} arquivos ao FormData`);
+      compressedFiles.forEach((file, index) => {
+        console.log(`[Frontend Debug] Arquivo ${index + 1}: ${file.name}, tipo: ${file.type}, tamanho: ${file.size} bytes`);
         formData.append('photos', file);
       });
+      
+      // Debug: log FormData entries
+      console.log('[Frontend Debug] FormData entries:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
       
       // Use XMLHttpRequest para monitorar o progresso do upload
       const result = await new Promise<any>((resolve, reject) => {
@@ -869,6 +881,7 @@ function UploadModal({
         
         // Enviar a requisição
         xhr.open('POST', '/api/projects');
+        xhr.withCredentials = true;
         xhr.send(formData);
       });
       
