@@ -33,7 +33,8 @@ import {
   Image as ImageIcon,
   Moon,
   Sun,
-  Send
+  Send,
+  Upload
 } from "lucide-react";
 import { 
   Tabs, 
