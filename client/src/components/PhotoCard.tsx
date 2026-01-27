@@ -84,9 +84,9 @@ export const PhotoCard = memo(function PhotoCard({
 
   return (
     <Card
-      className={`overflow-hidden group cursor-pointer transition ${
-        isFinalized ? 'opacity-80' : 'hover:shadow-md'
-      } ${isSelected ? 'ring-2 ring-primary' : ''}`}
+      className={`overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border-0 shadow-md ${
+        isFinalized ? 'opacity-80' : 'hover:shadow-xl hover:scale-[1.02]'
+      } ${isSelected ? 'ring-2 ring-purple-500 shadow-lg shadow-purple-500/20' : ''}`}
       onClick={handleCardClick}
     >
       <div className="relative h-64">
@@ -99,8 +99,8 @@ export const PhotoCard = memo(function PhotoCard({
             className="w-full h-full"
             onClick={handleImageClick}
           >
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-full p-3 opacity-0 group-hover:opacity-80 transition-opacity duration-200 z-20">
-              <Maximize className="h-6 w-6 text-white" />
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 shadow-lg">
+              <Maximize className="h-6 w-6 text-white drop-shadow-lg" />
             </div>
             <img
               src={imageUrl}
@@ -116,35 +116,35 @@ export const PhotoCard = memo(function PhotoCard({
           </div>
         </WatermarkOverlay>
         
-        {/* Selection indicator */}
+        {/* Selection indicator - Youze Style */}
         {isSelected && (
-          <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
-            <Check className="h-5 w-5" />
+          <div className="absolute top-3 right-3 bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white rounded-full p-1.5 shadow-lg shadow-purple-500/40">
+            <Check className="h-4 w-4" />
           </div>
         )}
         
-        {/* Filename */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-sm truncate">
+        {/* Filename - Youze Style */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white p-3 pt-8 text-sm font-medium truncate">
           {photo.originalName || photo.filename}
         </div>
       </div>
       
-      <CardContent className="p-3 space-y-3">
+      <CardContent className="p-3 space-y-3 bg-white">
         <div className="text-center">
           <Button
             variant={isSelected ? "default" : "outline"}
             size="sm"
             className={
-              `w-full transition-colors` +
+              `w-full transition-all duration-200 rounded-xl font-black text-sm` +
               (isSelected
-                ? " bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 text-white font-semibold border-none shadow"
-                : "")
+                ? " bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white border-none shadow-lg shadow-purple-500/30 hover:shadow-xl"
+                : " border-slate-200 hover:bg-slate-50 text-slate-700")
             }
             disabled={isFinalized}
           >
             {isSelected ? (
               <>
-                <Check className="mr-1 h-4 w-4" /> Selecionado
+                <Check className="mr-1.5 h-4 w-4" /> Selecionado
               </>
             ) : (
               "Selecionar"
@@ -152,13 +152,13 @@ export const PhotoCard = memo(function PhotoCard({
           </Button>
         </div>
 
-        {/* Comment Button */}
-        <div className="border-t pt-3" onClick={(e) => e.stopPropagation()}>
+        {/* Comment Button - Youze Style */}
+        <div className="border-t border-slate-100 pt-3" onClick={(e) => e.stopPropagation()}>
           {isSelected ? (
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+              className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-xl font-bold"
               onClick={handleCommentToggle}
             >
               <MessageCircle className="mr-2 h-4 w-4" />
@@ -172,35 +172,32 @@ export const PhotoCard = memo(function PhotoCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-gray-400 cursor-not-allowed"
+                className="w-full text-slate-400 cursor-not-allowed rounded-xl text-xs"
                 disabled
               >
                 <MessageCircle className="mr-2 h-4 w-4" />
-                Selecione a foto para comentar
+                Selecione para comentar
               </Button>
             </div>
           )}
         </div>
 
-        {/* Expanded Comment Section */}
+        {/* Expanded Comment Section - Youze Style */}
         {isCommentExpanded && isSelected && (
-          <div className="border-t space-y-2 text-[15px] text-left pt-3 mt-2" onClick={(e) => e.stopPropagation()}>
-            {/* Comment Text Area */}
+          <div className="border-t border-slate-100 space-y-3 text-[15px] text-left pt-3 mt-2" onClick={(e) => e.stopPropagation()}>
             <div>
               <Textarea
-                placeholder="Digite seu comentário sobre esta foto..."
+                placeholder="Digite seu comentário..."
                 value={commentText || ""}
                 onChange={handleCommentChange}
-                className="text-xs min-h-[60px] resize-none"
+                className="text-sm min-h-[60px] resize-none rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500"
                 rows={2}
               />
             </div>
 
-            {/* Submit Comment Button */}
             <Button
               size="sm"
-              variant="secondary"
-              className="w-full text-xs"
+              className="w-full text-xs rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-500 hover:from-purple-700 hover:to-fuchsia-600 text-white font-bold shadow shadow-purple-500/20"
               onClick={handleCommentSubmit}
               disabled={isCommentMutationPending || !commentText?.trim()}
             >
@@ -214,21 +211,21 @@ export const PhotoCard = memo(function PhotoCard({
               )}
             </Button>
 
-            {/* Existing Comments Display */}
+            {/* Existing Comments Display - Youze Style */}
             {photoComments && photoComments.length > 0 && (
-              <div className="border-t mt-3 pt-3 space-y-2">
-                <div className="text-xs font-medium text-gray-600">
-                  Comentários anteriores ({photoComments.length}):
+              <div className="border-t border-slate-100 mt-3 pt-3 space-y-2">
+                <div className="text-xs font-bold text-slate-600">
+                  Comentários ({photoComments.length}):
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {photoComments.map((comment, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-lg p-2 text-[12px] font-light">
+                    <div key={idx} className="bg-slate-50 rounded-xl p-3 text-[12px]">
                       <div className="flex justify-end mb-1">
-                        <span className="text-gray-400 text-xs">
+                        <span className="text-slate-400 text-xs">
                           {new Date(comment.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-gray-600 text-xs leading-relaxed">
+                      <p className="text-slate-600 text-xs leading-relaxed">
                         {comment.comment}
                       </p>
                     </div>

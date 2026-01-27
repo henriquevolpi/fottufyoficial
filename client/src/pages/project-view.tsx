@@ -858,36 +858,36 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Hero Section com Capa */}
+    <div className="min-h-screen bg-slate-50 pb-12">
+      {/* Hero Section com Capa - Youze Style */}
       {coverPhotoUrl && (
-        <div className="relative h-[85vh] md:h-[90vh] overflow-hidden">
-          {/* Background com desfoque */}
+        <div className="relative h-[70vh] md:h-[80vh] overflow-hidden">
+          {/* Background com desfoque suave */}
           <div 
-            className="absolute inset-0 bg-cover bg-center transform scale-110"
+            className="absolute inset-0 bg-cover bg-center transform scale-105"
             style={{
               backgroundImage: `url(${coverPhotoUrl})`,
-              filter: 'blur(3px)'
+              filter: 'blur(2px)'
             }}
           />
-          {/* Overlay escuro */}
-          <div className="absolute inset-0 bg-black/50" />
+          {/* Overlay gradiente moderno */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           
-          {/* Conteúdo sobre a capa */}
-          <div className="relative z-10 h-full flex items-center">
+          {/* Conteúdo sobre a capa - Youze Style */}
+          <div className="relative z-10 h-full flex items-end pb-8 sm:pb-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <div className="text-center md:text-left">
-                <h1 className="font-extrabold text-[48px] md:text-[56px] text-white drop-shadow-lg">
+                <h1 className="font-black text-3xl sm:text-5xl md:text-6xl text-white tracking-tight uppercase drop-shadow-2xl">
                   {project.nome}
                 </h1>
-                <p className="text-white/90 text-[18px] md:text-[20px] mt-2 drop-shadow-md">
-                  Cliente: {project.cliente}
+                <p className="text-white/90 text-base sm:text-lg md:text-xl mt-2 font-light drop-shadow-lg">
+                  {project.cliente}
                 </p>
-                <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-center md:justify-start">
-                  <span className="text-white/80 text-sm">
+                <div className="mt-4 flex flex-wrap items-center gap-3 justify-center md:justify-start">
+                  <span className="px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-white text-xs sm:text-sm font-medium">
                     {new Date(project.data).toLocaleDateString('pt-BR')}
                   </span>
-                  <span className="text-white/80 text-sm">
+                  <span className="px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-white text-xs sm:text-sm font-medium">
                     {project.fotos} fotos
                   </span>
                 </div>
@@ -897,17 +897,17 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         </div>
       )}
       
-      {/* Header com Ações */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Header com Ações - Youze Style */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="w-full">
             
             {/* Seção de ações - responsiva com wrap */}
-            <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-3">
+            <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3">
               {isFinalized ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1 flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                  <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center rounded-full font-bold shadow-lg shadow-green-500/20">
+                    <CheckCircle2 className="w-4 h-4 mr-1.5" />
                     Seleção finalizada
                   </Badge>
                   
@@ -917,15 +917,15 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="flex items-center flex-shrink-0"
+                          className="flex items-center flex-shrink-0 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs sm:text-sm"
                         >
-                          <FileText className="w-4 h-4 mr-1" />
+                          <FileText className="w-4 h-4 mr-1.5" />
                           Ver Fotos Selecionadas
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-md rounded-2xl">
                         <DialogHeader>
-                          <DialogTitle>Fotos Selecionadas</DialogTitle>
+                          <DialogTitle className="font-black text-xl">Fotos Selecionadas</DialogTitle>
                           <DialogDescription>
                             Lista de arquivos selecionados pelo cliente neste projeto.
                           </DialogDescription>
@@ -935,9 +935,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                             {project.photos
                               .filter(photo => selectedPhotos.has(photo.id))
                               .map(photo => (
-                                <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
-                                  <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                                  <span className="text-sm font-mono">{photo.originalName || photo.filename}</span>
+                                <div key={photo.id} className="p-3 bg-slate-50 rounded-xl flex items-center">
+                                  <FileText className="w-4 h-4 mr-2 text-purple-500" />
+                                  <span className="text-sm font-medium text-slate-700">{photo.originalName || photo.filename}</span>
                                 </div>
                             ))}
                           </div>
@@ -945,6 +945,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         <DialogFooter>
                           <Button 
                             onClick={() => setShowSelectedFilenamesDialog(false)}
+                            className="rounded-xl bg-slate-900 hover:bg-slate-800"
                           >
                             Fechar
                           </Button>
@@ -954,30 +955,34 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   )}
                 </div>
               ) : (
-                <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-3">
-                  {/* Badge com contador */}
-                  <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1 flex items-center flex-shrink-0">
-                    <Clock className="w-4 h-4 mr-1" />
-                    <span className="whitespace-nowrap">{selectedPhotos.size} de {project.photos.length} fotos</span>
+                <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3">
+                  {/* Badge com contador - Youze Style */}
+                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center rounded-full font-bold shadow-lg shadow-purple-500/20 flex-shrink-0">
+                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                    <span className="whitespace-nowrap">{selectedPhotos.size} de {project.photos.length}</span>
                   </Badge>
                   
-                  {/* Botão de filtro */}
+                  {/* Botão de filtro - Youze Style */}
                   {selectedPhotos.size > 0 && (
                     <Button
                       variant={showOnlySelected ? "default" : "outline"}
                       size="sm"
                       onClick={() => setShowOnlySelected(!showOnlySelected)}
-                      className="flex items-center flex-shrink-0"
+                      className={`flex items-center flex-shrink-0 rounded-xl font-semibold text-xs sm:text-sm transition-all ${
+                        showOnlySelected 
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20' 
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
                     >
                       {showOnlySelected ? (
                         <>
-                          <FilterX className="w-4 h-4 mr-1" />
+                          <FilterX className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                           <span className="hidden sm:inline">Mostrar Todas</span>
                           <span className="sm:hidden">Todas</span>
                         </>
                       ) : (
                         <>
-                          <Filter className="w-4 h-4 mr-1" />
+                          <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                           <span className="hidden sm:inline">Apenas Selecionadas</span>
                           <span className="sm:hidden">Selecionadas</span>
                         </>
@@ -985,13 +990,14 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     </Button>
                   )}
                   
-                  {/* Botões principais */}
+                  {/* Botões principais - Youze Style */}
                   <div className="flex flex-wrap items-center gap-2">
                     <Button 
                       size="sm"
                       onClick={() => setShowConfirmDialog(true)}
-                      className="bg-gradient-to-r from-pink-700 via-pink-500 to-fuchsia-400 text-white font-semibold border-none shadow hover:brightness-110 transition-colors flex-shrink-0"
+                      className="bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 text-white font-bold text-xs sm:text-sm border-none shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 transition-all rounded-xl px-4 sm:px-5 py-2.5 flex-shrink-0"
                     >
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
                       <span className="hidden sm:inline">Finalizar Seleção</span>
                       <span className="sm:hidden">Finalizar</span>
                     </Button>
@@ -1002,18 +1008,16 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="flex items-center flex-shrink-0"
+                            className="flex items-center flex-shrink-0 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs sm:text-sm"
                           >
-                            <FileText className="w-4 h-4 mr-1" />
+                            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                             <span className="hidden sm:inline">Ver Selecionadas</span>
                             <span className="sm:hidden">Ver</span>
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-md rounded-2xl">
                           <DialogHeader>
-                            <DialogTitle
-                              className="font-extrabold text-[27px] bg-gradient-to-r from-pink-600 via-pink-400 to-pink-300 bg-clip-text text-transparent"
-                            >
+                            <DialogTitle className="font-black text-2xl bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
                               Fotos Selecionadas
                             </DialogTitle>
                             <DialogDescription>
@@ -1025,9 +1029,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                               {project.photos
                                 .filter(photo => selectedPhotos.has(photo.id))
                                 .map(photo => (
-                                  <div key={photo.id} className="p-2 bg-gray-50 rounded-sm flex items-center">
-                                    <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                                    <span className="text-sm font-mono">{photo.originalName || photo.filename}</span>
+                                  <div key={photo.id} className="p-3 bg-slate-50 rounded-xl flex items-center">
+                                    <FileText className="w-4 h-4 mr-2 text-purple-500" />
+                                    <span className="text-sm font-medium text-slate-700">{photo.originalName || photo.filename}</span>
                                   </div>
                               ))}
                             </div>
@@ -1035,6 +1039,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                           <DialogFooter>
                             <Button 
                               onClick={() => setShowSelectedFilenamesDialog(false)}
+                              className="rounded-xl bg-slate-900 hover:bg-slate-800"
                             >
                               Fechar
                             </Button>
@@ -1049,19 +1054,21 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </div>
         </div>
       </header>
-      {/* Main content */}
+      {/* Main content - Youze Style */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isFinalized && finalizationSuccess ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-800 mb-2">Seleção finalizada com sucesso!</h2>
-            <p className="text-green-700 mb-4">
+          <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 sm:p-8 mb-8 text-center shadow-lg shadow-green-500/10">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/30">
+              <CheckCircle2 className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-emerald-800 mb-2">Seleção finalizada!</h2>
+            <p className="text-emerald-700 mb-6 font-medium">
               Suas {selectedPhotos.size} fotos selecionadas foram salvas com sucesso.
-              O fotógrafo receberá uma notificação com sua seleção.
+              O fotógrafo receberá uma notificação.
             </p>
             <Button 
               variant="outline" 
-              className="mt-2"
+              className="rounded-xl font-bold border-emerald-300 text-emerald-700 hover:bg-emerald-100"
               onClick={() => setLocation("/dashboard")}
             >
               Voltar para o Dashboard
@@ -1087,34 +1094,37 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           onSubmitComment={handleSubmitComment}
         />
       </main>
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog - Youze Style */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Finalizar Seleção</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-black text-2xl">Finalizar Seleção</DialogTitle>
+            <DialogDescription className="text-slate-500">
               Tem certeza que deseja finalizar sua seleção de fotos?
               Após finalizar, você não poderá mais alterar as fotos selecionadas.
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4">
-            <p className="font-medium">
-              Você selecionou {selectedPhotos.size} de {project.photos.length} fotos disponíveis.
-            </p>
+            <div className="bg-purple-50 rounded-xl p-4 text-center">
+              <p className="text-3xl font-black text-purple-600">{selectedPhotos.size}</p>
+              <p className="text-sm text-purple-500 font-medium">de {project.photos.length} fotos selecionadas</p>
+            </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button 
               variant="outline" 
               onClick={() => setShowConfirmDialog(false)}
               disabled={isSubmitting}
+              className="rounded-xl border-slate-200"
             >
               Cancelar
             </Button>
             <Button 
               onClick={finalizeSelection}
               disabled={isSubmitting}
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-500 hover:from-purple-700 hover:to-fuchsia-600 font-bold shadow-lg shadow-purple-500/30"
             >
               {isSubmitting ? (
                 <>
@@ -1122,7 +1132,10 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   Finalizando...
                 </>
               ) : (
-                "Sim, finalizar seleção"
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Sim, finalizar
+                </>
               )}
             </Button>
           </DialogFooter>
@@ -1131,7 +1144,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       {/* Lightbox Modal - Estilo personalizado igual ao portfolio público */}
       {imageModalOpen && project.photos[currentPhotoIndex] && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setImageModalOpen(false)}
         >
           <div className="relative max-w-[95vw] max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
@@ -1148,22 +1161,19 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     : `https://cdn.fottufy.com/${project.photos[currentPhotoIndex].filename}`
                 }
                 alt="Foto do projeto"
-                className="max-w-full max-h-full w-auto h-auto object-contain"
+                className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-2xl"
                 style={{ maxWidth: '95vw', maxHeight: '95vh' }}
                 loading="eager"
                 onLoad={(e) => {
-                  // Otimização: liberar recursos após carregamento
                   const img = e.currentTarget;
                   if (img.dataset.retryCount) {
                     delete img.dataset.retryCount;
                   }
                 }}
                 onError={(e) => {
-                  // Error handling melhorado com múltiplos fallbacks
                   const img = e.currentTarget;
                   if (!img.dataset.retryCount) {
                     img.dataset.retryCount = '1';
-                    // Primeira tentativa: usar CDN alternativo
                     const originalSrc = img.src;
                     if (originalSrc.includes('cdn.fottufy.com')) {
                       img.src = originalSrc.replace('cdn.fottufy.com', 'cdn2.fottufy.com');
@@ -1171,12 +1181,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     }
                   } else if (img.dataset.retryCount === '1') {
                     img.dataset.retryCount = '2';
-                    // Segunda tentativa: usar placeholder
                     img.src = '/placeholder.jpg';
                     return;
                   }
-                  // Última tentativa: usar data URL simples
-                  // Última tentativa: esconder imagem problemática
                   img.style.display = "none";
                   console.error("Imagem não pode ser carregada:", img.src);
                 }}
@@ -1184,46 +1191,44 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               />
             </WatermarkOverlay>
             
-            {/* Botão X dentro da foto - canto superior direito */}
+            {/* Botão X - Youze Style */}
             <button
               onClick={() => setImageModalOpen(false)}
-              className="absolute top-4 right-4 w-10 h-10 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+              className="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-md shadow-lg"
             >
               <X className="h-5 w-5" />
             </button>
             
-            {/* Navegação - apenas se houver mais de uma foto */}
+            {/* Navegação - Youze Style */}
             {project.photos.length > 1 && (
               <>
-                {/* Seta esquerda */}
                 <button
                   onClick={goToPrevPhoto}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-md shadow-lg"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
                 
-                {/* Seta direita */}
                 <button
                   onClick={goToNextPhoto}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/10 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all duration-200 backdrop-blur-md shadow-lg"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
               </>
             )}
             
-            {/* Botão de seleção - canto inferior direito */}
+            {/* Botão de seleção - Youze Style */}
             {!isFinalized && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   togglePhotoSelection(project.photos[currentPhotoIndex].id);
                 }}
-                className={`absolute bottom-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 text-white transition-all duration-200 backdrop-blur-sm shadow-lg ${
+                className={`absolute bottom-4 right-4 px-4 py-2.5 rounded-xl flex items-center gap-2 text-white font-bold text-sm transition-all duration-200 backdrop-blur-md shadow-xl ${
                   selectedPhotos.has(project.photos[currentPhotoIndex].id)
-                    ? 'bg-green-600/80 hover:bg-green-700/80'
-                    : 'bg-blue-800/70 hover:bg-blue-900/80'
+                    ? 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-green-500/30'
+                    : 'bg-gradient-to-r from-purple-600 to-fuchsia-500 shadow-purple-500/30'
                 }`}
               >
                 {selectedPhotos.has(project.photos[currentPhotoIndex].id) ? (
@@ -1240,21 +1245,21 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
               </button>
             )}
             
-            {/* Contador de fotos - canto inferior esquerdo */}
+            {/* Contador de fotos - Youze Style */}
             {project.photos.length > 1 && (
-              <div className="absolute bottom-4 left-4 px-3 py-2 bg-black/10 rounded-lg text-white text-sm backdrop-blur-sm">
-                {currentPhotoIndex + 1} de {project.photos.length}
+              <div className="absolute bottom-4 left-4 px-4 py-2 bg-white/20 rounded-xl text-white text-sm font-bold backdrop-blur-md shadow-lg">
+                {currentPhotoIndex + 1} / {project.photos.length}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Botão scroll to top - mobile apenas */}
+      {/* Botão scroll to top - Youze Style */}
       {showScrollToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-40 md:hidden w-10 h-10 bg-gray-800/60 hover:bg-gray-700/80 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 backdrop-blur-sm"
+          className="fixed bottom-6 right-6 z-40 md:hidden w-12 h-12 bg-gradient-to-br from-purple-600 to-fuchsia-500 hover:from-purple-700 hover:to-fuchsia-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-purple-500/30 transition-all duration-200"
           aria-label="Voltar ao topo"
         >
           <ArrowUp className="h-5 w-5" />

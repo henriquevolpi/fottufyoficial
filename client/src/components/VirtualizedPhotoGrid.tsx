@@ -79,7 +79,7 @@ export const VirtualizedPhotoGrid = memo(function VirtualizedPhotoGrid({
   
   // Determinar classes do grid baseado no número de colunas
   const gridClasses = useMemo(() => {
-    const baseClasses = "grid gap-4 px-2 sm:px-6 lg:px-8";
+    const baseClasses = "grid gap-4 sm:gap-5 px-2 sm:px-4 lg:px-6";
     switch (itemsPerRow) {
       case 1: return `${baseClasses} grid-cols-2 sm:grid-cols-1`;
       case 2: return `${baseClasses} grid-cols-2`;
