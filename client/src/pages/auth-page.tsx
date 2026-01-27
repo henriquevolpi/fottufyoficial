@@ -184,10 +184,10 @@ export default function AuthPage() {
             </div>
 
             {/* Tab switcher */}
-            <div className="relative flex justify-center gap-2 p-1 bg-white/5 rounded-2xl mb-8">
+            <div className="relative flex p-1 bg-white/5 rounded-2xl mb-8">
               <motion.div
                 className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl shadow-lg"
-                animate={{ x: activeTab === 'login' ? 4 : 'calc(100% + 4px)' }}
+                animate={{ left: activeTab === 'login' ? '4px' : 'calc(50% + 4px)' }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
               {["login", "register"].map((tab) => (
