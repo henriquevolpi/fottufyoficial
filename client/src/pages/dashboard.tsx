@@ -2012,7 +2012,6 @@ export default function Dashboard() {
                 <TabsList className="bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl h-auto shrink-0">
                   <TabsTrigger value="all" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Todos</TabsTrigger>
                   <TabsTrigger value="pending" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Pendentes</TabsTrigger>
-                  <TabsTrigger value="reviewed" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Revisados</TabsTrigger>
                   <TabsTrigger value="completed" className="rounded-xl px-6 sm:px-8 py-4 font-black text-xs tracking-widest uppercase data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-xl data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300">Finalizados</TabsTrigger>
                 </TabsList>
               </div>
