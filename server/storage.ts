@@ -3265,16 +3265,27 @@ export class DatabaseStorage implements IStorage {
 
   async markReferralAsConverted(referralId: number): Promise<Referral | undefined> {
     try {
+      // Atualização condicional: só atualiza se status ainda é 'pending'
+      // Isso garante atomicidade e evita processamento duplicado
       const [updatedReferral] = await db
         .update(referrals)
         .set({
           status: 'converted',
           convertedAt: new Date()
         })
-        .where(eq(referrals.id, referralId))
+        .where(
+          and(
+            eq(referrals.id, referralId),
+            eq(referrals.status, 'pending')
+          )
+        )
         .returning();
 
-      console.log(`DatabaseStorage: Referral ID=${referralId} marcado como convertido`);
+      if (updatedReferral) {
+        console.log(`DatabaseStorage: Referral ID=${referralId} marcado como convertido`);
+      } else {
+        console.log(`DatabaseStorage: Referral ID=${referralId} não encontrado ou já convertido`);
+      }
       return updatedReferral;
     } catch (error) {
       console.error("Erro ao marcar referral como convertido:", error);

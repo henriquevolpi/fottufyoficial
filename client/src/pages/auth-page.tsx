@@ -37,12 +37,31 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Lógica funcional (sem alterações)
+  // Lógica funcional
   const [searchParams] = useState(() => new URLSearchParams(window.location.search));
   const redirect = searchParams.get('redirect') || '/dashboard';
   const plan = searchParams.get('plan');
   const showAdminLogin = searchParams.get('admin') === 'true';
   const redirectUrl = plan ? `${redirect}?plan=${plan}` : redirect;
+  
+  // Sistema de indicação (referral)
+  const referralCode = searchParams.get('ref');
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+  
+  // Validar código de indicação ao carregar a página
+  useEffect(() => {
+    if (referralCode && referralCode.length >= 6) {
+      fetch(`/api/referral/validate/${referralCode}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid && data.referrerName) {
+            setReferrerName(data.referrerName);
+            setActiveTab("register"); // Ir para aba de cadastro
+          }
+        })
+        .catch(() => {});
+    }
+  }, [referralCode]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -60,7 +79,11 @@ export default function AuthPage() {
 
   const handleRegister = (values: RegisterFormValues) => {
     const { confirmPassword, ...registerData } = values;
-    registerMutation.mutate(registerData);
+    // Incluir código de indicação se presente
+    const dataWithReferral = referralCode 
+      ? { ...registerData, referralCode: referralCode.toUpperCase() }
+      : registerData;
+    registerMutation.mutate(dataWithReferral);
   };
 
   const handleAdminLogin = () => {
@@ -284,6 +307,14 @@ export default function AuthPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
                 >
+                  {/* Banner de indicação */}
+                  {referrerName && (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl">
+                      <p className="text-green-300 text-sm font-medium text-center">
+                        🎉 Você foi convidado por <span className="font-bold">{referrerName}</span>!
+                      </p>
+                    </div>
+                  )}
                   <Form {...registerForm}>
                     <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-3">
                       <FormField control={registerForm.control} name="name" render={({ field }) => (

@@ -2940,12 +2940,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`Usuário ${user.id} atualizado para plano ${planType} via Stripe Checkout (subscription: ${subscription.id})`);
 
+        // ============ PROCESSAR INDICAÇÃO (REFERRAL) ============
+        // Verificar se este usuário foi indicado e é a primeira compra
+        let referralProcessed = false;
+        try {
+          const pendingReferral = await storage.getPendingReferralByReferredId(user.id);
+          
+          if (pendingReferral && pendingReferral.status === 'pending') {
+            console.log(`Processando referral: indicador ID=${pendingReferral.referrerId}, indicado ID=${user.id}`);
+            
+            // PRIMEIRO: Marcar como convertido para garantir idempotência
+            // Se outra request concorrente tentar, não encontrará status='pending'
+            const updatedReferral = await storage.markReferralAsConverted(pendingReferral.id);
+            
+            if (!updatedReferral) {
+              console.log(`Referral ${pendingReferral.id} já foi processado por outra request`);
+            } else {
+              // Buscar o indicador
+              const referrer = await storage.getUser(pendingReferral.referrerId);
+              
+              if (referrer && referrer.stripeSubscriptionId) {
+                // Aplicar 40% de desconto na próxima fatura do indicador
+                try {
+                  // Criar ou buscar cupom de 40%
+                  let coupon;
+                  try {
+                    coupon = await stripe.coupons.retrieve('REFERRAL40');
+                  } catch (couponError) {
+                    // Cupom não existe, criar
+                    coupon = await stripe.coupons.create({
+                      id: 'REFERRAL40',
+                      percent_off: 40,
+                      duration: 'once',
+                      name: 'Desconto de Indicação - 40%'
+                    });
+                    console.log('Cupom REFERRAL40 criado com sucesso');
+                  }
+                  
+                  // Aplicar o cupom na assinatura do indicador para a próxima fatura
+                  await stripe.subscriptions.update(referrer.stripeSubscriptionId, {
+                    coupon: coupon.id
+                  });
+                  
+                  console.log(`Cupom REFERRAL40 aplicado na assinatura ${referrer.stripeSubscriptionId} do indicador ID=${referrer.id}`);
+                  
+                  // Marcar desconto como aplicado
+                  await storage.markReferralDiscountApplied(pendingReferral.id);
+                  referralProcessed = true;
+                } catch (stripeDiscountError: any) {
+                  console.error('Erro ao aplicar desconto no Stripe:', stripeDiscountError.message);
+                  // Referral já está convertido, apenas não aplicou o cupom
+                }
+              } else {
+                console.log(`Referral convertido, mas indicador ID=${pendingReferral.referrerId} não tem assinatura ativa`);
+              }
+            }
+          }
+        } catch (referralError: any) {
+          console.error('Erro ao processar referral (não crítico):', referralError.message);
+        }
+
         res.json({
           success: true,
           planType,
           billingCycle,
           subscriptionId: subscription.id,
-          currentPeriodEnd: endDate
+          currentPeriodEnd: endDate,
+          referralProcessed
         });
       } else {
         res.json({

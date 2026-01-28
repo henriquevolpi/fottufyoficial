@@ -288,7 +288,7 @@ export function setupAuth(app: Express) {
       }
       
       // Validate required fields
-      let { email, password } = req.body;
+      let { email, password, referralCode } = req.body;
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
@@ -302,21 +302,42 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email already in use" });
       }
       
+      // Validar código de indicação se fornecido
+      let referrerId: number | null = null;
+      if (referralCode && referralCode.length >= 6) {
+        const referrer = await storage.getUserByReferralCode(referralCode.toUpperCase());
+        if (referrer) {
+          referrerId = referrer.id;
+          console.log(`Registro via indicação: código ${referralCode} pertence ao usuário ID=${referrer.id}`);
+        }
+      }
+      
       // Hash the password with bcrypt
       const hashedPassword = await hashPassword(password);
       
       // Create basic user data
-      const userData = {
+      const userData: any = {
         name: req.body.name || email.split('@')[0], // Use part of email as name if not provided
         email,
         phone: req.body.phone || '+000000000000', // Use provided phone or default if not provided
         password: hashedPassword,
         role: "photographer", // Default to photographer role
-        status: "active"      // Default to active status
+        status: "active",      // Default to active status
+        referredBy: referrerId // ID do usuário que indicou (se houver)
       };
       
       // Criar usuário de forma assíncrona
       const user = await storage.createUser(userData);
+      
+      // Criar registro de referral se foi indicado por alguém
+      if (referrerId && user.id !== referrerId) {
+        try {
+          await storage.createReferral(referrerId, user.id);
+          console.log(`Referral criado: indicador ID=${referrerId}, indicado ID=${user.id}`);
+        } catch (refError) {
+          console.error("Erro ao criar referral (não crítico):", refError);
+        }
+      }
       
       // Enviar webhook e email em background sem await (não bloqueia o fluxo principal)
       Promise.all([

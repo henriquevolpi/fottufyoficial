@@ -34,7 +34,11 @@ import {
   Moon,
   Sun,
   Send,
-  Upload
+  Upload,
+  Copy,
+  Share2,
+  Gift,
+  Heart
 } from "lucide-react";
 import { 
   Tabs, 
@@ -1489,6 +1493,12 @@ export default function Dashboard() {
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   
+  // State for referral modal
+  const [referralModalOpen, setReferralModalOpen] = useState(false);
+  const [referralData, setReferralData] = useState<{ referralCode: string; referralLink: string } | null>(null);
+  const [referralStats, setReferralStats] = useState<{ total: number; converted: number } | null>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  
   // Theme state and logic
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1532,6 +1542,50 @@ export default function Dashboard() {
   const handleViewComments = (projectId: string) => {
     setSelectedProjectId(projectId);
     setCommentsModalOpen(true);
+  };
+
+  // Handler to open referral modal
+  const handleOpenReferralModal = async () => {
+    setReferralModalOpen(true);
+    setReferralLoading(true);
+    
+    try {
+      // Buscar código e estatísticas em paralelo
+      const [codeRes, statsRes] = await Promise.all([
+        fetch('/api/referral/code'),
+        fetch('/api/referral/stats')
+      ]);
+      
+      if (codeRes.ok) {
+        const codeData = await codeRes.json();
+        setReferralData(codeData);
+      }
+      
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setReferralStats(statsData);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados de indicação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar seus dados de indicação",
+        variant: "destructive"
+      });
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  // Copy referral link to clipboard
+  const copyReferralLink = () => {
+    if (referralData?.referralLink) {
+      navigator.clipboard.writeText(referralData.referralLink);
+      toast({
+        title: "Link copiado!",
+        description: "Seu link de indicação foi copiado para a área de transferência",
+      });
+    }
   };
   
   // Carregar projetos
@@ -1993,7 +2047,10 @@ export default function Dashboard() {
                 <p className="font-black text-sm sm:text-2xl text-white uppercase tracking-tight mb-0.5 sm:mb-2">Recomende a Fottufy ❤️</p>
                 <p className="font-light text-purple-100 text-xs sm:text-base leading-relaxed line-clamp-2 sm:line-clamp-none">Somos uma plataforma Brasileira 100% independente!</p>
               </div>
-              <button className="hidden sm:block shrink-0 bg-white text-purple-700 font-black text-xs tracking-widest uppercase px-6 py-4 rounded-2xl shadow-xl hover:scale-105 transition-transform">
+              <button 
+                onClick={handleOpenReferralModal}
+                className="hidden sm:block shrink-0 bg-white text-purple-700 font-black text-xs tracking-widest uppercase px-6 py-4 rounded-2xl shadow-xl hover:scale-105 transition-transform"
+              >
                 Indicar Amigo
               </button>
             </div>
@@ -2199,6 +2256,81 @@ export default function Dashboard() {
         open={changePasswordModalOpen}
         onClose={() => setChangePasswordModalOpen(false)}
       />
+      
+      {/* Modal de Indicação */}
+      <Dialog open={referralModalOpen} onOpenChange={setReferralModalOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-lg mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
+              <Gift className="h-6 w-6 text-purple-600" />
+              Indique e Ganhe!
+            </DialogTitle>
+            <DialogDescription className="text-base mt-1">
+              Indique amigos e ganhe 40% de desconto na sua próxima fatura quando eles assinarem!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {referralLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                <span className="ml-2 text-gray-600">Carregando...</span>
+              </div>
+            ) : referralData ? (
+              <>
+                {/* Link de indicação */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700">Seu link de indicação:</label>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={referralData.referralLink} 
+                      readOnly 
+                      className="flex-1 bg-gray-50 text-sm"
+                    />
+                    <Button onClick={copyReferralLink} className="bg-purple-600 hover:bg-purple-700">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Código */}
+                <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                  <p className="text-sm text-gray-600 mb-1">Seu código de indicação</p>
+                  <p className="text-3xl font-black text-purple-600 tracking-widest">{referralData.referralCode}</p>
+                </div>
+                
+                {/* Estatísticas */}
+                {referralStats && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-xl">
+                      <p className="text-2xl font-bold text-blue-600">{referralStats.total}</p>
+                      <p className="text-sm text-gray-600">Indicações</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-xl">
+                      <p className="text-2xl font-bold text-green-600">{referralStats.converted}</p>
+                      <p className="text-sm text-gray-600">Convertidas</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Informação */}
+                <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <Heart className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-semibold mb-1">Como funciona?</p>
+                    <p>Quando alguém se cadastrar usando seu link e assinar um plano, você ganha automaticamente 40% de desconto na sua próxima fatura!</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Erro ao carregar dados. Tente novamente.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       {/* Comments Modal */}
       <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
