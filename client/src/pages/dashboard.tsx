@@ -1381,7 +1381,7 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
         </span>
       </div>
       
-      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-4">
+      <div className={`grid gap-2 sm:gap-4 ${(user?.billingPeriod === 'yearly' || user?.isManualActivation || user?.role === 'admin') ? 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-4' : 'grid-cols-3 sm:grid-cols-3 lg:grid-cols-3'}`}>
         {/* Active projects card - Glassmorphism Style */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
@@ -1472,6 +1472,40 @@ function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
             </CardFooter>
           </Card>
         </div>
+        
+        {/* Portfolio card - Only for Annual Plan Users */}
+        {(user?.billingPeriod === 'yearly' || user?.isManualActivation || user?.role === 'admin') && (
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+            <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full">
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
+                    <Sparkles className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Portfólio</p>
+                    <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">Online</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center sm:justify-start gap-1">
+                  <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
+                  <span className="text-[9px] sm:text-xs font-bold text-amber-600 dark:text-amber-400">Anual</span>
+                </div>
+              </CardContent>
+              <CardFooter className="hidden sm:block px-4 pb-4 pt-0">
+                <Link href="/meu-portfolio">
+                  <Button 
+                    className="w-full font-bold text-xs tracking-wide uppercase py-3 rounded-xl transition-all bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/20 hover:scale-105"
+                  >
+                    <ExternalLink className="mr-2 h-3 w-3" />
+                    Acessar
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2059,39 +2093,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        
-        {/* Portfolio Card - Only for Annual Plan Users */}
-        {(user?.billingPeriod === 'yearly' || user?.isManualActivation || user?.role === 'admin') && (
-          <div className="mt-4 relative overflow-hidden group">
-            <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-xl sm:shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-400/20 rounded-full blur-2xl"></div>
-              <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
-                <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 sm:px-3 sm:py-1.5">
-                  <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-200" />
-                  <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Plano Anual</span>
-                </div>
-              </div>
-              
-              <div className="relative flex flex-row items-center gap-3 sm:gap-6">
-                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-black text-sm sm:text-xl text-white uppercase tracking-tight mb-0.5 sm:mb-1">Meu Portfólio Online</p>
-                  <p className="font-light text-amber-100 text-xs sm:text-sm leading-relaxed line-clamp-1 sm:line-clamp-none">Crie sua página profissional e compartilhe com clientes</p>
-                </div>
-                <Link href="/meu-portfolio">
-                  <button className="shrink-0 bg-white text-orange-600 font-black text-[10px] sm:text-xs tracking-widest uppercase px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl shadow-xl hover:scale-105 transition-transform flex items-center gap-1.5 sm:gap-2">
-                    <span className="hidden sm:inline">Acessar</span>
-                    <span className="sm:hidden">Abrir</span>
-                    <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Promotional Banner - only shown for free users */}
         {user?.planType === 'free' && <PromotionalBanner />}
