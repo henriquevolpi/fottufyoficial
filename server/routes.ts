@@ -2809,10 +2809,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : 'http://localhost:5000';
 
       // Criar a sessão de checkout
-      // Inclui cartão e PIX como métodos de pagamento
+      // Por enquanto apenas cartão - para adicionar PIX, habilitar no dashboard do Stripe primeiro
       const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
-        payment_method_types: ['card', 'pix'],
+        payment_method_types: ['card'],
         line_items: [
           {
             price: derivedPriceId,
