@@ -2989,6 +2989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // ============ PROCESSAR INDICAÇÃO (REFERRAL) ============
         // Verificar se este usuário foi indicado e é a primeira compra
+        // NOVO SISTEMA: +1000 fotos + selo de embaixador (funciona com Stripe e Hotmart)
         let referralProcessed = false;
         try {
           const pendingReferral = await storage.getPendingReferralByReferredId(user.id);
@@ -2997,7 +2998,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Processando referral: indicador ID=${pendingReferral.referrerId}, indicado ID=${user.id}`);
             
             // PRIMEIRO: Marcar como convertido para garantir idempotência
-            // Se outra request concorrente tentar, não encontrará status='pending'
             const updatedReferral = await storage.markReferralAsConverted(pendingReferral.id);
             
             if (!updatedReferral) {
@@ -3006,40 +3006,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Buscar o indicador
               const referrer = await storage.getUser(pendingReferral.referrerId);
               
-              if (referrer && referrer.stripeSubscriptionId) {
-                // Aplicar 40% de desconto na próxima fatura do indicador
-                try {
-                  // Criar ou buscar cupom de 40%
-                  let coupon;
-                  try {
-                    coupon = await stripe.coupons.retrieve('REFERRAL40');
-                  } catch (couponError) {
-                    // Cupom não existe, criar
-                    coupon = await stripe.coupons.create({
-                      id: 'REFERRAL40',
-                      percent_off: 40,
-                      duration: 'once',
-                      name: 'Desconto de Indicação - 40%'
-                    });
-                    console.log('Cupom REFERRAL40 criado com sucesso');
-                  }
-                  
-                  // Aplicar o cupom na assinatura do indicador para a próxima fatura
-                  await stripe.subscriptions.update(referrer.stripeSubscriptionId, {
-                    coupon: coupon.id
-                  });
-                  
-                  console.log(`Cupom REFERRAL40 aplicado na assinatura ${referrer.stripeSubscriptionId} do indicador ID=${referrer.id}`);
-                  
-                  // Marcar desconto como aplicado
-                  await storage.markReferralDiscountApplied(pendingReferral.id);
-                  referralProcessed = true;
-                } catch (stripeDiscountError: any) {
-                  console.error('Erro ao aplicar desconto no Stripe:', stripeDiscountError.message);
-                  // Referral já está convertido, apenas não aplicou o cupom
-                }
+              if (referrer) {
+                // NOVO: Dar +1000 fotos extras e marcar como embaixador
+                const currentBonus = referrer.bonusPhotos || 0;
+                await storage.updateUser(referrer.id, {
+                  bonusPhotos: currentBonus + 1000,
+                  isAmbassador: true
+                } as any);
+                
+                console.log(`Indicador ID=${referrer.id} recebeu +1000 fotos (total bônus: ${currentBonus + 1000}) e selo de embaixador`);
+                
+                // Marcar recompensa como aplicada
+                await storage.markReferralDiscountApplied(pendingReferral.id);
+                referralProcessed = true;
               } else {
-                console.log(`Referral convertido, mas indicador ID=${pendingReferral.referrerId} não tem assinatura ativa`);
+                console.log(`Referral convertido, mas indicador ID=${pendingReferral.referrerId} não encontrado`);
               }
             }
           }

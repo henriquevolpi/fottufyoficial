@@ -1145,6 +1145,40 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           }
         }
         
+        // ============ PROCESSAR INDICAÇÃO (REFERRAL) ============
+        // NOVO SISTEMA: +1000 fotos + selo de embaixador (funciona com Stripe e Hotmart)
+        try {
+          const pendingReferral = await storage.getPendingReferralByReferredId(user.id);
+          
+          if (pendingReferral && pendingReferral.status === 'pending') {
+            console.log(`Hotmart Referral: indicador ID=${pendingReferral.referrerId}, indicado ID=${user.id}`);
+            
+            // Marcar como convertido para garantir idempotência
+            const updatedReferral = await storage.markReferralAsConverted(pendingReferral.id);
+            
+            if (updatedReferral) {
+              // Buscar o indicador
+              const referrer = await storage.getUser(pendingReferral.referrerId);
+              
+              if (referrer) {
+                // Dar +1000 fotos extras e marcar como embaixador
+                const currentBonus = referrer.bonusPhotos || 0;
+                await storage.updateUser(referrer.id, {
+                  bonusPhotos: currentBonus + 1000,
+                  isAmbassador: true
+                } as any);
+                
+                console.log(`Hotmart Referral: Indicador ID=${referrer.id} recebeu +1000 fotos (total bônus: ${currentBonus + 1000}) e selo de embaixador`);
+                
+                // Marcar recompensa como aplicada
+                await storage.markReferralDiscountApplied(pendingReferral.id);
+              }
+            }
+          }
+        } catch (referralError: any) {
+          console.error('Hotmart: Erro ao processar referral (não crítico):', referralError.message);
+        }
+        
         // Marcar webhook como processado com sucesso
         markWebhookAsProcessed(webhookKey, payload, event, email, 'PLANO_ATIVADO');
         

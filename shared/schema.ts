@@ -54,6 +54,10 @@ export const users = pgTable("users", {
   // Sistema de indicação (referral)
   referralCode: text("referral_code").unique(), // Código único de 8 caracteres para indicação
   referredBy: integer("referred_by"), // ID do usuário que indicou (FK para users)
+  
+  // Bônus por indicações convertidas
+  bonusPhotos: integer("bonus_photos").default(0), // Fotos extras ganhas por indicações (+1000 por indicação)
+  isAmbassador: boolean("is_ambassador").default(false), // Selo de embaixador (ganhou ao menos 1 indicação convertida)
 });
 
 // Relations for users
@@ -76,6 +80,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   usedPortfolios: true,
   portfolioPhotoLimit: true,
   referralCode: true,
+  bonusPhotos: true,
+  isAmbassador: true,
 });
 
 // Tabela de indicações (referrals)
