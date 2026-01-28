@@ -280,50 +280,50 @@ export default function ProjectView() {
       
       {/* Selected Photos Filenames Dialog */}
       <Dialog open={showSelectedFilenamesDialog} onOpenChange={setShowSelectedFilenamesDialog}>
-        <DialogContent className="sm:max-w-md bg-white border border-gray-200 rounded-3xl shadow-2xl">
-          <DialogHeader>
-            <div className="inline-block mb-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md mx-auto max-h-[80vh] overflow-y-auto p-4 sm:p-6 bg-white border border-gray-200 rounded-2xl sm:rounded-3xl shadow-2xl">
+          <DialogHeader className="pb-2">
+            <div className="inline-block mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
                 {selectedPhotos.length} selecionadas
               </span>
             </div>
-            <DialogTitle className="text-2xl font-black text-gray-900">Fotos Selecionadas</DialogTitle>
-            <DialogDescription className="text-gray-600">
-              Lista de arquivos selecionados neste projeto.
+            <DialogTitle className="text-lg sm:text-2xl font-black text-gray-900">Fotos Selecionadas</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Lista de arquivos selecionados.
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto my-4">
-            <div className="space-y-2">
+          <div className="max-h-[40vh] overflow-y-auto my-2 sm:my-4">
+            <div className="space-y-1.5 sm:space-y-2">
               {(Array.isArray(project.photos) && project.photos.length > 0) ? (
                 project.photos
                   .filter(photo => selectedPhotos.includes(photo.id))
                   .map(photo => (
-                    <div key={photo.id} className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center hover:bg-gray-100 transition-all duration-300">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center mr-3">
-                        <FileText className="w-4 h-4 text-purple-600" />
+                    <div key={photo.id} className="p-2 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl flex items-center hover:bg-gray-100 transition-all duration-300">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center mr-2 sm:mr-3">
+                        <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">{photo.originalName || photo.filename}</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">{photo.originalName || photo.filename}</span>
                     </div>
                   ))
               ) : (
-                <div className="p-4 text-center text-gray-500">
+                <div className="p-3 text-center text-gray-500 text-sm">
                   Nenhuma foto selecionada.
                 </div>
               )}
             </div>
           </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
             {selectedPhotos.length > 0 && (
               <CopyNamesButton
                 selectedPhotos={project.photos.filter(photo => selectedPhotos.includes(photo.id))}
                 size="default"
                 variant="outline"
-                className="w-full sm:w-auto rounded-xl"
+                className="w-full sm:w-auto rounded-lg sm:rounded-xl text-sm"
               />
             )}
             <Button 
               onClick={() => setShowSelectedFilenamesDialog(false)}
-              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white font-bold rounded-xl hover:opacity-90 transition-all duration-300"
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white font-bold rounded-lg sm:rounded-xl hover:opacity-90 transition-all duration-300 text-sm"
             >
               Fechar
             </Button>
