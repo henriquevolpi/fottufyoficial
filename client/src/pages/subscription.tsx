@@ -144,6 +144,7 @@ export default function SubscriptionPage() {
       features: [
         "Até 6.000 fotos por mês",
         "Galerias ilimitadas", 
+        "✨ Portfólio Online Exclusivo",
         "Faturamento anual (R$155/ano)",
         "Suporte preferencial"
       ],
@@ -161,6 +162,7 @@ export default function SubscriptionPage() {
       features: [
         "Até 17.000 fotos por mês",
         "Galerias ilimitadas",
+        "✨ Portfólio Online Exclusivo",
         "Faturamento anual (R$235/ano)",
         "Suporte VIP"
       ],
@@ -178,6 +180,7 @@ export default function SubscriptionPage() {
       features: [
         "Até 40.000 fotos por mês",
         "Galerias ilimitadas",
+        "✨ Portfólio Online Exclusivo",
         "Faturamento anual (R$369/ano)",
         "Gerente de conta"
       ],
