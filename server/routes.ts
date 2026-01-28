@@ -3077,13 +3077,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as User;
       
+      // Buscar dados atualizados do usuário para pegar bonusPhotos e isAmbassador
+      const currentUser = await storage.getUser(user.id);
       const referrals = await storage.getUserReferrals(user.id);
       
       const stats = {
         total: referrals.length,
         pending: referrals.filter(r => r.status === 'pending').length,
         converted: referrals.filter(r => r.status === 'converted').length,
-        discountsEarned: referrals.filter(r => r.discountAppliedAt !== null).length
+        rewardsEarned: referrals.filter(r => r.discountAppliedAt !== null).length,
+        bonusPhotos: currentUser?.bonusPhotos || 0,
+        isAmbassador: currentUser?.isAmbassador || false
       };
       
       res.json(stats);

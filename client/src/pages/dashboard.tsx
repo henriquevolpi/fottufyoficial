@@ -41,7 +41,8 @@ import {
   Heart,
   Sparkles,
   Crown,
-  ExternalLink
+  ExternalLink,
+  Award
 } from "lucide-react";
 import { 
   Tabs, 
@@ -1536,7 +1537,7 @@ export default function Dashboard() {
   // State for referral modal
   const [referralModalOpen, setReferralModalOpen] = useState(false);
   const [referralData, setReferralData] = useState<{ referralCode: string; referralLink: string } | null>(null);
-  const [referralStats, setReferralStats] = useState<{ total: number; converted: number } | null>(null);
+  const [referralStats, setReferralStats] = useState<{ total: number; converted: number; bonusPhotos: number; isAmbassador: boolean } | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
   
   // Theme state and logic
@@ -2304,9 +2305,14 @@ export default function Dashboard() {
             <DialogTitle className="text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
               <Gift className="h-6 w-6 text-purple-600" />
               Indique e Ganhe!
+              {referralStats?.isAmbassador && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-600 text-white rounded-full">
+                  Embaixador
+                </span>
+              )}
             </DialogTitle>
             <DialogDescription className="text-base mt-1">
-              Indique amigos e ganhe 40% de desconto na sua próxima fatura quando eles assinarem!
+              Indique amigos e ganhe +1.000 fotos extras quando eles assinarem!
             </DialogDescription>
           </DialogHeader>
           
@@ -2318,6 +2324,26 @@ export default function Dashboard() {
               </div>
             ) : referralData ? (
               <>
+                {/* Selo de Embaixador (se tiver) */}
+                {referralStats?.isAmbassador && (
+                  <div className="text-center p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-300">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Award className="h-6 w-6 text-amber-600" />
+                      <span className="text-lg font-bold text-amber-700">Embaixador Fottufy</span>
+                    </div>
+                    <p className="text-sm text-amber-600">Você já indicou clientes que assinaram!</p>
+                  </div>
+                )}
+                
+                {/* Fotos Bônus Acumuladas */}
+                {referralStats && referralStats.bonusPhotos > 0 && (
+                  <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                    <p className="text-sm text-gray-600 mb-1">Fotos extras ganhas por indicações</p>
+                    <p className="text-3xl font-black text-green-600">+{referralStats.bonusPhotos.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 mt-1">Adicionadas ao seu limite mensal</p>
+                  </div>
+                )}
+                
                 {/* Link de indicação */}
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-700">Seu link de indicação:</label>
@@ -2358,7 +2384,8 @@ export default function Dashboard() {
                   <Heart className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-800">
                     <p className="font-semibold mb-1">Como funciona?</p>
-                    <p>Quando alguém se cadastrar usando seu link e assinar um plano, você ganha automaticamente 40% de desconto na sua próxima fatura!</p>
+                    <p>Quando alguém se cadastrar usando seu link e assinar um plano, você ganha automaticamente <strong>+1.000 fotos extras</strong> no seu limite mensal!</p>
+                    <p className="mt-2 text-amber-700 font-medium">Na primeira indicação convertida, você também ganha o selo de <strong>Embaixador Fottufy</strong>!</p>
                   </div>
                 </div>
               </>
