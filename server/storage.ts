@@ -4,6 +4,7 @@ import {
   photos, photoComments, portfolios, portfolioPhotos,
   hotmartOffers, type HotmartOffer, type InsertHotmartOffer,
   siteSettings, type SiteSetting,
+  referrals, type Referral,
   type WebhookPayload, type SubscriptionWebhookPayload, 
   type Photo, type PhotoComment, type InsertPhotoComment, SUBSCRIPTION_PLANS 
 } from "@shared/schema";
@@ -393,6 +394,16 @@ export interface IStorage {
   updatePortfolioPhoto(photoId: number, data: { description?: string; order?: number }): Promise<any | undefined>;
   deletePortfolioPhoto(photoId: number): Promise<void>;
   getPortfolioPhotos(portfolioId: number): Promise<any[]>;
+  
+  // Referral methods
+  getUserByReferralCode(referralCode: string): Promise<User | undefined>;
+  generateReferralCode(userId: number): Promise<string>;
+  createReferral(referrerId: number, referredId: number): Promise<Referral>;
+  getReferralByReferredId(referredId: number): Promise<Referral | undefined>;
+  getPendingReferralByReferredId(referredId: number): Promise<Referral | undefined>;
+  markReferralAsConverted(referralId: number): Promise<Referral | undefined>;
+  markReferralDiscountApplied(referralId: number): Promise<Referral | undefined>;
+  getUserReferrals(userId: number): Promise<Referral[]>;
   
   // Session store
   sessionStore: any;
@@ -1103,6 +1114,39 @@ export class MemStorage implements IStorage {
   async markCommentsAsViewed(commentIds: string[]): Promise<void> {
     // In memory storage - not implemented, no action needed
     return;
+  }
+
+  // Referral methods - stubs for MemStorage
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    return undefined;
+  }
+
+  async generateReferralCode(userId: number): Promise<string> {
+    return "";
+  }
+
+  async createReferral(referrerId: number, referredId: number): Promise<Referral> {
+    throw new Error("Not implemented in MemStorage");
+  }
+
+  async getReferralByReferredId(referredId: number): Promise<Referral | undefined> {
+    return undefined;
+  }
+
+  async getPendingReferralByReferredId(referredId: number): Promise<Referral | undefined> {
+    return undefined;
+  }
+
+  async markReferralAsConverted(referralId: number): Promise<Referral | undefined> {
+    return undefined;
+  }
+
+  async markReferralDiscountApplied(referralId: number): Promise<Referral | undefined> {
+    return undefined;
+  }
+
+  async getUserReferrals(userId: number): Promise<Referral[]> {
+    return [];
   }
 }
 
@@ -3128,6 +3172,145 @@ export class DatabaseStorage implements IStorage {
       return photos;
     } catch (error) {
       console.error("Erro ao buscar fotos do portfólio:", error);
+      return [];
+    }
+  }
+
+  // ============ REFERRAL METHODS ============
+
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.referralCode, referralCode))
+        .limit(1);
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por código de indicação:", error);
+      return undefined;
+    }
+  }
+
+  async generateReferralCode(userId: number): Promise<string> {
+    try {
+      // Gerar código único de 8 caracteres alfanuméricos
+      const code = nanoid(8).toUpperCase();
+      
+      // Atualizar o usuário com o código gerado
+      await db
+        .update(users)
+        .set({ referralCode: code })
+        .where(eq(users.id, userId));
+
+      console.log(`DatabaseStorage: Código de indicação ${code} gerado para usuário ID=${userId}`);
+      return code;
+    } catch (error) {
+      console.error("Erro ao gerar código de indicação:", error);
+      throw error;
+    }
+  }
+
+  async createReferral(referrerId: number, referredId: number): Promise<Referral> {
+    try {
+      const [newReferral] = await db
+        .insert(referrals)
+        .values({
+          referrerId,
+          referredId,
+          status: 'pending'
+        })
+        .returning();
+
+      console.log(`DatabaseStorage: Referral criado - Indicador ID=${referrerId}, Indicado ID=${referredId}`);
+      return newReferral;
+    } catch (error) {
+      console.error("Erro ao criar referral:", error);
+      throw error;
+    }
+  }
+
+  async getReferralByReferredId(referredId: number): Promise<Referral | undefined> {
+    try {
+      const [referral] = await db
+        .select()
+        .from(referrals)
+        .where(eq(referrals.referredId, referredId))
+        .limit(1);
+      return referral;
+    } catch (error) {
+      console.error("Erro ao buscar referral por referredId:", error);
+      return undefined;
+    }
+  }
+
+  async getPendingReferralByReferredId(referredId: number): Promise<Referral | undefined> {
+    try {
+      const [referral] = await db
+        .select()
+        .from(referrals)
+        .where(
+          and(
+            eq(referrals.referredId, referredId),
+            eq(referrals.status, 'pending')
+          )
+        )
+        .limit(1);
+      return referral;
+    } catch (error) {
+      console.error("Erro ao buscar referral pendente:", error);
+      return undefined;
+    }
+  }
+
+  async markReferralAsConverted(referralId: number): Promise<Referral | undefined> {
+    try {
+      const [updatedReferral] = await db
+        .update(referrals)
+        .set({
+          status: 'converted',
+          convertedAt: new Date()
+        })
+        .where(eq(referrals.id, referralId))
+        .returning();
+
+      console.log(`DatabaseStorage: Referral ID=${referralId} marcado como convertido`);
+      return updatedReferral;
+    } catch (error) {
+      console.error("Erro ao marcar referral como convertido:", error);
+      return undefined;
+    }
+  }
+
+  async markReferralDiscountApplied(referralId: number): Promise<Referral | undefined> {
+    try {
+      const [updatedReferral] = await db
+        .update(referrals)
+        .set({
+          discountAppliedAt: new Date()
+        })
+        .where(eq(referrals.id, referralId))
+        .returning();
+
+      console.log(`DatabaseStorage: Desconto aplicado no referral ID=${referralId}`);
+      return updatedReferral;
+    } catch (error) {
+      console.error("Erro ao marcar desconto aplicado:", error);
+      return undefined;
+    }
+  }
+
+  async getUserReferrals(userId: number): Promise<Referral[]> {
+    try {
+      const userReferrals = await db
+        .select()
+        .from(referrals)
+        .where(eq(referrals.referrerId, userId))
+        .orderBy(desc(referrals.createdAt));
+
+      return userReferrals;
+    } catch (error) {
+      console.error("Erro ao buscar indicações do usuário:", error);
       return [];
     }
   }

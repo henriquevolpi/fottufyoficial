@@ -47,6 +47,10 @@ export const users = pgTable("users", {
   portfolioLimit: integer("portfolio_limit").default(4), // Limite de portfólios para contas ativas
   usedPortfolios: integer("used_portfolios").default(0), // Quantidade de portfólios criados
   portfolioPhotoLimit: integer("portfolio_photo_limit").default(40), // Limite de fotos por portfólio
+  
+  // Sistema de indicação (referral)
+  referralCode: text("referral_code").unique(), // Código único de 8 caracteres para indicação
+  referredBy: integer("referred_by"), // ID do usuário que indicou (FK para users)
 });
 
 // Relations for users
@@ -68,7 +72,29 @@ export const insertUserSchema = createInsertSchema(users).omit({
   portfolioLimit: true,
   usedPortfolios: true,
   portfolioPhotoLimit: true,
+  referralCode: true,
 });
+
+// Tabela de indicações (referrals)
+export const referrals = pgTable("referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").notNull(), // Usuário que indicou
+  referredId: integer("referred_id").notNull(), // Usuário indicado
+  status: text("status").notNull().default("pending"), // pending | converted
+  discountAppliedAt: timestamp("discount_applied_at"), // Quando o desconto foi aplicado ao indicador
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  convertedAt: timestamp("converted_at"), // Quando o indicado fez a primeira compra
+});
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+  discountAppliedAt: true,
+  convertedAt: true,
+});
+
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;
 
 // IDs dos preços do Stripe (criados em Janeiro 2026)
 export const STRIPE_PRICE_IDS = {

@@ -2958,6 +2958,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao verificar pagamento", error: error.message });
     }
   });
+
+  // ============ ROTAS DE INDICAÇÃO (REFERRAL) ============
+
+  // Obter código de indicação do usuário logado
+  app.get("/api/referral/code", authenticate, async (req: Request, res: Response) => {
+    try {
+      const user = req.user as User;
+      
+      let referralCode = user.referralCode;
+      
+      // Se o usuário não tem código, gerar um novo
+      if (!referralCode) {
+        referralCode = await storage.generateReferralCode(user.id);
+      }
+      
+      res.json({ 
+        referralCode,
+        referralLink: `${req.protocol}://${req.get('host')}/auth?ref=${referralCode}`
+      });
+    } catch (error: any) {
+      console.error("Erro ao obter código de indicação:", error);
+      res.status(500).json({ message: "Erro ao obter código de indicação" });
+    }
+  });
+
+  // Obter estatísticas de indicações do usuário
+  app.get("/api/referral/stats", authenticate, async (req: Request, res: Response) => {
+    try {
+      const user = req.user as User;
+      
+      const referrals = await storage.getUserReferrals(user.id);
+      
+      const stats = {
+        total: referrals.length,
+        pending: referrals.filter(r => r.status === 'pending').length,
+        converted: referrals.filter(r => r.status === 'converted').length,
+        discountsEarned: referrals.filter(r => r.discountAppliedAt !== null).length
+      };
+      
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Erro ao obter estatísticas de indicações:", error);
+      res.status(500).json({ message: "Erro ao obter estatísticas" });
+    }
+  });
+
+  // Validar código de indicação (usado no registro)
+  app.get("/api/referral/validate/:code", async (req: Request, res: Response) => {
+    try {
+      const { code } = req.params;
+      
+      if (!code || code.length < 6) {
+        return res.json({ valid: false });
+      }
+      
+      const referrer = await storage.getUserByReferralCode(code.toUpperCase());
+      
+      if (referrer) {
+        res.json({ 
+          valid: true,
+          referrerName: referrer.name.split(' ')[0] // Apenas primeiro nome para privacidade
+        });
+      } else {
+        res.json({ valid: false });
+      }
+    } catch (error: any) {
+      console.error("Erro ao validar código de indicação:", error);
+      res.json({ valid: false });
+    }
+  });
   
   // Rota para criar intent de pagamento no Stripe
   app.post("/api/create-payment-intent", authenticate, async (req: Request, res: Response) => {
