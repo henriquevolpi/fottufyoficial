@@ -526,7 +526,16 @@ export default function PortfolioPage() {
 
       // Atualizar dados - invalidar tanto a lista quanto o portfólio específico
       await queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
-      await queryClient.refetchQueries({ queryKey: ['/api/portfolios'] });
+      const refetchResult = await queryClient.refetchQueries({ queryKey: ['/api/portfolios'] });
+      
+      // Atualizar o editingPortfolio com os dados mais recentes
+      if (editingPortfolio && selectedPortfolioId) {
+        const updatedPortfolios = queryClient.getQueryData<Portfolio[]>(['/api/portfolios']);
+        const updatedPortfolio = updatedPortfolios?.find(p => p.id === selectedPortfolioId);
+        if (updatedPortfolio) {
+          setEditingPortfolio(updatedPortfolio);
+        }
+      }
       
       toast({ 
         title: "Upload concluído!", 
