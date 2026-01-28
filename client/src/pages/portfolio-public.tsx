@@ -528,18 +528,18 @@ export default function PortfolioPublicPage() {
                   className="break-inside-avoid group cursor-pointer"
                   onClick={() => openLightbox(photo)}
                 >
-                  <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-white border-0 shadow-md">
+                  <Card className="overflow-hidden hover:shadow-xl bg-white border-0 shadow-md">
                     <CardContent className="p-0">
                       <div className="relative overflow-hidden">
                         <img
                           src={photo.photoUrl}
                           alt={photo.originalName || `Foto ${photo.id}`}
-                          className="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-700"
+                          className="w-full h-auto object-cover"
                           loading={index < 8 ? "eager" : "lazy"}
                         />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="bg-white/90 backdrop-blur-sm rounded-full p-3">
+                        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20"></div>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="bg-white rounded-full p-3 shadow-lg">
                             <ExternalLink className="h-6 w-6 text-gray-800" />
                           </div>
                         </div>
