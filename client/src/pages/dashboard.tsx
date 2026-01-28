@@ -2050,6 +2050,13 @@ export default function Dashboard() {
                   {user?.name?.split(' ')[0] || 'Fotógrafo'}
                 </span>
               </h1>
+              
+              {(user as any)?.isAmbassador && (
+                <div className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 rounded-full border border-amber-300 dark:border-amber-700">
+                  <Award className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Embaixador Fottufy</span>
+                </div>
+              )}
             </div>
             
             <p className="hidden sm:block text-lg sm:text-xl text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
