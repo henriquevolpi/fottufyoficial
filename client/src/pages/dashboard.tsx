@@ -1434,31 +1434,31 @@ function Statistics({ setLocation, user }: { setLocation: (path: string) => void
 
         {/* Upload usage card */}
         <div className="relative group">
-          <div className={`absolute inset-0 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity ${user?.billingPeriod === 'yearly' ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 'bg-gradient-to-br from-emerald-500 to-teal-600'}`}></div>
-          <Card className={`relative shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full ${user?.billingPeriod === 'yearly' ? 'border border-amber-200/50 dark:border-amber-700/30' : 'border border-slate-100 dark:border-slate-800'}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full">
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:gap-4 mb-2 sm:mb-4">
-                <div className={`w-8 h-8 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform mb-1 sm:mb-0 ${user?.billingPeriod === 'yearly' ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/20' : 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20'}`}>
+                <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform mb-1 sm:mb-0">
                   <CreditCard className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
                 </div>
                 <div className="text-center sm:text-left">
-                  <p className={`text-[8px] sm:text-xs font-black uppercase tracking-widest ${user?.billingPeriod === 'yearly' ? 'text-amber-500' : 'text-slate-400'}`}>Plano</p>
-                  <p className={`hidden sm:block text-sm font-medium ${user?.billingPeriod === 'yearly' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                  <p className="text-[8px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Plano</p>
+                  <p className="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-300">
                     {planInfo.planType.charAt(0).toUpperCase() + planInfo.planType.slice(1)}
-                    {user?.billingPeriod === 'yearly' && <span className="text-[10px] ml-1 text-amber-500/80">Anual</span>}
+                    {user?.billingPeriod === 'yearly' && <span className="text-[10px] ml-1 text-amber-500 font-semibold">• Anual</span>}
                   </p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-center sm:justify-between items-center">
                   <span className="hidden sm:block text-xs font-bold text-slate-500 uppercase tracking-wider">Uso</span>
-                  <span className={`text-[10px] sm:text-sm font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${user?.billingPeriod === 'yearly' ? 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' : 'text-purple-600 bg-purple-100'}`}>
+                  <span className="text-[10px] sm:text-sm font-black text-purple-600 bg-purple-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
                     {planInfo.usedUploads}/{planInfo.planType === "unlimited" ? "∞" : planInfo.uploadLimit}
                   </span>
                 </div>
                 <div className="w-full h-1.5 sm:h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full rounded-full transition-all duration-500 ${user?.billingPeriod === 'yearly' ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-gradient-to-r from-purple-500 to-fuchsia-500'}`}
+                    className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full transition-all duration-500"
                     style={{ width: planInfo.planType === "unlimited" ? "0%" : `${planInfo.percentageUsed}%` }}
                   />
                 </div>
@@ -1466,7 +1466,7 @@ function Statistics({ setLocation, user }: { setLocation: (path: string) => void
             </CardContent>
             <CardFooter className="hidden sm:block px-4 pb-4 pt-0">
               <Button 
-                className={`w-full font-bold text-xs tracking-wide uppercase py-3 rounded-xl transition-all text-white shadow-lg hover:scale-105 ${user?.billingPeriod === 'yearly' ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-500/20' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-purple-500/20'}`}
+                className="w-full font-bold text-xs tracking-wide uppercase py-3 rounded-xl transition-all bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/20 hover:scale-105"
                 onClick={() => setLocation("/subscription")}
               >
                 <Settings className="mr-2 h-3 w-3" />
