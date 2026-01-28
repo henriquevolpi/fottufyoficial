@@ -201,10 +201,11 @@ export default function AuthPage() {
                     whileHover={{ scale: 1.05, rotate: [0, -5, 5, 0] }}
                     transition={{ duration: 0.4 }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl blur-lg opacity-50" />
-                    <div className="relative bg-gradient-to-br from-violet-500 to-fuchsia-600 p-3 rounded-2xl">
-                      <Camera className="w-8 h-8 text-white" />
-                    </div>
+                    <img 
+                      src="/fottufinhopng.webp" 
+                      alt="Fottufy" 
+                      className="w-20 h-20 object-contain"
+                    />
                   </motion.div>
                   
                   <motion.h1 
