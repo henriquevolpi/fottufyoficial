@@ -70,22 +70,33 @@ export const insertUserSchema = createInsertSchema(users).omit({
   portfolioPhotoLimit: true,
 });
 
+// IDs dos preços do Stripe (criados em Janeiro 2026)
+export const STRIPE_PRICE_IDS = {
+  BASICO_MONTHLY: "price_1SuMfDHhs27r0l2SHQWt0qC3",
+  BASICO_YEARLY: "price_1SuMfDHhs27r0l2SiHk6j5CN",
+  FOTOGRAFO_MONTHLY: "price_1SuMfDHhs27r0l2SBblpOkuo",
+  FOTOGRAFO_YEARLY: "price_1SuMfEHhs27r0l2SkyU5eXM6",
+  ESTUDIO_MONTHLY: "price_1SuMfEHhs27r0l2S0xd4wG9b",
+  ESTUDIO_YEARLY: "price_1SuMfEHhs27r0l2SlaPtrh7B",
+};
+
 // Definição dos planos disponíveis
 export const SUBSCRIPTION_PLANS = {
   FREE: {
     name: "Gratuito",
     type: "free",
     price: 0,
-    uploadLimit: 10, // limite para teste
+    uploadLimit: 10,
     description: "Plano para testes",
   },
+  // Planos antigos (mantidos para compatibilidade)
   BASIC: {
     name: "Básico",
     type: "basic",
     price: 14.9,
     uploadLimit: 10000,
     description: "10.000 uploads por conta",
-    stripePriceId: "price_1RLDC2Hhs27r0l2SJGfPUumX", // Adicionando o mesmo priceId do Basic_V2 para compatibilidade
+    stripePriceId: "price_1RLDC2Hhs27r0l2SJGfPUumX",
   },
   STANDARD: {
     name: "Padrão",
@@ -93,7 +104,7 @@ export const SUBSCRIPTION_PLANS = {
     price: 37.9,
     uploadLimit: 50000,
     description: "50.000 uploads por conta",
-    stripePriceId: "price_1RLDCLHhs27r0l2SXe9gkVlD", // Adicionando o mesmo priceId do Standard_V2 para compatibilidade
+    stripePriceId: "price_1RLDCLHhs27r0l2SXe9gkVlD",
   },
   PROFESSIONAL: {
     name: "Profissional",
@@ -101,9 +112,9 @@ export const SUBSCRIPTION_PLANS = {
     price: 70,
     uploadLimit: 100000,
     description: "100.000 uploads por conta",
-    stripePriceId: "price_1RLDCpHhs27r0l2S4InekNvP", // Adicionando o mesmo priceId do Professional_V2 para compatibilidade
+    stripePriceId: "price_1RLDCpHhs27r0l2S4InekNvP",
   },
-  // Novos planos V2
+  // Planos V2 (mantidos para compatibilidade com usuários existentes)
   BASIC_V2: {
     name: "Básico",
     type: "basic_v2",
@@ -127,6 +138,37 @@ export const SUBSCRIPTION_PLANS = {
     uploadLimit: 40000,
     description: "40.000 uploads por conta",
     stripePriceId: "price_1RLDCpHhs27r0l2S4InekNvP",
+  },
+  // Novos planos 2026 (com Stripe integrado)
+  BASICO: {
+    name: "Básico",
+    type: "basico",
+    price: 19.9,
+    yearlyPrice: 155,
+    uploadLimit: 6000,
+    description: "Até 6.000 fotos por mês",
+    stripePriceIdMonthly: STRIPE_PRICE_IDS.BASICO_MONTHLY,
+    stripePriceIdYearly: STRIPE_PRICE_IDS.BASICO_YEARLY,
+  },
+  FOTOGRAFO: {
+    name: "Fotógrafo",
+    type: "fotografo",
+    price: 29.9,
+    yearlyPrice: 235,
+    uploadLimit: 17000,
+    description: "Até 17.000 fotos por mês",
+    stripePriceIdMonthly: STRIPE_PRICE_IDS.FOTOGRAFO_MONTHLY,
+    stripePriceIdYearly: STRIPE_PRICE_IDS.FOTOGRAFO_YEARLY,
+  },
+  ESTUDIO: {
+    name: "Estúdio",
+    type: "estudio",
+    price: 49.9,
+    yearlyPrice: 369,
+    uploadLimit: 40000,
+    description: "Até 40.000 fotos por mês",
+    stripePriceIdMonthly: STRIPE_PRICE_IDS.ESTUDIO_MONTHLY,
+    stripePriceIdYearly: STRIPE_PRICE_IDS.ESTUDIO_YEARLY,
   },
 };
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect, Link } from "wouter";
+import { Redirect, Link, useSearch } from "wouter";
 import { 
   Loader2, 
   ArrowLeft, 
@@ -13,16 +13,25 @@ import {
   Sparkles,
   Shield,
   Clock,
-  HeartHandshake
+  HeartHandshake,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function SubscriptionPage() {
   const { user, isLoading } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  // Verificar se voltou do checkout cancelado
+  const searchParams = new URLSearchParams(window.location.search);
+  const canceled = searchParams.get('canceled');
   
   if (isLoading) {
     return (
@@ -38,10 +47,39 @@ export default function SubscriptionPage() {
   if (!user) {
     return <Redirect to="/auth" />;
   }
+
+  const handleSubscribe = async (planType: string) => {
+    setLoadingPlan(planType);
+    
+    try {
+      const response = await apiRequest("POST", "/api/stripe/create-checkout-session", {
+        planType,
+        billingCycle
+      });
+
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("URL de checkout não retornada");
+      }
+    } catch (error: any) {
+      console.error("Erro ao criar sessão de checkout:", error);
+      toast({
+        title: "Erro ao processar pagamento",
+        description: error.message || "Tente novamente em alguns instantes",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
   
   const monthlyPlans = [
     {
       name: "Plano Básico",
+      planType: "basico",
       price: "R$19,90",
       period: "/mês",
       icon: <Camera className="h-8 w-8" />,
@@ -54,11 +92,11 @@ export default function SubscriptionPage() {
         "Ideal para quem está começando",
         "Acesso imediato e suporte"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=z0pxaesy&checkoutMode=6",
       popular: false
     },
     {
       name: "Plano Fotógrafo",
+      planType: "fotografo",
       price: "R$29,90",
       period: "/mês",
       icon: <Zap className="h-8 w-8" />,
@@ -71,11 +109,11 @@ export default function SubscriptionPage() {
         "Perfeito para fotógrafos que atendem vários clientes na semana",
         "Suporte prioritário"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=tpfhcllk&checkoutMode=6",
       popular: true
     },
     {
       name: "Plano Estúdio",
+      planType: "estudio",
       price: "R$49,90",
       period: "/mês",
       icon: <Crown className="h-8 w-8" />,
@@ -88,7 +126,6 @@ export default function SubscriptionPage() {
         "Indicado para estúdios ou grandes equipes",
         "Suporte prioritário"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=xtuh4ji0&checkoutMode=6",
       popular: false
     }
   ];
@@ -96,23 +133,24 @@ export default function SubscriptionPage() {
   const yearlyPlans = [
     {
       name: "Básico Anual",
+      planType: "basico",
       price: "R$12,92",
       period: "/mês",
       icon: <Camera className="h-8 w-8" />,
       color: "from-blue-500 to-blue-600",
       borderColor: "border-blue-200",
-      badge: "Economia 25%",
+      badge: "Economia 35%",
       features: [
         "Até 6.000 fotos por mês",
         "Galerias ilimitadas", 
-        "Faturamento anual",
+        "Faturamento anual (R$155/ano)",
         "Suporte preferencial"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=qrud9ui2&checkoutMode=6",
       popular: false
     },
     {
       name: "Fotógrafo Anual",
+      planType: "fotografo",
       price: "R$19,59",
       period: "/mês",
       icon: <Zap className="h-8 w-8" />,
@@ -122,14 +160,14 @@ export default function SubscriptionPage() {
       features: [
         "Até 17.000 fotos por mês",
         "Galerias ilimitadas",
-        "Faturamento anual",
+        "Faturamento anual (R$235/ano)",
         "Suporte VIP"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=9w3ya3rl&checkoutMode=6",
       popular: true
     },
     {
       name: "Estúdio Anual",
+      planType: "estudio",
       price: "R$30,75",
       period: "/mês",
       icon: <Crown className="h-8 w-8" />,
@@ -139,10 +177,9 @@ export default function SubscriptionPage() {
       features: [
         "Até 40.000 fotos por mês",
         "Galerias ilimitadas",
-        "Faturamento anual",
+        "Faturamento anual (R$369/ano)",
         "Gerente de conta"
       ],
-      url: "https://pay.hotmart.com/K99608926Q?off=rh54m382&checkoutMode=6",
       popular: false
     }
   ];
@@ -161,6 +198,14 @@ export default function SubscriptionPage() {
             </Button>
           </Link>
         </div>
+
+        {/* Aviso de cancelamento */}
+        {canceled && (
+          <div className="mb-8 bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <p className="text-yellow-800">O pagamento foi cancelado. Você pode tentar novamente quando quiser.</p>
+          </div>
+        )}
         
         {/* Hero Section */}
         <div className="text-center mb-12">
@@ -214,7 +259,7 @@ export default function SubscriptionPage() {
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-green-500" />
-              <span>Segurança garantida</span>
+              <span>Pagamento seguro via Stripe</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-500" />
@@ -285,14 +330,23 @@ export default function SubscriptionPage() {
               </CardContent>
               
               <CardFooter className="pt-6 px-6 pb-6">
-                <a href={plan.url} target="_blank" rel="noopener noreferrer" className="w-full">
-                  <Button 
-                    className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90 text-white font-semibold text-lg py-6 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-200 hover:-translate-y-1`}
-                  >
-                    <Users className="mr-2 h-5 w-5" />
-                    Assinar Agora
-                  </Button>
-                </a>
+                <Button 
+                  className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90 text-white font-semibold text-lg py-6 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-200 hover:-translate-y-1`}
+                  onClick={() => handleSubscribe(plan.planType)}
+                  disabled={loadingPlan === plan.planType}
+                >
+                  {loadingPlan === plan.planType ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Users className="mr-2 h-5 w-5" />
+                      Assinar Agora
+                    </>
+                  )}
+                </Button>
               </CardFooter>
             </Card>
           ))}
@@ -388,9 +442,10 @@ export default function SubscriptionPage() {
             <Button 
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-6 text-lg font-semibold rounded-xl"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Camera className="mr-2 h-5 w-5" />
-              Começar agora
+              Ver Planos
             </Button>
           </div>
           <p className="text-blue-200 text-sm mt-6">

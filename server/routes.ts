@@ -7,7 +7,8 @@ import {
   insertUserSchema, 
   insertProjectSchema, 
   WebhookPayload, 
-  SUBSCRIPTION_PLANS, 
+  SUBSCRIPTION_PLANS,
+  STRIPE_PRICE_IDS,
   Project,
   projects,
   newProjects,
@@ -2719,6 +2720,242 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao buscar planos de assinatura:", error);
       res.status(500).json({ message: "Falha ao buscar planos de assinatura" });
+    }
+  });
+
+  // Rota para criar sessão de checkout do Stripe (assinaturas recorrentes)
+  app.post("/api/stripe/create-checkout-session", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { planType, billingCycle } = req.body;
+
+      if (!planType) {
+        return res.status(400).json({ message: "planType é obrigatório" });
+      }
+
+      // Validar planType contra planos conhecidos
+      const validPlanTypes = ['basico', 'fotografo', 'estudio'];
+      if (!validPlanTypes.includes(planType)) {
+        return res.status(400).json({ message: "Tipo de plano inválido" });
+      }
+
+      // Validar billingCycle
+      const cycle = billingCycle || 'monthly';
+      const validBillingCycles = ['monthly', 'yearly'];
+      if (!validBillingCycles.includes(cycle)) {
+        return res.status(400).json({ message: "Ciclo de cobrança inválido" });
+      }
+
+      // Derivar priceId no servidor a partir de planType + billingCycle (segurança)
+      const priceMapping: Record<string, Record<string, string>> = {
+        'basico': {
+          'monthly': STRIPE_PRICE_IDS.BASICO_MONTHLY,
+          'yearly': STRIPE_PRICE_IDS.BASICO_YEARLY
+        },
+        'fotografo': {
+          'monthly': STRIPE_PRICE_IDS.FOTOGRAFO_MONTHLY,
+          'yearly': STRIPE_PRICE_IDS.FOTOGRAFO_YEARLY
+        },
+        'estudio': {
+          'monthly': STRIPE_PRICE_IDS.ESTUDIO_MONTHLY,
+          'yearly': STRIPE_PRICE_IDS.ESTUDIO_YEARLY
+        }
+      };
+
+      const derivedPriceId = priceMapping[planType]?.[cycle];
+      if (!derivedPriceId) {
+        return res.status(400).json({ message: "Combinação de plano/ciclo inválida" });
+      }
+
+      if (!stripe) {
+        return res.status(500).json({ 
+          message: "Erro no serviço de pagamento", 
+          details: "Stripe não está configurado corretamente" 
+        });
+      }
+
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      // Verificar se o usuário já tem um customer ID no Stripe
+      let stripeCustomerId = user.stripeCustomerId;
+
+      if (!stripeCustomerId) {
+        // Criar customer no Stripe
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.fullName || user.username,
+          metadata: {
+            userId: user.id.toString(),
+            fottufy: 'true'
+          }
+        });
+        stripeCustomerId = customer.id;
+        
+        // Salvar o customerId no banco (se o campo existir)
+        try {
+          await storage.updateUser(user.id, { stripeCustomerId: customer.id } as any);
+        } catch (e) {
+          console.log("Campo stripeCustomerId não existe no schema, continuando...");
+        }
+      }
+
+      // Determinar a URL de sucesso e cancelamento
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : process.env.REPLIT_DOMAINS 
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'http://localhost:5000';
+
+      // Criar a sessão de checkout
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: derivedPriceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/subscription?canceled=true`,
+        metadata: {
+          userId: user.id.toString(),
+          planType: planType,
+          billingCycle: billingCycle || 'monthly',
+          userEmail: user.email
+        },
+        subscription_data: {
+          metadata: {
+            userId: user.id.toString(),
+            planType: planType,
+            billingCycle: billingCycle || 'monthly'
+          }
+        },
+        allow_promotion_codes: true,
+        billing_address_collection: 'auto',
+        locale: 'pt-BR'
+      });
+
+      console.log(`Stripe Checkout Session criada: ${session.id} para usuário ${user.id} (${user.email})`);
+
+      res.json({ 
+        sessionId: session.id,
+        url: session.url
+      });
+    } catch (error: any) {
+      console.error("Erro ao criar sessão de checkout:", error);
+      res.status(500).json({ 
+        message: "Falha ao criar sessão de pagamento",
+        error: error.message 
+      });
+    }
+  });
+
+  // Rota para verificar status da sessão de checkout (após redirecionamento de sucesso)
+  app.get("/api/stripe/checkout-session/:sessionId", authenticate, async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.params;
+      const user = req.user;
+
+      if (!user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe não configurado" });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['subscription', 'customer']
+      });
+
+      // Validar que a sessão pertence ao usuário autenticado (dupla verificação: metadata + customer)
+      const sessionUserId = parseInt(session.metadata?.userId || '0');
+      if (sessionUserId !== user.id) {
+        console.warn(`Tentativa de acessar sessão de outro usuário: user ${user.id} tentou acessar sessão do user ${sessionUserId}`);
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      // Verificação adicional: customer da sessão deve corresponder ao customer do usuário
+      const sessionCustomerId = typeof session.customer === 'string' 
+        ? session.customer 
+        : (session.customer as Stripe.Customer)?.id;
+      
+      if (user.stripeCustomerId && sessionCustomerId && sessionCustomerId !== user.stripeCustomerId) {
+        console.warn(`Customer mismatch: user ${user.id} tem customerId ${user.stripeCustomerId} mas sessão é do customer ${sessionCustomerId}`);
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      if (session.payment_status === 'paid' && session.subscription) {
+        const subscription = session.subscription as Stripe.Subscription;
+        const planType = session.metadata?.planType || 'basico';
+        const billingCycle = session.metadata?.billingCycle || 'monthly';
+
+        // Validar planType contra planos conhecidos
+        const validPlanTypes = ['basico', 'fotografo', 'estudio'];
+        if (!validPlanTypes.includes(planType)) {
+          return res.status(400).json({ message: "Tipo de plano inválido na sessão" });
+        }
+        
+        // Mapear planType para uploadLimit
+        const planLimits: Record<string, number> = {
+          'basico': 6000,
+          'fotografo': 17000,
+          'estudio': 40000
+        };
+
+        const uploadLimit = planLimits[planType] || 6000;
+        
+        // Usar datas do Stripe (mais precisas)
+        const startDate = new Date(subscription.current_period_start * 1000);
+        const endDate = new Date(subscription.current_period_end * 1000);
+        
+        // Verificar se já foi atualizado (idempotência)
+        const currentUser = await storage.getUser(user.id);
+        if (currentUser?.stripeSubscriptionId === subscription.id && currentUser?.subscriptionStatus === 'active') {
+          // Já foi atualizado, retornar sucesso sem modificar
+          console.log(`Sessão ${sessionId} já processada para usuário ${user.id}`);
+          return res.json({
+            success: true,
+            planType,
+            billingCycle,
+            subscriptionId: subscription.id,
+            currentPeriodEnd: endDate,
+            alreadyProcessed: true
+          });
+        }
+        
+        // Atualizar o usuário no banco de dados
+        await storage.updateUser(user.id, {
+          planType: planType,
+          uploadLimit: uploadLimit,
+          subscriptionStatus: 'active',
+          subscriptionStartDate: startDate,
+          subscriptionEndDate: endDate,
+          stripeSubscriptionId: subscription.id
+        } as any);
+        
+        console.log(`Usuário ${user.id} atualizado para plano ${planType} via Stripe Checkout (subscription: ${subscription.id})`);
+
+        res.json({
+          success: true,
+          planType,
+          billingCycle,
+          subscriptionId: subscription.id,
+          currentPeriodEnd: endDate
+        });
+      } else {
+        res.json({
+          success: false,
+          status: session.payment_status
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro ao verificar sessão:", error);
+      res.status(500).json({ message: "Erro ao verificar pagamento", error: error.message });
     }
   });
   
