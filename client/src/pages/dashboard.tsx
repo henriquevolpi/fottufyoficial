@@ -1497,13 +1497,15 @@ function Statistics({ setLocation, user }: { setLocation: (path: string) => void
                   <span className="text-[9px] sm:text-xs font-bold text-amber-600 dark:text-amber-400">Anual</span>
                 </div>
               </CardContent>
-              <CardFooter className="hidden sm:block px-4 pb-4 pt-0">
-                <Link href="/meu-portfolio">
+              <CardFooter className="px-3 sm:px-4 pb-3 sm:pb-4 pt-0">
+                <Link href="/meu-portfolio" className="w-full">
                   <Button 
-                    className="w-full font-bold text-xs tracking-wide uppercase py-3 rounded-xl transition-all bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/20 hover:scale-105"
+                    size="sm"
+                    className="w-full font-bold text-[10px] sm:text-xs tracking-wide uppercase py-1.5 sm:py-3 rounded-lg sm:rounded-xl transition-all bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/20 hover:scale-105"
                   >
-                    <ExternalLink className="mr-2 h-3 w-3" />
-                    Acessar
+                    <ExternalLink className="mr-1 sm:mr-2 h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    <span className="hidden sm:inline">Acessar</span>
+                    <span className="sm:hidden">Ver</span>
                   </Button>
                 </Link>
               </CardFooter>
