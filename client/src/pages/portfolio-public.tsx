@@ -525,20 +525,80 @@ export default function PortfolioPublicPage() {
                 .map((photo, index) => (
                 <div 
                   key={photo.id} 
-                  className="break-inside-avoid group cursor-pointer"
+                  className="break-inside-avoid cursor-pointer"
                   onClick={() => openLightbox(photo)}
+                  onMouseEnter={(e) => {
+                    const card = e.currentTarget.querySelector('[data-card]') as HTMLElement;
+                    const img = e.currentTarget.querySelector('img') as HTMLElement;
+                    const overlay = e.currentTarget.querySelector('[data-overlay]') as HTMLElement;
+                    const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
+                    if (card) {
+                      card.style.transform = 'translateY(-8px) translateZ(0)';
+                      card.style.webkitTransform = 'translateY(-8px) translateZ(0)';
+                      card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
+                    }
+                    if (img) {
+                      img.style.transform = 'scale(1.08)';
+                      img.style.webkitTransform = 'scale(1.08)';
+                    }
+                    if (overlay) overlay.style.opacity = '0.2';
+                    if (icon) icon.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    const card = e.currentTarget.querySelector('[data-card]') as HTMLElement;
+                    const img = e.currentTarget.querySelector('img') as HTMLElement;
+                    const overlay = e.currentTarget.querySelector('[data-overlay]') as HTMLElement;
+                    const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
+                    if (card) {
+                      card.style.transform = 'translateZ(0)';
+                      card.style.webkitTransform = 'translateZ(0)';
+                      card.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                    }
+                    if (img) {
+                      img.style.transform = 'scale(1)';
+                      img.style.webkitTransform = 'scale(1)';
+                    }
+                    if (overlay) overlay.style.opacity = '0';
+                    if (icon) icon.style.opacity = '0';
+                  }}
                 >
-                  <Card className="overflow-hidden hover:shadow-xl bg-white border-0 shadow-md">
+                  <Card 
+                    data-card
+                    className="overflow-hidden bg-white border-0 shadow-md"
+                    style={{ 
+                      transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+                      WebkitTransition: 'box-shadow 0.3s ease, -webkit-transform 0.3s ease',
+                      WebkitTransform: 'translateZ(0)',
+                      transform: 'translateZ(0)'
+                    }}
+                  >
                     <CardContent className="p-0">
                       <div className="relative overflow-hidden">
                         <img
                           src={photo.photoUrl}
                           alt={photo.originalName || `Foto ${photo.id}`}
                           className="w-full h-auto object-cover"
+                          style={{
+                            transition: 'transform 0.5s ease',
+                            WebkitTransition: '-webkit-transform 0.5s ease',
+                            WebkitTransform: 'scale(1)',
+                            transform: 'scale(1)',
+                            willChange: 'transform',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden'
+                          }}
                           loading={index < 8 ? "eager" : "lazy"}
                         />
-                        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20"></div>
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div 
+                          data-overlay
+                          className="absolute inset-0 bg-black pointer-events-none"
+                          style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
+                        ></div>
+                        <div 
+                          data-icon
+                          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                          style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
+                        >
                           <div className="bg-white rounded-full p-3 shadow-lg">
                             <ExternalLink className="h-6 w-6 text-gray-800" />
                           </div>
