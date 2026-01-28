@@ -248,99 +248,150 @@ export default function PortfolioPublicPage() {
         </div>
       </nav>
 
-      {/* Hero Section with Banner */}
-      <div className="relative overflow-hidden">
-        {/* Custom Banner */}
-        {portfolio.bannerUrl ? (
-          <div className="relative h-[60vh] min-h-[400px] max-h-[600px]">
-            <div className="absolute inset-0">
-              <img
-                src={portfolio.bannerUrl}
-                alt={`Banner do portfólio ${portfolio.name}`}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+      {/* Hero Section Premium - Experiência Imersiva */}
+      {(() => {
+        const heroImageUrl = portfolio.bannerUrl || (portfolio.photos.length > 0 ? portfolio.photos[0].photoUrl : null);
+        
+        return heroImageUrl ? (
+          <div className="relative h-[100svh] md:h-[85vh] overflow-hidden">
+            {/* Background principal com efeito Ken Burns suave */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center animate-[kenburns_20s_ease-in-out_infinite_alternate]"
+              style={{
+                backgroundImage: `url(${heroImageUrl})`,
+              }}
+            />
+            
+            {/* Camada de blur sutil */}
+            <div className="absolute inset-0 backdrop-blur-[1px]" />
+            
+            {/* Gradiente cinematográfico multicamada */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
+            
+            {/* Efeito vinheta nas bordas */}
+            <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.5)]" />
+            
+            {/* Partículas decorativas (bokeh effect) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-white/5 rounded-full blur-3xl animate-pulse" style={{animationDuration: '4s'}} />
+              <div className="absolute top-1/3 right-1/4 w-24 h-24 bg-purple-300/10 rounded-full blur-2xl animate-pulse" style={{animationDuration: '5s', animationDelay: '1s'}} />
+              <div className="absolute bottom-1/3 left-1/3 w-40 h-40 bg-fuchsia-300/5 rounded-full blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '2s'}} />
             </div>
             
-            {/* Content overlay on banner */}
-            <div className="relative h-full flex items-end">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 w-full">
-                <div className="text-center text-white">
-                  <Badge variant="secondary" className="mb-4 bg-white/20 text-white border-white/30 backdrop-blur-sm">
+            {/* Conteúdo principal centralizado */}
+            <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
+              {/* Badge decorativo animado */}
+              <div className="mb-6 animate-[fadeInDown_1s_ease-out]">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
                     Portfólio Profissional
-                  </Badge>
-                  
-                  <h1 className="text-5xl md:text-6xl font-bold mb-6 drop-shadow-lg">
-                    {portfolio.name}
-                  </h1>
-                  
-                  {portfolio.description && (
-                    <p className="text-xl md:text-2xl text-white/90 mb-8 leading-relaxed max-w-4xl mx-auto drop-shadow">
-                      {portfolio.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex flex-wrap items-center justify-center gap-4 text-white/80">
-                    <div className="flex items-center backdrop-blur-sm bg-white/10 rounded-full px-4 py-2">
-                      <User className="mr-2 h-5 w-5" />
-                      <span className="font-medium">{portfolio.userName}</span>
-                    </div>
-                    
-                    <div className="flex items-center backdrop-blur-sm bg-white/10 rounded-full px-4 py-2">
-                      <Camera className="mr-2 h-5 w-5" />
-                      <span className="font-medium">{portfolio.photos.length} fotos</span>
-                    </div>
-                    
-                    <div className="flex items-center backdrop-blur-sm bg-white/10 rounded-full px-4 py-2">
-                      <Calendar className="mr-2 h-5 w-5" />
-                      <span className="font-medium">{new Date(portfolio.createdAt).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                  </div>
+                  </span>
+                </div>
+              </div>
+              
+              {/* Título principal com animação */}
+              <h1 className="font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-white tracking-tight uppercase drop-shadow-2xl animate-[fadeInUp_1s_ease-out_0.3s_both] leading-[0.9]">
+                {portfolio.name}
+              </h1>
+              
+              {/* Linha decorativa animada */}
+              <div className="mt-6 mb-4 animate-[scaleX_1s_ease-out_0.6s_both]">
+                <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
+              </div>
+              
+              {/* Nome do fotógrafo */}
+              <p className="text-white/80 text-lg sm:text-xl md:text-2xl font-light tracking-wide animate-[fadeInUp_1s_ease-out_0.5s_both]">
+                {portfolio.userName}
+              </p>
+              
+              {/* Descrição se houver */}
+              {portfolio.description && (
+                <p className="mt-4 text-white/70 text-base sm:text-lg max-w-2xl mx-auto animate-[fadeInUp_1s_ease-out_0.6s_both]">
+                  {portfolio.description}
+                </p>
+              )}
+              
+              {/* Badges de informação com glassmorphism */}
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 animate-[fadeInUp_1s_ease-out_0.7s_both]">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
+                  <Camera className="w-4 h-4 text-white/70" />
+                  <span className="text-white text-sm font-medium">{portfolio.photos.length} fotos</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
+                  <Calendar className="w-4 h-4 text-white/70" />
+                  <span className="text-white text-sm font-medium">
+                    {new Date(portfolio.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
                 </div>
               </div>
             </div>
+            
+            {/* Indicador de scroll animado */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-[fadeIn_1s_ease-out_1.5s_both] md:bottom-10">
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-white/60 text-xs uppercase tracking-widest font-medium">Ver fotos</span>
+                <div className="w-6 h-10 border-2 border-white/30 rounded-full p-1 flex justify-center">
+                  <div className="w-1.5 h-3 bg-white/70 rounded-full animate-[scrollDown_2s_ease-in-out_infinite]" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Overlay de proteção inferior para transição suave */}
+            <div className={`absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t ${isDarkMode ? 'from-gray-900' : 'from-slate-50'} to-transparent`} />
           </div>
         ) : (
-          /* Default gradient hero when no banner */
-          <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white">
+          /* Default gradient hero when no banner or photos */
+          <div className="relative h-[60vh] min-h-[400px] bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white overflow-hidden">
             <div className="absolute inset-0 bg-black/20"></div>
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-              <div className="text-center">
-                <Badge variant="secondary" className="mb-6 bg-white/20 text-white border-white/30 backdrop-blur-sm text-lg px-4 py-2">
-                  Portfólio Profissional
-                </Badge>
-                
-                <h1 className="text-5xl md:text-7xl font-bold mb-8 drop-shadow-lg">
-                  {portfolio.name}
-                </h1>
-                
-                {portfolio.description && (
-                  <p className="text-xl md:text-2xl text-white/90 mb-12 leading-relaxed max-w-4xl mx-auto">
-                    {portfolio.description}
-                  </p>
-                )}
-                
-                <div className="flex items-center justify-center space-x-8 text-lg">
-                  <div className="flex items-center backdrop-blur-sm bg-white/10 rounded-full px-6 py-3">
-                    <User className="mr-3 h-6 w-6" />
-                    <span className="font-medium">{portfolio.userName}</span>
-                  </div>
-                  
-                  <div className="flex items-center backdrop-blur-sm bg-white/10 rounded-full px-6 py-3">
-                    <Camera className="mr-3 h-6 w-6" />
-                    <span className="font-medium">{portfolio.photos.length} fotos</span>
-                  </div>
-                  
-                  <div className="hidden sm:flex items-center backdrop-blur-sm bg-white/10 rounded-full px-6 py-3">
-                    <Calendar className="mr-3 h-6 w-6" />
-                    <span className="font-medium">{new Date(portfolio.createdAt).toLocaleDateString('pt-BR')}</span>
-                  </div>
+            
+            {/* Partículas decorativas */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse" style={{animationDuration: '4s'}} />
+              <div className="absolute top-1/3 right-1/4 w-24 h-24 bg-purple-300/20 rounded-full blur-2xl animate-pulse" style={{animationDuration: '5s', animationDelay: '1s'}} />
+            </div>
+            
+            <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
+              <div className="mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
+                    Portfólio Profissional
+                  </span>
+                </div>
+              </div>
+              
+              <h1 className="font-black text-4xl sm:text-6xl md:text-7xl text-white tracking-tight uppercase drop-shadow-2xl leading-[0.9]">
+                {portfolio.name}
+              </h1>
+              
+              <div className="mt-6 mb-4">
+                <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
+              </div>
+              
+              <p className="text-white/80 text-lg sm:text-xl md:text-2xl font-light tracking-wide">
+                {portfolio.userName}
+              </p>
+              
+              {portfolio.description && (
+                <p className="mt-4 text-white/70 text-base sm:text-lg max-w-2xl mx-auto">
+                  {portfolio.description}
+                </p>
+              )}
+              
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10">
+                  <Camera className="w-4 h-4 text-white/70" />
+                  <span className="text-white text-sm font-medium">{portfolio.photos.length} fotos</span>
                 </div>
               </div>
             </div>
+            
+            <div className={`absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t ${isDarkMode ? 'from-gray-900' : 'from-slate-50'} to-transparent`} />
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Navigation Tabs */}
       {portfolio && (
