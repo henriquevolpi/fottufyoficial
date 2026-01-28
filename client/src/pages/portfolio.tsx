@@ -1037,18 +1037,6 @@ export default function PortfolioPage() {
                       <Button
                         onClick={() => {
                           setSelectedPortfolioId(editingPortfolio.id);
-                          setIsAddPhotosOpen(true);
-                        }}
-                        size="sm"
-                        variant="outline"
-                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                      >
-                        <Plus className="mr-1 h-4 w-4" />
-                        Adicionar da Galeria
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setSelectedPortfolioId(editingPortfolio.id);
                           setIsUploadModalOpen(true);
                         }}
                         size="sm"
