@@ -13,6 +13,7 @@ import Admin from "@/pages/admin";
 import AdminProjects from "@/pages/admin-projects";
 import AuthPage from "@/pages/auth-page";
 import SubscriptionPage from "@/pages/subscription";
+import SubscriptionPixPage from "@/pages/subscription-pix";
 import SubscriptionSuccessPage from "@/pages/subscription-success";
 import BlackFridayPage from "@/pages/blackfriday";
 import Checkout from "@/pages/checkout";
@@ -112,6 +113,7 @@ function Router() {
         {(params) => <ProjectViewPublicRoute params={params} />}
       </Route>
       <ProtectedRoute path="/subscription" component={SubscriptionPage} />
+      <ProtectedRoute path="/subscription/pix" component={SubscriptionPixPage} />
       <ProtectedRoute path="/subscription/success" component={SubscriptionSuccessPage} />
       <ProtectedRoute path="/blackfriday" component={BlackFridayPage} />
       <ProtectedRoute path="/checkout" component={Checkout} />

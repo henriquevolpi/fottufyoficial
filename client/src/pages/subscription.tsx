@@ -14,7 +14,8 @@ import {
   Shield,
   Clock,
   HeartHandshake,
-  AlertCircle
+  AlertCircle,
+  QrCode
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -269,6 +270,18 @@ export default function SubscriptionPage() {
               <HeartHandshake className="h-4 w-4 text-purple-500" />
               <span>Suporte brasileiro</span>
             </div>
+          </div>
+          
+          <div className="mt-6">
+            <Link href="/subscription/pix">
+              <Button 
+                variant="outline" 
+                className="bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 font-medium px-6 py-3"
+              >
+                <QrCode className="mr-2 h-4 w-4" />
+                Precisa pagar por PIX? Clique aqui
+              </Button>
+            </Link>
           </div>
         </div>
         
