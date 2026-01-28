@@ -2359,12 +2359,6 @@ export default function Dashboard() {
                   </div>
                 </div>
                 
-                {/* Código */}
-                <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
-                  <p className="text-sm text-gray-600 mb-1">Seu código de indicação</p>
-                  <p className="text-3xl font-black text-purple-600 tracking-widest">{referralData.referralCode}</p>
-                </div>
-                
                 {/* Estatísticas */}
                 {referralStats && (
                   <div className="grid grid-cols-2 gap-4">
