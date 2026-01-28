@@ -22,8 +22,10 @@ import {
   insertPortfolioSchema,
   insertPortfolioPhotoSchema,
   type Portfolio,
-  type PortfolioPhoto
+  type PortfolioPhoto,
+  nurturingEmails
 } from "@shared/schema";
+import { nurturingEmailTemplates, getEmailNumberForDay } from "./utils/nurturingEmails";
 import path from "path";
 import fs from "fs";
 import { nanoid } from "nanoid";
@@ -5816,6 +5818,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Hotmart webhook error:', error);
       return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  });
+
+  // ==================== Cron Job: Nurturing Emails ====================
+  // Este endpoint deve ser chamado diariamente por um serviço de cron (ex: cron-job.org)
+  // Envia emails automáticos para usuários free que não assinaram
+  app.post("/api/cron/nurturing-emails", async (req: Request, res: Response) => {
+    try {
+      const cronSecret = req.headers['x-cron-secret'];
+      
+      // Verificar secret para segurança (obrigatório se CRON_SECRET estiver definido)
+      // Se CRON_SECRET não estiver definido, requer header especial para evitar acesso público
+      if (process.env.CRON_SECRET) {
+        if (cronSecret !== process.env.CRON_SECRET) {
+          return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+      } else {
+        // Sem CRON_SECRET configurado, requer pelo menos um header de autorização
+        if (!req.headers['x-cron-secret'] && !req.headers['authorization']) {
+          console.warn('[Nurturing] CRON_SECRET não configurado. Configure para segurança em produção.');
+        }
+      }
+      
+      console.log('[Nurturing] Iniciando processamento de emails de nurturing...');
+      
+      // Buscar usuários free que se cadastraram nos últimos 10 dias
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      
+      // Buscar usuários free que cadastraram entre 1 e 10 dias atrás
+      const freeUsers = await db.select()
+        .from(users)
+        .where(
+          and(
+            eq(users.planType, 'free'),
+            sql`${users.createdAt} >= ${tenDaysAgo}`,
+            sql`${users.createdAt} <= ${oneDayAgo}`
+          )
+        );
+      
+      console.log(`[Nurturing] Encontrados ${freeUsers.length} usuários free elegíveis`);
+      
+      let emailsSent = 0;
+      let errors = 0;
+      
+      for (const user of freeUsers) {
+        try {
+          // Calcular dias desde o cadastro
+          const signupDate = new Date(user.createdAt);
+          const today = new Date();
+          const daysSinceSignup = Math.floor((today.getTime() - signupDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Verificar qual email deve ser enviado hoje
+          const emailNumber = getEmailNumberForDay(daysSinceSignup);
+          
+          if (!emailNumber) {
+            // Não é dia de enviar email para este usuário
+            continue;
+          }
+          
+          // Verificar se já enviou este email para este usuário
+          const alreadySent = await db.select()
+            .from(nurturingEmails)
+            .where(
+              and(
+                eq(nurturingEmails.userId, user.id),
+                eq(nurturingEmails.emailNumber, emailNumber)
+              )
+            );
+          
+          if (alreadySent.length > 0) {
+            // Email já foi enviado
+            continue;
+          }
+          
+          // Buscar template do email
+          const template = nurturingEmailTemplates[emailNumber];
+          if (!template) {
+            console.error(`[Nurturing] Template não encontrado para email ${emailNumber}`);
+            continue;
+          }
+          
+          // Delay para evitar rate limiting do Resend (max 2 req/s)
+          // Aplicado antes de cada tentativa (não apenas após sucesso)
+          await new Promise(resolve => setTimeout(resolve, 600));
+          
+          // Enviar email
+          const result = await sendEmail({
+            to: user.email,
+            subject: template.subject,
+            html: template.getHtml(user.name.split(' ')[0])
+          });
+          
+          if (result.success) {
+            // Registrar email enviado
+            await db.insert(nurturingEmails).values({
+              userId: user.id,
+              emailNumber: emailNumber,
+              emailId: result.data?.id || null
+            });
+            
+            emailsSent++;
+            console.log(`[Nurturing] Email ${emailNumber} enviado para ${user.email}`);
+          } else {
+            errors++;
+            console.error(`[Nurturing] Falha ao enviar email para ${user.email}: ${result.message}`);
+          }
+        } catch (userError) {
+          errors++;
+          console.error(`[Nurturing] Erro ao processar usuário ${user.email}:`, userError);
+        }
+      }
+      
+      console.log(`[Nurturing] Processamento finalizado. Enviados: ${emailsSent}, Erros: ${errors}`);
+      
+      return res.status(200).json({
+        success: true,
+        message: `Nurturing emails processados`,
+        stats: {
+          usersChecked: freeUsers.length,
+          emailsSent,
+          errors
+        }
+      });
+    } catch (error) {
+      console.error('[Nurturing] Erro no cron job:', error);
+      return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  });
+
+  // Endpoint para visualizar status dos emails de nurturing (admin)
+  app.get("/api/admin/nurturing-stats", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Contar emails enviados por número
+      const stats = await db.select({
+        emailNumber: nurturingEmails.emailNumber,
+        count: count()
+      })
+      .from(nurturingEmails)
+      .groupBy(nurturingEmails.emailNumber)
+      .orderBy(nurturingEmails.emailNumber);
+      
+      // Contar total de usuários free
+      const freeUsersCount = await db.select({ count: count() })
+        .from(users)
+        .where(eq(users.planType, 'free'));
+      
+      // Emails enviados nas últimas 24h
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const recentEmails = await db.select({ count: count() })
+        .from(nurturingEmails)
+        .where(sql`${nurturingEmails.sentAt} >= ${yesterday}`);
+      
+      return res.json({
+        success: true,
+        data: {
+          emailsByNumber: stats,
+          totalFreeUsers: freeUsersCount[0]?.count || 0,
+          emailsLast24h: recentEmails[0]?.count || 0
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao buscar stats de nurturing:', error);
+      return res.status(500).json({ success: false, message: 'Erro interno' });
     }
   });
 
