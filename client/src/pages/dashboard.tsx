@@ -1287,7 +1287,7 @@ function DashboardBanner() {
 }
 
 // Dashboard statistics component
-function Statistics({ setLocation }: { setLocation: (path: string) => void }) {
+function Statistics({ setLocation, user }: { setLocation: (path: string) => void; user: any }) {
   // Statistics data
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/user/stats"],
@@ -2097,7 +2097,7 @@ export default function Dashboard() {
         {/* Promotional Banner - only shown for free users */}
         {user?.planType === 'free' && <PromotionalBanner />}
         
-        <Statistics setLocation={setLocation} />
+        <Statistics setLocation={setLocation} user={user} />
         
         {/* Meus Projetos Section - Youze Style */}
         <div className="mt-16">
