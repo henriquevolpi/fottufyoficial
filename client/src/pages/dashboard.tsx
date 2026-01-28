@@ -2307,60 +2307,59 @@ export default function Dashboard() {
       
       {/* Modal de Indicação */}
       <Dialog open={referralModalOpen} onOpenChange={setReferralModalOpen}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-lg mx-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
-              <Gift className="h-6 w-6 text-purple-600" />
+        <DialogContent className="w-[calc(100%-2rem)] max-w-lg mx-auto max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg sm:text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
+              <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
               Indique e Ganhe!
               {referralStats?.isAmbassador && (
-                <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-600 text-white rounded-full">
+                <span className="ml-1 px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-600 text-white rounded-full">
                   Embaixador
                 </span>
               )}
             </DialogTitle>
-            <DialogDescription className="text-base mt-1">
-              Indique amigos e ganhe +1.000 fotos extras quando eles assinarem!
+            <DialogDescription className="text-sm mt-1">
+              Indique amigos e ganhe +1.000 fotos extras!
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
+          <div className="space-y-3 sm:space-y-4 py-2">
             {referralLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                <span className="ml-2 text-gray-600">Carregando...</span>
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+                <span className="ml-2 text-gray-600 text-sm">Carregando...</span>
               </div>
             ) : referralData ? (
               <>
                 {/* Selo de Embaixador (se tiver) */}
                 {referralStats?.isAmbassador && (
-                  <div className="text-center p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-300">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Award className="h-6 w-6 text-amber-600" />
-                      <span className="text-lg font-bold text-amber-700">Embaixador Fottufy</span>
+                  <div className="text-center p-2.5 sm:p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border-2 border-amber-300">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+                      <span className="text-sm sm:text-base font-bold text-amber-700">Embaixador Fottufy</span>
                     </div>
-                    <p className="text-sm text-amber-600">Você já indicou clientes que assinaram!</p>
+                    <p className="text-xs text-amber-600">Você já indicou clientes que assinaram!</p>
                   </div>
                 )}
                 
                 {/* Fotos Bônus Acumuladas */}
                 {referralStats && referralStats.bonusPhotos > 0 && (
-                  <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                    <p className="text-sm text-gray-600 mb-1">Fotos extras ganhas por indicações</p>
-                    <p className="text-3xl font-black text-green-600">+{referralStats.bonusPhotos.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500 mt-1">Adicionadas ao seu limite mensal</p>
+                  <div className="text-center p-2.5 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                    <p className="text-xs text-gray-600">Fotos extras ganhas</p>
+                    <p className="text-2xl sm:text-3xl font-black text-green-600">+{referralStats.bonusPhotos.toLocaleString()}</p>
                   </div>
                 )}
                 
                 {/* Link de indicação */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Seu link de indicação:</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700">Seu link de indicação:</label>
                   <div className="flex gap-2">
                     <Input 
                       value={referralData.referralLink} 
                       readOnly 
-                      className="flex-1 bg-gray-50 text-sm"
+                      className="flex-1 bg-gray-50 text-xs sm:text-sm h-9"
                     />
-                    <Button onClick={copyReferralLink} className="bg-purple-600 hover:bg-purple-700">
+                    <Button onClick={copyReferralLink} className="bg-purple-600 hover:bg-purple-700 h-9 px-3">
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
@@ -2368,30 +2367,30 @@ export default function Dashboard() {
                 
                 {/* Estatísticas */}
                 {referralStats && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-xl">
-                      <p className="text-2xl font-bold text-blue-600">{referralStats.total}</p>
-                      <p className="text-sm text-gray-600">Indicações</p>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="text-center p-2.5 bg-blue-50 rounded-lg">
+                      <p className="text-xl sm:text-2xl font-bold text-blue-600">{referralStats.total}</p>
+                      <p className="text-xs text-gray-600">Indicações</p>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-xl">
-                      <p className="text-2xl font-bold text-green-600">{referralStats.converted}</p>
-                      <p className="text-sm text-gray-600">Convertidas</p>
+                    <div className="text-center p-2.5 bg-green-50 rounded-lg">
+                      <p className="text-xl sm:text-2xl font-bold text-green-600">{referralStats.converted}</p>
+                      <p className="text-xs text-gray-600">Convertidas</p>
                     </div>
                   </div>
                 )}
                 
                 {/* Informação */}
-                <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <Heart className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    <p className="font-semibold mb-1">Como funciona?</p>
-                    <p>Quando alguém se cadastrar usando seu link e assinar um plano, você ganha automaticamente <strong>+1.000 fotos extras</strong> no seu limite mensal!</p>
-                    <p className="mt-2 text-amber-700 font-medium">Na primeira indicação convertida, você também ganha o selo de <strong>Embaixador Fottufy</strong>!</p>
+                <div className="flex items-start gap-2 p-2.5 sm:p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <Heart className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-800">
+                    <p className="font-semibold mb-0.5">Como funciona?</p>
+                    <p>Quando alguém assinar usando seu link, você ganha <strong>+1.000 fotos extras</strong>!</p>
+                    <p className="mt-1 text-amber-700">Na 1ª indicação, ganha o selo de <strong>Embaixador</strong>!</p>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-4 text-gray-500 text-sm">
                 Erro ao carregar dados. Tente novamente.
               </div>
             )}
