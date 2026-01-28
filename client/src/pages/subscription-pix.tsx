@@ -53,7 +53,7 @@ export default function SubscriptionPixPage() {
         "Acesso imediato e suporte"
       ],
       popular: false,
-      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=ro76q5uz&checkoutMode=6"
+      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=6fm4k0j3"
     },
     {
       name: "Plano Fotógrafo",
@@ -70,7 +70,7 @@ export default function SubscriptionPixPage() {
         "Suporte prioritário"
       ],
       popular: true,
-      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=tpfhcllk&checkoutMode=6"
+      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=hjb8gqn7"
     },
     {
       name: "Plano Estúdio",
@@ -87,7 +87,7 @@ export default function SubscriptionPixPage() {
         "Suporte prioritário"
       ],
       popular: false,
-      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=xtuh4ji0&checkoutMode=6"
+      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=suf6vkf6"
     }
   ];
 
@@ -107,7 +107,7 @@ export default function SubscriptionPixPage() {
         "Suporte preferencial"
       ],
       popular: false,
-      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=ro76q5uz&checkoutMode=6"
+      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=6fm4k0j3"
     },
     {
       name: "Fotógrafo Anual",
@@ -124,7 +124,7 @@ export default function SubscriptionPixPage() {
         "Suporte VIP"
       ],
       popular: true,
-      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=tpfhcllk&checkoutMode=6"
+      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=hjb8gqn7"
     },
     {
       name: "Estúdio Anual",
@@ -141,7 +141,7 @@ export default function SubscriptionPixPage() {
         "Gerente de conta"
       ],
       popular: false,
-      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=xtuh4ji0&checkoutMode=6"
+      hotmartUrl: "https://pay.hotmart.com/K99608926Q?off=suf6vkf6"
     }
   ];
 
