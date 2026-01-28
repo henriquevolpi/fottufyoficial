@@ -2092,8 +2092,8 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div className="text-left flex-1 min-w-0">
-                <p className="font-black text-sm sm:text-2xl text-white uppercase tracking-tight mb-0.5 sm:mb-2">Recomende a Fottufy ❤️</p>
-                <p className="font-light text-purple-100 text-xs sm:text-base leading-relaxed line-clamp-2 sm:line-clamp-none">Somos uma plataforma Brasileira 100% independente!</p>
+                <p className="font-black text-sm sm:text-2xl text-white uppercase tracking-tight mb-0.5 sm:mb-2">Recomende a Fottufy e ganhe um selo ❤️</p>
+                <p className="font-light text-purple-100 text-xs sm:text-base leading-relaxed line-clamp-2 sm:line-clamp-none">+1.000 fotos extras no seu pacote por indicação!</p>
               </div>
               <button 
                 onClick={handleOpenReferralModal}
