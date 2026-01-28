@@ -515,6 +515,23 @@ export interface DashboardBannerConfig {
   altText?: string;
 }
 
+// Tabela de emails de nurturing (drip campaign) para usuários free
+export const nurturingEmails = pgTable("nurturing_emails", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // FK para users
+  emailNumber: integer("email_number").notNull(), // 1, 2, 3, 4, 5, 6 (dias 1, 2, 4, 6, 8, 10)
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+  emailId: text("email_id"), // ID do email retornado pelo Resend
+});
+
+export const insertNurturingEmailSchema = createInsertSchema(nurturingEmails).omit({
+  id: true,
+  sentAt: true,
+});
+
+export type NurturingEmail = typeof nurturingEmails.$inferSelect;
+export type InsertNurturingEmail = z.infer<typeof insertNurturingEmailSchema>;
+
 // NOTA: Tabela session removida do schema Drizzle para evitar conflitos
 // A tabela session é gerenciada pelo connect-pg-simple e não deve ser alterada pelo Drizzle
 // Formato atual no banco: sid (varchar), sess (json), expire (timestamp)
