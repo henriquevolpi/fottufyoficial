@@ -48,6 +48,9 @@ export const users = pgTable("users", {
   usedPortfolios: integer("used_portfolios").default(0), // Quantidade de portfólios criados
   portfolioPhotoLimit: integer("portfolio_photo_limit").default(40), // Limite de fotos por portfólio
   
+  // Campo para identificar tipo de cobrança (mensal/anual) - usado para recursos exclusivos
+  billingPeriod: text("billing_period").default("monthly"), // "monthly" | "yearly"
+  
   // Sistema de indicação (referral)
   referralCode: text("referral_code").unique(), // Código único de 8 caracteres para indicação
   referredBy: integer("referred_by"), // ID do usuário que indicou (FK para users)

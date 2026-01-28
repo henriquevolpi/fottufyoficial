@@ -8,11 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical, X, Loader2, User } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Share, Upload, Image, ExternalLink, Settings, GripVertical, X, Loader2, User, Crown, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { compressMultiplePortfolioImages, calculateCompressionStats } from "@/lib/portfolioImageCompression";
 import { uploadPortfolioPhotos, validatePortfolioFiles } from "@/lib/portfolioBatchUpload";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 
 interface Portfolio {
   id: number;
@@ -106,6 +108,14 @@ export default function PortfolioPage() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Verificar se o usuário tem acesso ao portfólio (plano anual ou ativação manual)
+  const hasPortfolioAccess = user && (
+    user.billingPeriod === 'yearly' || 
+    user.isManualActivation === true ||
+    user.role === 'admin'
+  ) && (user.subscriptionStatus === 'active' || user.isManualActivation);
 
   // Fetch portfolios from real API
   const { data: portfolios = [], isLoading } = useQuery({
@@ -715,6 +725,58 @@ export default function PortfolioPage() {
       event.target.value = '';
     }
   };
+
+  // Se o usuário não tem acesso, mostrar tela de upgrade
+  if (!hasPortfolioAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center p-6">
+        <div className="max-w-lg w-full">
+          <Card className="border-0 shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 p-8 text-center">
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+                <Crown className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-2">Recurso Exclusivo</h2>
+              <p className="text-white/90">Disponível apenas para planos anuais</p>
+            </div>
+            
+            <CardContent className="p-8 text-center space-y-6">
+              <div className="space-y-3">
+                <Lock className="h-12 w-12 text-gray-300 mx-auto" />
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Portfólio Online
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Crie um portfólio profissional online para mostrar seus melhores trabalhos. 
+                  Este recurso exclusivo está disponível apenas para assinantes dos planos anuais.
+                </p>
+              </div>
+              
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                <p className="text-sm text-amber-800 font-medium">
+                  Economize até 35% com o plano anual e desbloqueie recursos exclusivos!
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <Link href="/subscription">
+                  <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                    <Crown className="mr-2 h-5 w-5" />
+                    Ver Planos Anuais
+                  </Button>
+                </Link>
+                <Link href="/dashboard">
+                  <Button variant="ghost" className="w-full text-gray-600 hover:text-gray-900">
+                    Voltar ao Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">

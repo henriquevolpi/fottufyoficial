@@ -1433,6 +1433,18 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Processando webhook Stripe: evento=${payload.type}, usuário=${user.id}, customer=${payload.data.customer.id}`);
       
+      // Determinar o billingPeriod com base no interval da subscription
+      let billingPeriod = user.billingPeriod || 'monthly';
+      const subscriptionItems = (payload.data.subscription as any)?.items?.data || [];
+      if (subscriptionItems.length > 0) {
+        const interval = subscriptionItems[0]?.price?.recurring?.interval;
+        if (interval === 'year') {
+          billingPeriod = 'yearly';
+        } else if (interval === 'month') {
+          billingPeriod = 'monthly';
+        }
+      }
+      
       switch(payload.type) {
         case "subscription.created":
         case "subscription.updated":
@@ -1457,7 +1469,7 @@ export class DatabaseStorage implements IStorage {
               
               if (plan) {
                 uploadLimit = plan.uploadLimit;
-                console.log(`Atualizando plano via webhook: planType=${planType}, uploadLimit=${uploadLimit}`);
+                console.log(`Atualizando plano via webhook: planType=${planType}, uploadLimit=${uploadLimit}, billingPeriod=${billingPeriod}`);
               }
             }
           } else if (payload.data.subscription.status === "canceled") {
@@ -1485,6 +1497,7 @@ export class DatabaseStorage implements IStorage {
           subscriptionStatus,
           status: userStatus,
           subscriptionEndDate,
+          billingPeriod, // Salvar período de cobrança (monthly/yearly)
           stripeSubscriptionId: payload.data.subscription.id,
           lastEvent: {
             type: payload.type,

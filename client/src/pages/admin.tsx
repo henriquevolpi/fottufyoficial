@@ -358,7 +358,8 @@ export default function Admin() {
     email: "",
     status: "active",
     planType: "free",
-    accessDays: undefined as number | undefined
+    accessDays: undefined as number | undefined,
+    billingPeriod: "monthly" as "monthly" | "yearly"
   });
 
   // Reset Password Form
@@ -522,6 +523,40 @@ export default function Admin() {
   };
   
   // Handle setting access time
+  // Handle updating billing period (for portfolio access)
+  const handleSetBillingPeriod = async () => {
+    if (!editingUser) return;
+    
+    try {
+      const response = await apiRequest("POST", "/api/admin/set-billing-period", {
+        email: editingUser.email,
+        billingPeriod: editForm.billingPeriod
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update billing period");
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      toast({
+        title: "Período de Cobrança Atualizado",
+        description: editForm.billingPeriod === 'yearly' 
+          ? `${editingUser.name} agora tem acesso ao recurso de Portfólio Online.`
+          : `${editingUser.name} não tem mais acesso ao recurso de Portfólio Online.`
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Falha ao atualizar período de cobrança",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSetAccessTime = async () => {
     if (!editingUser || !editForm.accessDays) return;
     
@@ -953,7 +988,8 @@ export default function Admin() {
                                         name: user.name,
                                         email: user.email,
                                         status: user.status,
-                                        planType: user.planType
+                                        planType: user.planType,
+                                        billingPeriod: (user.billingPeriod as "monthly" | "yearly") || "monthly"
                                       });
                                       setEditUserDialogOpen(true);
                                     }}
@@ -1936,6 +1972,27 @@ export default function Admin() {
                 )}
               </div>
               
+              <div className="space-y-2">
+                <Label>Período de Cobrança (Recurso Portfólio)</Label>
+                <Select 
+                  value={editForm.billingPeriod} 
+                  onValueChange={(value: "monthly" | "yearly") => setEditForm({...editForm, billingPeriod: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal (sem acesso ao portfólio)</SelectItem>
+                    <SelectItem value="yearly">Anual (com acesso ao portfólio)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  {editForm.billingPeriod === 'yearly' 
+                    ? '✅ Usuário terá acesso ao recurso de Portfólio Online' 
+                    : '❌ Usuário não terá acesso ao recurso de Portfólio Online'}
+                </p>
+              </div>
+              
               <div className="space-y-4 pt-4">
                 {/* Email Button */}
                 <div className="w-full">
@@ -1975,6 +2032,14 @@ export default function Admin() {
                     className="w-full"
                   >
                     Definir Tempo de Acesso
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleSetBillingPeriod}
+                    disabled={editForm.billingPeriod === (editingUser?.billingPeriod || 'monthly')}
+                    className="w-full bg-amber-500 hover:bg-amber-600"
+                  >
+                    {editForm.billingPeriod === 'yearly' ? 'Liberar Portfólio' : 'Remover Portfólio'}
                   </Button>
                   
                   <Button 

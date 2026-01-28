@@ -1285,6 +1285,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set billing period for user (controls portfolio access)
+  app.post("/api/admin/set-billing-period", authenticate, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { email, billingPeriod } = req.body;
+      
+      if (!email || !billingPeriod) {
+        return res.status(400).json({ message: "Email and billingPeriod are required" });
+      }
+      
+      // Validate billingPeriod
+      if (!['monthly', 'yearly'].includes(billingPeriod)) {
+        return res.status(400).json({ message: "billingPeriod must be 'monthly' or 'yearly'" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user with new billing period
+      const updatedUser = await storage.updateUser(user.id, { 
+        billingPeriod: billingPeriod,
+      });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user" });
+      }
+      
+      console.log(`[ADMIN] Billing period updated for ${email}: ${billingPeriod}`);
+      
+      res.json({
+        success: true,
+        user: {
+          ...updatedUser,
+          password: undefined,
+        },
+        billingPeriod: billingPeriod,
+        hasPortfolioAccess: billingPeriod === 'yearly'
+      });
+    } catch (error) {
+      console.error("Error setting billing period:", error);
+      res.status(500).json({ message: "Failed to set billing period for user" });
+    }
+  });
+
   // Rota exclusiva para ativação manual de planos pelo ADM (expira em 34 dias)
   app.post("/api/admin/activate-manual-plan", authenticate, requireAdmin, async (req: Request, res: Response) => {
     try {

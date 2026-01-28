@@ -1079,6 +1079,7 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
           await storage.updateUser(user.id, {
             status: 'active',
             subscriptionStatus: 'active',
+            billingPeriod: billingPeriod, // Salvar período de cobrança (monthly/yearly)
             // Salvar ID da transação no campo subscription_id para referência
             subscription_id: data?.purchase?.transaction || `hotmart_${Date.now()}`
           });
@@ -1106,7 +1107,8 @@ export async function processHotmartWebhook(payload: HotmartWebhookPayload): Pro
             status: 'active',
             phone: customerPhone || data?.buyer?.phone || '',
             planType: validPlanType, // Usar o planType validado
-            subscriptionStatus: 'active'
+            subscriptionStatus: 'active',
+            billingPeriod: billingPeriod, // Salvar período de cobrança (monthly/yearly)
           };
           
           // Criar o usuário
