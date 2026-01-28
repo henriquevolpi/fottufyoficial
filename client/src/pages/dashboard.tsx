@@ -38,7 +38,10 @@ import {
   Copy,
   Share2,
   Gift,
-  Heart
+  Heart,
+  Sparkles,
+  Crown,
+  ExternalLink
 } from "lucide-react";
 import { 
   Tabs, 
@@ -2056,6 +2059,39 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {/* Portfolio Card - Only for Annual Plan Users */}
+        {(user?.billingPeriod === 'yearly' || user?.isManualActivation || user?.role === 'admin') && (
+          <div className="mt-4 relative overflow-hidden group">
+            <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-xl sm:shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all duration-300">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-400/20 rounded-full blur-2xl"></div>
+              <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 sm:px-3 sm:py-1.5">
+                  <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-200" />
+                  <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Plano Anual</span>
+                </div>
+              </div>
+              
+              <div className="relative flex flex-row items-center gap-3 sm:gap-6">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-black text-sm sm:text-xl text-white uppercase tracking-tight mb-0.5 sm:mb-1">Meu Portfólio Online</p>
+                  <p className="font-light text-amber-100 text-xs sm:text-sm leading-relaxed line-clamp-1 sm:line-clamp-none">Crie sua página profissional e compartilhe com clientes</p>
+                </div>
+                <Link href="/meu-portfolio">
+                  <button className="shrink-0 bg-white text-orange-600 font-black text-[10px] sm:text-xs tracking-widest uppercase px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl shadow-xl hover:scale-105 transition-transform flex items-center gap-1.5 sm:gap-2">
+                    <span className="hidden sm:inline">Acessar</span>
+                    <span className="sm:hidden">Abrir</span>
+                    <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Promotional Banner - only shown for free users */}
         {user?.planType === 'free' && <PromotionalBanner />}
