@@ -67,6 +67,8 @@ interface Project {
   photos: Photo[];
   finalizado?: boolean;
   showWatermark?: boolean; // Controle da marca d'água frontend
+  includedPhotos?: number; // Fotos incluídas no pacote (0 = ilimitado)
+  additionalPhotoPrice?: number; // Preço por foto adicional (em centavos)
 }
 
 export default function ProjectView({ params }: { params?: { id: string } }) {
@@ -269,7 +271,9 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
         selected: p.selected !== undefined ? p.selected : (project.selectedPhotos ? project.selectedPhotos.includes(p.id) : false)
       })) : [],
       finalizado: project.status === "Completed" || project.status === "finalizado" || project.finalizado,
-      showWatermark: project.showWatermark
+      showWatermark: project.showWatermark,
+      includedPhotos: project.includedPhotos || 0,
+      additionalPhotoPrice: project.additionalPhotoPrice || 0
     };
     
     console.log('🔍 WATERMARK DEBUG - Projeto adaptado:', {
@@ -1013,6 +1017,28 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                     <span className="whitespace-nowrap">{selectedPhotos.size} de {project.photos.length}</span>
                   </Badge>
                   
+                  {/* Badge de fotos incluídas/adicionais */}
+                  {project.includedPhotos && project.includedPhotos > 0 && (
+                    <Badge className={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center rounded-full font-bold flex-shrink-0 ${
+                      selectedPhotos.size > project.includedPhotos
+                        ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                        : 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-lg shadow-green-500/20'
+                    }`}>
+                      {selectedPhotos.size <= project.includedPhotos ? (
+                        <span className="whitespace-nowrap">✓ {selectedPhotos.size}/{project.includedPhotos} incluídas</span>
+                      ) : (
+                        <span className="whitespace-nowrap">
+                          +{selectedPhotos.size - project.includedPhotos} extra
+                          {project.additionalPhotoPrice && project.additionalPhotoPrice > 0 && (
+                            <span className="ml-1 hidden sm:inline">
+                              (R$ {((selectedPhotos.size - project.includedPhotos) * project.additionalPhotoPrice / 100).toFixed(2)})
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </Badge>
+                  )}
+                  
                   {/* Botão de filtro - Youze Style */}
                   {selectedPhotos.size > 0 && (
                     <Button
@@ -1157,11 +1183,38 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
+          <div className="py-4 space-y-3">
             <div className="bg-purple-50 rounded-xl p-4 text-center">
               <p className="text-3xl font-black text-purple-600">{selectedPhotos.size}</p>
               <p className="text-sm text-purple-500 font-medium">de {project.photos.length} fotos selecionadas</p>
             </div>
+            
+            {project.includedPhotos && project.includedPhotos > 0 && (
+              <div className={`rounded-xl p-4 text-center ${
+                selectedPhotos.size > project.includedPhotos 
+                  ? 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200' 
+                  : 'bg-green-50 border border-green-200'
+              }`}>
+                {selectedPhotos.size <= project.includedPhotos ? (
+                  <>
+                    <p className="text-sm text-green-700 font-medium">
+                      ✓ {selectedPhotos.size} de {project.includedPhotos} fotos incluídas no pacote
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-amber-700 font-medium">
+                      📸 {project.includedPhotos} fotos incluídas + {selectedPhotos.size - project.includedPhotos} adicionais
+                    </p>
+                    {project.additionalPhotoPrice && project.additionalPhotoPrice > 0 && (
+                      <p className="text-lg font-bold text-amber-800 mt-1">
+                        Valor adicional: R$ {((selectedPhotos.size - project.includedPhotos) * project.additionalPhotoPrice / 100).toFixed(2)}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
           
           <DialogFooter className="flex-col sm:flex-row gap-2">
