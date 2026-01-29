@@ -3315,32 +3315,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe webhook
   app.post("/api/webhook/stripe", async (req: Request, res: Response) => {
     try {
-      // Verificar assinatura (em um cenário real, faríamos verificação com o Stripe)
-      // Para implementar verificação de assinatura, precisaríamos do webhookSecret do Stripe
+      console.log("========== INICIO WEBHOOK STRIPE ==========");
       
-      // Em ambiente de produção, usaríamos:
-      // const sig = req.headers['stripe-signature'];
-      // const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      
-      // Processar eventos de assinatura Stripe
       const event = req.body;
       
       if (!event || !event.type || !event.data) {
+        console.error("[Stripe Webhook] Evento inválido recebido");
         return res.status(400).json({ error: "Evento inválido" });
       }
       
-      if (event.type.startsWith('subscription.')) {
-        // Processar eventos relacionados a assinaturas
-        const updatedUser = await storage.handleStripeWebhook(event);
+      console.log(`[Stripe Webhook] Evento recebido: ${event.type}`);
+      
+      // Processar checkout.session.completed - CRÍTICO para ativar planos
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        console.log(`[Stripe Webhook] Checkout session completed: ${session.id}`);
+        console.log(`[Stripe Webhook] Payment status: ${session.payment_status}`);
+        console.log(`[Stripe Webhook] Metadata:`, session.metadata);
         
-        if (!updatedUser) {
-          return res.status(404).json({ 
-            message: "User not found",
-            event: "processed",
+        if (session.payment_status === 'paid' && session.mode === 'subscription') {
+          const userId = parseInt(session.metadata?.userId || '0');
+          const planType = session.metadata?.planType || 'basico';
+          const billingCycle = session.metadata?.billingCycle || 'monthly';
+          
+          if (!userId) {
+            console.error("[Stripe Webhook] userId não encontrado nos metadata");
+            return res.status(400).json({ error: "userId não encontrado" });
+          }
+          
+          // Verificar se o usuário existe
+          const user = await storage.getUser(userId);
+          if (!user) {
+            console.error(`[Stripe Webhook] Usuário ${userId} não encontrado`);
+            return res.status(404).json({ error: "Usuário não encontrado" });
+          }
+          
+          // Mapear planType para uploadLimit
+          const planLimits: Record<string, number> = {
+            'basico': 6000,
+            'fotografo': 17000,
+            'estudio': 40000
+          };
+          const uploadLimit = planLimits[planType] || 6000;
+          
+          // Calcular datas de assinatura (se subscription disponível)
+          let startDate = new Date();
+          let endDate = new Date();
+          if (billingCycle === 'yearly') {
+            endDate.setFullYear(endDate.getFullYear() + 1);
+          } else {
+            endDate.setMonth(endDate.getMonth() + 1);
+          }
+          
+          // Verificar se já foi processado (idempotência)
+          if (user.subscriptionStatus === 'active' && user.planType === planType) {
+            console.log(`[Stripe Webhook] Usuário ${userId} já tem plano ${planType} ativo - ignorando`);
+            return res.json({
+              message: "Já processado anteriormente",
+              event: event.type,
+              status: "already_processed"
+            });
+          }
+          
+          // Atualizar o usuário
+          await storage.updateUser(userId, {
+            planType: planType,
+            uploadLimit: uploadLimit,
+            subscriptionStatus: 'active',
+            subscriptionStartDate: startDate,
+            subscriptionEndDate: endDate,
+            billingPeriod: billingCycle,
+            stripeSubscriptionId: session.subscription as string
+          } as any);
+          
+          console.log(`[Stripe Webhook] Usuário ${userId} atualizado para plano ${planType} (${billingCycle})`);
+          console.log("========== FIM WEBHOOK STRIPE ==========");
+          
+          return res.json({
+            message: "Checkout processado com sucesso",
+            event: event.type,
+            userId: userId,
+            planType: planType,
+            status: "success"
+          });
+        }
+      }
+      
+      // Processar eventos de customer.subscription.*
+      if (event.type.startsWith('customer.subscription.')) {
+        console.log(`[Stripe Webhook] Processando evento de subscription: ${event.type}`);
+        
+        const subscription = event.data.object;
+        const userId = parseInt(subscription.metadata?.userId || '0');
+        
+        if (!userId) {
+          console.warn("[Stripe Webhook] userId não encontrado nos metadata da subscription");
+          return res.json({ 
+            message: "Subscription sem userId nos metadata",
+            event: event.type,
             status: "warning"
           });
         }
         
+        const user = await storage.getUser(userId);
+        if (!user) {
+          console.error(`[Stripe Webhook] Usuário ${userId} não encontrado`);
+          return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+        
+        // Processar conforme o tipo de evento
+        if (event.type === 'customer.subscription.deleted' || 
+            event.type === 'customer.subscription.canceled') {
+          // Cancelamento de assinatura
+          await storage.updateUser(userId, {
+            subscriptionStatus: 'inactive'
+          } as any);
+          console.log(`[Stripe Webhook] Assinatura cancelada para usuário ${userId}`);
+        } else if (event.type === 'customer.subscription.updated') {
+          // Atualização de assinatura
+          if (subscription.status === 'active') {
+            const planType = subscription.metadata?.planType || user.planType;
+            const billingCycle = subscription.metadata?.billingCycle || 'monthly';
+            
+            const planLimits: Record<string, number> = {
+              'basico': 6000,
+              'fotografo': 17000,
+              'estudio': 40000
+            };
+            const uploadLimit = planLimits[planType] || 6000;
+            
+            const endDate = new Date(subscription.current_period_end * 1000);
+            
+            await storage.updateUser(userId, {
+              planType: planType,
+              uploadLimit: uploadLimit,
+              subscriptionStatus: 'active',
+              subscriptionEndDate: endDate,
+              billingPeriod: billingCycle
+            } as any);
+            
+            console.log(`[Stripe Webhook] Assinatura atualizada para usuário ${userId}: ${planType}`);
+          } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+            console.log(`[Stripe Webhook] Assinatura em atraso para usuário ${userId}`);
+          }
+        }
+        
+        console.log("========== FIM WEBHOOK STRIPE ==========");
         return res.json({
           message: "Stripe webhook processado com sucesso",
           event: event.type,
@@ -3348,15 +3468,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Outros eventos Stripe não processados
+      // Processar invoice.paid (renovação de assinatura)
+      if (event.type === 'invoice.paid') {
+        const invoice = event.data.object;
+        console.log(`[Stripe Webhook] Invoice paga: ${invoice.id}`);
+        
+        if (invoice.subscription) {
+          // Buscar usuário pelo subscription ID
+          const allUsers = await storage.getUsers();
+          const user = allUsers.find(u => u.stripeSubscriptionId === invoice.subscription);
+          
+          if (user) {
+            // Atualizar data de fim da assinatura
+            const periodEnd = new Date((invoice.lines?.data?.[0]?.period?.end || Date.now() / 1000) * 1000);
+            await storage.updateUser(user.id, {
+              subscriptionStatus: 'active',
+              subscriptionEndDate: periodEnd,
+              lastPaymentDate: new Date()
+            } as any);
+            console.log(`[Stripe Webhook] Renovação processada para usuário ${user.id}`);
+          }
+        }
+        
+        console.log("========== FIM WEBHOOK STRIPE ==========");
+        return res.json({
+          message: "Invoice processada",
+          event: event.type,
+          status: "success"
+        });
+      }
+      
+      // Outros eventos não processados
+      console.log(`[Stripe Webhook] Evento ignorado: ${event.type}`);
+      console.log("========== FIM WEBHOOK STRIPE ==========");
       return res.json({ 
         message: "Evento não processado",
         event: event.type,
         status: "ignored"
       });
-    } catch (error) {
-      console.error("Erro ao processar webhook do Stripe:", error);
-      res.status(500).json({ message: "Falha ao processar webhook do Stripe" });
+    } catch (error: any) {
+      console.error("[Stripe Webhook] Erro:", error);
+      console.log("========== FIM WEBHOOK STRIPE (COM ERRO) ==========");
+      res.status(500).json({ message: "Falha ao processar webhook do Stripe", error: error.message });
     }
   });
   
