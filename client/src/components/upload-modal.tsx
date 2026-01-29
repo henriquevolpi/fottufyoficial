@@ -750,27 +750,7 @@ export default function UploadModal({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="observacoes"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    📝 Observações
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Anotações adicionais sobre o projeto..."
-                      className="resize-none min-h-[100px] border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Seção de Fotos Adicionais */}
+            {/* Seção de Fotos Adicionais - Logo após data do evento */}
             <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl space-y-4">
               <div className="flex items-center gap-2 text-amber-700">
                 <span className="text-lg">💰</span>
@@ -833,6 +813,26 @@ export default function UploadModal({
                 />
               </div>
             </div>
+
+            <FormField
+              control={form.control}
+              name="observacoes"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    📝 Observações
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Anotações adicionais sobre o projeto..."
+                      className="resize-none min-h-[100px] border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white/80 backdrop-blur-sm rounded-xl text-base shadow-sm transition-all"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="space-y-4">
               <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
