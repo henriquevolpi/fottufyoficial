@@ -1988,18 +1988,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } while (attempts < maxAttempts);
       
-      // Extract additional photo pricing fields
-      const includedPhotos = parseInt(req.body.includedPhotos || '0') || 0;
-      const additionalPhotoPrice = parseInt(req.body.additionalPhotoPrice || '0') || 0;
-      
       const projectData = insertProjectSchema.parse({
         name: name,
         clientName: clientName,
         clientEmail: clientEmail,
         photographerId: currentUserId,
         publicId: uniquePublicId,
-        includedPhotos: includedPhotos,
-        additionalPhotoPrice: additionalPhotoPrice,
       });
       
       // Check if photographer ID matches authenticated user

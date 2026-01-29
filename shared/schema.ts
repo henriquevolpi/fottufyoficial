@@ -224,8 +224,6 @@ export const projects = pgTable("projects", {
   }[]>(),
   selectedPhotos: jsonb("selected_photos").default([]).$type<string[]>(),
   showWatermark: boolean("show_watermark").default(true), // Frontend watermark control
-  includedPhotos: integer("included_photos").default(0), // Number of photos included in base price (0 = unlimited)
-  additionalPhotoPrice: integer("additional_photo_price").default(0), // Price in cents for each additional photo
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
