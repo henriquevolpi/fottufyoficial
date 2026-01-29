@@ -9,6 +9,8 @@ export interface ProjectData {
   emailCliente: string;
   dataEvento: string;
   observacoes?: string;
+  includedPhotos?: number; // Number of photos included in base price (0 = unlimited)
+  additionalPhotoPrice?: number; // Price in cents for each additional photo
 }
 
 export interface BatchUploadResult {
@@ -126,6 +128,8 @@ async function uploadProjectBatch(
     formData.append("date", projectData.dataEvento);
     formData.append("notes", projectData.observacoes || "");
     formData.append("photographerId", "1"); // Usando ID padrão
+    formData.append("includedPhotos", (projectData.includedPhotos || 0).toString());
+    formData.append("additionalPhotoPrice", (projectData.additionalPhotoPrice || 0).toString());
     
     // Adicionar imagens do lote
     files.forEach((file) => {

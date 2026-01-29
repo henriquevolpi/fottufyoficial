@@ -59,6 +59,8 @@ const uploadFormSchema = z.object({
   emailCliente: z.string().email({ message: "Invalid email address" }),
   dataEvento: z.string().min(1, { message: "Event date is required" }),
   observacoes: z.string().optional(),
+  includedPhotos: z.number().min(0).optional(),
+  additionalPhotoPrice: z.number().min(0).optional(),
 });
 
 type UploadFormValues = z.infer<typeof uploadFormSchema>;
@@ -166,6 +168,8 @@ export default function UploadModal({
       emailCliente: "",
       dataEvento: new Date().toISOString().substring(0, 10),
       observacoes: "",
+      includedPhotos: 0,
+      additionalPhotoPrice: 0,
     },
   });
 
@@ -358,6 +362,8 @@ export default function UploadModal({
         emailCliente: values.emailCliente,
         dataEvento: values.dataEvento,
         observacoes: values.observacoes || "",
+        includedPhotos: values.includedPhotos || 0,
+        additionalPhotoPrice: values.additionalPhotoPrice || 0,
       };
 
       // Importar função de upload em lotes dinamicamente
@@ -763,6 +769,69 @@ export default function UploadModal({
                 </FormItem>
               )}
             />
+
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl space-y-4">
+              <div className="flex items-center gap-2 text-amber-700">
+                <span className="text-lg">💰</span>
+                <h4 className="font-semibold">Fotos Adicionais (Opcional)</h4>
+              </div>
+              <p className="text-sm text-amber-600">
+                Defina quantas fotos estão incluídas no pacote e o valor por foto adicional.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="includedPhotos"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium text-slate-700">
+                        Fotos Incluídas
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Ex: 20"
+                          className="h-11 border-amber-200 focus:border-amber-400 focus:ring-amber-400/20 bg-white rounded-xl"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-slate-500">0 = sem limite</p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="additionalPhotoPrice"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium text-slate-700">
+                        Preço Adicional (R$)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Ex: 5.00"
+                          className="h-11 border-amber-200 focus:border-amber-400 focus:ring-amber-400/20 bg-white rounded-xl"
+                          {...field}
+                          onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) * 100) || 0)}
+                          value={field.value ? (field.value / 100).toFixed(2) : ''}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-slate-500">Por foto extra</p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <div className="space-y-4">
               <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
