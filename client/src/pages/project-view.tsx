@@ -811,6 +811,25 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
+  const isSelectionLimitReached = useMemo(() => {
+    if (!project?.includedPhotos || project.includedPhotos === 0) return false;
+    return selectedPhotos.size >= project.includedPhotos;
+  }, [project?.includedPhotos, selectedPhotos.size]);
+
+  const additionalPhotosCount = useMemo(() => {
+    if (!project?.includedPhotos || project.includedPhotos === 0) return 0;
+    return Math.max(0, selectedPhotos.size - project.includedPhotos);
+  }, [project?.includedPhotos, selectedPhotos.size]);
+
+  const additionalPriceTotal = useMemo(() => {
+    if (!project?.additionalPhotoPrice) return 0;
+    return additionalPhotosCount * project.additionalPhotoPrice;
+  }, [additionalPhotosCount, project?.additionalPhotoPrice]);
+
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -863,6 +882,39 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
+      {/* Floating Counter - Youze Style */}
+      {!isFinalized && !finalizationSuccess && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-2xl shadow-purple-500/20 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${isSelectionLimitReached ? 'bg-amber-100 text-amber-600' : 'bg-purple-100 text-purple-600'}`}>
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Seleção</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white">
+                  {selectedPhotos.size} <span className="text-slate-400 text-sm font-bold">/ {project?.includedPhotos || '∞'}</span>
+                </p>
+              </div>
+            </div>
+            
+            {additionalPhotosCount > 0 && (
+              <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Adicionais (+{additionalPhotosCount})</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white">{formatCurrency(additionalPriceTotal)}</p>
+              </div>
+            )}
+
+            <Button 
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={selectedPhotos.size === 0 || isSubmitting}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-xs uppercase tracking-widest px-6 h-12 rounded-2xl shadow-xl shadow-purple-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Finalizar"}
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Hero Section Premium - Experiência Imersiva */}
       {coverPhotoUrl && (
         <div className="relative h-[100svh] md:h-[95vh] overflow-hidden">
