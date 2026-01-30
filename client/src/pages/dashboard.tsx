@@ -743,6 +743,8 @@ function UploadModal({
     clientName: z.string().min(3, "Client name is required"),
     clientEmail: z.string().email("Invalid email").optional().or(z.literal("")),
     data: z.string().min(1, "Date is required"),
+    includedPhotos: z.coerce.number().min(0).default(0),
+    additionalPhotoPrice: z.coerce.number().min(0).default(0),
   });
   
   const form = useForm<z.infer<typeof uploadSchema>>({
@@ -752,6 +754,8 @@ function UploadModal({
       clientName: "",
       clientEmail: "",
       data: new Date().toISOString().split('T')[0],
+      includedPhotos: 0,
+      additionalPhotoPrice: 0,
     },
   });
   
@@ -1104,6 +1108,50 @@ function UploadModal({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="includedPhotos"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      🖼️ Fotos Inclusas
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Ex: 20"
+                        className="h-14 border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-800 rounded-2xl text-base font-medium transition-all" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="additionalPhotoPrice"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      💰 Valor Foto Extra (em centavos)
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Ex: 1000 (para R$ 10,00)"
+                        className="h-14 border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-800 rounded-2xl text-base font-medium transition-all" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
 
             <div className="mt-8">
