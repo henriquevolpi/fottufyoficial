@@ -836,8 +836,8 @@ function UploadModal({
       formData.append('clientName', data.clientName);
       formData.append('clientEmail', data.clientEmail || '');
       formData.append('data', data.data);
-      formData.append('includedPhotos', data.includedPhotos.toString());
-      formData.append('additionalPhotoPrice', data.additionalPhotoPrice.toString());
+      formData.append('includedPhotos', data.includedPhotos?.toString() || '0');
+      formData.append('additionalPhotoPrice', data.additionalPhotoPrice?.toString() || '0');
 
       
       // Add photographer ID from the user context

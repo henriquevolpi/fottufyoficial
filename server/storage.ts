@@ -882,7 +882,9 @@ export class MemStorage implements IStorage {
       clientEmail: projectData.clientEmail,
       photographerId: projectData.photographerId,
       photos: processedPhotos,
-      selectedPhotos: []
+      selectedPhotos: [],
+      includedPhotos: projectData.includedPhotos || 0,
+      additionalPhotoPrice: projectData.additionalPhotoPrice || 0
     };
     
     this.projects.set(id, project);
@@ -2013,6 +2015,8 @@ export class DatabaseStorage implements IStorage {
           ...projectData,
           photos: processedPhotos,
           selectedPhotos: [],
+          includedPhotos: projectData.includedPhotos || 0,
+          additionalPhotoPrice: projectData.additionalPhotoPrice || 0
         })
         .returning();
       

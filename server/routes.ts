@@ -1992,6 +1992,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const includedPhotos = parseInt(req.body.includedPhotos || '0') || 0;
       const additionalPhotoPrice = parseInt(req.body.additionalPhotoPrice || '0') || 0;
       
+      console.log(`[Server Debug] Creating project with limits: includedPhotos=${includedPhotos}, additionalPhotoPrice=${additionalPhotoPrice}`);
+      
       const projectData = insertProjectSchema.parse({
         name: name,
         clientName: clientName,

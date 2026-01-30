@@ -812,18 +812,21 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
   }, []);
   
   const isSelectionLimitReached = useMemo(() => {
-    if (!project?.includedPhotos || project.includedPhotos === 0) return false;
-    return selectedPhotos.size >= project.includedPhotos;
+    const limit = Number(project?.includedPhotos);
+    if (!limit || limit === 0) return false;
+    return selectedPhotos.size >= limit;
   }, [project?.includedPhotos, selectedPhotos.size]);
 
   const additionalPhotosCount = useMemo(() => {
-    if (!project?.includedPhotos || project.includedPhotos === 0) return 0;
-    return Math.max(0, selectedPhotos.size - project.includedPhotos);
+    const limit = Number(project?.includedPhotos);
+    if (!limit || limit === 0) return 0;
+    return Math.max(0, selectedPhotos.size - limit);
   }, [project?.includedPhotos, selectedPhotos.size]);
 
   const additionalPriceTotal = useMemo(() => {
-    if (!project?.additionalPhotoPrice) return 0;
-    return additionalPhotosCount * project.additionalPhotoPrice;
+    const price = Number(project?.additionalPhotoPrice);
+    if (!price) return 0;
+    return additionalPhotosCount * price;
   }, [additionalPhotosCount, project?.additionalPhotoPrice]);
 
   const formatCurrency = (cents: number) => {
@@ -1032,12 +1035,24 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md rounded-2xl">
                         <DialogHeader>
-                          <DialogTitle className="font-black text-xl">Fotos Selecionadas</DialogTitle>
+                          <DialogTitle className="font-black text-xl">Resumo da Seleção</DialogTitle>
                           <DialogDescription>
-                            Lista de arquivos selecionados pelo cliente neste projeto.
+                            Você selecionou {selectedPhotos.size} fotos.
+                            {project.includedPhotos && project.includedPhotos > 0 && (
+                              <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <p className="text-sm font-bold text-slate-700">Fotos Incluídas: {project.includedPhotos}</p>
+                                {selectedPhotos.size > project.includedPhotos ? (
+                                  <p className="text-sm font-bold text-amber-600">
+                                    Fotos Adicionais: {selectedPhotos.size - project.includedPhotos} ({formatCurrency((selectedPhotos.size - project.includedPhotos) * (project.additionalPhotoPrice || 0))})
+                                  </p>
+                                ) : (
+                                  <p className="text-sm font-bold text-green-600">Nenhuma foto adicional</p>
+                                )}
+                              </div>
+                            )}
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="max-h-[60vh] overflow-y-auto">
+                        <div className="max-h-[50vh] overflow-y-auto mt-4">
                           <div className="space-y-2">
                             {project.photos
                               .filter(photo => selectedPhotos.has(photo.id))
@@ -1063,14 +1078,13 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                 </div>
               ) : (
                 <div className="w-full flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3">
-                  {/* Badge com contador - Youze Style */}
                   <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center rounded-full font-bold shadow-lg shadow-purple-500/20 flex-shrink-0">
                     <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
-                    <span className="whitespace-nowrap">{selectedPhotos.size} de {project.photos.length}</span>
+                    <span className="whitespace-nowrap">{selectedPhotos.size} de {project.photos?.length || 0}</span>
                   </Badge>
                   
                   {/* Badge de fotos incluídas/adicionais */}
-                  {project.includedPhotos && project.includedPhotos > 0 && (
+                  {(project.includedPhotos !== undefined && project.includedPhotos !== null && project.includedPhotos > 0) && (
                     <Badge className={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 flex items-center rounded-full font-bold flex-shrink-0 ${
                       selectedPhotos.size > project.includedPhotos
                         ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20'
