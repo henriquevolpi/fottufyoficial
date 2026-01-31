@@ -837,7 +837,9 @@ function UploadModal({
       formData.append('clientEmail', data.clientEmail || '');
       formData.append('data', data.data);
       formData.append('includedPhotos', data.includedPhotos?.toString() || '0');
-      formData.append('additionalPhotoPrice', data.additionalPhotoPrice?.toString() || '0');
+      // Convert additionalPhotoPrice from Reais to Cents
+      const priceInCents = Math.round(Number(data.additionalPhotoPrice || 0) * 100);
+      formData.append('additionalPhotoPrice', priceInCents.toString());
 
       
       // Add photographer ID from the user context
@@ -1139,12 +1141,13 @@ function UploadModal({
                 render={({ field }) => (
                   <FormItem className="space-y-2">
                     <FormLabel className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      💰 Valor Foto Extra (em centavos)
+                      💰 Valor Foto Extra (R$)
                     </FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
-                        placeholder="Ex: 1000 (para R$ 10,00)"
+                        step="0.01"
+                        placeholder="Ex: 25.00"
                         className="h-14 border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-800 rounded-2xl text-base font-medium transition-all" 
                         {...field} 
                       />

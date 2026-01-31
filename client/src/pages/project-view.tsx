@@ -1043,7 +1043,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                                 <p className="text-sm font-bold text-slate-700">Fotos Incluídas: {project.includedPhotos}</p>
                                 {selectedPhotos.size > project.includedPhotos ? (
                                   <p className="text-sm font-bold text-amber-600">
-                                    Fotos Adicionais: {selectedPhotos.size - project.includedPhotos} ({formatCurrency((selectedPhotos.size - project.includedPhotos) * (project.additionalPhotoPrice || 0))})
+                                    Fotos Adicionais: {selectedPhotos.size - project.includedPhotos} ({formatCurrency((selectedPhotos.size - project.includedPhotos) * (Number(project.additionalPhotoPrice) || 0))})
                                   </p>
                                 ) : (
                                   <p className="text-sm font-bold text-green-600">Nenhuma foto adicional</p>
@@ -1096,7 +1096,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                         <span className="whitespace-nowrap">
                           +{selectedPhotos.size - project.includedPhotos} extra
                           {project.additionalPhotoPrice && project.additionalPhotoPrice > 0 && (
-                            <span className="ml-1 hidden sm:inline">
+                            <span className="ml-1 hidden sm:inline text-amber-600 font-bold">
                               (R$ {((selectedPhotos.size - project.includedPhotos) * project.additionalPhotoPrice / 100).toFixed(2)})
                             </span>
                           )}
