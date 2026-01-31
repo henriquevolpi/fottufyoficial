@@ -2118,15 +2118,15 @@ export default function Dashboard() {
               Sua plataforma de elite para gerenciar projetos fotográficos.
             </p>
             
-            {/* Mobile New Project Button */}
-            <Button
+            {/* Mobile New Project Button removed visually */}
+            {/* <Button
               onClick={() => setUploadModalOpen(true)}
               size="lg"
               className="sm:hidden mt-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black text-xs tracking-widest uppercase rounded-xl px-6 py-5 shadow-xl shadow-purple-500/20 transform transition-all hover:scale-105"
             >
               <PlusCircle className="h-5 w-5 mr-2" />
               Novo Projeto
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
