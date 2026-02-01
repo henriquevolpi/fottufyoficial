@@ -2045,6 +2045,16 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-4">
+              <Link href="/whats-new">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="hidden md:flex items-center gap-2 rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-50 font-bold text-xs tracking-widest uppercase"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Novidades
+                </Button>
+              </Link>
               <Button
                 onClick={() => setUploadModalOpen(true)}
                 size="lg"
