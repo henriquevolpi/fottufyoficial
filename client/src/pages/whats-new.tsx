@@ -23,12 +23,37 @@ export default function WhatsNew() {
       description: "Uma interface totalmente nova com glassmorphism, gradientes vibrantes e foco total na experiência do usuário.",
       icon: <Layout className="w-10 h-10 text-purple-500" />,
       visual: (
-        <div className="relative w-full h-40 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-2xl overflow-hidden border border-white/20 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-24 h-24 bg-white/30 rounded-full blur-2xl absolute -top-10 -left-10 animate-pulse" />
-          <div className="w-24 h-24 bg-blue-500/30 rounded-full blur-2xl absolute -bottom-10 -right-10 animate-pulse" />
-          <div className="relative bg-white/80 dark:bg-slate-900/80 p-4 rounded-xl shadow-lg border border-white/50">
-            <div className="w-20 h-2 bg-slate-200 dark:bg-slate-700 rounded-full mb-2" />
-            <div className="w-12 h-2 bg-purple-200 dark:bg-purple-900/50 rounded-full" />
+        <div className="relative w-full h-40 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-inner">
+          {/* Mock Dashboard Preview */}
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=800&q=80')] bg-cover bg-center opacity-40 grayscale" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+          
+          <div className="relative p-3 space-y-2">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-red-500/50" />
+                <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
+                <div className="w-2 h-2 rounded-full bg-green-500/50" />
+              </div>
+              <div className="w-12 h-2 bg-white/10 rounded-full" />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="aspect-square bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
+                  <div className="w-4 h-4 rounded bg-purple-500/20" />
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-2 pt-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 shadow-lg shadow-purple-500/20" />
+              <div className="flex-1 h-3 bg-white/5 rounded-full" />
+            </div>
+          </div>
+          
+          <div className="absolute bottom-2 right-2 px-2 py-1 bg-purple-500 text-[8px] font-black text-white rounded-md uppercase tracking-tighter">
+            Premium UI
           </div>
         </div>
       )
@@ -201,18 +226,42 @@ export default function WhatsNew() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="mt-20 p-10 bg-gradient-to-br from-purple-600 to-blue-700 rounded-[3rem] text-center text-white space-y-6 shadow-2xl shadow-purple-500/30"
+          className="mt-20 p-10 bg-gradient-to-br from-slate-900 via-purple-900 to-blue-900 rounded-[3rem] text-center text-white space-y-8 shadow-2xl relative overflow-hidden group"
         >
-          <Sparkles className="w-12 h-12 mx-auto text-yellow-300 animate-spin-slow" />
-          <h2 className="text-3xl font-black uppercase tracking-tight">Pronto para começar?</h2>
-          <p className="text-purple-100 font-light max-w-lg mx-auto">
-            Sua jornada para um fluxo de trabalho fotográfico mais produtivo e rentável começa agora.
-          </p>
-          <Link href="/dashboard">
-            <Button size="lg" className="bg-white text-purple-700 hover:bg-slate-100 font-black uppercase px-10 py-7 rounded-2xl shadow-xl hover:scale-105 transition-all">
-              Ir para o Painel
-            </Button>
-          </Link>
+          <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]" />
+          <div className="absolute -top-24 -left-24 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-colors" />
+          
+          <div className="relative z-10 space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-yellow-300 font-bold text-sm">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              Dê um upgrade no seu fluxo
+            </div>
+            
+            <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight leading-tight max-w-3xl mx-auto">
+              Seus clientes demoram para <span className="text-purple-400">fazer a seleção?</span>
+            </h2>
+            
+            <p className="text-slate-300 font-light text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+              Esqueça Drive ou WhatsApp, isso não funciona mais! Venda mais, economize tempo e encante seus clientes com a <span className="font-black text-white">Fottufy</span>.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Link href="/subscription">
+                <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-black uppercase px-12 py-8 rounded-2xl shadow-2xl shadow-purple-500/40 hover:scale-105 transition-all">
+                  Assinar Agora
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="lg" className="w-full sm:w-auto text-white hover:bg-white/10 font-bold uppercase px-8 py-8 rounded-2xl border border-white/10">
+                  Voltar ao Painel
+                </Button>
+              </Link>
+            </div>
+            
+            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest pt-4">
+              A escolha número #1 dos fotógrafos de elite
+            </p>
+          </div>
         </motion.div>
       </div>
     </div>
