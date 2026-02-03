@@ -270,42 +270,12 @@ export default function SubscriptionSuccessPage() {
               </p>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-6 mb-8">
-              <h3 className="font-semibold text-gray-900 mb-4">O que você pode fazer agora:</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>Criar galerias ilimitadas para seus clientes</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>Fazer upload de fotos com seu novo limite</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>Compartilhar links personalizados com clientes</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>Acessar suporte prioritário</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/dashboard" className="flex-1">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-lg py-6">
-                  <Camera className="mr-2 h-5 w-5" />
-                  Ir para Dashboard
-                </Button>
-              </Link>
-              <Link href="/project/new" className="flex-1">
-                <Button variant="outline" className="w-full text-lg py-6">
-                  Criar Nova Galeria
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
+            <Link href="/dashboard" className="block">
+              <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-lg py-6">
+                <ArrowRight className="mr-2 h-5 w-5" />
+                Ir para Dashboard
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
