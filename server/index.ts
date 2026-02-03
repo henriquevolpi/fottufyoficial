@@ -125,6 +125,9 @@ app.use(securityLogger);
 app.use(advancedUploadValidation);
 // ============================================================
 
+// Configure raw body capture for Stripe webhook BEFORE json parser
+app.use('/api/webhook/stripe', express.raw({ type: 'application/json' }));
+
 // Configure essential middleware first
 app.use(express.json({ limit: '10mb' })); // Limite para JSON
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Limite para form data

@@ -3325,7 +3325,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("========== INICIO WEBHOOK STRIPE ==========");
       
-      const event = req.body;
+      if (!stripe) {
+        console.error("[Stripe Webhook] Stripe não configurado");
+        return res.status(500).json({ error: "Stripe não configurado" });
+      }
+
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      let event;
+
+      // Validate webhook signature if secret is configured
+      if (webhookSecret) {
+        const sig = req.headers['stripe-signature'];
+        if (!sig) {
+          console.error("[Stripe Webhook] Assinatura não encontrada no header");
+          return res.status(400).json({ error: "Assinatura não encontrada" });
+        }
+
+        try {
+          // req.body is raw buffer when using express.raw()
+          const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
+          event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+          console.log("[Stripe Webhook] Assinatura validada com sucesso");
+        } catch (err: any) {
+          console.error("[Stripe Webhook] Erro na validação da assinatura:", err.message);
+          return res.status(400).json({ error: `Assinatura inválida: ${err.message}` });
+        }
+      } else {
+        // Fallback without signature validation (development only)
+        console.warn("[Stripe Webhook] ATENÇÃO: Webhook sem validação de assinatura!");
+        event = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
+      }
       
       if (!event || !event.type || !event.data) {
         console.error("[Stripe Webhook] Evento inválido recebido");
