@@ -3460,11 +3460,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Processar conforme o tipo de evento
         if (event.type === 'customer.subscription.deleted' || 
             event.type === 'customer.subscription.canceled') {
-          // Cancelamento de assinatura
+          // Cancelamento de assinatura - retornar ao plano gratuito
           await storage.updateUser(userId, {
-            subscriptionStatus: 'inactive'
+            planType: 'free',
+            uploadLimit: 10,
+            subscriptionStatus: 'inactive',
+            stripeSubscriptionId: null,
+            subscriptionEndDate: null
           } as any);
-          console.log(`[Stripe Webhook] Assinatura cancelada para usuário ${userId}`);
+          console.log(`[Stripe Webhook] Assinatura cancelada - usuário ${userId} rebaixado para plano gratuito`);
         } else if (event.type === 'customer.subscription.updated') {
           // Atualização de assinatura
           if (subscription.status === 'active') {
@@ -3529,6 +3533,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Invoice processada",
           event: event.type,
           status: "success"
+        });
+      }
+      
+      // Processar reembolso (charge.refunded)
+      if (event.type === 'charge.refunded') {
+        const charge = event.data.object;
+        console.log(`[Stripe Webhook] Reembolso processado: ${charge.id}`);
+        
+        // Buscar usuário pelo customer ID do Stripe
+        const customerId = charge.customer as string;
+        if (customerId) {
+          const allUsers = await storage.getUsers();
+          const user = allUsers.find(u => u.stripeCustomerId === customerId);
+          
+          if (user) {
+            // Verificar se foi reembolso total
+            const refundedAmount = charge.amount_refunded || 0;
+            const totalAmount = charge.amount || 0;
+            const isFullRefund = refundedAmount >= totalAmount;
+            
+            if (isFullRefund) {
+              // Reembolso total - remover plano
+              await storage.updateUser(user.id, {
+                planType: 'free',
+                uploadLimit: 10,
+                subscriptionStatus: 'inactive',
+                stripeSubscriptionId: null,
+                subscriptionEndDate: null
+              } as any);
+              console.log(`[Stripe Webhook] Reembolso total - usuário ${user.id} rebaixado para plano gratuito`);
+            } else {
+              console.log(`[Stripe Webhook] Reembolso parcial para usuário ${user.id} (${refundedAmount}/${totalAmount}) - mantendo plano`);
+            }
+            
+            console.log("========== FIM WEBHOOK STRIPE ==========");
+            return res.json({
+              message: "Reembolso processado",
+              event: event.type,
+              userId: user.id,
+              isFullRefund,
+              status: "success"
+            });
+          } else {
+            console.log(`[Stripe Webhook] Usuário não encontrado para customer ${customerId}`);
+          }
+        }
+        
+        console.log("========== FIM WEBHOOK STRIPE ==========");
+        return res.json({
+          message: "Reembolso processado (usuário não identificado)",
+          event: event.type,
+          status: "warning"
+        });
+      }
+      
+      // Processar disputa/chargeback (charge.dispute.created)
+      if (event.type === 'charge.dispute.created') {
+        const dispute = event.data.object;
+        console.log(`[Stripe Webhook] Disputa criada: ${dispute.id}`);
+        
+        // Buscar charge associada à disputa
+        const chargeId = dispute.charge as string;
+        if (chargeId && stripe) {
+          try {
+            const charge = await stripe.charges.retrieve(chargeId);
+            const customerId = charge.customer as string;
+            
+            if (customerId) {
+              const allUsers = await storage.getUsers();
+              const user = allUsers.find(u => u.stripeCustomerId === customerId);
+              
+              if (user) {
+                // Disputa = remover plano imediatamente
+                await storage.updateUser(user.id, {
+                  planType: 'free',
+                  uploadLimit: 10,
+                  subscriptionStatus: 'inactive',
+                  stripeSubscriptionId: null,
+                  subscriptionEndDate: null
+                } as any);
+                console.log(`[Stripe Webhook] Disputa criada - usuário ${user.id} rebaixado para plano gratuito`);
+                
+                console.log("========== FIM WEBHOOK STRIPE ==========");
+                return res.json({
+                  message: "Disputa processada",
+                  event: event.type,
+                  userId: user.id,
+                  status: "success"
+                });
+              }
+            }
+          } catch (chargeErr) {
+            console.error(`[Stripe Webhook] Erro ao buscar charge ${chargeId}:`, chargeErr);
+          }
+        }
+        
+        console.log("========== FIM WEBHOOK STRIPE ==========");
+        return res.json({
+          message: "Disputa processada (usuário não identificado)",
+          event: event.type,
+          status: "warning"
         });
       }
       
