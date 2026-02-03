@@ -2858,11 +2858,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Determinar a URL de sucesso e cancelamento
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : process.env.REPLIT_DOMAINS 
-          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-          : 'http://localhost:5000';
+      // Prioridade: SITE_URL > fottufy.com (produção)
+      const baseUrl = process.env.SITE_URL || 'https://fottufy.com';
 
       // Criar a sessão de checkout
       // Por enquanto apenas cartão - para adicionar PIX, habilitar no dashboard do Stripe primeiro
