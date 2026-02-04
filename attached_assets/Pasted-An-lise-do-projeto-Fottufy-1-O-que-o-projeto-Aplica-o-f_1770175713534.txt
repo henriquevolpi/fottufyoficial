@@ -1,0 +1,96 @@
+Análise do projeto Fottufy
+1. O que o projeto é
+Aplicação full‑stack para fotógrafos: dashboard de projetos, upload de fotos, galeria para cliente, planos/assinaturas (Stripe + Hotmart), portfólios públicos e área admin. Nome do pacote no package.json: rest-express.
+2. Arquitetura
+Monolito com front e back no mesmo repositório:
+Client: client/ — SPA React (Vite).
+Server: server/ — API Express (Node).
+Shared: shared/ — schema Drizzle + tipos (uso em client e server).
+Fluxo resumido:
+Build: vite build gera dist/public; esbuild empacota o server em dist/index.js.
+Runtime: um único processo Node serve a API e os arquivos estáticos de dist/public (SPA).
+Banco: PostgreSQL (ex.: Neon) via pg + Drizzle.
+Storage: fotos no Cloudflare R2 (compatível S3); uploads/ em disco é usado só como fallback/temporário em alguns fluxos.
+Sessão: express-session com store em PostgreSQL (connect-pg-simple), não em memória.
+Auth: Passport (Local Strategy) + sessão; cookies com CORS configurado para o domínio do app.
+Ou seja: uma app Express que serve API + SPA, com Postgres (dados + sessão), R2 (fotos) e integrações (Stripe, Hotmart, Resend, etc.).
+3. Stack
+Camada	Tecnologia
+Frontend	React 18, TypeScript, Vite, Wouter, TanStack Query, Radix UI, Tailwind, Framer Motion
+Backend	Node, Express, TypeScript (tsx em dev, esbuild em prod)
+Banco	PostgreSQL, Drizzle ORM, pg (pool)
+Storage	Cloudflare R2 (AWS SDK S3), Multer (upload)
+Auth	Passport Local, bcrypt, express-session, connect-pg-simple
+Pagamentos	Stripe (checkout, assinaturas), Hotmart (webhooks)
+Email	Resend
+Deploy	Railway (Procfile + railway-bootstrap.sh) e/ou Docker (Dockerfile)
+4. Pontos frágeis e onde ter cuidado
+4.1 Banco e schema
+Duas “camadas” de projetos:
+Tabela legada projects (id serial, public_id, photos em JSONB).
+Tabela nova new_projects (id UUID) e tabela photos normalizada com project_id (text) referindo a new_projects.id.
+Uso misto: em storage.ts ainda há queries em projects (legado); em routes.ts a API de projetos usa newProjects e photos. Qualquer mudança em uma tabela sem olhar a outra pode quebrar relatórios, listagens ou migrações futuras.
+photos.projectId: no schema está como text com comentário “References projects.public_id”, mas a relação Drizzle aponta para newProjects.id (UUID). Na prática o código usa UUID de newProjects; o comentário está desatualizado e pode confundir em mudanças no schema.
+Migrações: drizzle.config.ts usa shared/schema.ts; migrations em migrations/. Antes de alterar colunas, índices ou FKs, rodar migrações em staging e ter rollback planejado.
+Tabela session: não está no schema Drizzle (gerida pelo connect-pg-simple). Não criar migração Drizzle para essa tabela para não conflitar.
+Cuidado em produção:
+Alterar shared/schema.ts, tabelas projects / new_projects / photos ou a tabela session sem testar em staging e sem backup.
+4.2 Webhooks (Stripe e Hotmart)
+Stripe (/api/webhook/stripe):
+O handler não valida assinatura com STRIPE_WEBHOOK_SECRET (não há stripe.webhooks.constructEvent no código ativo). Qualquer um que descobrir a URL pode enviar eventos falsos e, em tese, ativar/alterar planos.
+Hotmart (/api/webhook/hotmart):
+Usa HOTMART_WEBHOOK_SECRET e validateHotmartSignature quando o secret está definido — mais seguro.
+Idempotência: Hotmart tem lógica de idempotência; Stripe depende de checagens manuais (ex.: “já tem plano ativo”).
+Cuidado em produção:
+1) Implementar verificação de assinatura no webhook Stripe e usar STRIPE_WEBHOOK_SECRET. 2) Não mudar a estrutura do payload ou os campos usados (ex.: metadata.userId, planType, billingCycle) sem ajustar Stripe/Hotmart e testar em ambiente de teste.
+4.3 Storage e upload
+R2: obrigatório em produção (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_ACCOUNT_ID). O módulo r2.ts dá throw se faltar variável — app não sobe sem R2 configurado.
+Dois caminhos de upload: fluxo com stream (streamUpload.ts + processAndStreamToR2) e fluxo “clássico” (Multer disco + processamento). Alterar um pode afetar limite de tamanho, tempo de resposta ou uso de disco.
+Limites: Multer no index.ts com 500MB; R2 com 1GB. Reduzir ou mudar em um lugar e não no outro gera comportamento inconsistente.
+uploads/: ainda usado para arquivos temporários e em alguns fluxos (ex.: downloadImage em routes.ts). No Railway/Docker o filesystem é efêmero; não contar com arquivos em uploads/ após restart.
+Cuidado em produção:
+Mudar envs de R2, limites de upload ou a ordem dos middlewares de upload/stream sem testar uploads grandes e sem conferir onde o disco ainda é usado.
+4.4 Autenticação e sessão
+Sessão: store em PostgreSQL; limpeza de sessões expiradas a cada 6h no index.ts. Se o pool do banco estiver mal configurado ou a tabela session muito grande, pode impactar login e middlewares que leem sessão.
+Cookie user_id: em routes.ts há fallback que lê user_id do cookie e chama req.login(user, ...). Qualquer mudança em nome do cookie ou em storage.getUser pode quebrar “login automático” para usuários já logados.
+SESSION_SECRET: se não estiver definido ou for o valor default, o index.ts gera um novo a cada restart — todas as sessões são invalidadas.
+Cuidado em produção:
+Alterar SESSION_SECRET, configuração de sessão/cookie ou a lógica de fallback de auth sem testar logout/login e múltiplas abas.
+4.5 Jobs em background (index.ts)
+Dentro do server.listen há:
+Limpeza de sessões expiradas (1 min após start, depois a cada 6h).
+Processamento de downgrades expirados (30s após start, depois a cada 1h).
+Processamento de ativações manuais ADM expiradas (45s após start, depois a cada 1h).
+Backup automático (scheduler em backup/backup-scheduler.ts).
+Health check do DB (a cada 2 min).
+Monitor de memória e GC manual (a cada 1 min / 15 min).
+Se um desses jobs der exceção não tratada, pode derrubar o processo dependendo de como esteja envolvido. Hoje a maioria está em try/catch com log.
+Cuidado em produção:
+Mexer nos setInterval/timeouts ou na lógica de downgrade/ativação manual sem garantir que erros estão sempre capturados e que o pool do banco não é fechado inadvertidamente.
+4.6 Deploy (Railway vs Docker)
+Railway: Procfile chama railway-bootstrap.sh, que:
+Altera package.json com sed (--outdir=dist → --outfile=dist/index.js).
+Depende de railway-fix-paths.cjs e de dist/index.js já existir (build feita antes).
+Dockerfile: multi-stage; build com npm run build; em produção não roda o bootstrap, só npm start (node dist/index.js).
+Paths: uso de import.meta.dirname no server; em produção o app roda de dist/index.js. O railway-fix-paths.cjs existe para ajustar resolução de módulos ESM no Railway. Se alguém mudar o build (ex.: outro bundler ou outro outfile), os caminhos para public/ e arquivos estáticos podem quebrar.
+Cuidado em produção:
+Alterar package.json (scripts de build/start), Procfile, railway-bootstrap.sh ou a forma de build sem testar deploy real no mesmo ambiente (Railway ou Docker) que você usa.
+4.7 Stripe (preços e planos)
+IDs de preço estão em shared/schema.ts (STRIPE_PRICE_IDS). Trocar plano no Stripe (novo price id) exige alterar esse objeto e fazer deploy junto; senão checkout pode criar assinatura com preço errado ou quebrado.
+Planos (nomes, limites, uploadLimit) estão espalhados em SUBSCRIPTION_PLANS, em storage.ts (webhook) e em routes.ts (checkout e webhook). Incluir um plano novo ou mudar limite exige manter esses pontos alinhados.
+Cuidado em produção:
+Mudar preços/planos no Stripe sem atualizar STRIPE_PRICE_IDS e a lógica de limites no backend.
+4.8 Arquivos legados e duplicados
+Existem .backup, .bak, .old (ex.: server/storage.ts.backup, server/routes.ts.backup, server/auth.ts.bak). Não são usados em runtime, mas podem ser editados por engano ou em merge.
+Cuidado:
+Não tratar esses arquivos como fonte da verdade; evitar refactors baseados neles sem conferir o arquivo principal.
+5. Checklist rápido antes de deploy
+Variáveis de ambiente: DATABASE_URL, SESSION_SECRET, R2_*, STRIPE_*, e, se usar Hotmart/email, HOTMART_WEBHOOK_SECRET, Resend, etc.
+Stripe: configurar e validar webhook com assinatura (STRIPE_WEBHOOK_SECRET).
+Migrações: rodar em staging primeiro; em produção, de preferência com backup e janela de manutenção.
+Build: garantir que dist/index.js e dist/public são gerados como no script atual e que o comando de start (Railway ou Docker) está correto.
+Jobs: após deploy, checar logs de sessão, downgrade, backup e health check para garantir que não há erros não tratados.
+Se quiser, posso sugerir um plano concreto para: (1) adicionar verificação de assinatura no webhook Stripe, (2) documentar quais rotas usam projects vs newProjects, ou (3) simplificar o bootstrap/Docker para um único fluxo de deploy.
+
+
+traduza para eu conseguir entender melhor
