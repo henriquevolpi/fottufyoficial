@@ -2862,10 +2862,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = process.env.SITE_URL || 'https://fottufy.com';
 
       // Criar a sessão de checkout
-      // Por enquanto apenas cartão - para adicionar PIX, habilitar no dashboard do Stripe primeiro
+      // Métodos de pagamento: Cartão de crédito + Pix (pagamento instantâneo brasileiro)
       const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
-        payment_method_types: ['card'],
+        payment_method_types: ['card', 'pix'],
         line_items: [
           {
             price: derivedPriceId,
