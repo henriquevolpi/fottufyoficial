@@ -1,0 +1,98 @@
+Crie uma landing page para o produto Fottufy, uma plataforma de seleção de fotos para fotógrafos.
+
+Objetivo da página:
+Converter fotógrafos, deixando claro que o diferencial da Fottufy não é apenas facilidade ou design, mas a criação de um Caminho de Escolha que guia o cliente final a escolher fotos mais rápido, comprar mais fotos extras e perceber o fotógrafo como profissional.
+
+⸻
+
+Estrutura obrigatória da landing page
+
+1. Hero Section
+	•	Headline grande e direta:
+“Faça seus clientes escolherem fotos mais rápido, comprarem mais e te respeitarem como profissional.”
+	•	Subheadline quebrando crença:
+“O problema não é o cliente demorar pra escolher fotos.
+O problema é deixar ele escolher sem um Caminho de Escolha.”
+	•	Botão principal (CTA):
+“Criar meu Caminho de Escolha”
+
+⸻
+
+2. Seção: O erro do mercado
+Título:
+“Por que Drive e WhatsApp não funcionam?”
+
+Texto:
+Porque essas ferramentas apenas entregam arquivos.
+Elas não conduzem decisão.
+
+Quando o cliente recebe todas as fotos soltas, ele se perde, demora para escolher e raramente compra fotos extras.
+
+⸻
+
+3. Seção: O mecanismo da Fottufy
+Título:
+“O Caminho de Escolha”
+
+Texto:
+A Fottufy não é apenas uma galeria de fotos.
+Ela cria um Caminho de Escolha que guia o cliente passo a passo, sem confusão e sem o fotógrafo precisar explicar nada.
+
+Com esse caminho, o cliente decide mais rápido, compra com menos resistência e passa a respeitar o processo profissional do fotógrafo.
+
+⸻
+
+4. Seção: Não é milagre, é processo
+Título:
+“Parece milagre. Na prática, é processo.”
+
+Texto:
+Os clientes não mudam.
+O que muda é o ambiente de decisão.
+
+Quando existe um Caminho de Escolha, o cliente entende o que fazer, escolhe melhor e finaliza mais rápido.
+A Fottufy faz isso automaticamente.
+
+⸻
+
+5. Seção: Benefícios claros
+Título:
+“O que muda quando você usa a Fottufy”
+	•	Clientes escolhem fotos mais rápido
+	•	Mais vendas de fotos extras sem insistir
+	•	Menos mensagens e menos retrabalho
+	•	Processo profissional do começo ao fim
+	•	Mais controle para o fotógrafo
+
+⸻
+
+6. Seção: Comparação visual
+Crie uma comparação simples entre:
+
+Drive / WhatsApp
+	•	Cliente perdido
+	•	Escolha sem limite
+	•	Processo amador
+	•	Baixa percepção de valor
+
+Fottufy
+	•	Caminho de Escolha claro
+	•	Escolha guiada
+	•	Processo profissional
+	•	Maior percepção de valor
+
+⸻
+
+7. CTA final
+	•	Botão principal:
+“Criar meu Caminho de Escolha”
+	•	Texto de apoio curto:
+“Comece agora e veja seus clientes escolherem fotos do jeito certo.”
+
+⸻
+
+Diretrizes visuais e de linguagem
+	•	Design moderno, limpo e profissional
+	•	Linguagem direta, simples e humana
+	•	Sem termos técnicos ou corporativos
+	•	Público-alvo: fotógrafos profissionais e iniciantes

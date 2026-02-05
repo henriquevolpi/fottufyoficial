@@ -19,6 +19,7 @@ import BlackFridayPage from "@/pages/blackfriday";
 import Checkout from "@/pages/checkout";
 import DebugPage from "@/pages/debug";
 import LandingPage from "@/pages/landing";
+import LandingAdsPage from "@/pages/landing-ads";
 import CreatePassword from "@/pages/create-password";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -137,6 +138,9 @@ function Router() {
 
       <Route path="/home">
         {() => <LandingPage />}
+      </Route>
+      <Route path="/lp">
+        {() => <LandingAdsPage />}
       </Route>
       <Route path="/">
         {() => (
