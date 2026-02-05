@@ -32,28 +32,41 @@ export default function LandingAdsPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   useEffect(() => {
-    // Facebook Pixel
-    const fbPixelId = '903015070818153';
+    // Meta Pixel Code - Injected in <head> as per Facebook requirements
+    const FB_PIXEL_ID = '903015070818153';
     
-    (function(f: any, b: any, e: any, v: any, n?: any, t?: any, s?: any) {
-      if (f.fbq) return;
-      n = f.fbq = function() {
-        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-      };
-      if (!f._fbq) f._fbq = n;
-      n.push = n;
-      n.loaded = !0;
-      n.version = '2.0';
-      n.queue = [];
-      t = b.createElement(e);
-      t.async = !0;
-      t.src = v;
-      s = b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t, s);
-    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    // Check if pixel already exists to avoid duplicates
+    if (window.fbq) {
+      window.fbq('track', 'PageView');
+      return;
+    }
+
+    // Create and inject the pixel script into <head>
+    const script = document.createElement('script');
+    script.id = 'facebook-pixel';
+    script.innerHTML = `
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '${FB_PIXEL_ID}');
+      fbq('track', 'PageView');
+    `;
     
-    window.fbq('init', fbPixelId);
-    window.fbq('track', 'PageView');
+    // Insert at the beginning of <head> as Facebook recommends
+    document.head.insertBefore(script, document.head.firstChild);
+
+    // Cleanup on unmount
+    return () => {
+      const existingScript = document.getElementById('facebook-pixel');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
   }, []);
 
   const monthlyPlans = [
