@@ -78,7 +78,7 @@ export default function LandingAdsPage() {
       icon: <Camera className="h-7 w-7" />,
       color: "from-blue-500 to-blue-600",
       features: [
-        "Até 6.000 fotos por mês",
+        "Plano de 6.000 fotos",
         "Galerias ilimitadas", 
         "Ideal para quem está começando"
       ],
@@ -93,7 +93,7 @@ export default function LandingAdsPage() {
       color: "from-purple-500 to-purple-600",
       badge: "Mais Popular",
       features: [
-        "Até 17.000 fotos por mês",
+        "Plano de 17.000 fotos",
         "Galerias ilimitadas",
         "Para fotógrafos ativos"
       ],
@@ -108,7 +108,7 @@ export default function LandingAdsPage() {
       color: "from-amber-500 to-amber-600",
       badge: "Premium",
       features: [
-        "Até 40.000 fotos por mês",
+        "Plano de 40.000 fotos",
         "Galerias ilimitadas",
         "Para estúdios e equipes"
       ],
@@ -172,12 +172,12 @@ export default function LandingAdsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 text-white overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative pt-16 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 sm:left-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 sm:right-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
         </div>
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -204,12 +204,12 @@ export default function LandingAdsPage() {
 
           <Button 
             size="lg"
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-10 py-7 text-xl font-bold rounded-2xl shadow-2xl shadow-green-500/30 hover:shadow-green-500/50 transform transition-all hover:scale-105"
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 sm:px-10 py-6 sm:py-7 text-base sm:text-xl font-bold rounded-2xl shadow-2xl shadow-green-500/30 hover:shadow-green-500/50 transform transition-all hover:scale-105 w-full sm:w-auto max-w-sm"
             onClick={handleCTA}
           >
-            <Zap className="mr-2 h-6 w-6" />
-            Criar meu Caminho de Escolha
-            <ArrowRight className="ml-2 h-6 w-6" />
+            <Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+            <span className="whitespace-nowrap">Criar meu Caminho de Escolha</span>
+            <ArrowRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
           </Button>
           
           <p className="mt-4 text-slate-400 text-sm">Teste grátis por 7 dias. Sem compromisso.</p>
@@ -484,11 +484,11 @@ export default function LandingAdsPage() {
 
           <Button 
             size="lg"
-            className="bg-white text-purple-600 hover:bg-slate-100 px-12 py-7 text-xl font-bold rounded-2xl shadow-2xl hover:shadow-white/30 transform transition-all hover:scale-105"
+            className="bg-white text-purple-600 hover:bg-slate-100 px-6 sm:px-12 py-6 sm:py-7 text-base sm:text-xl font-bold rounded-2xl shadow-2xl hover:shadow-white/30 transform transition-all hover:scale-105 w-full sm:w-auto max-w-sm"
             onClick={handleCTA}
           >
-            Criar meu Caminho de Escolha
-            <ArrowRight className="ml-3 h-6 w-6" />
+            <span className="whitespace-nowrap">Criar meu Caminho de Escolha</span>
+            <ArrowRight className="ml-2 sm:ml-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
           </Button>
           
           <p className="mt-4 text-white/60 text-sm">
