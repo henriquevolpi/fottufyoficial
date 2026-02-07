@@ -557,80 +557,100 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
             </DialogDescription>
           </DialogHeader>
           
-          <div className="max-h-60 overflow-y-auto my-4 border rounded-md bg-gray-50 p-4">
-            {(() => {
+          {(() => {
               if (!modalProject?.photos || modalProject.photos.length === 0) {
-                return <p className="text-gray-500 text-center">Nenhuma foto encontrada</p>;
+                return <p className="text-gray-500 text-center my-4">Nenhuma foto encontrada</p>;
               }
               
-              // Get selected photos - check multiple possible ways the data might be structured
-              let selectedPhotos = [];
-              
-              // Method 1: Filter by photo.selected property
+              let selectedPhotos: any[] = [];
               selectedPhotos = modalProject.photos.filter((photo: any) => photo.selected === true);
-              
-              // Method 2: If no selected photos found but we have selectedPhotos array, use that
               if (selectedPhotos.length === 0 && modalProject.selectedPhotos && modalProject.selectedPhotos.length > 0) {
                 selectedPhotos = modalProject.photos.filter((photo: any) => 
                   modalProject.selectedPhotos.includes(photo.id)
                 );
               }
-              
-              // Method 3: If still no results, check for selected photos by status
               if (selectedPhotos.length === 0 && modalProject.status === 'completed') {
-                // For completed projects, all photos with selected=true or selected=1
                 selectedPhotos = modalProject.photos.filter((photo: any) => 
                   photo.selected === true || photo.selected === 1 || photo.selected === "1"
                 );
               }
               
               if (selectedPhotos.length === 0) {
-                return <p className="text-gray-500 text-center">Nenhuma foto selecionada pelo cliente</p>;
-              }
-              
-              return (
-                <div className="space-y-1">
-                  {selectedPhotos.map((photo: any) => (
-                    <div key={photo.id} className="text-sm font-mono text-gray-800 select-all">
-                      {photo.originalName || photo.filename || 'Arquivo sem nome'}
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-          
-          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
-            {(() => {
-              // Get selected photos for the copy button
-              let selectedPhotos = [];
-              
-              if (modalProject?.photos) {
-                selectedPhotos = modalProject.photos.filter((photo: any) => photo.selected === true);
-                
-                if (selectedPhotos.length === 0 && modalProject.selectedPhotos && modalProject.selectedPhotos.length > 0) {
-                  selectedPhotos = modalProject.photos.filter((photo: any) => 
-                    modalProject.selectedPhotos.some((sp: any) => sp.id === photo.id)
-                  );
-                }
-                
-                if (selectedPhotos.length === 0 && modalProject.status === 'completed') {
-                  selectedPhotos = modalProject.photos.filter((photo: any) => 
-                    photo.selected === true || photo.selected === 1 || photo.selected === "1"
-                  );
-                }
+                return <p className="text-gray-500 text-center my-4">Nenhuma foto selecionada pelo cliente</p>;
               }
 
-              return selectedPhotos.length > 0 ? (
-                <CopyNamesButton
-                  selectedPhotos={selectedPhotos}
-                  size="default"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                />
-              ) : null;
-            })()}
-            
+              const namesWithoutExt = selectedPhotos.map((photo: any) => {
+                const fileName = photo.originalName || photo.filename || 'Arquivo sem nome';
+                return fileName.replace(/\.(jpg|jpeg|png|webp|gif|bmp|tiff|cr2|cr3|nef|arw|dng|raf|rw2|orf|pef)$/i, '');
+              });
+
+              const lightroomText = namesWithoutExt.map(n => `,${n}.`).join(' ').replace(/^,/, '');
+              const windowsText = namesWithoutExt.map(n => `"${n}"`).join(' OU ');
+              const macText = namesWithoutExt.map(n => `${n}.`).join(' OU ');
+
+              const copyToClipboard = async (text: string, label: string) => {
+                try {
+                  if (!navigator.clipboard) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                  } else {
+                    await navigator.clipboard.writeText(text);
+                  }
+                  toast({ title: "Copiado!", description: `Formato ${label} copiado para a área de transferência.` });
+                } catch {
+                  toast({ title: "Erro ao copiar", description: "Não foi possível copiar. Selecione o texto manualmente.", variant: "destructive" });
+                }
+              };
+
+              return (
+                <div className="my-4 space-y-4">
+                  <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-gray-900">Usando Adobe Lightroom <span className="font-normal text-gray-500 text-xs">(utilize como "Filtro de biblioteca &gt; Texto" e marque: Nome do arquivo &gt; Contém &gt; Cole aqui)</span></p>
+                      <Button size="sm" variant="outline" className="shrink-0 ml-2 text-xs" onClick={() => copyToClipboard(lightroomText, 'Lightroom')}>
+                        <Copy className="h-3 w-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded p-2 sm:p-3 max-h-24 overflow-y-auto">
+                      <p className="text-xs sm:text-sm font-mono text-gray-800 break-all select-all">{lightroomText}</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-gray-900">Usando o Windows <span className="font-normal text-gray-500 text-xs">(utilize na busca de arquivos do Explorer)</span></p>
+                      <Button size="sm" variant="outline" className="shrink-0 ml-2 text-xs" onClick={() => copyToClipboard(windowsText, 'Windows')}>
+                        <Copy className="h-3 w-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <div className="bg-gray-100 border border-gray-200 rounded p-2 sm:p-3 max-h-24 overflow-y-auto">
+                      <p className="text-xs sm:text-sm font-mono text-gray-800 break-all select-all">{windowsText}</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-gray-900">Usando o Mac OS X <span className="font-normal text-gray-500 text-xs">(utilize na busca de arquivos do Finder)</span></p>
+                      <Button size="sm" variant="outline" className="shrink-0 ml-2 text-xs" onClick={() => copyToClipboard(macText, 'Mac')}>
+                        <Copy className="h-3 w-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <div className="bg-gray-100 border border-gray-200 rounded p-2 sm:p-3 max-h-24 overflow-y-auto">
+                      <p className="text-xs sm:text-sm font-mono text-gray-800 break-all select-all">{macText}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+          })()}
+          
+          <DialogFooter className="mt-4">
             <Button onClick={() => setShowSelectionsModal(false)} className="w-full sm:w-auto">
               Fechar
             </Button>
