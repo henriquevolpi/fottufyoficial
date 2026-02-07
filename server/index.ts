@@ -9,6 +9,8 @@ import { testConnection, pool, startDbHealthCheck } from "./db";
 import { storage as dbStorage } from "./storage";
 // Import backup system
 import { initializeBackupScheduler } from "./backup/backup-scheduler";
+// Import R2 cleanup scheduler
+import { startCleanupScheduler } from "./cleanup-scheduler";
 // Import security middleware
 import { 
   securityHeaders, 
@@ -482,6 +484,14 @@ app.use((req, res, next) => {
       console.error('[BACKUP] ⚠️ Backups automáticos desabilitados');
     }
     // ====================================================================
+    
+    // ==================== SISTEMA DE LIMPEZA R2 AUTOMATICA ====================
+    try {
+      startCleanupScheduler();
+    } catch (error: any) {
+      console.error('[R2-CLEANUP] Erro ao inicializar sistema de limpeza:', error.message);
+    }
+    // =========================================================================
     
     // Converter bytes para MB para facilitar a leitura
     const bytesToMB = (bytes: number) => Math.round(bytes / 1024 / 1024 * 100) / 100;
