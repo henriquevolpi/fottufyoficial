@@ -1461,8 +1461,8 @@ function Statistics({ setLocation, user }: { setLocation: (path: string) => void
           </Card>
         </div>
         
-        {/* Monthly uploads card */}
-        <div className="relative group">
+        {/* Monthly uploads card - TEMPORARIAMENTE OCULTO */}
+        {/* <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl sm:rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
           <Card className="relative border border-slate-100 dark:border-slate-800 shadow-lg sm:shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] rounded-2xl sm:rounded-3xl overflow-hidden h-full">
             <CardContent className="p-3 sm:p-6">
@@ -1484,7 +1484,7 @@ function Statistics({ setLocation, user }: { setLocation: (path: string) => void
               )}
             </CardContent>
           </Card>
-        </div>
+        </div> */}
 
         {/* Upload usage card */}
         <div className="relative group">
