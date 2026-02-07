@@ -2162,6 +2162,7 @@ export default function Dashboard() {
         <DashboardBanner />
 
         {/* Aviso de novidades - Youze Style */}
+        {user?.planType !== 'free' && (
         <div className="mt-0 mb-4 sm:mb-8 relative overflow-hidden">
           <div className="relative bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-xl sm:shadow-2xl shadow-purple-500/20">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
@@ -2186,6 +2187,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Promotional Banner - only shown for free users */}
         {user?.planType === 'free' && <PromotionalBanner />}
