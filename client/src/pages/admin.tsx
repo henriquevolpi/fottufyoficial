@@ -192,7 +192,7 @@ export default function Admin() {
         </Button>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh]">
             <DialogHeader>
               <DialogTitle>
                 Assinaturas Vencidas Sem Pagamento ({previewData?.count || 0})
@@ -763,17 +763,16 @@ export default function Admin() {
       <div className="flex flex-col min-h-screen">
         <header className="bg-white border-b shadow-sm">
           <div className="container mx-auto py-4 px-4 sm:px-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-              <div className="flex items-center space-x-4">
-                <Button 
-                  onClick={() => setAddUserDialogOpen(true)}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add User
-                </Button>
-              </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Management</h1>
+              <Button 
+                onClick={() => setAddUserDialogOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 w-full sm:w-auto"
+                size="sm"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
             </div>
           </div>
         </header>
@@ -781,31 +780,35 @@ export default function Admin() {
         <main className="flex-1 bg-gray-50">
         <div className="container mx-auto py-6 px-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-5">
-              <TabsTrigger value="users" className="flex items-center">
-                <UsersIcon className="h-4 w-4 mr-2" />
-                Users Management
-              </TabsTrigger>
-              <TabsTrigger value="subscriptions" className="flex items-center">
-                <BarChart className="h-4 w-4 mr-2" />
-                Subscriptions
-              </TabsTrigger>
-              <TabsTrigger value="hotmart" className="flex items-center">
-                <KeyIcon className="h-4 w-4 mr-2" />
-                Hotmart
-              </TabsTrigger>
-              <TabsTrigger value="banner" className="flex items-center">
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Banner
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="flex items-center">
-                <CheckCircleIcon className="h-4 w-4 mr-2" />
-                System Stats
-              </TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 sm:grid sm:grid-cols-5 gap-1">
+                <TabsTrigger value="users" className="flex items-center whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                  <UsersIcon className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
+                  <span className="hidden sm:inline">Users Management</span>
+                  <span className="sm:hidden">Users</span>
+                </TabsTrigger>
+                <TabsTrigger value="subscriptions" className="flex items-center whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                  <BarChart className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
+                  <span className="hidden sm:inline">Subscriptions</span>
+                  <span className="sm:hidden">Subs</span>
+                </TabsTrigger>
+                <TabsTrigger value="hotmart" className="flex items-center whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                  <KeyIcon className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
+                  Hotmart
+                </TabsTrigger>
+                <TabsTrigger value="banner" className="flex items-center whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                  <ImageIcon className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
+                  Banner
+                </TabsTrigger>
+                <TabsTrigger value="stats" className="flex items-center whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                  <CheckCircleIcon className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
+                  Stats
+                </TabsTrigger>
+              </TabsList>
+            </div>
             
             <TabsContent value="users" className="space-y-4">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                   <h2 className="text-xl font-semibold text-gray-900">Users</h2>
                   
@@ -835,7 +838,7 @@ export default function Admin() {
                 </div>
                 
                 {/* Filtro de planos */}
-                <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
                   <Card 
                     className={`cursor-pointer hover:shadow-md transition-shadow ${!filters.planType ? 'ring-2 ring-primary' : ''}`}
                     onClick={() => {
@@ -843,12 +846,12 @@ export default function Admin() {
                       updateTempFiltersFromPlanClick(undefined);
                     }}
                   >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Todos os Planos</CardTitle>
+                    <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                      <CardTitle className="text-xs sm:text-sm font-medium">Todos os Planos</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{users.length}</div>
-                      <div className="text-xs text-gray-500 mt-1">Todos os usuários</div>
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                      <div className="text-xl sm:text-2xl font-bold">{users.length}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-500 mt-1">Todos os usuários</div>
                     </CardContent>
                   </Card>
                   
@@ -873,12 +876,12 @@ export default function Admin() {
                               updateTempFiltersFromPlanClick(plan.type);
                             }}
                           >
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium">{plan.name}</CardTitle>
+                            <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                              <CardTitle className="text-xs sm:text-sm font-medium truncate">{plan.name}</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold">{planCounts[plan.type] || 0}</div>
-                              <div className="text-xs text-gray-500 mt-1">
+                            <CardContent className="p-3 sm:p-4 pt-0">
+                              <div className="text-xl sm:text-2xl font-bold">{planCounts[plan.type] || 0}</div>
+                              <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                                 {plan.price > 0 ? `R$ ${plan.price.toFixed(2)}` : 'Gratuito'}
                               </div>
                             </CardContent>
@@ -900,8 +903,8 @@ export default function Admin() {
                     ))}
                   </div>
                 ) : (
-                  <div className="mt-4 rounded-md border">
-                    <Table>
+                  <div className="mt-4 rounded-md border overflow-x-auto">
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>User</TableHead>
@@ -1032,11 +1035,11 @@ export default function Admin() {
             </TabsContent>
             
             <TabsContent value="subscriptions" className="space-y-4">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Subscription Analytics</h2>
-                    <p className="text-gray-600">Monitor subscription status, payments, and user access</p>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Subscription Analytics</h2>
+                    <p className="text-sm sm:text-base text-gray-600">Monitor subscription status, payments, and user access</p>
                   </div>
                   <Button
                     onClick={() => refetchAnalytics()}
@@ -1067,10 +1070,10 @@ export default function Admin() {
                 ) : subscriptionAnalytics ? (
                   <div className="space-y-6">
                     {/* Overview Metrics */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                       <Card className="bg-green-50 border-green-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-green-700">Active Subscriptions</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-green-700">Active Subscriptions</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="text-2xl font-bold text-green-900">
@@ -1083,98 +1086,98 @@ export default function Admin() {
                       </Card>
                       
                       <Card className="bg-red-50 border-red-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-red-700">Assinaturas Expiradas</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-red-700">Assinaturas Expiradas</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-red-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-red-900">
                             {subscriptionAnalytics.analytics.expiredSubscriptions}
                           </div>
-                          <p className="text-xs text-red-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-red-600 mt-1">
                             Precisam atenção imediata
                           </p>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-yellow-50 border-yellow-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-yellow-700">Cancelamentos Pendentes</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-yellow-700">Cancelamentos Pendentes</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-yellow-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-yellow-900">
                             {subscriptionAnalytics.analytics.pendingCancellations}
                           </div>
-                          <p className="text-xs text-yellow-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-yellow-600 mt-1">
                             Processamento imediato
                           </p>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-orange-50 border-orange-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-orange-700">Expirações Críticas</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-orange-700">Expirações Críticas</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-orange-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-orange-900">
                             {subscriptionAnalytics.analytics.criticalExpirations}
                           </div>
-                          <p className="text-xs text-orange-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-orange-600 mt-1">
                             Expiram em 7 dias
                           </p>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-indigo-50 border-indigo-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-indigo-700">Problemas de Pagamento</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-indigo-700">Problemas de Pagamento</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-indigo-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-indigo-900">
                             {subscriptionAnalytics.analytics.usersWithPaymentIssues || subscriptionAnalytics.analytics.paidUsersWithoutPayment}
                           </div>
-                          <p className="text-xs text-indigo-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-indigo-600 mt-1">
                             Verificação necessária
                           </p>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-emerald-50 border-emerald-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-emerald-700">Pagamentos Recentes</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-emerald-700">Pagamentos Recentes</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-emerald-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-emerald-900">
                             {subscriptionAnalytics.analytics.recentPayments || 0}
                           </div>
-                          <p className="text-xs text-emerald-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-emerald-600 mt-1">
                             Últimos 7 dias
                           </p>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-cyan-50 border-cyan-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-cyan-700">Ativações Manuais</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-cyan-700">Ativações Manuais</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-cyan-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-cyan-900">
                             {subscriptionAnalytics.analytics.manualActivations || 0}
                           </div>
-                          <p className="text-xs text-cyan-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-cyan-600 mt-1">
                             Ativadas pelo admin
                           </p>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-rose-50 border-rose-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-rose-700">Muito Atrasadas</CardTitle>
+                        <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+                          <CardTitle className="text-xs sm:text-sm text-rose-700">Muito Atrasadas</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-rose-900">
+                        <CardContent className="p-3 sm:p-4 pt-0">
+                          <div className="text-xl sm:text-2xl font-bold text-rose-900">
                             {subscriptionAnalytics.analytics.overdueSubscriptions || 0}
                           </div>
-                          <p className="text-xs text-rose-600 mt-1">
+                          <p className="text-[10px] sm:text-xs text-rose-600 mt-1">
                             Vencidas há +7 dias
                           </p>
                         </CardContent>
@@ -1253,9 +1256,9 @@ export default function Admin() {
                                       Ver Todos
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                  <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh]">
                                     <DialogHeader>
-                                      <DialogTitle>Assinaturas Expiradas ({subscriptionAnalytics.usersByCategory.expired.length})</DialogTitle>
+                                      <DialogTitle className="text-sm sm:text-base">Assinaturas Expiradas ({subscriptionAnalytics.usersByCategory.expired.length})</DialogTitle>
                                       <DialogDescription>
                                         Usuários com assinaturas vencidas que precisam de atenção imediata
                                       </DialogDescription>
@@ -1264,12 +1267,12 @@ export default function Admin() {
                                       <div className="space-y-2">
                                         {subscriptionAnalytics.usersByCategory.expired.map((user: any, index: number) => (
                                           <div key={index} className="bg-red-50 p-3 rounded border border-red-100">
-                                            <div className="flex justify-between items-start">
-                                              <div>
-                                                <p className="font-medium text-gray-900">{user.email}</p>
-                                                <p className="text-sm text-gray-600">{user.name} • Plano: {user.planType}</p>
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                                              <div className="min-w-0">
+                                                <p className="font-medium text-gray-900 text-sm truncate">{user.email}</p>
+                                                <p className="text-xs sm:text-sm text-gray-600">{user.name} • Plano: {user.planType}</p>
                                               </div>
-                                              <div className="text-right text-sm">
+                                              <div className="sm:text-right text-xs sm:text-sm shrink-0">
                                                 <p className="text-red-600 font-medium">{user.daysExpired} dias expirado</p>
                                                 {user.subscriptionEndDate && (
                                                   <p className="text-gray-500">Venceu: {new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR')}</p>
@@ -1327,7 +1330,7 @@ export default function Admin() {
                                       Ver Todos
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                  <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh]">
                                     <DialogHeader>
                                       <DialogTitle>Problemas de Pagamento ({subscriptionAnalytics.usersByCategory.paidWithoutPayment.length})</DialogTitle>
                                       <DialogDescription>
@@ -1411,7 +1414,7 @@ export default function Admin() {
                                       Ver Todos
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                  <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh]">
                                     <DialogHeader>
                                       <DialogTitle>Pagamentos Recentes ({subscriptionAnalytics.usersByCategory.recentPayments?.length || 0})</DialogTitle>
                                       <DialogDescription>
@@ -1469,7 +1472,7 @@ export default function Admin() {
                                       Ver Todos
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                                  <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh]">
                                     <DialogHeader>
                                       <DialogTitle>Ativações Manuais ({subscriptionAnalytics.usersByCategory.manualActivations?.length || 0})</DialogTitle>
                                       <DialogDescription>
@@ -1563,7 +1566,7 @@ export default function Admin() {
             </TabsContent>
             
             <TabsContent value="stats" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-gray-500 text-sm font-normal">Total Users</CardTitle>
