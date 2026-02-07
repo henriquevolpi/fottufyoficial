@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 - **Admin Panel**: Comprehensive dashboard for managing projects, users, and Hotmart offers, including real-time photo counts and filtering options.
 - **Portfolio System**: Allows users to create and manage public portfolio pages (`/portfolio/[slug]`) using real R2-hosted photos from their projects.
 - **Security**: Centralized security middleware with Helmet for HTTP headers, conservative rate limiting, enhanced session and cookie security, and stricter CORS policies.
+- **R2 Auto-Cleanup**: Daily automated cleanup system (`server/cleanup-scheduler.ts`) that deletes R2 photos from accounts inactive for 7+ days (based on `subscription_end_date`) with projects older than 30 days. Processes in rate-limited batches (500 items, 2s between accounts) to avoid server overload. Exempts accounts that reactivate subscriptions and always protects user_id=5 (nata@hotmail.com). Runs 5 minutes after startup, then every 24 hours.
 
 ## External Dependencies
 
