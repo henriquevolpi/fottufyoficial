@@ -70,9 +70,10 @@
         function toggleWhatsAppButton() {
           const whatsappButton = document.getElementById('whatsapp-button');
           if (whatsappButton) {
-            // Esconde o botão se estiver na página project-view ou project
+            // Esconde o botão se estiver na página project-view, project ou admin
             if (window.location.pathname.includes('/project-view/') || 
-                window.location.pathname.includes('/project/')) {
+                window.location.pathname.includes('/project/') ||
+                window.location.pathname.includes('/admin')) {
               whatsappButton.style.display = 'none';
             } else {
               whatsappButton.style.display = 'flex';
