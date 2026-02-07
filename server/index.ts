@@ -451,22 +451,43 @@ app.use((req, res, next) => {
         console.error('[ADM] Erro ao processar ativações manuais expiradas:', error);
       }
     };
+
+    // ==================== SISTEMA AUTOMÁTICO DE EXPIRAÇÃO (HOTMART/STRIPE) ====================
+    // Verifica contas com subscription_end_date expirada e sem pagamento recente
+    // Converte automaticamente para plano free se não houver renovação
+    const processExpiredSubscriptionsAuto = async () => {
+      try {
+        console.log('[EXPIRED-AUTO] Verificando assinaturas com data de expiração vencida...');
+        const processedCount = await dbStorage.processExpiredSubscriptionsWithoutPayment();
+        
+        if (processedCount > 0) {
+          console.log(`[EXPIRED-AUTO] ${processedCount} usuários com assinatura vencida convertidos para plano gratuito`);
+        } else {
+          console.log('[EXPIRED-AUTO] Nenhuma assinatura vencida encontrada para downgrade');
+        }
+      } catch (error) {
+        console.error('[EXPIRED-AUTO] Erro ao processar assinaturas vencidas:', error);
+      }
+    };
     
     // Executar limpeza de sessões inicial após 1 minuto do startup
     setTimeout(cleanupExpiredSessions, 60000);
     
     // Executar verificações iniciais após 30 segundos do startup
     setTimeout(processExpiredDowngrades, 30000);
-    setTimeout(processExpiredManualActivations, 45000); // 15 segundos depois do primeiro
+    setTimeout(processExpiredManualActivations, 45000);
+    setTimeout(processExpiredSubscriptionsAuto, 60000);
     
     // Configurar intervalos
     const sessionCleanupIntervalId = setInterval(cleanupExpiredSessions, 6 * 60 * 60 * 1000); // 6 horas
     const downgradeIntervalId = setInterval(processExpiredDowngrades, 3600000); // 1 hora
     const manualActivationIntervalId = setInterval(processExpiredManualActivations, 3600000); // 1 hora
+    const expiredSubscriptionsIntervalId = setInterval(processExpiredSubscriptionsAuto, 6 * 60 * 60 * 1000); // 6 horas
     
     console.log('[SESSION-CLEANUP] Sistema de limpeza automática iniciado - verificação a cada 6 horas');
     console.log('[DOWNGRADE] Sistema automático de downgrade iniciado - verificação a cada hora');
     console.log('[ADM] Sistema de controle manual ADM iniciado - verificação a cada hora (34 dias)');
+    console.log('[EXPIRED-AUTO] Sistema automático de expiração iniciado - verificação a cada 6 horas');
     
     // ==================== SISTEMA DE BACKUP AUTOMÁTICO ====================
     // Inicializar sistema de backup automático (Local + Email)
