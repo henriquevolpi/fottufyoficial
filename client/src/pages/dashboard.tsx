@@ -623,7 +623,29 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
                     </div>
                   </div>
 
-                  {/* Windows e Mac OS X - TEMPORARIAMENTE OCULTOS */}
+                  <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-gray-900">Usando o Windows <span className="font-normal text-gray-500 text-xs">(utilize na busca de arquivos do Explorer)</span></p>
+                      <Button size="sm" variant="outline" className="shrink-0 ml-2 text-xs" onClick={() => copyToClipboard(windowsText, 'Windows')}>
+                        <Copy className="h-3 w-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <div className="bg-gray-100 border border-gray-200 rounded p-2 sm:p-3 max-h-24 overflow-y-auto">
+                      <p className="text-xs sm:text-sm font-mono text-gray-800 break-all select-all">{windowsText}</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-gray-900">Usando o Mac OS X <span className="font-normal text-gray-500 text-xs">(utilize na busca de arquivos do Finder)</span></p>
+                      <Button size="sm" variant="outline" className="shrink-0 ml-2 text-xs" onClick={() => copyToClipboard(macText, 'Mac')}>
+                        <Copy className="h-3 w-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <div className="bg-gray-100 border border-gray-200 rounded p-2 sm:p-3 max-h-24 overflow-y-auto">
+                      <p className="text-xs sm:text-sm font-mono text-gray-800 break-all select-all">{macText}</p>
+                    </div>
+                  </div>
                 </div>
               );
           })()}
