@@ -2596,6 +2596,13 @@ export default function Dashboard() {
   </DialogFooter>
 </DialogContent>
 </Dialog>
+
+    <div className="mt-16 mb-6 text-center">
+      <p className="text-[10px] text-slate-400">
+        A Fottufy é uma plataforma de <strong>seleção e entrega</strong> de fotos, não de armazenamento. Fotos de contas inativas podem ser removidas.{' '}
+        <a href="https://fottufy.com/termos" target="_blank" rel="noopener" className="underline hover:text-slate-500 transition-colors">Saiba mais</a>
+      </p>
+    </div>
     </div>
   );
 }
