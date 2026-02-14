@@ -585,7 +585,7 @@ function ProjectCard({ project, onDelete, onViewComments }: { project: any, onDe
               });
 
               const lightroomText = namesWithoutExt.map(n => `,${n}.`).join(' ').replace(/^,/, '');
-              const windowsText = namesWithoutExt.map(n => `"${n}"`).join(' OU ');
+              const windowsText = namesWithoutExt.map(n => `"${n}"`).join(' OR ');
               const macText = namesWithoutExt.map(n => `${n}.`).join(' OU ');
 
               const copyToClipboard = async (text: string, label: string) => {
