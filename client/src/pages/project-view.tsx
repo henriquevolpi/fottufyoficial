@@ -921,47 +921,61 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
       {/* Hero Section Premium - Experiência Imersiva */}
       {coverPhotoUrl && (
         <div className="relative h-[100svh] md:h-[95vh] overflow-hidden">
-          {/* Background principal */}
+          {/* Background principal com efeito Ken Burns suave */}
           <div 
-            className="absolute inset-0 bg-cover bg-center"
+            className="absolute inset-0 bg-cover bg-center animate-[kenburns_20s_ease-in-out_infinite_alternate]"
             style={{
               backgroundImage: `url(${coverPhotoUrl})`,
             }}
           />
           
-          {/* Gradiente cinematográfico */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
+          {/* Camada de blur sutil */}
+          <div className="absolute inset-0 backdrop-blur-[1px]" />
+          
+          {/* Gradiente cinematográfico multicamada */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
+          
+          {/* Efeito vinheta nas bordas */}
+          <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.5)]" />
+          
+          {/* Partículas decorativas (bokeh effect) */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-white/5 rounded-full blur-3xl animate-pulse" style={{animationDuration: '4s'}} />
+            <div className="absolute top-1/3 right-1/4 w-24 h-24 bg-purple-300/10 rounded-full blur-2xl animate-pulse" style={{animationDuration: '5s', animationDelay: '1s'}} />
+            <div className="absolute bottom-1/3 left-1/3 w-40 h-40 bg-fuchsia-300/5 rounded-full blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '2s'}} />
+          </div>
           
           {/* Conteúdo principal centralizado */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
-            {/* Badge decorativo */}
-            <div className="mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 rounded-full border border-white/20">
-                <div className="w-2 h-2 bg-green-400 rounded-full" />
+            {/* Badge decorativo animado */}
+            <div className="mb-6 animate-[fadeInDown_1s_ease-out]">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
                   Galeria Exclusiva
                 </span>
               </div>
             </div>
             
-            {/* Título principal */}
-            <h1 className="font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-white tracking-tight uppercase drop-shadow-lg leading-[0.9]">
+            {/* Título principal com animação */}
+            <h1 className="font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-white tracking-tight uppercase drop-shadow-2xl animate-[fadeInUp_1s_ease-out_0.3s_both] leading-[0.9]">
               {project.nome}
             </h1>
             
-            {/* Linha decorativa */}
-            <div className="mt-6 mb-4">
+            {/* Linha decorativa animada */}
+            <div className="mt-6 mb-4 animate-[scaleX_1s_ease-out_0.6s_both]">
               <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
             </div>
             
             {/* Nome do cliente */}
-            <p className="text-white/80 text-lg sm:text-xl md:text-2xl font-light tracking-wide">
+            <p className="text-white/80 text-lg sm:text-xl md:text-2xl font-light tracking-wide animate-[fadeInUp_1s_ease-out_0.5s_both]">
               {project.cliente}
             </p>
             
             {/* Badges de informação */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 rounded-2xl border border-white/10">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 animate-[fadeInUp_1s_ease-out_0.7s_both]">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
                 <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -969,7 +983,7 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
                   {new Date(project.data).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/15 rounded-2xl border border-white/10">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg">
                 <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -979,11 +993,11 @@ export default function ProjectView({ params }: { params?: { id: string } }) {
           </div>
           
           {/* Indicador de scroll animado - apenas mobile */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 md:bottom-10">
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-[fadeIn_1s_ease-out_1.5s_both] md:bottom-10">
             <div className="flex flex-col items-center gap-2">
               <span className="text-white/60 text-xs uppercase tracking-widest font-medium">Ver fotos</span>
               <div className="w-6 h-10 border-2 border-white/30 rounded-full p-1 flex justify-center">
-                <div className="w-1.5 h-3 bg-white/70 rounded-full" />
+                <div className="w-1.5 h-3 bg-white/70 rounded-full animate-[scrollDown_2s_ease-in-out_infinite]" />
               </div>
             </div>
           </div>
