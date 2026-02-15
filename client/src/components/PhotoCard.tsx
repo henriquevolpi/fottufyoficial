@@ -123,14 +123,12 @@ export const PhotoCard = memo(function PhotoCard({
   return (
     <Card
       ref={cardRef}
-      className={`overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border-0 shadow-md ${
-        isFinalized ? 'opacity-80' : 'hover:shadow-xl hover:scale-[1.02]'
+      className={`overflow-hidden group cursor-pointer transition-shadow duration-300 rounded-2xl border-0 shadow-md ${
+        isFinalized ? 'opacity-80' : 'hover:shadow-xl'
       } ${isSelected ? 'ring-2 ring-purple-500 shadow-lg shadow-purple-500/20' : ''}`}
       onClick={handleCardClick}
       style={{ 
-        contain: 'layout style paint',
-        contentVisibility: 'auto',
-        containIntrinsicSize: '0 350px'
+        contain: 'layout style paint'
       }}
     >
       <div className="relative h-64 bg-slate-100">
