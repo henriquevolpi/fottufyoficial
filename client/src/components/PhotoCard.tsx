@@ -142,7 +142,7 @@ export const PhotoCard = memo(function PhotoCard({
               className="w-full h-full"
               onClick={handleImageClick}
             >
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 shadow-lg">
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/40 rounded-full p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
                 <Maximize className="h-6 w-6 text-white drop-shadow-lg" />
               </div>
               
