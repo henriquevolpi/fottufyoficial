@@ -128,7 +128,9 @@ export const PhotoCard = memo(function PhotoCard({
       } ${isSelected ? 'ring-2 ring-purple-500 shadow-lg shadow-purple-500/20' : ''}`}
       onClick={handleCardClick}
       style={{ 
-        contain: 'layout style paint'
+        contain: 'layout style paint',
+        contentVisibility: 'auto',
+        containIntrinsicSize: '0 400px'
       }}
     >
       <div className="relative h-64 bg-slate-100">
