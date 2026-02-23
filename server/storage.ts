@@ -1739,7 +1739,7 @@ export class DatabaseStorage implements IStorage {
       const [offer] = await db
         .select()
         .from(hotmartOffers)
-        .where(eq(hotmartOffers.offerCode, offerCode))
+        .where(sql`LOWER(${hotmartOffers.offerCode}) = LOWER(${offerCode})`)
         .limit(1);
       
       return offer;

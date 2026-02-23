@@ -3728,19 +3728,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (result.success) {
         console.log(`Hotmart webhook processado: ${result.message}`);
-        console.log("========== FIM WEBHOOK HOTMART ==========");
-        return res.status(200).json({ 
-          message: "Hotmart webhook processado com sucesso",
-          details: result.message
-        });
       } else {
         console.warn(`Hotmart webhook com erro: ${result.message}`);
-        console.log("========== FIM WEBHOOK HOTMART (COM ERRO) ==========");
-        return res.status(400).json({ 
-          message: "Erro ao processar webhook",
-          details: result.message
-        });
       }
+      console.log("========== FIM WEBHOOK HOTMART ==========");
+      return res.status(200).json({ 
+        success: result.success,
+        message: result.message
+      });
     } catch (error: any) {
       console.error("Erro ao processar webhook da Hotmart:", error);
       console.log("========== FIM WEBHOOK HOTMART (COM EXCEÇÃO) ==========");
@@ -6096,22 +6091,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== Hotmart Webhook ====================
+  // ==================== Hotmart Webhook (rota alternativa) ====================
   app.post("/api/hotmart/webhook", async (req: Request, res: Response) => {
     try {
-      console.log('Hotmart: Webhook recebido', JSON.stringify(req.body));
+      console.log("========== INICIO WEBHOOK HOTMART (rota alternativa) ==========");
+      console.log("Payload recebido:", JSON.stringify(req.body));
       
       const result = await processHotmartWebhook(req.body);
       
       if (result.success) {
-        return res.status(200).json(result);
+        console.log(`Hotmart webhook processado: ${result.message}`);
       } else {
-        // Hotmart espera 200 até para erros que não devem ser retentados
-        return res.status(200).json(result);
+        console.warn(`Hotmart webhook com erro: ${result.message}`);
       }
+      console.log("========== FIM WEBHOOK HOTMART ==========");
+      return res.status(200).json({ success: result.success, message: result.message });
     } catch (error) {
       console.error('Hotmart webhook error:', error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+      return res.status(200).json({ success: false, message: 'Internal server error' });
     }
   });
 

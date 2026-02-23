@@ -31,15 +31,15 @@ interface HotmartWebhookPayload {
       email?: string;     // Email pode estar no objeto de contato em alguns payloads
     };
     purchase?: {
-      transaction?: string; // ID da transação ou URL com parâmetros (pode conter "off=XXXX")
-      status?: string;      // Status da compra (approved, refunded, etc)
+      transaction?: string;
+      status?: string;
       offer?: {
-        code?: string;      // Código da oferta (usado para mapear o plano)
-        off?: string;       // ID da oferta conforme especificado (ex: ro76q5uz)
-        status?: string;    // Status da oferta
+        code?: string;
+        off?: string;
+        status?: string;
       };
       plan?: {
-        name?: string;      // Nome do plano (usado como fallback)
+        name?: string;
       };
     };
     subscription?: {
@@ -59,21 +59,18 @@ interface HotmartWebhookPayload {
   };
 }
 
-// Mapeamento dos códigos de oferta da Hotmart para os planos do Fottufy
-// Configurado com os códigos reais das ofertas da Hotmart
-const HOTMART_OFFER_TO_PLAN_MAP: Record<string, string> = {
-  // Planos mensais
-  "ro76q5uz": "basic_v2",        // R$14,90 - 6.000 fotos
-  "z0pxaesy": "basic_v2",        // R$14,90 - 6.000 fotos  
-  "ze3jhsob": "basic_v2",        // R$14,90 - 6.000 fotos
-  "tpfhcllk": "standard_v2",     // R$29,90 - 15.000 fotos (CORRIGIDO)
-  "hjb8gqn7": "standard_v2",     // R$29,90 - 15.000 fotos
-  "xtuh4ji0": "professional_v2", // R$49,90 - 35.000 fotos (CORRIGIDO)
-  
-  // Planos anuais - TROCAR pelos códigos reais da Hotmart
-  "BASICO_ANUAL_CODIGO": "basic_v2",        // Básico Anual - substituir código
-  "STANDARD_ANUAL_CODIGO": "standard_v2",   // Standard Anual - substituir código
-  "PREMIUM_ANUAL_CODIGO": "professional_v2" // Premium Anual - substituir código
+const HOTMART_OFFER_TO_PLAN_MAP: Record<string, { planType: string; billingPeriod: string }> = {
+  "ro76q5uz": { planType: "basic_v2", billingPeriod: "monthly" },
+  "z0pxaesy": { planType: "basic_v2", billingPeriod: "monthly" },
+  "ze3jhsob": { planType: "basic_v2", billingPeriod: "monthly" },
+  "6fm4k0j3": { planType: "basic_v2", billingPeriod: "monthly" },
+  "z0fgxfr5": { planType: "basic_v2", billingPeriod: "monthly" },
+  "tpfhcllk": { planType: "standard_v2", billingPeriod: "monthly" },
+  "hjb8gqn7": { planType: "standard_v2", billingPeriod: "monthly" },
+  "2rkaudbb": { planType: "standard_v2", billingPeriod: "monthly" },
+  "suf6vkf6": { planType: "professional_v2", billingPeriod: "monthly" },
+  "xtuh4ji0": { planType: "professional_v2", billingPeriod: "monthly" },
+  "z61olrnh": { planType: "professional_v2", billingPeriod: "monthly" },
 };
 
 // Função para gerar uma senha aleatória para novos usuários
@@ -130,13 +127,19 @@ export async function determineOffer(payload: HotmartWebhookPayload): Promise<{ 
       return null;
     }
     
-    // Função auxiliar para verificar se uma oferta existe no banco de dados
     const checkOfferInDatabase = async (offerId: string): Promise<{ planType: string; billingPeriod: string } | null> => {
       const offer = await storage.getHotmartOfferByCode(offerId);
       if (offer && offer.isActive) {
         console.log(`Hotmart: Oferta encontrada no banco de dados: ${offerId} -> ${offer.planType} (${offer.billingPeriod})`);
         return { planType: offer.planType, billingPeriod: offer.billingPeriod };
       }
+      const lowerOfferId = offerId.toLowerCase();
+      const fallback = HOTMART_OFFER_TO_PLAN_MAP[lowerOfferId];
+      if (fallback) {
+        console.log(`Hotmart: Oferta encontrada no mapa fallback: ${offerId} -> ${fallback.planType} (${fallback.billingPeriod})`);
+        return fallback;
+      }
+      console.log(`Hotmart: Oferta NÃO encontrada (DB nem fallback) para código: ${offerId}`);
       return null;
     };
     
@@ -225,8 +228,7 @@ export async function determineOffer(payload: HotmartWebhookPayload): Promise<{ 
       }
     }
     
-    // Se não encontrou um ID de oferta válido, retornar null para indicar que não deve processar
-    console.log(`Hotmart: Nenhuma oferta válida encontrada`);
+    console.log(`Hotmart: Nenhuma oferta válida encontrada. Payload resumido: event=${payload.event}, offer=${JSON.stringify(payload.data?.purchase?.offer)}, params=${JSON.stringify(payload.data?.params)}, transaction=${payload.data?.purchase?.transaction}`);
     return null;
   } catch (error) {
     console.error('Erro ao determinar tipo de plano:', error);
