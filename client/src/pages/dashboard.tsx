@@ -2190,7 +2190,7 @@ export default function Dashboard() {
                 onClick={handleOpenReferralModal}
                 className="shrink-0 bg-white text-purple-700 font-black text-[10px] sm:text-xs tracking-widest uppercase px-4 sm:px-6 py-2.5 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl hover:scale-105 transition-transform"
               >
-                Indicar Amigo
+                
               </button>
             </div>
           </div>
