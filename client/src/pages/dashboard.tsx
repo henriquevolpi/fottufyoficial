@@ -2183,7 +2183,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div className="text-left flex-1 min-w-0">
-                <p className="font-black text-sm sm:text-2xl text-white uppercase tracking-tight mb-0.5 sm:mb-2">Recomende a Fottufy e ganhe um selo ❤️</p>
+                <p className="font-black text-sm sm:text-2xl text-white uppercase tracking-tight mb-0.5 sm:mb-2">Olá a todos! A fottufy está enfrentando uma instabilidade momentânea, mas volta em instantes! Pedimos a compreensão de todos, estamos trabalhando ativamente para resolver📸 em instantes o sistema volta, pois houve uma pequena instabilidade no banco de imagens contratado, mas estamos tendo sucesso no conserto, obrigado a todos e aguardem que será rápido e resolvido ✅🙌🏻 Demorou um pouco mais que o esperado, mas estamos cientes e recompensaremos a todos ❤️</p>
                 <p className="font-light text-purple-100 text-xs sm:text-base leading-relaxed line-clamp-2 sm:line-clamp-none">+1.000 fotos extras no seu pacote por indicação!</p>
               </div>
               <button 
